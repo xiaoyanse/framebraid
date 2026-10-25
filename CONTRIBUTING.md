@@ -80,7 +80,7 @@ parent repository's commit. These fields do not replace artifact SHA-256; see
 From the root, after obtaining locked dependencies:
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:/FrameBraid-build'
+$env:CARGO_TARGET_DIR = (Join-Path $PWD '.local/build/current')
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked --features am-camera-ffi/shared-frames,am-vision-ffi/shared-frames -- -D warnings
 node scripts/sdk/check-boundary.mjs
@@ -111,3 +111,9 @@ Changes should explain purpose, compatibility impact, actual validation and docu
 Contribute only materials you are authorized to submit. Unless explicitly agreed otherwise, intentional project contributions use Apache-2.0. Preserve upstream notices and identify new dependency licenses. Contribution does not transfer other people's copyright to the maintainer.
 
 只贡献有权提交的材料，项目贡献按 Apache-2.0，明确另议除外。保留第三方声明并说明新增依赖许可，不将他人版权改为维护者所有。
+
+## Local outputs / 本地产物
+
+Keep project build/test/release/evidence files under this checkout’s ignored `.local` categories; see [layout](docs/LOCAL_LAYOUT.md). Do not place private configuration or tests in public packages. Core fixes live here; host upgrades pin a complete reviewed Git commit and lockfiles instead of copying source.
+
+项目专属产物按 `.local` 分类，不再创建散落目录；SDK 在本仓维护，宿主固定版本消费。清理前检查进程、链接及未合并成果，历史发布包保持原字节。

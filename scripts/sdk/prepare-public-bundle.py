@@ -8,6 +8,7 @@ import re
 import shutil
 import subprocess
 import zipfile
+from local_paths import local_path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -22,19 +23,8 @@ def digest(path):
         return hashlib.file_digest(stream, "sha256").hexdigest()
 
 
-def safe_directory(value, fresh=False):
-    original = Path(value)
-    if not original.is_absolute():
-        raise ValueError("Absolute directory required")
-    for part in [original, *original.parents]:
-        if part.is_symlink() or (part.exists() and part.is_junction()):
-            raise ValueError("Refuse linked directory")
-    resolved = original.resolve()
-    if resolved == ROOT or ROOT in resolved.parents or resolved in ROOT.parents:
-        raise ValueError("Output must not contain or be inside the source checkout")
-    if fresh and resolved.exists():
-        raise ValueError("Refuse existing output; choose a fresh directory")
-    return resolved
+def safe_directory(value, fresh=False, category="releases"):
+    return local_path(value, category, fresh)
 
 
 def inventory(directory):
@@ -96,7 +86,7 @@ def verify_document_links(directory):
 def prepare(args):
     labels = release_labels(args.version, args.publication_authorized)
     output = safe_directory(args.output, fresh=True)
-    evidence = safe_directory(args.evidence, fresh=True)
+    evidence = safe_directory(args.evidence, fresh=True, category="evidence")
     if output in evidence.parents or evidence in output.parents:
         raise ValueError("Evidence and deliverables must be separate")
     if run("git", "status", "--porcelain"):

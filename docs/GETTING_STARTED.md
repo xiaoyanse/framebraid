@@ -9,7 +9,7 @@ Use the Windows x64 source checkout or [v0.1.0 download](https://github.com/xiao
 Install Rust 1.90+, MSVC x64 build tools and Windows SDK. From the repository root:
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:/FrameBraid-build'
+$env:CARGO_TARGET_DIR = (Join-Path $PWD '.local/build/current')
 cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-camera-ffi/shared-frames,am-vision-ffi/shared-frames
 $SDK_ROOT = Join-Path (Get-Location).Path 'sdk'
 $DLL_DIR = Join-Path $env:CARGO_TARGET_DIR 'release'

@@ -9,7 +9,7 @@
 准备 Rust 1.90+、MSVC x64 工具及 Windows SDK，在仓库根目录执行：
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:/FrameBraid-build'
+$env:CARGO_TARGET_DIR = (Join-Path $PWD '.local/build/current')
 cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-camera-ffi/shared-frames,am-vision-ffi/shared-frames
 $SDK_ROOT = Join-Path (Get-Location).Path 'sdk'
 $DLL_DIR = Join-Path $env:CARGO_TARGET_DIR 'release'

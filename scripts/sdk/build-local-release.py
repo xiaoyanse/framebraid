@@ -1,4 +1,4 @@
-"""记录干净提交的真实 Cargo Release 构建与输入指纹，输出放源码之外。"""
+"""记录干净提交的真实 Cargo Release 构建与输入指纹，输出放仓内忽略的 .local 分类。"""
 
 import argparse
 import hashlib
@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import subprocess
 import time
+from local_paths import local_path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -33,25 +34,16 @@ if __name__ == "__main__":
     args = parser.parse_args()
     if git("status", "--porcelain"):
         raise ValueError("Build record requires a clean committed checkout")
-    record = args.record.resolve()
-    if (not args.record.is_absolute() or record == ROOT or ROOT in record.parents or
-            record.exists() or record.with_suffix(".log").exists()):
-        raise ValueError("Record must be a new absolute file outside the checkout")
-    for path in [record, *record.parents]:
-        if path.is_symlink() or (path.exists() and path.is_junction()):
-            raise ValueError("Refuse linked record directory")
+    record = local_path(args.record, "evidence", fresh=True)
+    if record.with_suffix(".log").exists():
+        raise ValueError("Refuse existing build log")
     commit = git("rev-parse", "HEAD")
     before = inputs()
     command = ["cargo", "build", "--release", "--workspace", "--locked", "--offline", "--features",
                "am-camera-ffi/shared-frames,am-vision-ffi/shared-frames"]
     import os
-    original_target = Path(os.environ["CARGO_TARGET_DIR"])
-    for path in [original_target, *original_target.parents]:
-        if path.is_symlink() or (path.exists() and path.is_junction()):
-            raise ValueError("Refuse linked Cargo target directory")
-    target = original_target.resolve()
-    if target == ROOT or ROOT in target.parents or not Path(os.environ["CARGO_TARGET_DIR"]).is_absolute():
-        raise ValueError("CARGO_TARGET_DIR must be absolute and outside source")
+    target = local_path(os.environ.get("CARGO_TARGET_DIR", ROOT / ".local/build/current"), "build")
+    os.environ["CARGO_TARGET_DIR"] = str(target)
     start = time.monotonic()
     result = subprocess.run(command, cwd=ROOT, capture_output=True)
     record.parent.mkdir(parents=True, exist_ok=True)

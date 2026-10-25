@@ -2,6 +2,9 @@
 
 ## Unreleased / 未发布
 
+- Consolidated local build/test/release/evidence paths under ignored `.local` categories; documented AM-RT pinned-source consumption and upgrade/rollback boundaries. SDK core/ABI and published artifacts unchanged.
+- 本地目录分类与宿主固定版本接入已整理；构建/打包工具拒绝分类外输出，不改变公开 SDK 接口。
+
 - Fixed runtime version diagnostics: Cargo package version, actual target, source commit/state,
   build profile and shared-frame feature, without changing C ABI 1.0 layouts or exports.
 - Retained original extraction provenance and added an explicit source-revision overlay.

@@ -1,14 +1,14 @@
 # FrameBraid SDK 开发约定
 
 - 一个仓库管理 Media SDK 与 Vision SDK；无任务、工位、报警、PLC、数据库或 UI 业务依赖。
-- 七个 crate 的历史提取指纹保留原字节；FrameBraid 为公开维护源，宿主固定版本迁移另行协调，不在两仓分别修核心。授权修复通过 `sdk-source-revisions.json` 绑定原清单摘要、评审基线、变更前后指纹及原因；不覆盖原始 `sdk-source-manifest.json`。
+- 七个 crate 的历史提取指纹保留原字节；FrameBraid 为公开维护源，AM-RT 已按完整 Git 提交固定消费，升级仍须独立评审，不在两仓分别修核心。授权修复通过 `sdk-source-revisions.json` 绑定原清单摘要、评审基线、变更前后指纹及原因；不覆盖原始 `sdk-source-manifest.json`。
 - 自有代码 Apache-2.0，保留第三方许可；不得自动发布、创建远程、推送或打标签。
 - 公开署名使用 GitHub 用户名 xiaoyanse，不自动公开登录邮箱。README.md 为英文入口、README.zh-CN.md 为中文入口；能力、限制、命令与验证状态同步维护，文档入口见 docs/README.md。
 - 开源准备和实际发布分开，发布前按 docs/RELEASE_CHECKLIST.md 核对；历史设计/提取清单不改写为新验收，不把 Debug 证据或旧宿主制品当作 FrameBraid Release。
-- 公开文档保留当前接入/合同/支持说明和简洁 CHANGELOG；过期审计、交接、探索稿先按原字节归档到仓外再清理并修正引用。生成器输入、ABI 历史链、来源指纹及第三方原件不当过程垃圾删除。
+- 公开文档保留当前接入/合同/支持说明和简洁 CHANGELOG；过期审计、交接、探索稿先按原字节归档到忽略的 `.local/archive` 再清理并修正引用。生成器输入、ABI 历史链、来源指纹及第三方原件不当过程垃圾删除。
 - 兼容 amc_/amv_ 和既有 Rust crate 名称；品牌更名不改变 ABI。
 - 修改接口先改 docs/design/dual-dll-abi*.md，使用 scripts/sdk 生成器同步头、Rust、Python/C#；禁止手改生成物。
-- cargo fmt、cargo clippy、受影响测试、ABI 检查与 check-boundary 为验证入口。构建输出放仓外 D 盘。
+- cargo fmt、cargo clippy、受影响测试、ABI 检查与 check-boundary 为验证入口。构建输出统一在本仓 `.local/build/current`，验证与归档分别放 `.local/tests`、`.local/evidence`、`.local/archive`；不再创建项目根外的散落目录。
 - 测试使用合成数据及随机回环端口，不连接现场设备；模型、运行库、凭据、内部证据不得提交。
 
 ## 版本与公开接口同步
@@ -22,3 +22,8 @@
 - `sdk-source-manifest.json` 是历史提取指纹，不是每次发布自动覆盖的清单；ABI 冻结指纹用于防漂移，不等于 DLL 身份或兼容结论。修改核心/合同须评审新的基线，保留旧记录和迁移关系，禁止为过检查盲目重算哈希。
 - 下游固定消费版本/提交及匹配绑定，以版本协商、struct_size、能力查询和实际依赖检查决定启用或回退；不从哈希或 GitHub 最新文档猜兼容，不默认自动替换 DLL/改宿主代码。本要求是维护规范，不代表已有自动升级或在线合同同步服务。
 - 运行时包版本取 Cargo 版本，目标取实际 target triple；现有 notes 返回构建时提交、源码输入 clean/dirty/unknown、profile 与公共支撑层共享帧编译特性（实际每库能力另查）。无自身 Git 仓库不猜提交；该信息不替代制品 SHA-256。发布前须核实际载入库与候选清单一致，查询能力不等于自动升级。
+
+## 本地目录与宿主接入
+
+- 唯一维护根为本仓与 AM-RT 宿主仓；归属和版本交接见 `docs/LOCAL_LAYOUT.md`、`docs/SOURCE_MAINTENANCE.md`。不在宿主恢复核心副本，也不把本地未公开提交偷偷写成公共 Git 依赖。
+- `.cargo/config.toml` 默认 `.local/build/current`；测试/证据/运行库/历史包分类保存。覆盖 `CARGO_TARGET_DIR` 也用本仓 `.local/build` 子目录。正式制品原字节保留，测试和配置不混入公开包；过期缓存确认闲置后及时回收。

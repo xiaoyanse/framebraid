@@ -10,6 +10,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from local_paths import local_path
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -137,12 +138,7 @@ if __name__ == "__main__":
     parser.add_argument("--work-dir", type=Path, required=True)
     args = parser.parse_args()
     DLL_DIR = args.dll_dir.resolve(strict=True)
-    WORK = args.work_dir.resolve()
-    if not args.work_dir.is_absolute() or WORK == ROOT or ROOT in WORK.parents or WORK in ROOT.parents:
-        raise ValueError("Use an absolute test-only work directory outside the checkout")
-    for part in [WORK, *WORK.parents]:
-        if part.is_symlink() or (part.exists() and part.is_junction()):
-            raise ValueError("Refuse linked test directory")
+    WORK = local_path(args.work_dir, "tests")
     WORK.mkdir(parents=True, exist_ok=True)
     OBSERVATIONS = []
     result = unittest.TextTestRunner(verbosity=2).run(unittest.defaultTestLoader.loadTestsFromTestCase(VersionTests))

@@ -1,24 +1,23 @@
 # Source maintenance boundary / 后续源码维护边界
 
-FrameBraid contains an exact extracted SDK core. The original host's main branch
-already contains the original decoupling branch; ancestry was verified locally.
-This check does not authorize changing that host's dependencies.
+FrameBraid is the sole maintenance source for Media/Vision SDK code. AM-RT's
+original decoupling is merged, and its authorized 2026-10-26 integration now
+consumes the published v0.1.0 source commit
+`5ee707153796cf1d8f9dd7118c664bacf757f97b` through Cargo Git dependencies.
+The host no longer carries seven editable core crates. The host statically links
+SDK code; external DLL delivery is a separate option, not a second host runtime.
 
-已通过真实祖先关系核对原宿主 main 包含解耦分支；本轮不改宿主依赖或其开发成果。
+FrameBraid 为 SDK 唯一维护源。AM-RT 的源头解耦已合入，本轮已按授权切换为固定
+Git 源码依赖并移除七份核心副本；业务 DTO、凭据持久化和任务适配仍在宿主。
+SDK 未发布的本地改动不会自动进入宿主，不在两仓分别修核心。
 
-FrameBraid is the SDK's public maintenance source;
-the host consumes a reviewed, pinned source snapshot or native artifact version.
-Core fixes should not be implemented independently in both repositories.
+Core fixes are reviewed/tested here. A host upgrade explicitly changes complete
+revisions and lockfiles, verifies source identity/builds/affected behavior, and
+is committed independently. Existing releases and extraction records are not
+rewritten. No automatic source synchronization, upload or DLL replacement is implied.
 
-以 FrameBraid 为 SDK 公开维护源，宿主消费审过的固定源码快照或二进制版本，
-不在两个仓库分别修同一核心。此依赖迁移尚未实施，也未代表另一团队接手确认。
-
-The host integration owner and version-pinning migration remain a separate
-coordination task; publication does not modify the host or install a Git dependency,
-submodule or package-registry workflow.
-
-宿主接入负责人及固定版本迁移另行协调；本次开源不修改宿主，也不自动安装 Git 依赖、
-子模块或包注册流程。
+版本升级与目录说明见 [Local layout / 两仓维护](LOCAL_LAYOUT.md)。本轮只本地提交，
+不推送、不打标签、不发布；原始来源记录与历史交付证据保留。
 
 ## Reviewed local source revisions / 已评审源码修订
 

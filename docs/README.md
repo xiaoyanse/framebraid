@@ -6,6 +6,7 @@
 | --- | --- |
 | Build and run / 构建运行 | [English](GETTING_STARTED.md) · [中文](GETTING_STARTED.zh-CN.md) |
 | Prebuilt Windows package / Windows 预编译包 | [Prebuilt integration / 接入](USE_PREBUILT.md) |
+| Local artifacts and host upgrades / 目录与宿主升级 | [Local layout / 两仓维护](LOCAL_LAYOUT.md) |
 | Source ownership / 源码维护源 | [Maintenance boundary / 维护边界](SOURCE_MAINTENANCE.md) |
 | Full lifecycle and language integration / 完整生命周期及接入 | [Integration / 接入说明](../sdk/INTEGRATION.md) |
 | Runnable examples / 可运行示例 | [Examples / 示例](../sdk/examples/README.md) |

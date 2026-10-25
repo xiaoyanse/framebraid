@@ -56,12 +56,12 @@ Windows x64: Rust 1.90+, x64 MSVC build tools and Windows SDK. Fetch locked Carg
 Run from the repository root, keeping output outside the checkout:
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:/FrameBraid-build'
+$env:CARGO_TARGET_DIR = (Join-Path $PWD '.local/build/current')
 cargo build --workspace --locked
 cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-camera-ffi/shared-frames,am-vision-ffi/shared-frames
 ```
 
-The Release command outputs `am_camera.dll`, `am_vision.dll` and import libraries in `D:/FrameBraid-build/release`. Historical filenames, `amc_*`/`amv_*` symbols and crate names remain for compatibility; they do not require the original host application.
+The Release command outputs `am_camera.dll`, `am_vision.dll` and import libraries in `.local/build/current/release`. Historical filenames, `amc_*`/`amv_*` symbols and crate names remain for compatibility; they do not require the original host application.
 
 FFmpeg and ONNX Runtime are dynamically loaded. Pass compatible absolute runtime directories at initialization. A build does not prove runtime availability. See [getting started](docs/GETTING_STARTED.md) for a real-image call and dependency troubleshooting.
 

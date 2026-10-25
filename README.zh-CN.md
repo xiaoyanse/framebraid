@@ -56,12 +56,12 @@ Windows x64 需要 Rust 1.90+、x64 MSVC 工具链和 Windows SDK，首次取得
 在仓库根目录执行，输出放在源码目录之外：
 
 ```powershell
-$env:CARGO_TARGET_DIR = 'D:/FrameBraid-build'
+$env:CARGO_TARGET_DIR = (Join-Path $PWD '.local/build/current')
 cargo build --workspace --locked
 cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-camera-ffi/shared-frames,am-vision-ffi/shared-frames
 ```
 
-Release 命令在 `D:/FrameBraid-build/release` 生成 `am_camera.dll`、`am_vision.dll` 及导入库。为兼容现有调用，保留这些文件名、`amc_*`/`amv_*` 符号和 crate 名称，不要求运行原宿主。
+Release 命令在 `.local/build/current/release` 生成 `am_camera.dll`、`am_vision.dll` 及导入库。为兼容现有调用，保留这些文件名、`amc_*`/`amv_*` 符号和 crate 名称，不要求运行原宿主。
 
 FFmpeg、ONNX Runtime 在运行时动态加载，初始化显式传入兼容运行库绝对目录。构建成功不等于运行依赖已可用，真实图片调用及排错见[快速接入](docs/GETTING_STARTED.zh-CN.md)。
 

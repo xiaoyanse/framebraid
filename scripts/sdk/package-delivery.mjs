@@ -15,15 +15,15 @@ const ffmpegNames = [
   'swscale-10.dll',
 ];
 const usage = `本地 Windows x64 SDK 交付包（不上传、不发布）
-node scripts/sdk/package-delivery.mjs --output D:/AM-RT-delivery/new-package \\
-  --dll-dir D:/AM-RT-build/dual-sdk/debug \\
-  --ffmpeg-dir D:/AM-RT-tests/sdk-runtime-20261025 \\
-  --ort-dir D:/AM-RT-tests/sdk-infer-stage10/ort \\
-  [--materials-dir D:/AM-RT-delivery/third-party-20261026] [--python python]
+node scripts/sdk/package-delivery.mjs --output "${path.join(repo, '.local/releases/new-package')}" \\
+  --dll-dir "${path.join(repo, '.local/build/current/debug')}" \\
+  --ffmpeg-dir "${path.join(repo, '.local/runtimes/ffmpeg')}" \\
+  --ort-dir "${path.join(repo, '.local/runtimes/ort')}" \\
+  [--materials-dir "${path.join(repo, '.local/runtimes/materials')}"] [--python python]
   [--materials-profile <仓库受控材料档案名>]
   [--build-record <已成功Release构建的记录JSON>]
   [--require-distribution-ready]
-输出目录必须是仓库外的新建或空目录，不允许目录链接。
+输出目录必须在本仓 .local/releases、.local/evidence 或 .local/tests 下新建，不允许目录链接。
 许可证材料不齐时仍可生成本地核验包，但清单明确标记 incomplete，不能当作正式分发合规证明。`;
 
 function inside(root, candidate) {
@@ -46,7 +46,9 @@ async function rejectLinks(value) {
 }
 
 function git(...args) {
-  return execFileSync('git', ['-C', repo, ...args], { encoding: 'utf8' }).trim();
+  return execFileSync('git', ['-C', repo, ...args], {
+    encoding: 'utf8',
+  }).trim();
 }
 
 async function digest(filename) {
@@ -106,7 +108,10 @@ export async function inspectPe(filename) {
         if (i === 511) throw new Error(`PE 导入表超限：${filename}`);
       }
     }
-    return { architecture: 'windows-x64', directImports: [...new Set(imports)] };
+    return {
+      architecture: 'windows-x64',
+      directImports: [...new Set(imports)],
+    };
   } finally {
     await handle.close();
   }
@@ -171,11 +176,13 @@ export async function packageDelivery(options) {
     throw new Error('--output 必须是绝对路径');
   const output = path.resolve(options.output);
   const root = await fs.realpath(repo);
-  const mainRoot = path.resolve(root, git('rev-parse', '--git-common-dir'), '..');
   if (
-    [root, mainRoot].some((sourceRoot) => inside(sourceRoot, output) || inside(output, sourceRoot))
+    !['releases', 'evidence', 'tests'].some((group) => {
+      const parent = path.join(root, '.local', group);
+      return output !== parent && inside(parent, output);
+    })
   )
-    throw new Error('输出必须在主仓和当前工作树之外，也不能是其父目录');
+    throw new Error('输出必须在 SDK .local/releases、.local/evidence 或 .local/tests 分类下');
   await rejectLinks(output);
   try {
     if ((await fs.readdir(output)).length) throw new Error('输出目录非空，拒绝覆盖');
@@ -342,7 +349,9 @@ export async function packageDelivery(options) {
   const sourceGuide =
     '# 独立源码交付\n\n完整源码另由 export-source.mjs 导出，按 sdk-source-manifest.json 的 sourceCommit 与本包核对。此目录不是可编译源码闭包；本包的使用说明位于 ../sdk/README.md，模型档案在 ../sdk/profiles.json。C/C++ 的 Windows x64 导入库在 ../lib/win-x64，运行DLL在 ../bin/win-x64。构建与运行验证分别见 ../docs/verification/。\n';
   await fs.mkdir(path.join(output, 'source'), { recursive: true });
-  await fs.writeFile(path.join(output, 'source/README.md'), sourceGuide, { flag: 'wx' });
+  await fs.writeFile(path.join(output, 'source/README.md'), sourceGuide, {
+    flag: 'wx',
+  });
   rows.push({
     path: 'source/README.md',
     bytes: Buffer.byteLength(sourceGuide),

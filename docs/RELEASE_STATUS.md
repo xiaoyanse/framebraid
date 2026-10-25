@@ -6,6 +6,10 @@ Updated 2026-10-26. Version 0.1.0 developer preview; Windows x64 CPU.
 
 更新于 2026-10-26，0.1.0 开发者预览版，首发验证 Windows x64 CPU。
 
+Local directory consolidation and host source pinning are recorded in [verification](verification/local-consolidation-20261026.md). This maintenance work does not rebuild or replace public release assets.
+
+本地目录与宿主版本维护见上述记录；本轮没有替换公开版本。
+
 ## Public version / 公开版本
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)
