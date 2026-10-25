@@ -27,3 +27,6 @@ am-camera = { path = "crates/am-camera", default-features = false }
 am-vision = { path = "crates/vision" }
 am-sdk-abi = { path = "crates/sdk-abi" }
 am-sdk-support = { path = "crates/sdk-support" }
+
+[dev-dependencies]
+serde_json.workspace = true

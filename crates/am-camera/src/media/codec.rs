@@ -1,6 +1,7 @@
-//! 与网络源无关的同步软解原语；压缩队列、采样和调用方生命周期由上层装配。
+//! 与网络源无关的同步解码原语；默认CPU，显式设备路径验证后才能报告硬解。
 use super::{ffmpeg_lib::FfmpegApi, ffmpeg_sys::*};
 use std::{ptr, sync::Arc};
+mod hardware;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VideoCodec {
@@ -44,6 +45,8 @@ pub struct CpuDecoder {
     pending: bool,
     ended: bool,
     max_pixels: u64,
+    hardware: Option<Box<hardware::Binding>>,
+    transfer: *mut AVFrame,
 }
 // 原语可在调用线程间移动；上层Mutex保证同一解码器不会并发访问FFmpeg上下文。
 unsafe impl Send for CpuDecoder {}
@@ -53,6 +56,28 @@ impl CpuDecoder {
         codec: VideoCodec,
         extradata: &[u8],
         max_pixels: u64,
+    ) -> Result<Self> {
+        Self::create_inner(api, codec, extradata, max_pixels, None)
+    }
+
+    /// 显式设备创建；初始化不代表真实硬解成功，须在收到帧后查询hardware_backend。
+    pub fn create_on_device(
+        api: Arc<FfmpegApi>,
+        codec: VideoCodec,
+        extradata: &[u8],
+        max_pixels: u64,
+        backend: super::hardware::Backend,
+        adapter: &super::hardware::Adapter,
+    ) -> Result<Self> {
+        Self::create_inner(api, codec, extradata, max_pixels, Some((backend, adapter)))
+    }
+
+    fn create_inner(
+        api: Arc<FfmpegApi>,
+        codec: VideoCodec,
+        extradata: &[u8],
+        max_pixels: u64,
+        hardware: Option<(super::hardware::Backend, &super::hardware::Adapter)>,
     ) -> Result<Self> {
         if max_pixels == 0 || max_pixels > 8192 * 8192 || extradata.len() > 16 * 1024 * 1024 {
             return Err(DecodeError::InvalidInput);
@@ -73,6 +98,8 @@ impl CpuDecoder {
             pending: false,
             ended: false,
             max_pixels,
+            hardware: None,
+            transfer: ptr::null_mut(),
         };
         if ctx.is_null() {
             return Err(DecodeError::AllocationFailed);
@@ -103,6 +130,15 @@ impl CpuDecoder {
                 }
                 (*ctx).extradata_size = extradata.len() as i32;
             }
+            if let Some((backend, adapter)) = hardware {
+                result.hardware = Some(hardware::Binding::attach(
+                    result.api.clone(),
+                    ctx,
+                    decoder,
+                    backend,
+                    adapter,
+                )?);
+            }
             let rc = (result.api.avcodec_open2)(ctx, decoder, ptr::null_mut());
             if rc < 0 {
                 return Err(DecodeError::Runtime(rc));
@@ -114,6 +150,11 @@ impl CpuDecoder {
             return Err(DecodeError::AllocationFailed);
         }
         Ok(result)
+    }
+
+    /// 只在实际收到硬件像素格式后返回Some，不能将设备创建成功冒充硬解运行中。
+    pub fn hardware_backend(&self) -> Option<super::hardware::Backend> {
+        self.hardware.as_ref().and_then(|h| h.verified_backend())
     }
     /// false表示FFmpeg暂未接受，可在receive后重试同一包；true后不可重发。
     pub fn send(&mut self, bytes: &[u8], pts: i64, dts: i64) -> Result<bool> {
@@ -186,6 +227,9 @@ impl CpuDecoder {
             self.pending = true;
         }
         let frame = unsafe { &*self.frame };
+        if let Some(hardware) = &self.hardware {
+            hardware.observe(frame.format);
+        }
         let w = u32::try_from(frame.width).map_err(|_| DecodeError::FrameTooLarge)?;
         let h = u32::try_from(frame.height).map_err(|_| DecodeError::FrameTooLarge)?;
         let pixels = u64::from(w) * u64::from(h);
@@ -205,6 +249,9 @@ impl CpuDecoder {
             self.pending = false;
             unsafe {
                 (self.api.av_frame_unref)(self.frame);
+                if !self.transfer.is_null() {
+                    (self.api.av_frame_unref)(self.transfer);
+                }
             }
         }
         Ok(())
@@ -234,7 +281,8 @@ impl CpuDecoder {
         if bytes > max_bytes {
             return Err(DecodeError::FrameTooLarge);
         }
-        let frame = unsafe { &*self.frame };
+        let source = self.pixel_source()?;
+        let frame = unsafe { &*source };
         let mut data = vec![0u8; bytes];
         let sws = unsafe {
             (self.api.sws_get_context)(
@@ -276,8 +324,33 @@ impl CpuDecoder {
         self.pending = false;
         unsafe {
             (self.api.av_frame_unref)(self.frame);
+            if !self.transfer.is_null() {
+                (self.api.av_frame_unref)(self.transfer);
+            }
         }
         Ok(Some(DecodedRgba { info, data }))
+    }
+
+    fn pixel_source(&mut self) -> Result<*mut AVFrame> {
+        if !self
+            .hardware
+            .as_ref()
+            .is_some_and(|h| h.matches(unsafe { (*self.frame).format }))
+        {
+            return Ok(self.frame);
+        }
+        if self.transfer.is_null() {
+            self.transfer = unsafe { (self.api.av_frame_alloc)() };
+            if self.transfer.is_null() {
+                return Err(DecodeError::AllocationFailed);
+            }
+        }
+        unsafe { (self.api.av_frame_unref)(self.transfer) };
+        let rc = unsafe { (self.api.av_hwframe_transfer_data)(self.transfer, self.frame, 0) };
+        if rc < 0 {
+            return Err(DecodeError::Runtime(rc));
+        }
+        Ok(self.transfer)
     }
 }
 impl Drop for CpuDecoder {
@@ -288,6 +361,9 @@ impl Drop for CpuDecoder {
             }
             if !self.frame.is_null() {
                 (self.api.av_frame_free)(&mut self.frame);
+            }
+            if !self.transfer.is_null() {
+                (self.api.av_frame_free)(&mut self.transfer);
             }
             if !self.ctx.is_null() {
                 (self.api.avcodec_free_context)(&mut self.ctx);

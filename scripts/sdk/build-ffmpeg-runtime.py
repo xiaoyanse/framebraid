@@ -57,7 +57,8 @@ def configure_args(prefix):
         "--enable-protocol=file,tcp,udp,rtp,http,https,tls",
         "--enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,extract_extradata,filter_units",
         "--enable-d3d11va", "--enable-dxva2",
-        "--enable-hwaccel=h264_d3d11va,hevc_d3d11va,h264_dxva2,hevc_dxva2",
+        # d3d11va是旧AD_HOC接口；AVHWDeviceContext路径必须同时启用d3d11va2。
+        "--enable-hwaccel=h264_d3d11va,h264_d3d11va2,hevc_d3d11va,hevc_d3d11va2,h264_dxva2,hevc_dxva2",
     ]
 
 
@@ -79,7 +80,7 @@ def main():
     if root == archive.parent or root == args.msys_root.resolve():
         raise ValueError("输出必须使用专属构建目录")
     tools, source, build = root / "tools", root / "source", root / "build"
-    for path in (tools, source, build):
+    for path in (tools, source, build, root / "tmp"):
         path.mkdir(exist_ok=True)
     bash = args.msys_root.resolve() / "usr/bin/bash.exe"
     for name, (url, expected) in TOOLS.items():
@@ -123,10 +124,11 @@ def main():
     make = msys_path(tools / "usr/bin/make.exe")
     script = "\n".join([
         "#!/usr/bin/env bash", "set -euo pipefail", "export PATH=" + shlex.quote(tool_path),
+        "export TMPDIR=" + shlex.quote(msys_path(root / "tmp")),
         "cd " + shlex.quote(msys_path(build)),
         (":" if resume else shlex.quote(msys_path(source_dir / "configure")) + " "
          + " ".join(map(shlex.quote, options)) + " > ../configure.log 2>&1"),
-        shlex.quote(make) + " -j" + str(args.jobs) + " -W libavutil/libavutil.ver "
+        shlex.quote(make) + " -j" + str(args.jobs) + " "
         + shlex.quote("EXTRALIBS=" + MAKE_EXTRALIBS) + " > ../build.log 2>&1",
         shlex.quote(make) + " install > ../install.log 2>&1", "",
     ])
@@ -161,6 +163,8 @@ def main():
                        for line in imports.splitlines() if "DLL Name:" in line]
             if any("pthread" in value.lower() or "libgcc" in value.lower() for value in imports):
                 raise ValueError("存在意外 GCC 动态依赖：" + name)
+            if library == "avcodec":
+                hardware_configs = validate_hardware_configs(loaded)
             shutil.copy2(path, runtime / name)
             binaries.append({"group": "ffmpeg", "file": name, "sha256": digest(path),
                              "bytes": path.stat().st_size, "directPeImports": imports})
@@ -197,9 +201,39 @@ def main():
               "tools": [{"file": name, "url": item[0], "sha256": item[1]}
                         for name, item in TOOLS.items()], "versions": versions,
               "actualConfigurations": actual_configurations, "binaries": binaries,
+              "decoderHardwareConfigs": hardware_configs,
               "scope": "H264/HEVC/MJPEG SDK transport/decode, native Windows hardware backends; no programs"}
     (root / "build-record.json").write_text(json.dumps(record, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({"runtime": str(runtime), "record": str(root / "build-record.json")}), flush=True)
+
+
+def validate_hardware_configs(library):
+    """设备类型可枚举不代表解码器支持；核验每种编码的HW_DEVICE_CTX合同。"""
+    class Config(ctypes.Structure):
+        _fields_ = [("pixelFormat", ctypes.c_int), ("methods", ctypes.c_int),
+                    ("deviceType", ctypes.c_int)]
+    find = library.avcodec_find_decoder_by_name
+    find.argtypes, find.restype = [ctypes.c_char_p], ctypes.c_void_p
+    query = library.avcodec_get_hw_config
+    query.argtypes, query.restype = [ctypes.c_void_p, ctypes.c_int], ctypes.POINTER(Config)
+    results = {}
+    for name in ("h264", "hevc"):
+        codec = find(name.encode("ascii"))
+        if not codec:
+            raise ValueError("required decoder missing: " + name)
+        configs = []
+        for index in range(64):
+            item = query(codec, index)
+            if not item:
+                break
+            item = item.contents
+            configs.append({"pixelFormat": item.pixelFormat, "methods": item.methods,
+                            "deviceType": item.deviceType})
+        for device in (4, 7):
+            if not any(item["deviceType"] == device and item["methods"] & 1 for item in configs):
+                raise ValueError(f"{name}: required HW_DEVICE_CTX backend {device} missing")
+        results[name] = configs
+    return results
 
 
 if __name__ == "__main__":

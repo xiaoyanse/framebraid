@@ -2,6 +2,9 @@
 
 ## Unreleased / 未发布
 
+- Add explicit bounded Windows adapter/device probes and Rust H.264/H.265 hardware decoding with CPU pixel readback; default CPU and C ABI behavior remain unchanged. Hardware policy integration is still in progress.
+- 增加原生设备探测与显式硬解原语，区分初始化与真实硬件帧；修正新FFmpeg构建缺少现代D3D11解码入口的问题。旧发布运行库不改写，自动选择/回退及跨语言诊断尚未完成。
+
 - Retire canceled/replaced queued inference inputs without waiting for their busy model;
   preserve active/native-batch ownership, fairness switches and bounded execution budgets.
 - R5优先项修复忙模型无效排队占额，有CPU DLL近邻A/B和生命周期回归；未新增ABI，不宣称整体吞吐提升。

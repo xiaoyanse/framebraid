@@ -3,6 +3,7 @@ pub mod codec;
 pub mod ffmpeg_lib;
 pub mod ffmpeg_sys;
 pub mod h264;
+pub mod hardware;
 pub mod pixel_ops;
 pub mod rtsp;
 pub mod sdk_io;

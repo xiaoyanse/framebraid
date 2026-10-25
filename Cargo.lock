@@ -293,6 +293,7 @@ dependencies = [
  "am-sdk-abi",
  "am-sdk-support",
  "am-vision",
+ "serde_json",
 ]
 
 [[package]]

@@ -6,6 +6,8 @@ Interface presence, tested behavior and release commitments are separate. No sup
 
 接口存在、实测通过与交付承诺分开，不承诺支持时限。
 
+Local R2 introduces explicit Rust hardware primitives ([contract](design/native-hardware.md)); this does not upgrade the published Windows CPU scope or claim C ABI/RTSP automatic hardware selection is complete. / 本地硬解原语不改变公开CPU制品支持承诺，不代表C ABI/RTSP自动硬解已完成。
+
 | Area / 方面 | Initial scope / 首发范围 | Limits / 限制 |
 | --- | --- | --- |
 | Platform / 平台 | Windows x64 CPU | Linux/macOS/mobile and other architectures separately verified / 其他平台架构另验 |

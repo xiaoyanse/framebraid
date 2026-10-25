@@ -18,6 +18,10 @@ R5 priority queue retirement is locally verified ([record](verification/sdk-r5-p
 
 R5第1组排队清理本地验证完成，保留微基准告警与限制；不等于整包R5或硬件能力完成。
 
+Local R2/H2 explicit Rust hardware foundation is verified on synthetic H.264/HEVC Main ([record](verification/sdk-r2-hardware-foundation-20261026.md)); C ABI/RTSP automatic selection, global readback budgeting and production validation remain open. Published assets unchanged.
+
+R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、跨语言诊断及H5推理选择尚未完成，不扩大公开CPU支持范围。
+
 ## Public version / 公开版本
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)

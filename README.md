@@ -6,6 +6,8 @@
 
 **Reusable camera, video and ONNX inference building blocks for native applications.**
 
+Local R2 work adds explicit Rust hardware probes/decoding ([contract](docs/design/native-hardware.md)); published assets remain CPU validated, and C ABI automatic hardware selection is not yet complete.
+
 FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repository contains two components:
 
 | Component | Purpose |

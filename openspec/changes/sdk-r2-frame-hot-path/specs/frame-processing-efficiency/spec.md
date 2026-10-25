@@ -24,6 +24,20 @@ SDK MUST 为直接解码和流式像素输出提供策略约束下的硬件探�
 - **WHEN** 硬解运行中失效或重新配置
 - **THEN** 隔离旧输出代次、按关键帧恢复并报告实际回退，重试不循环放大资源；浏览器 WebCodecs 状态不冒充本 SDK 验收
 
+### Requirement: Explicit native hardware foundation
+
+Rust设备探测入口 MUST 有界、显式且与普通状态查询分离；设备上下文初始化成功不得标记真实码流已验证。显式设备构造 MUST 保持默认CPU入口兼容，设备身份可靠、原生引用成对归还，输出预算不足或回读失败不得丢失待输出帧。
+
+#### Scenario: Runtime compiled with legacy D3D11 only
+
+- **WHEN** FFmpeg可以创建D3D11设备但目标解码器只提供AD_HOC配置
+- **THEN** 显式硬解构造拒绝，不误报运行成功；新运行库构建门检查H.264和H.265各自的HW_DEVICE_CTX配置
+
+#### Scenario: Transfer fails before output
+
+- **WHEN** 已接收硬件帧但CPU回读失败或输出预算不足
+- **THEN** 保留原待输出帧及时间戳供明确重试或关闭；不把GPU地址解释为CPU像素，最终由同一运行库释放资源
+
 ### Requirement: Reuse without changing output
 
 SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、分配或复制，保留原像素/张量与坐标映射合同。
