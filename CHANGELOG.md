@@ -2,6 +2,10 @@
 
 ## Unreleased / 未发布
 
+- Added build-bound local performance tools for real CPU inference DLL calls and production
+  Rust preprocessing/decode functions, with bounded samples and correctness/identity checks.
+- 新增局部与真实 DLL 基准工具及三轮初始记录；R1 尚未整包验收，核心实现、ABI、发布制品与硬件支持声明未变。
+
 - Consolidated local build/test/release/evidence paths under ignored `.local` categories; documented AM-RT pinned-source consumption and upgrade/rollback boundaries. SDK core/ABI and published artifacts unchanged.
 - 本地目录分类与宿主固定版本接入已整理；构建/打包工具拒绝分类外输出，不改变公开 SDK 接口。
 

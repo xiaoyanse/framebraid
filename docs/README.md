@@ -15,6 +15,7 @@
 | Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、参考索引与量化验收；尚未实施 |
 | Current validation / 当前验证 | [Local Release status / 本地 Release 状态](RELEASE_STATUS.md) |
 | Charts and numeric observations / 图表及数值观察 | [Test observations / 测试资料](BENCHMARKS.md) |
+| Reproducible SDK performance tools / 可复现基准工具 | [Performance measurement / 性能测量](PERFORMANCE.md) — local tools, boundaries and current limitations / 本地工具、计时边界与未验项 |
 | Visual identity / 视觉标识 | [Selected logo and banner / 已选 Logo 与横幅](../assets/brand/README.md) |
 | Future publication / 后续发布 | [Release checklist / 发布清单](RELEASE_CHECKLIST.md) |
 | Contribute/security / 贡献与安全 | [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md) |
