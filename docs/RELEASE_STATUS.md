@@ -14,6 +14,10 @@ Local R1 measurement tools and CPU/synthetic baselines are complete; see [R1 ver
 
 本地R1观测与合成基线已完成，原生硬件能力、其他优化包及长跑仍未完成；未发布、不升级支持范围。
 
+R5 priority queue retirement is locally verified ([record](verification/sdk-r5-priority-20261026.md)); hardware selection, adaptive batching and production validation remain open. No public assets were replaced.
+
+R5第1组排队清理本地验证完成，保留微基准告警与限制；不等于整包R5或硬件能力完成。
+
 ## Public version / 公开版本
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)

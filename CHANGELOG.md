@@ -2,6 +2,10 @@
 
 ## Unreleased / 未发布
 
+- Retire canceled/replaced queued inference inputs without waiting for their busy model;
+  preserve active/native-batch ownership, fairness switches and bounded execution budgets.
+- R5优先项修复忙模型无效排队占额，有CPU DLL近邻A/B和生命周期回归；未新增ABI，不宣称整体吞吐提升。
+
 - Added build-bound local performance tools for real CPU inference DLL calls and production
   Rust preprocessing/decode functions, with bounded samples and correctness/identity checks.
 - 新增局部与真实 DLL 基准工具及三轮初始记录；R1 尚未整包验收，核心实现、ABI、发布制品与硬件支持声明未变。

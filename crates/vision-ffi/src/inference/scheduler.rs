@@ -1,6 +1,7 @@
 mod admission;
 mod execution;
 mod native_execution;
+mod retired;
 use super::{
     error, lock,
     models::ModelHandle,
@@ -26,6 +27,7 @@ static THREADS_PEAK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicU
 static ENGINE: Mutex<Option<Arc<Engine>>> = Mutex::new(None);
 struct Data {
     queue: VecDeque<Job>,
+    retirement_pending: bool,
     contexts: Vec<Weak<State>>,
     inflight: usize,
     bytes: usize,
@@ -85,6 +87,7 @@ pub fn reserve_model(budget: ThreadBudget, extra: usize) -> Result<ModelPermit> 
         let engine = Arc::new(Engine {
             data: Mutex::new(Data {
                 queue: VecDeque::new(),
+                retirement_pending: false,
                 contexts: Vec::new(),
                 inflight: 0,
                 bytes: 0,
@@ -165,8 +168,11 @@ fn release_model(engine: &Arc<Engine>, extra: usize) {
     }
 }
 pub fn wake() {
-    if let Ok(global) = ENGINE.lock() {
-        if let Some(engine) = &*global {
+    let engine = ENGINE.lock().ok().and_then(|global| global.clone());
+    if let Some(engine) = engine {
+        // 取消修改的是records；与wait的域锁握手，避免检查结束到睡眠之间丢唤醒。
+        if let Ok(mut data) = engine.data.lock() {
+            data.retirement_pending = true;
             engine.wake.notify_all();
         }
     }

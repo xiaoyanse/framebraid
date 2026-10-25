@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "c4369d340dec6db8f60440cfbf9dd9c6b322e430",
+  "reviewBaseCommit": "54603815475135a5312533bd63e18649df705b15",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -20,6 +20,30 @@
       "previousSha256": null,
       "sha256": "ec69c7a3f6a12c58ec335973b7f8400018a4e9ba8db1405ee31ef129af47a1e0",
       "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler.rs",
+      "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
+      "sha256": "4c8db9db505abe873839ff7f9cc50b51cabbc5ada6602747e1cea98cfbaa9df4",
+      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
+      "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
+      "sha256": "71ee3de765ed21b79e993e664dbb80cc1ca3ad5602b482610f549f9ef8d03491",
+      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
+      "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
+      "sha256": "46d01fae79a14230918a1a66a2c8269a26d378db4957c32d875713011ed10c85",
+      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
+      "previousSha256": null,
+      "sha256": "adb616df5d21d6697f62f462cf192728280445cc3214357fde6647bbb9a4823c",
+      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
     }
   ]
 }

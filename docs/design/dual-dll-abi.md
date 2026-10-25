@@ -645,6 +645,8 @@ AM_API am_status_t amv_set_realtime_policy(amv_model_t* model, const am_realtime
 
 `am_realtime_policy_t`（附录 §3.6）：max_inflight（每槽）/replace_oldest/slot_count（槽数上限，默认 1）/fair_round_robin。全部受执行器域共享并发预算约束（§6）。**槽与公平覆盖全部推理入口（P6）**：图像单帧（`am_infer_params_t.slot_key`）、张量单帧（同 params）、批量逐项（`am_batch_item_t.slot_key`）——同一套槽身份与调度规则，无入口例外。
 
+2026-10-26 R5本地实现补充：未执行且整项已取消/被替换的排队输入可独立归还准入，不必等待同模型活请求完成；清理不重置活请求的busy/running。原生批次仍有有效项、或实际读取未结束时保持整批输入，cancel不是强杀。此内部优化不新增ABI或自动组批，证据见`docs/verification/sdk-r5-priority-20261026.md`。
+
 模型换代（首版语义）：热切换 = `amv_model_load` 新句柄 + 旧句柄 `amv_model_close` 排干在途；新旧结果各自携带 `am_model_identity_t` 不串版；旧句柄结果保留预算独立清退。原子无缝热切换属 6.5 后续候选，首版不承诺。
 
 ### 3.8 诊断统计与资源限额（推理侧；B10）

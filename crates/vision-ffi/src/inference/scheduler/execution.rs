@@ -48,14 +48,41 @@ pub(super) fn worker(engine: Arc<Engine>) {
                     m.state.running.fetch_add(1, Ordering::AcqRel);
                     data.last = Some((m.info.key.load(Ordering::Acquire), job.params.slot_key));
                 }
-                Some(job)
+                Some((job, false))
             } else {
-                let _ = engine.wake.wait_timeout(data, Duration::from_millis(50));
-                None
+                let mut contended = false;
+                // 普通高频提交不查records；取消/替换/关闭才触发额外扫描。
+                let retired = data
+                    .retirement_pending
+                    .then(|| {
+                        data.queue.iter().position(|job| match retired::check(job) {
+                            Some(value) => value,
+                            None => {
+                                contended = true;
+                                false
+                            }
+                        })
+                    })
+                    .flatten();
+                if let Some(index) = retired {
+                    data.queue.remove(index).map(|job| (job, true))
+                } else {
+                    if !contended {
+                        data.retirement_pending = false;
+                    }
+                    // records仅try_lock，避免与准入的records→域锁形成锁序反转。
+                    let delay = if contended { 1 } else { 50 };
+                    let _ = engine.wake.wait_timeout(data, Duration::from_millis(delay));
+                    None
+                }
             }
         };
-        if let Some(job) = job {
-            execute(job);
+        if let Some((job, retired)) = job {
+            if retired {
+                retired::release(job);
+            } else {
+                execute(job);
+            }
             engine.wake.notify_all();
         }
     }

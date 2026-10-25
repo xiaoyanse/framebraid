@@ -124,6 +124,7 @@ pub(super) unsafe fn submit(
         return Err(AM_ERR_SDK_DEADLINE_EXCEEDED);
     }
     if let Some(old) = replacement {
+        data.retirement_pending = true;
         if let Some(r) = records.get_mut(&old) {
             r.state = AM_REQ_REPLACED as u32;
             r.finished = now;
