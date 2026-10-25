@@ -6,15 +6,17 @@
 本次在路线文档提交 `8e8839e` 上重排计划；未修改 SDK 核心或重新执行性能测试。
 
 **状态：2026-10-26 用户已授权 R1～R5 实施，当前先建立任务与基线。阶段任务及证据以 [SDK OpenSpec 入口](../openspec/README.md) 为准；未勾选项不能视作已完成，不改变现有发布制品。**
-阶段编号 R1～R5 是实施顺序，不是已确定的版本号、日期或完成率。
+阶段编号 R1～R5 是工作包编号，不是严格串行顺序、已确定的版本号、日期或完成率。
+2026-10-26 用户追加：**原生解码和推理的硬件探测、自动选择、实际后端查询及故障恢复提升为本轮前置项**。R1 最小基线后，R5 第 1 组与 H5、R2 的 H2 优先，之后继续 R2 热路径及其余阶段；不再把基础硬件能力一概留给 E2。
 本次将原 R3 热路径优化前移为 R2，原 R2 恢复深化改为 R3；R1/R4/R5 的主要职责保留。
 重排不撤销已有队列与租约保护，也不把所有建议变成本轮必做。
 
 English overview: establish a small reproducible baseline, prioritize conversion-context reuse,
 sampling before pixel conversion and preprocessing allocation/copy reduction, then deepen
 queue/recovery checks, language/profile integration and opt-in adaptive batching.
-Soak and fault-injection checks accompany these stages. Device discovery and additional
-platform/backend acceptance remain separate extensions. This roadmap is not a claim
+Soak and fault-injection checks accompany these stages. Native decode/inference hardware
+discovery and policy-driven selection are now priority H2/H5 work; network camera discovery,
+additional platforms and specialized backends remain extensions. This roadmap is not a claim
 that planned capabilities are implemented or production-accepted.
 
 ## 1. 目标与边界
@@ -39,6 +41,8 @@ that planned capabilities are implemented or production-accepted.
 | --- | --- | --- | --- |
 | 共享帧与跨语言传输 | 显式启用的共享池、发布/借用/归还、租约引用及异步持有桥接 | 发布入池仍复制；优先减少重复分配和转换，池内直写按收益再评估 | R2/R4 |
 | 媒体转换与采样 | 解码、像素输出、订阅采样和连接共享已存在 | 转换上下文逐次创建；流式 RGBA 物化早于订阅到期判断，优先处理可避免的开销 | R2 |
+| 原生硬件解码 | 解码入口当前固定 CPU，hw_policy 尚未真正选择硬件；受控 FFmpeg 构建含 D3D11VA/DXVA2 | Windows H.264/H.265 硬件探测、适配器/格式可用性、策略选择、实际状态与有界恢复；与浏览器 WebCodecs 分开 | R2-H2 前置 |
+| 推理硬件选择 | 既有 CPU/OpenVINO/CUDA 策略、provider 查询/重试；有 GPU 不等于实际可执行 | 统一设备/依赖/会话/执行证据，按允许列表/优先级自动选择、明确 strict 与回退原因；OpenVINO 当前仍 CPU | R5-H5 前置 |
 | 张量前处理 | 已融合缩放、归一化、通道顺序和布局转换 | 临时浮点数组再复制到张量；评估工作区、最终缓冲直写及受控 SIMD | R2 |
 | 有界队列与恢复 | 数量/字节预算、背压、替换/过期、重连策略及慢客户端重同步 | 核对中转暂存与回调队列，深化公平性、故障恢复时延和关闭竞争 | R3 |
 | 推理与批次 | 同步/异步/显式 batch，模型批次声明、后端选择/查询/重试及执行预算 | 不等于自动跨请求凑批；自适应与运行期切换需独立验证 | R5 |
@@ -85,6 +89,10 @@ that planned capabilities are implemented or production-accepted.
    内存/线程预算和后续性能回归容差。未测量前不预设“提速百分比”。
 
 ### R2：优先优化转换、采样与前处理热路径
+
+**新增前置 H2：硬件解码。** R1 后先落实探测和选择合同及实际接线，D3D11VA 优先、DXVA2 为构建可用时的兼容候选；覆盖直接压缩数据解码与 RTSP 像素订阅。明确编译支持、硬件发现、依赖、初始化和目标码流输出五层状态，不以设备名或“prefer hardware”宣称正在硬解。压缩直传不为探测而启动解码器。
+
+验收：H.264/H.265 尺寸/profile/位深、无设备/依赖/不支持格式诊断、CPU 回退、暂时故障重试、关键帧恢复、活帧与关闭安全；同预算对比有效交付率、CPU、显存、回读成本和 P95。缺目标设备标未验，不以软件模拟证明真实硬解。浏览器看板的 WebCodecs 提示与自动降级属于宿主显示层，SDK 完成不会自动修复该页面。本次不改 AM-RT。
 
 依赖：R1 最小基线可复现，已有预算、租约和关闭约束保持有效。
 不等待 R3 的完整长跑后才开始这些局部优化；发现底层安全缺口时先修复该前置问题。
@@ -167,7 +175,9 @@ R2 必需的生命周期与背压定向测试不能延后；这里补齐跨队�
 
 ### R5：条件化 batching 与后端调度
 
-依赖：R1～R4 有实测基线和明确模型合同。目标是验证有收益的调度，不默认改变实时策略。
+**新增前置 H5：推理硬件探测与自动选择。** 只依赖 R1 最小基线和现有模型合同，与第 1 组调度优先推进。分别核硬件、依赖、provider、目标模型会话及真实执行；按调用方允许列表、优先级与 strict/fallback 约束选择 CPU/OpenVINO/CUDA，报告请求/实际后端、设备、原因及未验状态。OpenVINO 当前 CPU 及单加速后端共存约束不变。查询只读，探测/刷新有界，暂时失败可显式重试；不每帧切后端、不重放已完成或状态不确定请求、不宣称自动选择一定最快。设备忙、缺依赖、不兼容、运行期故障和关闭须定向测试，实际加速效果按设备分别验收。
+
+其余自适应组批及联合调度依赖 R1～R4 有实测基线和明确模型合同。目标是验证有收益的调度，不默认改变实时策略。
 
 范围：
 
@@ -252,7 +262,7 @@ R2 必需的生命周期与背压定向测试不能延后；这里补齐跨队�
 | ID | 候选方向 | 拉起条件与验收边界 |
 | --- | --- | --- |
 | E1 | 自动设备发现、跨品牌探测与参数建议 | 有明确部署需求再设计；扫描由调用方显式启动并限定网卡/范围/超时，区分发现、认证、可取流，不能把探测成功等同设备健康；不持久化设备台账/凭据 |
-| E2 | 加速后端、硬解及设备缓冲共享深化 | 有目标硬件和可复现收益；分别核依赖、格式、同步、回退与资源释放，不从 CPU 或普通共享帧结果推导 GPU 零拷贝 |
+| E2 | 专用加速后端、GPU 设备缓冲共享深化 | 基础探测/自动选择已前移 R2-H2/R5-H5；CUDA/QSV 专用视频解码、OpenVINO GPU、新后端及 GPU 跨库零拷贝仍需独立需求和验证，不从 CPU 结果推导 |
 | E3 | Linux/macOS、移动端及其他语言封装 | 有实际接入方和验证环境；构建通过、运行可用、正式支持分别登记，不提前承诺通用适配 |
 | E4 | 配套播放器性能示例 | 借鉴 REF-W3 的全局渲染节拍、帧释放、解码积压与实际后端恢复；仅在有接入需求时设计，JS/Qt 显示层不并入 DLL，不默认增加第三个 DLL |
 
@@ -291,11 +301,11 @@ HEAD 仅标记定位快照，其他团队的未提交工作不被本路线归档
 
 | 阶段 | 当前状态 | 开工前提 |
 | --- | --- | --- |
-| R1 | 未开工 | 确认代表负载、测量边界与基准记录格式 |
-| R2 | 未开工；优先 R2-1 → R2-2 → R2-3 | R1 最小基线完成，已有预算/租约保护有效；R2-4 条件纳入 |
+| R1 | 基准工具实施中；局部三轮采样已取得，整包未验收 | 补齐真实 DLL 和压力负载、测量边界与预算 |
+| R2 | 未开工；H2 硬解前置，然后 R2-1 → R2-2 → R2-3 | R1 最小基线完成，硬解合同与实际环境核验，已有预算/租约保护有效；R2-4 条件纳入 |
 | R3 | 未开工；原 R2 恢复深化后移 | 复用 R1/R2 候选，补整条路径压力、组合故障与恢复证据 |
 | R4 | 未开工 | 所有权/错误语义稳定，代表模型来源与档案明确 |
-| R5 | 未开工 | 前阶段结果成立，批次兼容与调度收益有验证条件 |
+| R5 | 未开工；第 1 组调度与 H5 硬件选择前置 | 前置组依赖 R1；自动组批及后续联合验收依赖 R1～R4 |
 | E1～E4 | 讨论储备 | 明确需求后重新评估范围与成本 |
 
 - 开工前复查当前代码、上一阶段验证结果和本路线；必要时修订范围，不照搬过期目标。

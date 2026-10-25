@@ -6,6 +6,24 @@
 
 ## ADDED Requirements
 
+### Requirement: Observable native hardware decode selection
+
+SDK MUST 为直接解码和流式像素输出提供策略约束下的硬件探测与自动选择，区分编译支持、设备发现、依赖、初始化和目标码流实际解码；返回实际后端、设备及原因，而非仅返回硬解偏好。Windows H.264/H.265 的 D3D11VA 为本轮路径，DXVA2 为可用时的兼容候选。
+
+#### Scenario: Hardware present but target decoding unavailable
+
+- **WHEN** 存在显卡但依赖、初始化、编码/profile/位深或资源条件不满足
+- **THEN** 明确报告失败层次并遵循 SOFTWARE_ONLY/PREFER_HW 合同回退，未测不报成功，纯压缩直传不创建解码器
+
+### Requirement: Bounded hardware decode recovery
+
+探测与恢复 SHALL 受时间、并发、内存和代次约束，瞬态负结果可重试，活帧在实际读取结束前不能释放或覆写。
+
+#### Scenario: Device fails during output
+
+- **WHEN** 硬解运行中失效或重新配置
+- **THEN** 隔离旧输出代次、按关键帧恢复并报告实际回退，重试不循环放大资源；浏览器 WebCodecs 状态不冒充本 SDK 验收
+
 ### Requirement: Reuse without changing output
 
 SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、分配或复制，保留原像素/张量与坐标映射合同。
