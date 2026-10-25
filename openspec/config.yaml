@@ -1,0 +1,29 @@
+schema: spec-driven
+
+context: |
+  Language: zh-CN
+  All artifacts must be written in zh-CN.
+  Keep OpenSpec structural headings and SHALL/MUST keywords in English.
+  FrameBraid 是独立 Media/Vision Rust 源码 SDK；Windows DLL 为交付形式之一。
+  自有代码 Apache-2.0；业务规则、设备台账、凭据持久化、数据库和 UI 属于宿主。
+  当前用户授权 SDK R1～R5 优化、量化测试及 main 本地阶段提交；先 R1 与 R5 可独立项，其他任务按依赖推进。
+  仅修改本 SDK，不修改 AM-RT，不派子代理，不推送、打标签、发布或调用现场设备。
+  openspec/README.md 为持续目标与恢复入口；具体状态只在各 change/tasks.md 维护，实测写 docs/verification。
+  固定源码/DLL/运行库/输入模型身份，分开报告机制计数、局部耗时和端到端收益；不预造提速比例。
+  原始提取指纹和 ABI 冻结不覆盖；核心修订更新来源覆盖清单，公开接口变化先修合同和生成器。
+  测试和材料只在忽略的 .local 分类内；保留外部 .gitignore 改动，不提交私有模型、运行库和配置。
+rules:
+  design:
+    - 写清预算、所有权、并发、失败恢复、兼容性和可回退边界。
+  tasks:
+    - 每项包含可验证完成条件，沿用 ROADMAP 的全部范围；条件项说明实际纳入或后置的证据。
+    - 机制改造、性能收益、组件验证、长跑和硬件验收分别登记；不以无收益改造冒充提速。
+operations:
+  apply:
+    guidance:
+      - 恢复时先读 AGENTS.md、openspec/README.md、当前 change 全套文件及最新验证记录。
+      - 只推进已授权 R1～R5；一个完整小包验证后本地提交，不每步停止询问。
+      - 先 R1 最小基线和 R5 无需新增接口的调度修复，再推进 R2/R3/R4，R5 后续依赖项最后收口。
+  archive:
+    guidance:
+      - 不自动归档；未有证据的任务保持未勾选，未测后端和现场范围明确保留。
