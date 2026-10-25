@@ -2,7 +2,7 @@
 
 ![FrameBraid SDK — Media SDK and Vision SDK](assets/brand/framebraid-banner.webp)
 
-[简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Getting started](docs/GETTING_STARTED.md)
+[简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Getting started](docs/GETTING_STARTED.md) · [Roadmap](docs/ROADMAP.md)
 
 **Reusable camera, video and ONNX inference building blocks for native applications.**
 

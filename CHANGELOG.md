@@ -1,5 +1,13 @@
 # Changelog / 变更记录
 
+## Unreleased / 未发布
+
+- Added a staged optimization roadmap distinguishing existing capabilities, improvements
+  and optional extensions, with soak and fault-injection acceptance criteria.
+- Documentation only; SDK code, ABI, v0.1.0 artifacts and support commitments unchanged.
+
+新增分阶段优化路线与持续运行/故障注入验收要求，仅整理文档，尚未开始实施。
+
 ## 0.1.0 — 2026-10-26 / 开发者预览版
 
 Initial public developer preview: source SDK and Windows x64 CPU binaries.

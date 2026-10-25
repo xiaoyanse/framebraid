@@ -2,7 +2,7 @@
 
 ![FrameBraid SDK — Media SDK 与 Vision SDK](assets/brand/framebraid-banner.webp)
 
-[English](README.md) · [文档入口](docs/README.md) · [快速接入](docs/GETTING_STARTED.zh-CN.md)
+[English](README.md) · [文档入口](docs/README.md) · [快速接入](docs/GETTING_STARTED.zh-CN.md) · [后续路线图](docs/ROADMAP.md)
 
 **可复用的相机接入、视频处理与 ONNX 推理基础组件。**
 
