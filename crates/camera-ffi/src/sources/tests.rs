@@ -1,0 +1,307 @@
+use super::{api::*, *};
+use std::time::{Duration, Instant};
+
+struct Fixture {
+    ctx: usize,
+    sources: Vec<usize>,
+}
+impl Fixture {
+    fn new() -> Self {
+        let params = amc_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            ..Default::default()
+        };
+        let ctx = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+        Self {
+            ctx,
+            sources: Vec::new(),
+        }
+    }
+    fn open(
+        &mut self,
+        creds: *const am_credential_data_t,
+        provider: *const am_credential_provider_t,
+        reuse: u32,
+    ) -> usize {
+        let desc = am_source_desc_t {
+            kind: AM_SRC_ISAPI_URL as u32,
+            url_utf8: c"http://127.0.0.1:9/ISAPI/Streaming/channels/101/picture".as_ptr(),
+            creds,
+            provider,
+            reuse,
+            ..Default::default()
+        };
+        let mut out = std::ptr::null_mut();
+        assert_eq!(
+            unsafe { amc_source_open(self.ctx as *mut _, &desc, &mut out) },
+            AM_OK as i32
+        );
+        self.sources.push(out as usize);
+        out as usize
+    }
+}
+impl Drop for Fixture {
+    fn drop(&mut self) {
+        for source in self.sources.drain(..) {
+            domain().close(source, 2000).unwrap();
+            domain().destroy(source).unwrap();
+        }
+        domain().close(self.ctx, 2000).unwrap();
+        domain().destroy(self.ctx).unwrap();
+    }
+}
+fn status_of(source: usize) -> am_source_status_t {
+    let mut out = am_source_status_t::default();
+    assert_eq!(
+        unsafe { amc_source_get_status(source as *mut _, &mut out) },
+        AM_OK as i32
+    );
+    out
+}
+fn wait(mut check: impl FnMut() -> bool) {
+    let until = Instant::now() + Duration::from_secs(2);
+    while !check() {
+        assert!(Instant::now() < until);
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+#[test]
+fn source_waiting_reuse_rotation_and_close_keep_consumers_independent() {
+    let mut f = Fixture::new();
+    let a = f.open(std::ptr::null(), std::ptr::null(), 1);
+    assert_eq!(status_of(a).state, AM_SRC_WAITING_CREDENTIALS);
+    let b = f.open(std::ptr::null(), std::ptr::null(), 1);
+    assert_eq!(status_of(a).source_id, status_of(b).source_id);
+    let creds = am_credential_data_t {
+        username_utf8: c"test".as_ptr(),
+        password_utf8: c"only-isolated-test".as_ptr(),
+        ..Default::default()
+    };
+    assert_eq!(
+        unsafe { amc_credentials_set(a as *mut _, &creds) },
+        AM_OK as i32
+    );
+    assert_eq!(status_of(b).generation, 2);
+    let c = f.open(std::ptr::null(), std::ptr::null(), 1);
+    assert_ne!(status_of(c).source_id, status_of(b).source_id);
+    let d = f.open(&creds, std::ptr::null(), 1);
+    assert_eq!(status_of(d).source_id, status_of(b).source_id);
+    let mut lifecycle = 99;
+    assert_eq!(
+        unsafe { amc_source_close(a as *mut _, 0, &mut lifecycle) },
+        AM_OK as i32
+    );
+    assert_eq!(lifecycle, AM_LIFECYCLE_CLOSED as u32);
+    assert_eq!(status_of(a).state, AM_SRC_CLOSED);
+    assert_eq!(status_of(b).state, AM_SRC_CONNECTING);
+    let invalid = am_reconnect_policy_t {
+        initial_backoff_ms: 1,
+        max_backoff_ms: 60001,
+        ..Default::default()
+    };
+    assert_eq!(
+        unsafe { amc_source_set_reconnect_policy(b as *mut _, &invalid) },
+        AM_ERR_SDK_LIMIT_OUT_OF_RANGE
+    );
+}
+
+struct ProviderGate {
+    entered: AtomicBool,
+    release: AtomicBool,
+    dropped: AtomicUsize,
+}
+unsafe extern "C" fn fetch(
+    user: *mut c_void,
+    known: u32,
+    out: *mut am_credential_data_t,
+    version: *mut u32,
+) -> i32 {
+    let gate = unsafe { &*(user as *const ProviderGate) };
+    gate.entered.store(true, Ordering::Release);
+    while !gate.release.load(Ordering::Acquire) {
+        std::thread::sleep(Duration::from_millis(1));
+    }
+    unsafe {
+        out.write(am_credential_data_t {
+            username_utf8: c"test".as_ptr(),
+            password_utf8: c"test".as_ptr(),
+            ..Default::default()
+        });
+        version.write(known + 1);
+    }
+    AM_OK as i32
+}
+unsafe extern "C" fn dropped(user: *mut c_void) {
+    unsafe { &*(user as *const ProviderGate) }
+        .dropped
+        .fetch_add(1, Ordering::AcqRel);
+}
+#[test]
+fn provider_timeout_does_not_spawn_replacements_or_outlive_close_barrier() {
+    let mut f = Fixture::new();
+    let gate = Box::new(ProviderGate {
+        entered: AtomicBool::new(false),
+        release: AtomicBool::new(false),
+        dropped: AtomicUsize::new(0),
+    });
+    let provider = am_credential_provider_t {
+        fetch: Some(fetch),
+        on_drop: Some(dropped),
+        user_data: (&*gate as *const ProviderGate).cast_mut().cast(),
+        fetch_timeout_ms: 5,
+        ..Default::default()
+    };
+    let source = f.open(std::ptr::null(), &provider, 0);
+    wait(|| gate.entered.load(Ordering::Acquire));
+    std::thread::sleep(Duration::from_millis(10));
+    assert_eq!(status_of(source).state, AM_SRC_AUTH_WAITING);
+    assert_eq!(
+        get(source)
+            .unwrap()
+            .data::<Source>()
+            .unwrap()
+            .shared
+            .state_code
+            .load(Ordering::Acquire),
+        AM_SRC_CONNECTING as u32
+    );
+    assert_eq!(gate.dropped.load(Ordering::Acquire), 0);
+    let mut lifecycle = 99;
+    assert_eq!(
+        unsafe { amc_source_close(source as *mut _, 0, &mut lifecycle) },
+        AM_OK as i32
+    );
+    assert_eq!(lifecycle, AM_LIFECYCLE_CLOSING as u32);
+    gate.release.store(true, Ordering::Release);
+    wait(|| domain().state(source).unwrap() == AM_LIFECYCLE_CLOSED as u32);
+    assert_eq!(gate.dropped.load(Ordering::Acquire), 1);
+}
+
+#[test]
+fn shared_claim_never_resurrects_last_closed_owner() {
+    let credentials = Credentials::default();
+    let owners = AtomicUsize::new(1);
+    let stop = AtomicBool::new(false);
+    assert!(credentials.claim(None, None, &owners, &stop));
+    assert_eq!(owners.load(Ordering::Acquire), 2);
+    owners.store(0, Ordering::Release);
+    assert!(!credentials.claim(None, None, &owners, &stop));
+    assert_eq!(owners.load(Ordering::Acquire), 0);
+}
+
+#[test]
+fn final_auth_rejection_invalidates_static_credentials_until_explicit_update() {
+    let mut f = Fixture::new();
+    let creds = am_credential_data_t {
+        username_utf8: c"test".as_ptr(),
+        password_utf8: c"test".as_ptr(),
+        ..Default::default()
+    };
+    let source = f.open(&creds, std::ptr::null(), 0);
+    let entry = get(source).unwrap();
+    let shared = &entry.data::<Source>().unwrap().shared;
+    assert!(shared.secret().is_ok());
+    shared.report(
+        AM_SRC_AUTH_WAITING as u32,
+        AM_FAULT_AUTH as u32,
+        c"camera.authenticationRejected",
+    );
+    assert!(matches!(
+        shared.secret(),
+        Err(AM_ERR_CAMERA_AUTH_FINAL_FAILED)
+    ));
+    assert_eq!(shared.generation.load(Ordering::Acquire), 2);
+    assert_eq!(status_of(source).state, AM_SRC_AUTH_WAITING);
+    drop(entry);
+    assert_eq!(
+        unsafe { amc_credentials_set(source as *mut _, &creds) },
+        AM_OK as i32
+    );
+    assert!(get(source)
+        .unwrap()
+        .data::<Source>()
+        .unwrap()
+        .shared
+        .secret()
+        .is_ok());
+}
+
+struct EventGate {
+    entered: AtomicBool,
+    release: AtomicBool,
+    calls: AtomicUsize,
+    reentry: AtomicI64,
+}
+unsafe extern "C" fn event(
+    src: *mut amc_source_t,
+    _: i32,
+    _: *const am_event_detail_t,
+    user: *mut c_void,
+) {
+    let gate = unsafe { &*(user as *const EventGate) };
+    gate.calls.fetch_add(1, Ordering::AcqRel);
+    let mut state = 0;
+    gate.reentry.store(
+        unsafe { amc_source_close(src, 0, &mut state) } as i64,
+        Ordering::Release,
+    );
+    let mut snapshot = am_source_status_t::default();
+    assert_eq!(
+        unsafe { amc_source_get_status(src, &mut snapshot) },
+        AM_OK as i32
+    );
+    gate.entered.store(true, Ordering::Release);
+    while !gate.release.load(Ordering::Acquire) {
+        std::thread::sleep(Duration::from_millis(1));
+    }
+}
+#[test]
+fn source_event_unregister_waits_for_callback_and_rejects_blocking_reentry() {
+    let mut f = Fixture::new();
+    let source = f.open(std::ptr::null(), std::ptr::null(), 0);
+    let gate = Arc::new(EventGate {
+        entered: AtomicBool::new(false),
+        release: AtomicBool::new(false),
+        calls: AtomicUsize::new(0),
+        reentry: AtomicI64::new(0),
+    });
+    assert_eq!(
+        unsafe {
+            amc_source_set_event_callback(
+                source as *mut _,
+                Some(event),
+                Arc::as_ptr(&gate).cast_mut().cast(),
+            )
+        },
+        AM_OK as i32
+    );
+    let entry = get(source).unwrap();
+    entry.data::<Source>().unwrap().shared.event(
+        AM_EVENT_STATE_CHANGED,
+        AM_EVENT_SCOPE_SOURCE,
+        0,
+        AM_FAULT_NONE as u32,
+        c"camera.test",
+    );
+    drop(entry);
+    wait(|| gate.entered.load(Ordering::Acquire));
+    assert_eq!(
+        gate.reentry.load(Ordering::Acquire),
+        AM_ERR_SDK_CALLBACK_CONTRACT_VIOLATION as i64
+    );
+    let completed = Arc::new(AtomicBool::new(false));
+    let completed_worker = completed.clone();
+    let unregister = std::thread::spawn(move || {
+        assert_eq!(
+            unsafe { amc_source_set_event_callback(source as *mut _, None, std::ptr::null_mut()) },
+            AM_OK as i32
+        );
+        completed_worker.store(true, Ordering::Release);
+    });
+    std::thread::sleep(Duration::from_millis(10));
+    assert!(!completed.load(Ordering::Acquire));
+    gate.release.store(true, Ordering::Release);
+    unregister.join().unwrap();
+    assert!(completed.load(Ordering::Acquire));
+    assert_eq!(gate.calls.load(Ordering::Acquire), 1);
+}

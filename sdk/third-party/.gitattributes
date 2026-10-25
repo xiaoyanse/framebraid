@@ -1,0 +1,6 @@
+# 上游许可按原字节保存，防止 CRLF 归一化使锁定指纹失效。
+/onnxruntime/LICENSE -text whitespace=cr-at-eol
+/ffmpeg/COPYING.* -text
+/ffmpeg/*.original -text
+# 原始声明包含上游尾随空格/空行，不得为了格式校验重写版权材料。
+/toolchain/** -text -whitespace

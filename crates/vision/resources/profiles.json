@@ -1,0 +1,110 @@
+{
+  "formatVersion": 1,
+  "exportDefaults": {
+    "ultralytics": "8.4.163",
+    "opset": 17,
+    "batch": 1,
+    "dynamic": false,
+    "simplify": false,
+    "dtype": "float32"
+  },
+  "profiles": [
+    {
+      "id": "pose-yolo26-e2e-coco17-v1",
+      "task": "pose",
+      "decoder": "yolo26-pose-end2end-coco17-v1",
+      "export": {
+        "ultralytics": "8.4.23",
+        "opset": 20,
+        "batch": 1,
+        "dynamic": false,
+        "simplify": true,
+        "dtype": "float32"
+      },
+      "sampleSha256": "80fb5f58a3f6ec18909427ecc74fec0910196c2d2e924659eaae6dea5857b957",
+      "input": { "name": "images", "shape": [1, 3, 640, 640] },
+      "outputs": [{ "name": "output0", "shape": [1, 300, 57] }],
+      "preprocess": "letterbox-rgb-div255-nchw",
+      "keypoints": 17,
+      "endToEnd": true,
+      "confidence": 0.25,
+      "maxDet": 300
+    },
+    {
+      "id": "detect-yolo11n-nms-v1",
+      "task": "detect",
+      "decoder": "yolo11-detect-nms-v1",
+      "sampleSha256": "843c063303938d44dcb8cf814d8e8bf5aa31ecd51c156f80f56186bcf861d3cb",
+      "input": { "name": "images", "shape": [1, 3, 640, 640] },
+      "outputs": [{ "name": "output0", "shape": [1, 84, 8400] }],
+      "preprocess": "letterbox-rgb-div255-nchw",
+      "classes": 80,
+      "confidence": 0.25,
+      "nmsIou": 0.7,
+      "nmsMetric": "axis-aligned-iou",
+      "maxDet": 300
+    },
+    {
+      "id": "classify-yolo11n-prob-v1",
+      "task": "classify",
+      "decoder": "yolo11-classify-prob-v1",
+      "sampleSha256": "30a66094446e32a8bb40fd45022c6061ba4a4f464581cf4a6180dd20b4034432",
+      "input": { "name": "images", "shape": [1, 3, 224, 224] },
+      "outputs": [{ "name": "output0", "shape": [1, 1000] }],
+      "preprocess": "resize-short-edge-center-crop-rgb-div255-nchw",
+      "classes": 1000,
+      "hasProbability": true,
+      "applySoftmax": false
+    },
+    {
+      "id": "segment-yolo11n-nms-v1",
+      "task": "segment",
+      "decoder": "yolo11-segment-nms-v1",
+      "sampleSha256": "9f04d0c8d03ca7ab505f857272ddcc76ee57ad2ad39f049829ed7c2fe604331e",
+      "input": { "name": "images", "shape": [1, 3, 640, 640] },
+      "outputs": [
+        { "name": "output0", "shape": [1, 116, 8400] },
+        { "name": "output1", "shape": [1, 32, 160, 160] }
+      ],
+      "preprocess": "letterbox-rgb-div255-nchw",
+      "classes": 80,
+      "maskCoefficients": 32,
+      "maskPipeline": [
+        "matmul-logits",
+        "bilinear-to-input",
+        "sigmoid-threshold-0.5",
+        "crop-box",
+        "remove-letterbox",
+        "nearest-to-original",
+        "pack-lsb-first"
+      ],
+      "confidence": 0.25,
+      "nmsIou": 0.7,
+      "maxDet": 300
+    },
+    {
+      "id": "obb-yolo11n-nms-v1",
+      "task": "obb",
+      "decoder": "yolo11-obb-probiou-v1",
+      "sampleSha256": "fd5a3426804f6bb783ee7d1af10977073b11df99e3a435c28b9281ef6a2ff911",
+      "input": { "name": "images", "shape": [1, 3, 640, 640] },
+      "outputs": [{ "name": "output0", "shape": [1, 20, 8400] }],
+      "preprocess": "letterbox-rgb-div255-nchw",
+      "classes": 15,
+      "confidence": 0.25,
+      "nmsIou": 0.7,
+      "nmsMetric": "probabilistic-iou",
+      "nmsMode": "class-aware-fast",
+      "angle": "radians-clockwise-image-coordinates",
+      "maxDet": 300
+    }
+  ],
+  "letterbox": { "fill": 114, "auto": false, "center": true },
+  "classification": {
+    "resize": "bilinear-short-edge-224",
+    "crop": "center-224",
+    "mean": [0, 0, 0],
+    "std": [1, 1, 1]
+  },
+  "referenceOutputs": "pending-runtime-validation"
+}

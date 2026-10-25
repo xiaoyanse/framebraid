@@ -1,0 +1,364 @@
+{
+  "schemaVersion": 1,
+  "recordedDate": "2026-10-26",
+  "extraction": {
+    "sourceCommit": "f05305fa9215e2c458f532ffe4697202a85b4dca",
+    "configuration": "debug",
+    "platform": "Windows x64 CPU",
+    "unitTests": {
+      "passed": 177,
+      "ignored": 3,
+      "filtered": 8
+    },
+    "dllGroups": [
+      {
+        "name": "lifecycle",
+        "passed": true
+      },
+      {
+        "name": "shared-frames",
+        "passed": true
+      },
+      {
+        "name": "capture",
+        "passed": true
+      },
+      {
+        "name": "probe",
+        "passed": true
+      },
+      {
+        "name": "decoder",
+        "passed": true
+      },
+      {
+        "name": "inference-async",
+        "passed": true
+      },
+      {
+        "name": "language-bindings",
+        "passed": true
+      },
+      {
+        "name": "safe-bindings",
+        "passed": true
+      }
+    ]
+  },
+  "historicalRelease": {
+    "label": "Pre-extraction SDK: Windows x64 CPU, finite local test",
+    "modelHardware": "CPU model and per-run binary fingerprint not captured in the selected logs",
+    "associatedBuildRecordSourceCommit": "6078ebc9d18ed690c5769dc272db8c37bd1aed6d",
+    "provenanceLimit": "Associated archive build record is context, not proof of the exact binaries used by each log. These are not current FrameBraid Release benchmarks.",
+    "cycles": [
+      {
+        "reload": 1,
+        "privateBytes": 33873920,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 40
+      },
+      {
+        "reload": 2,
+        "privateBytes": 35307520,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 40
+      },
+      {
+        "reload": 3,
+        "privateBytes": 37097472,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 40
+      },
+      {
+        "reload": 4,
+        "privateBytes": 37076992,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 5,
+        "privateBytes": 37654528,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 6,
+        "privateBytes": 37658624,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 7,
+        "privateBytes": 37654528,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 8,
+        "privateBytes": 37654528,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 9,
+        "privateBytes": 37609472,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 10,
+        "privateBytes": 37543936,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 11,
+        "privateBytes": 37609472,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 12,
+        "privateBytes": 37601280,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 13,
+        "privateBytes": 37670912,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 14,
+        "privateBytes": 38289408,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 15,
+        "privateBytes": 37670912,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 16,
+        "privateBytes": 37597184,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 17,
+        "privateBytes": 37666816,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 18,
+        "privateBytes": 37609472,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 19,
+        "privateBytes": 37888000,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 20,
+        "privateBytes": 37720064,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 21,
+        "privateBytes": 38277120,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 22,
+        "privateBytes": 37634048,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 23,
+        "privateBytes": 37896192,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 24,
+        "privateBytes": 37711872,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 25,
+        "privateBytes": 37888000,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 26,
+        "privateBytes": 37703680,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 27,
+        "privateBytes": 37867520,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 28,
+        "privateBytes": 37666816,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 29,
+        "privateBytes": 37883904,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      },
+      {
+        "reload": 30,
+        "privateBytes": 38383616,
+        "processHandles": 157,
+        "workersAfterClose": 0,
+        "sdkModuleUnmapped": true,
+        "cameraModuleUnmapped": true,
+        "concurrentLoadInferClose": 1
+      }
+    ],
+    "plateau": {
+      "warmupCycles": 5,
+      "measuredCycles": 25,
+      "privateGrowthBytes": 724992,
+      "lastMinusFirstBlockBytes": 277162.6666666642,
+      "privateRangeBytes": 839680,
+      "handleRange": 0
+    },
+    "pressure": {
+      "accepted": 37,
+      "rejected": 14,
+      "balancedOwners": {
+        "retain": 37,
+        "release": 37
+      }
+    },
+    "expiry": {
+      "fetchReleaseRaces": 400,
+      "ttlExternalHold": true
+    },
+    "scope": "Windows CPU ORT; native dependencies may remain process-resident; finite reload test is not 7x24 or acceleration acceptance"
+  },
+  "sourceArtifacts": [
+    {
+      "name": "module-lifecycle.stdout.log",
+      "sha256": "d94aacdbeec74649013e8000a5dc833c866d69ff4eb012bcfd543dc75455844f",
+      "scope": "pre-extraction-release"
+    },
+    {
+      "name": "inference.stdout.log",
+      "sha256": "7bced23ce91a1b9113d858f081f4daff0622adcf3249a716644ac8f29ca708cc",
+      "scope": "pre-extraction-release"
+    },
+    {
+      "name": "dll-results.json",
+      "sha256": "238a047310eb4e42f6fd49e23e525aa414322e091713a63e33e22c539f080baa",
+      "scope": "framebraid-extraction-debug"
+    }
+  ]
+}

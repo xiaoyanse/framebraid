@@ -1,0 +1,13 @@
+/target/
+/.local/
+/.venv/
+/dist/
+**/__pycache__/
+**/bin/
+**/obj/
+.env
+.env.*
+*.dpapi
+*.key
+*.pfx
+*.sqlite*

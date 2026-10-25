@@ -1,0 +1,8 @@
+FrameBraid SDK
+
+Copyright 2026 xiaoyanse
+
+Original Media and Vision SDK code is licensed under Apache-2.0.
+Third-party software retains its own copyright and licenses.
+See sdk/third-party/NOTICE.md and the corresponding original license texts.
+Native runtimes and model weights are not included in this source repository.

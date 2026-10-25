@@ -1,0 +1,234 @@
+{
+  "schemaVersion": 1,
+  "scope": "Windows x64 CPU base package; source-built FFmpeg SDK subset; ORT CPU unchanged",
+  "artifacts": [
+    {
+      "id": "ort-wheel",
+      "file": "onnxruntime_openvino-1.24.1-cp312-cp312-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/59/37/d301f2c68b19a9485ed5db3047e0fb52478f3e73eb08c7d2a7c61be7cc1c/onnxruntime_openvino-1.24.1-cp312-cp312-win_amd64.whl",
+      "sha256": "f186335a9c9b255633275290da7521d3d4d14c7773fee3127bfa040234d3fa5a",
+      "bytes": 13658075
+    },
+    {
+      "id": "ffmpeg-source",
+      "file": "ffmpeg-303510f9d1.tar.gz",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/303510f9d1",
+      "sha256": "5a1063443078be230709462c289f10b6695dfc88e7fb7009d5a1c58885562f2a",
+      "bytes": 17964769
+    },
+    {
+      "id": "ffmpeg-build-recipes",
+      "file": "ffmpeg-sdk-minimal-20261026-build-materials.zip",
+      "url": "https://github.com/xiaoyanse/framebraid/releases/download/v0.1.0/ffmpeg-sdk-minimal-20261026-build-materials.zip",
+      "sha256": "db5d8ea57358d496627dbe8e77afa934a92aa23c1cdf156a94a0655683fe4914",
+      "bytes": 69505,
+      "generation": "Run scripts/sdk/build-ffmpeg-runtime.py with its locked source/tools, retain final build-record and materials bundle. This exact reviewed archive must be supplied, not replaced with a rebuilt archive of different bytes."
+    }
+  ],
+  "texts": [
+    {
+      "path": "onnxruntime/LICENSE",
+      "sha256": "c250d6278f0b47a6439fb7592b08b58a55eb9f535aa49a1db63211c3f982b674",
+      "artifact": "ort-wheel",
+      "member": "onnxruntime/LICENSE"
+    },
+    {
+      "path": "onnxruntime/ThirdPartyNotices.txt",
+      "sha256": "fb0af774b4d7cffc5b9d046f2aaeade2f37df2f80abf8033c95dfffcc77a8866",
+      "artifact": "ort-wheel",
+      "member": "onnxruntime/ThirdPartyNotices.txt",
+      "external": true,
+      "externalPath": "texts/onnxruntime/ThirdPartyNotices.txt"
+    },
+    {
+      "path": "ffmpeg/LICENSE.md.original",
+      "sha256": "e6dc72d5665a1ebd6dcc841de59278dad4ca77ecc47b03f1064a55c3e9ea8bb8",
+      "artifact": "ffmpeg-source",
+      "member": "FFmpeg-303510f9d1/LICENSE.md"
+    },
+    {
+      "path": "ffmpeg/COPYING.LGPLv2.1",
+      "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30",
+      "artifact": "ffmpeg-source",
+      "member": "FFmpeg-303510f9d1/COPYING.LGPLv2.1"
+    },
+    {
+      "path": "toolchain/crt/COPYING",
+      "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/crt/COPYING"
+    },
+    {
+      "path": "toolchain/crt/COPYING.MinGW-w64-runtime.txt",
+      "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/crt/COPYING.MinGW-w64-runtime.txt"
+    },
+    {
+      "path": "toolchain/crt/COPYING.MinGW-w64.txt",
+      "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/crt/COPYING.MinGW-w64.txt"
+    },
+    {
+      "path": "toolchain/gcc-libs/COPYING.LIB",
+      "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/gcc-libs/COPYING.LIB"
+    },
+    {
+      "path": "toolchain/gcc-libs/COPYING.RUNTIME",
+      "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/gcc-libs/COPYING.RUNTIME"
+    },
+    {
+      "path": "toolchain/gcc-libs/COPYING3",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/gcc-libs/COPYING3"
+    },
+    {
+      "path": "toolchain/gcc-libs/README",
+      "sha256": "33400d067fa3e2bd670a0868dcdb60c9486e8f559b675cf9ff1ff55d4e0d06ab",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/gcc-libs/README"
+    },
+    {
+      "path": "toolchain/headers/COPYING",
+      "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/headers/COPYING"
+    },
+    {
+      "path": "toolchain/headers/COPYING.MinGW-w64-runtime.txt",
+      "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/headers/COPYING.MinGW-w64-runtime.txt"
+    },
+    {
+      "path": "toolchain/headers/COPYING.MinGW-w64.txt",
+      "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/headers/COPYING.MinGW-w64.txt"
+    },
+    {
+      "path": "toolchain/headers/ddk-readme.txt",
+      "sha256": "fdb6018009cec99085041e4fd1f13db7b82852e9aa73012d0cc7da6449b94f13",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/headers/ddk-readme.txt"
+    },
+    {
+      "path": "toolchain/libwinpthread/COPYING",
+      "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/libwinpthread/COPYING"
+    },
+    {
+      "path": "toolchain/winpthreads/COPYING",
+      "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177",
+      "artifact": "ffmpeg-build-recipes",
+      "member": "toolchain-licenses/winpthreads/COPYING"
+    }
+  ],
+  "binaries": [
+    {
+      "group": "ffmpeg",
+      "file": "avutil-61.dll",
+      "sha256": "2fbceff5a4406adb0f15769a076f9878ff16b988cb72b7e6bcae1ebbed798e07",
+      "bytes": 1131520,
+      "directPeImports": ["bcrypt.dll", "KERNEL32.dll", "msvcrt.dll", "USER32.dll"],
+      "artifact": "ffmpeg-build-recipes"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "swresample-7.dll",
+      "sha256": "d57ed32dc41d5c93865feb03e2a7c664141e7f2211a8c0f5c2871332f0e594f3",
+      "bytes": 184320,
+      "directPeImports": ["KERNEL32.dll", "msvcrt.dll", "avutil-61.dll"],
+      "artifact": "ffmpeg-build-recipes"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "swscale-10.dll",
+      "sha256": "b53d951d3d4ae8ac68cb2888de0efa03e539622871b4a47ac61d4868460a1a0f",
+      "bytes": 2339840,
+      "directPeImports": ["KERNEL32.dll", "msvcrt.dll", "avutil-61.dll"],
+      "artifact": "ffmpeg-build-recipes"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "avcodec-63.dll",
+      "sha256": "3784a38edd8a51a418a4b7880c469e3054cecd62fa7344695dbffcbadd251472",
+      "bytes": 4001792,
+      "directPeImports": ["KERNEL32.dll", "msvcrt.dll", "ole32.dll", "avutil-61.dll"],
+      "artifact": "ffmpeg-build-recipes"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "avformat-63.dll",
+      "sha256": "78e378029761e1f352ab6423edbbae8297578acc604821e0e8689f193a39615e",
+      "bytes": 966144,
+      "directPeImports": [
+        "CRYPT32.dll",
+        "KERNEL32.dll",
+        "msvcrt.dll",
+        "ncrypt.dll",
+        "Secur32.dll",
+        "WS2_32.dll",
+        "avcodec-63.dll",
+        "avutil-61.dll"
+      ],
+      "artifact": "ffmpeg-build-recipes"
+    },
+    {
+      "group": "onnxruntime-cpu",
+      "file": "onnxruntime.dll",
+      "sha256": "66e62f7bebf65b048ff1a93c40a73df93c36f93ce5bb085076de92b1a1e754fd",
+      "artifact": "ort-wheel"
+    }
+  ],
+  "sourceClosure": {
+    "ffmpegMainSource": "complete-at-303510f9d1",
+    "ffmpegBuildRecipes": "reviewed-source-build-script-3879030-and-final-run-record",
+    "ffmpegStaticDependencies": "complete",
+    "externalMediaLibraries": [],
+    "staticallyLinkedToolchain": [
+      "MinGW CRT",
+      "GCC runtime (Runtime Library Exception)",
+      "winpthreads (MIT/BSD style; original COPYING preserved)"
+    ],
+    "reason": "No external media libraries; exact main source and final build configuration/materials plus toolchain notices are supplied. Windows system DLLs are not redistributed."
+  },
+  "vcRuntime": {
+    "packaged": false,
+    "officialInstaller": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+    "officialDocumentation": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "instruction": "Install Microsoft-signed x64 redistributable if required; retain installer terms. No arbitrary system DLL redistribution."
+  },
+  "runtimePolicy": {
+    "requiredFlags": [
+      "--disable-autodetect",
+      "--disable-gpl",
+      "--disable-nonfree",
+      "--disable-version3",
+      "--extra-ldflags=-static-libgcc"
+    ],
+    "forbiddenFlags": ["--enable-gpl", "--enable-nonfree", "--enable-version3"],
+    "forbiddenFlagPrefixes": ["--enable-lib"],
+    "expectedLicense": "LGPL version 2.1 or later",
+    "allowedDirectImports": [
+      "avcodec-63.dll",
+      "avutil-61.dll",
+      "bcrypt.dll",
+      "crypt32.dll",
+      "kernel32.dll",
+      "msvcrt.dll",
+      "ncrypt.dll",
+      "ole32.dll",
+      "secur32.dll",
+      "user32.dll",
+      "ws2_32.dll"
+    ]
+  }
+}

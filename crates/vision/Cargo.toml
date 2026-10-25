@@ -1,0 +1,17 @@
+[package]
+name = "am-vision"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+
+[dependencies]
+am-vision-types = { path = "../vision-types" }
+serde_json.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+# api-24 对应 onnxruntime 1.24 线：OpenVINO 提供器官方二进制最高 1.24.1，
+# 核心与提供器必须同发行版（见 vendor/onnxruntime README）。
+# cuda/tensorrt feature 只是 Rust 侧 EP 绑定符号（load-dynamic 下由 GPU 版 DLL 提供）。
+ort = { version = "=2.0.0-rc.13", default-features = false, features = ["std", "load-dynamic", "api-24", "openvino", "cuda", "tensorrt"] }

@@ -1,0 +1,29 @@
+# 独立源码 SDK；不依赖 AM-RT 服务、数据库或桌面壳。
+[workspace]
+members = ["crates/vision-types","crates/am-camera","crates/vision","crates/sdk-abi","crates/sdk-support","crates/camera-ffi","crates/vision-ffi"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+license = "Apache-2.0"
+
+[workspace.dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+thiserror = "2"
+
+[package]
+name = "framebraid-sdk"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.90"
+license = "Apache-2.0"
+publish = false
+
+[dependencies]
+am-camera = { path = "crates/am-camera", default-features = false }
+am-vision = { path = "crates/vision" }
+am-sdk-abi = { path = "crates/sdk-abi" }
+am-sdk-support = { path = "crates/sdk-support" }

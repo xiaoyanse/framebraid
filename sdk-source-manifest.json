@@ -1,0 +1,1647 @@
+{
+  "formatVersion": 1,
+  "sourceCommit": "f05305fa9215e2c458f532ffe4697202a85b4dca",
+  "sourceChanges": [],
+  "lockStatus": "frozen:sdk/source.Cargo.lock; build with --locked",
+  "runtimeLibrariesIncluded": false,
+  "files": [
+    {
+      "path": "crates/am-camera/Cargo.toml",
+      "source": "crates/am-camera/Cargo.toml",
+      "bytes": 991,
+      "sha256": "c49aef7faba6a39e41250fd91227ae9e9849714740e0f3b264abc9fd847fe6af"
+    },
+    {
+      "path": "crates/am-camera/src/credentials.rs",
+      "source": "crates/am-camera/src/credentials.rs",
+      "bytes": 233,
+      "sha256": "a745311850526fedbabbd6d51b58455439b55f682362dc806418336e2cd9fca1"
+    },
+    {
+      "path": "crates/am-camera/src/device_addresses.rs",
+      "source": "crates/am-camera/src/device_addresses.rs",
+      "bytes": 4220,
+      "sha256": "d14971d24c825159f81b8f6bf6f9244a4d7e1ed3f3e64af866c158b681622314"
+    },
+    {
+      "path": "crates/am-camera/src/frame_budget.rs",
+      "source": "crates/am-camera/src/frame_budget.rs",
+      "bytes": 3260,
+      "sha256": "b729ce5ae29ede66c1616403062b7863051966c90aa6c99dd899221010d74706"
+    },
+    {
+      "path": "crates/am-camera/src/lib.rs",
+      "source": "crates/am-camera/src/lib.rs",
+      "bytes": 405,
+      "sha256": "61c76e37b10df84909e9c17cf3ab07b9319a98d6fa4f5f8949a86e52c9ad584a"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec.rs",
+      "source": "crates/am-camera/src/media/codec.rs",
+      "bytes": 14437,
+      "sha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2"
+    },
+    {
+      "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
+      "source": "crates/am-camera/src/media/ffmpeg_lib.rs",
+      "bytes": 21340,
+      "sha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592"
+    },
+    {
+      "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
+      "source": "crates/am-camera/src/media/ffmpeg_sys.rs",
+      "bytes": 10609,
+      "sha256": "22eaeb29796bdb8268427a16fd4e363a2fcbab2a32da4a5a40c2b63de3015798"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/annexb.rs",
+      "source": "crates/am-camera/src/media/h264/annexb.rs",
+      "bytes": 7488,
+      "sha256": "6034431a91a2b7d2929c0718924dfd69aefa9cc8db4b4b5e36687aaf650d2164"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/annexb_tests.rs",
+      "source": "crates/am-camera/src/media/h264/annexb_tests.rs",
+      "bytes": 4838,
+      "sha256": "44aaaca15d37d693ef94628e9f38ab10d532749a4035d8fbe5896dfbd1abf073"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/codec_probe.rs",
+      "source": "crates/am-camera/src/media/h264/codec_probe.rs",
+      "bytes": 6586,
+      "sha256": "e99211213a5743e53a1b437216b62fe3ea8c1d7458310907db449a23b9935ff6"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/codec_probe_tests.rs",
+      "source": "crates/am-camera/src/media/h264/codec_probe_tests.rs",
+      "bytes": 5426,
+      "sha256": "75e5b9af10fe151d4f223b4e3d2435745ebdc64a9b3c542d88562e7b4a1c6fc9"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/fanout.rs",
+      "source": "crates/am-camera/src/media/h264/fanout.rs",
+      "bytes": 8175,
+      "sha256": "54bf768ac934f5f3c1da1473d9f2f5c43aa59cc60ad509488dbb5ad25bd7600d"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/mod.rs",
+      "source": "crates/am-camera/src/media/h264/mod.rs",
+      "bytes": 590,
+      "sha256": "dd4f77dfb5770a2165ad08cd37c844709ff31549e83f67b2896c7a909439ce0a"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/protocol.rs",
+      "source": "crates/am-camera/src/media/h264/protocol.rs",
+      "bytes": 4309,
+      "sha256": "259d6af3dba2efc96e70f5a5dffa280f5f1751dd340824cf7ea4d55543638eec"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/protocol_tests.rs",
+      "source": "crates/am-camera/src/media/h264/protocol_tests.rs",
+      "bytes": 4912,
+      "sha256": "8b0b0336cb9792bda6e2c5f1c401a2243732b8d601f167fdebafb088d7c5f8b4"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/session.rs",
+      "source": "crates/am-camera/src/media/h264/session.rs",
+      "bytes": 21906,
+      "sha256": "f2d5ad0b3a6992502c3ff8c5d35d4fd9702211a4ac171e015b2f6f97b46506dd"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/session_tests.rs",
+      "source": "crates/am-camera/src/media/h264/session_tests.rs",
+      "bytes": 11464,
+      "sha256": "d8268827e64df362ad31d296425d7e644a8a5c8f8c2f23f41c1d84e3f1fa8ad4"
+    },
+    {
+      "path": "crates/am-camera/src/media/mod.rs",
+      "source": "crates/am-camera/src/media/mod.rs",
+      "bytes": 299,
+      "sha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8"
+    },
+    {
+      "path": "crates/am-camera/src/media/pixel_ops.rs",
+      "source": "crates/am-camera/src/media/pixel_ops.rs",
+      "bytes": 3889,
+      "sha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526"
+    },
+    {
+      "path": "crates/am-camera/src/media/rtsp.rs",
+      "source": "crates/am-camera/src/media/rtsp.rs",
+      "bytes": 25678,
+      "sha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f"
+    },
+    {
+      "path": "crates/am-camera/src/media/rtsp_tests.rs",
+      "source": "crates/am-camera/src/media/rtsp_tests.rs",
+      "bytes": 5145,
+      "sha256": "95612225fa8ea084f57daf874a6b8772baddab37be8e3d3eb36ab4fb08310978"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/digest.rs",
+      "source": "crates/am-camera/src/media/sdk_io/digest.rs",
+      "bytes": 5182,
+      "sha256": "a9534b6d66f3a1686b5118fd602f005670af4afe7596b5c2dd5fc4484c68a0a9"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/http.rs",
+      "source": "crates/am-camera/src/media/sdk_io/http.rs",
+      "bytes": 5715,
+      "sha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/mod.rs",
+      "source": "crates/am-camera/src/media/sdk_io/mod.rs",
+      "bytes": 2005,
+      "sha256": "9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/nal.rs",
+      "source": "crates/am-camera/src/media/sdk_io/nal.rs",
+      "bytes": 8175,
+      "sha256": "a5363ffc037e76ebb56bb5fceec8afbd8993176fc4c5e8d1fcfa25eef02bca04"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/quiet.rs",
+      "source": "crates/am-camera/src/media/sdk_io/quiet.rs",
+      "bytes": 3041,
+      "sha256": "cc4236d04e3f8aa3ce3eff66d2f1aa986600e9f73b3b34cc2db5d33fdd943ac4"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
+      "source": "crates/am-camera/src/media/sdk_io/rtsp.rs",
+      "bytes": 11638,
+      "sha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/tests.rs",
+      "source": "crates/am-camera/src/media/sdk_io/tests.rs",
+      "bytes": 5771,
+      "sha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74"
+    },
+    {
+      "path": "crates/am-camera/src/media/testdata/probe_source.mp4",
+      "source": "crates/am-camera/src/media/testdata/probe_source.mp4",
+      "bytes": 83526,
+      "sha256": "67b6202d84fc721a5e49922c0f05fc58f6df0d2a8f605d8b2dc3f515bd3e3e73"
+    },
+    {
+      "path": "crates/am-camera/src/media/testkit.rs",
+      "source": "crates/am-camera/src/media/testkit.rs",
+      "bytes": 2923,
+      "sha256": "5dc60b6a904f330af301438a5911621f7b1602c2b207376b52f57c0686a11d9d"
+    },
+    {
+      "path": "crates/camera-ffi/Cargo.toml",
+      "source": "crates/camera-ffi/Cargo.toml",
+      "bytes": 426,
+      "sha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/continuous.rs",
+      "source": "crates/camera-ffi/src/captures/continuous.rs",
+      "bytes": 17337,
+      "sha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/images.rs",
+      "source": "crates/camera-ffi/src/captures/images.rs",
+      "bytes": 5903,
+      "sha256": "6363e851b83c2b4ce3f1aa40c87200ebf552a5926c41182b919afaf035a4a504"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/io.rs",
+      "source": "crates/camera-ffi/src/captures/io.rs",
+      "bytes": 8111,
+      "sha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/mod.rs",
+      "source": "crates/camera-ffi/src/captures/mod.rs",
+      "bytes": 2609,
+      "sha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/requests.rs",
+      "source": "crates/camera-ffi/src/captures/requests.rs",
+      "bytes": 10429,
+      "sha256": "0b8b6901fb88baf76225e8f6bdf43d218304fe1c00ff39591f06360983ce2e2a"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/state.rs",
+      "source": "crates/camera-ffi/src/captures/state.rs",
+      "bytes": 5047,
+      "sha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/config.rs",
+      "source": "crates/camera-ffi/src/decoder/config.rs",
+      "bytes": 9656,
+      "sha256": "9d504128dd8b83e86ab16a001047e1900e88dd6a5a1e5d0241e6b8bc6aafdf57"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/diagnostics.rs",
+      "source": "crates/camera-ffi/src/decoder/diagnostics.rs",
+      "bytes": 3430,
+      "sha256": "bf0357167256624764c996a72ea3d8c49138b76512b66a14828fce845a41b6a7"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/mod.rs",
+      "source": "crates/camera-ffi/src/decoder/mod.rs",
+      "bytes": 20692,
+      "sha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b"
+    },
+    {
+      "path": "crates/camera-ffi/src/frames.rs",
+      "source": "crates/camera-ffi/src/frames.rs",
+      "bytes": 13453,
+      "sha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54"
+    },
+    {
+      "path": "crates/camera-ffi/src/frames/scale.rs",
+      "source": "crates/camera-ffi/src/frames/scale.rs",
+      "bytes": 3092,
+      "sha256": "16bf39ddd9d60bfbf5dd69ca4b312d4033483edec585d546143244836adb4065"
+    },
+    {
+      "path": "crates/camera-ffi/src/lib.rs",
+      "source": "crates/camera-ffi/src/lib.rs",
+      "bytes": 2504,
+      "sha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82"
+    },
+    {
+      "path": "crates/camera-ffi/src/probe.rs",
+      "source": "crates/camera-ffi/src/probe.rs",
+      "bytes": 14744,
+      "sha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0"
+    },
+    {
+      "path": "crates/camera-ffi/src/shared.rs",
+      "source": "crates/camera-ffi/src/shared.rs",
+      "bytes": 2856,
+      "sha256": "2e2d31afdcc35fa5f080749a8507fb6ad6b8f61795d5531ad045a581659254fa"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/api.rs",
+      "source": "crates/camera-ffi/src/sources/api.rs",
+      "bytes": 11275,
+      "sha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/credentials.rs",
+      "source": "crates/camera-ffi/src/sources/credentials.rs",
+      "bytes": 14623,
+      "sha256": "ea9e85be771b9ff1fece47e3e0921b6d8354bdce182a2f8fd665f9c2886f9106"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/events.rs",
+      "source": "crates/camera-ffi/src/sources/events.rs",
+      "bytes": 6659,
+      "sha256": "b286bced772ab175d578db3cd9efc1c85ad5054c9d7bb9757f9f9b2ab71a5c71"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/mod.rs",
+      "source": "crates/camera-ffi/src/sources/mod.rs",
+      "bytes": 11540,
+      "sha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/tests.rs",
+      "source": "crates/camera-ffi/src/sources/tests.rs",
+      "bytes": 9747,
+      "sha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub.rs",
+      "source": "crates/camera-ffi/src/subscriptions/hub.rs",
+      "bytes": 28357,
+      "sha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/mod.rs",
+      "source": "crates/camera-ffi/src/subscriptions/mod.rs",
+      "bytes": 8404,
+      "sha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
+      "source": "crates/camera-ffi/src/subscriptions/pixels.rs",
+      "bytes": 3729,
+      "sha256": "df1471666e1cabb774f93d3cdba8689c0ff97bb017473951c5d4d88b8576b111"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/queue.rs",
+      "source": "crates/camera-ffi/src/subscriptions/queue.rs",
+      "bytes": 17876,
+      "sha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
+      "source": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
+      "bytes": 6968,
+      "sha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c"
+    },
+    {
+      "path": "crates/camera-ffi/src/telemetry.rs",
+      "source": "crates/camera-ffi/src/telemetry.rs",
+      "bytes": 4558,
+      "sha256": "750ec6a77e681771f38c9f269b233971ecbab34124a5a5ad99464e753540ea9a"
+    },
+    {
+      "path": "crates/sdk-abi/Cargo.toml",
+      "source": "crates/sdk-abi/Cargo.toml",
+      "bytes": 149,
+      "sha256": "858fd74d0573f70efc0809300e24a26fcaf4a0ea6a7ad176160c3c09a23306e8"
+    },
+    {
+      "path": "crates/sdk-abi/src/base.rs",
+      "source": "crates/sdk-abi/src/base.rs",
+      "bytes": 6962,
+      "sha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b"
+    },
+    {
+      "path": "crates/sdk-abi/src/constants.rs",
+      "source": "crates/sdk-abi/src/constants.rs",
+      "bytes": 2986,
+      "sha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103"
+    },
+    {
+      "path": "crates/sdk-abi/src/defaults.rs",
+      "source": "crates/sdk-abi/src/defaults.rs",
+      "bytes": 5743,
+      "sha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_0.rs",
+      "source": "crates/sdk-abi/src/fields_0.rs",
+      "bytes": 11988,
+      "sha256": "a9c425ae03eee144ccc727a3682ac5afa558d106079f9f7530ebb42d348f1eb0"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_1.rs",
+      "source": "crates/sdk-abi/src/fields_1.rs",
+      "bytes": 16560,
+      "sha256": "e93befe355fc3ccbf40f3b7dfa8cfd207c596077518a6decc53c10bb19fadcf5"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_2.rs",
+      "source": "crates/sdk-abi/src/fields_2.rs",
+      "bytes": 12536,
+      "sha256": "186054fbc46c1ab5460b6c616d25be2c731c9ff098c8a395f1130ef6d9861786"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_3.rs",
+      "source": "crates/sdk-abi/src/fields_3.rs",
+      "bytes": 9811,
+      "sha256": "0f66d439447c9ca88bcb32ac26e304e0e2c814f886596d0bdcdac717b90005d6"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_4.rs",
+      "source": "crates/sdk-abi/src/fields_4.rs",
+      "bytes": 11117,
+      "sha256": "264a66eedc78912e040c20c5df24d9a03387273120f1a3e46c202b1a053ab556"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_5.rs",
+      "source": "crates/sdk-abi/src/fields_5.rs",
+      "bytes": 8480,
+      "sha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_6.rs",
+      "source": "crates/sdk-abi/src/fields_6.rs",
+      "bytes": 11539,
+      "sha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_7.rs",
+      "source": "crates/sdk-abi/src/fields_7.rs",
+      "bytes": 8851,
+      "sha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_0.rs",
+      "source": "crates/sdk-abi/src/layout_0.rs",
+      "bytes": 13429,
+      "sha256": "0f4636b38abc0d04c1d8b4eeb71f51edca3e11567848801c01948b9d9222fd38"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_1.rs",
+      "source": "crates/sdk-abi/src/layout_1.rs",
+      "bytes": 13143,
+      "sha256": "dbc818b12ccafd7b20de73177ba568762d4d3d8a734e3a128e9d7bdbd1e447f2"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_2.rs",
+      "source": "crates/sdk-abi/src/layout_2.rs",
+      "bytes": 12820,
+      "sha256": "16d44dc4cd219a590b0758d145807d22dfbb96aa6689ce67ce2fd6e0c1849c3f"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_3.rs",
+      "source": "crates/sdk-abi/src/layout_3.rs",
+      "bytes": 11200,
+      "sha256": "19b58ed267449c1ff76cef89aa0a637f926da99bb8e509cc01e1181bd2b89101"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_4.rs",
+      "source": "crates/sdk-abi/src/layout_4.rs",
+      "bytes": 10899,
+      "sha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_5.rs",
+      "source": "crates/sdk-abi/src/layout_5.rs",
+      "bytes": 9302,
+      "sha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_6.rs",
+      "source": "crates/sdk-abi/src/layout_6.rs",
+      "bytes": 8986,
+      "sha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_7.rs",
+      "source": "crates/sdk-abi/src/layout_7.rs",
+      "bytes": 9541,
+      "sha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_tests.rs",
+      "source": "crates/sdk-abi/src/layout_tests.rs",
+      "bytes": 385,
+      "sha256": "960b3f8654a66e4b75735436c1bab9919e8ef00297def9e2651ca8ea913247f4"
+    },
+    {
+      "path": "crates/sdk-abi/src/lib.rs",
+      "source": "crates/sdk-abi/src/lib.rs",
+      "bytes": 845,
+      "sha256": "5ae46b1dd32bc386bbc0e7b6d4e11d7ded4eee838ba9a811aaeaa2d2147a8db3"
+    },
+    {
+      "path": "crates/sdk-abi/src/status.rs",
+      "source": "crates/sdk-abi/src/status.rs",
+      "bytes": 8237,
+      "sha256": "ed890ce2b1436fe4eddfc02f24a661c0b1f50feae46f4d35229467ac46701092"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_0.rs",
+      "source": "crates/sdk-abi/src/types_0.rs",
+      "bytes": 6784,
+      "sha256": "038dae871224fdc5d0d3e46aa96507f7f52fe6998bb0d323d92a6223be68346e"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_1.rs",
+      "source": "crates/sdk-abi/src/types_1.rs",
+      "bytes": 7805,
+      "sha256": "13e131fe0c9e3d3bffccce1a1c09e6934f355cb3df37f5c10616f0f58b1c8605"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_2.rs",
+      "source": "crates/sdk-abi/src/types_2.rs",
+      "bytes": 7008,
+      "sha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_3.rs",
+      "source": "crates/sdk-abi/src/types_3.rs",
+      "bytes": 6462,
+      "sha256": "78c9b9d99e55fb2c9860417ae501fa474ad8b9b564dd05f62e439a59e28cd804"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_4.rs",
+      "source": "crates/sdk-abi/src/types_4.rs",
+      "bytes": 6226,
+      "sha256": "941040d1aaae58ec6e04e58aad256d3b80608e27ec6f7051992a2ffcb2146d36"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_5.rs",
+      "source": "crates/sdk-abi/src/types_5.rs",
+      "bytes": 4382,
+      "sha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_6.rs",
+      "source": "crates/sdk-abi/src/types_6.rs",
+      "bytes": 3243,
+      "sha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_7.rs",
+      "source": "crates/sdk-abi/src/types_7.rs",
+      "bytes": 6126,
+      "sha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7"
+    },
+    {
+      "path": "crates/sdk-support/Cargo.toml",
+      "source": "crates/sdk-support/Cargo.toml",
+      "bytes": 544,
+      "sha256": "6be9d5a6c2528016b54c7e85685e783f5c02bc0770905b5da7568e7604196e2f"
+    },
+    {
+      "path": "crates/sdk-support/src/args.rs",
+      "source": "crates/sdk-support/src/args.rs",
+      "bytes": 5411,
+      "sha256": "a1a193ca7c4703aa6b96063f76612bb95a09b29b8811f7aede5cbae28331faca"
+    },
+    {
+      "path": "crates/sdk-support/src/buffers.rs",
+      "source": "crates/sdk-support/src/buffers.rs",
+      "bytes": 2921,
+      "sha256": "650696bb44414130b9d506eeb69a6313de9c4e3a079b27c4e61edc1b02a0e73c"
+    },
+    {
+      "path": "crates/sdk-support/src/callbacks.rs",
+      "source": "crates/sdk-support/src/callbacks.rs",
+      "bytes": 558,
+      "sha256": "b091c8f2754d5e25c45b11f88686556b0d880e415025cb1c9cb00b2b73cf7143"
+    },
+    {
+      "path": "crates/sdk-support/src/clock.rs",
+      "source": "crates/sdk-support/src/clock.rs",
+      "bytes": 730,
+      "sha256": "679a146954e7967a638b919d6a1664d5da932f7ae9266ca2057d0acc0e9f0561"
+    },
+    {
+      "path": "crates/sdk-support/src/common.rs",
+      "source": "crates/sdk-support/src/common.rs",
+      "bytes": 11540,
+      "sha256": "f7b20e9c0ec6b67a5622de4dacd32a2c3002d214834a7aabc2c2dd09da2175bc"
+    },
+    {
+      "path": "crates/sdk-support/src/context.rs",
+      "source": "crates/sdk-support/src/context.rs",
+      "bytes": 8939,
+      "sha256": "5bbc555780e27a91f722499d4012582970535cd96ac8da7dc5a34a2a9c88a170"
+    },
+    {
+      "path": "crates/sdk-support/src/diagnostics.rs",
+      "source": "crates/sdk-support/src/diagnostics.rs",
+      "bytes": 4078,
+      "sha256": "fd3806e1adc1ed4e02d37db6a038b0213f99c4b4578568172036a94394a18c40"
+    },
+    {
+      "path": "crates/sdk-support/src/handles.rs",
+      "source": "crates/sdk-support/src/handles.rs",
+      "bytes": 9365,
+      "sha256": "0e9b82f34a166ba7ee92d1bcf3d16e53caea3d7e0471b271cd31719c72ee827b"
+    },
+    {
+      "path": "crates/sdk-support/src/handles/tests.rs",
+      "source": "crates/sdk-support/src/handles/tests.rs",
+      "bytes": 3209,
+      "sha256": "d9174f360fb463e692eb546b2d4d7c0b3226662194c2f7aa4e625e8b2a6ae8af"
+    },
+    {
+      "path": "crates/sdk-support/src/lib.rs",
+      "source": "crates/sdk-support/src/lib.rs",
+      "bytes": 1493,
+      "sha256": "1cd2b9e675a0871b578701daa6271848a7da6957da1a71e046b022d54c789128"
+    },
+    {
+      "path": "crates/sdk-support/src/queues.rs",
+      "source": "crates/sdk-support/src/queues.rs",
+      "bytes": 3454,
+      "sha256": "91edae3b6b5462063a8ee220ae867cee3cfa7a021a5b9dfc89c53eb287c085d2"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/api.rs",
+      "source": "crates/sdk-support/src/shared/api.rs",
+      "bytes": 9193,
+      "sha256": "4d6d9ad84de2d0544123107ef0b860d2d3017914025d20aa3fac0af9946cacb2"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/layout.rs",
+      "source": "crates/sdk-support/src/shared/layout.rs",
+      "bytes": 8699,
+      "sha256": "789b5818f979d4f63cd3eb0d8d6d9e9d16575b403065c805c7a5d145ce72e8a9"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/mod.rs",
+      "source": "crates/sdk-support/src/shared/mod.rs",
+      "bytes": 205,
+      "sha256": "48e64876ca9eac334af490586f807d5d61a9416f5d377ee54362417664f0ea4b"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/pool.rs",
+      "source": "crates/sdk-support/src/shared/pool.rs",
+      "bytes": 15465,
+      "sha256": "807731180140ce9a01d3870ea224c0057a5ef1ea42f867ca7ae2e6724cd99e91"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/tests.rs",
+      "source": "crates/sdk-support/src/shared/tests.rs",
+      "bytes": 8500,
+      "sha256": "9de8d0ab9e97d398306574a959543b4f61482806547f4d18e70ae803f8bbf9dc"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/windows.rs",
+      "source": "crates/sdk-support/src/shared/windows.rs",
+      "bytes": 9451,
+      "sha256": "4e13ce57c3b4e646643e92f23e45a499a60c171d5c8b2a78643b5e10a1a6305a"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/wire.rs",
+      "source": "crates/sdk-support/src/shared/wire.rs",
+      "bytes": 10741,
+      "sha256": "f094c593ebda7526975f63a6edfb716eb3960da9e2cf9afea4ce3efd82e90bf2"
+    },
+    {
+      "path": "crates/sdk-support/src/unload.rs",
+      "source": "crates/sdk-support/src/unload.rs",
+      "bytes": 3397,
+      "sha256": "7eb6bc0096734f3b8b3dc06925383a281b394f4792f5523fb94ca83a2f337c30"
+    },
+    {
+      "path": "crates/vision-ffi/Cargo.toml",
+      "source": "crates/vision-ffi/Cargo.toml",
+      "bytes": 397,
+      "sha256": "21100d26118bea4e9987e2b8ed9ae9994556fffd30aee76b84d69f95aca9251c"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/backends.rs",
+      "source": "crates/vision-ffi/src/inference/backends.rs",
+      "bytes": 3860,
+      "sha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/batch_exports.rs",
+      "source": "crates/vision-ffi/src/inference/batch_exports.rs",
+      "bytes": 9275,
+      "sha256": "13de2cdb439cdcf8b2ce2df3553db2834b68c30028cc537cfed9cfd60ef3fee8"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/exports.rs",
+      "source": "crates/vision-ffi/src/inference/exports.rs",
+      "bytes": 10045,
+      "sha256": "e9853356a47e62016d9375fee9f0299bbdb849968e68387892797bff713e3b59"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/input.rs",
+      "source": "crates/vision-ffi/src/inference/input.rs",
+      "bytes": 11861,
+      "sha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/mod.rs",
+      "source": "crates/vision-ffi/src/inference/mod.rs",
+      "bytes": 696,
+      "sha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/models.rs",
+      "source": "crates/vision-ffi/src/inference/models.rs",
+      "bytes": 9236,
+      "sha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/notify.rs",
+      "source": "crates/vision-ffi/src/inference/notify.rs",
+      "bytes": 6499,
+      "sha256": "9d8ae3ede7d71496b040f9bc53068cf7da8b06b06c1f72d7cf3a5a4b8c4f6a05"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/receipt.rs",
+      "source": "crates/vision-ffi/src/inference/receipt.rs",
+      "bytes": 1609,
+      "sha256": "862959662f9e0f346fd2c769d5c8bdd088892c0218aadaabb536f5e3b329d41a"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/results.rs",
+      "source": "crates/vision-ffi/src/inference/results.rs",
+      "bytes": 14919,
+      "sha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler.rs",
+      "source": "crates/vision-ffi/src/inference/scheduler.rs",
+      "bytes": 8876,
+      "sha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
+      "source": "crates/vision-ffi/src/inference/scheduler/admission.rs",
+      "bytes": 6194,
+      "sha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
+      "source": "crates/vision-ffi/src/inference/scheduler/execution.rs",
+      "bytes": 10656,
+      "sha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
+      "source": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
+      "bytes": 4195,
+      "sha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
+      "source": "crates/vision-ffi/src/inference/scheduler/tests.rs",
+      "bytes": 1379,
+      "sha256": "515897059c2a19e3105e027fb9699f5be7e03277a4f0b308c13e9acb61e20e8b"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/state.rs",
+      "source": "crates/vision-ffi/src/inference/state.rs",
+      "bytes": 7243,
+      "sha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/submission.rs",
+      "source": "crates/vision-ffi/src/inference/submission.rs",
+      "bytes": 2562,
+      "sha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/telemetry.rs",
+      "source": "crates/vision-ffi/src/inference/telemetry.rs",
+      "bytes": 4768,
+      "sha256": "b7a710d039ea04839abbfe4079bd8727936afc72da2763860d503d22c9836be9"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/tensor_exports.rs",
+      "source": "crates/vision-ffi/src/inference/tensor_exports.rs",
+      "bytes": 1572,
+      "sha256": "b14f5f571b65da62dbd5eaa8a7764e5267bee8f263b1efe0613076ddd8eb4b1e"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/tensors.rs",
+      "source": "crates/vision-ffi/src/inference/tensors.rs",
+      "bytes": 5454,
+      "sha256": "b4d4ac1f7b3b6dee75ee037f283dadf9dce7a36b63e5ca1ea9acb441fcd6a433"
+    },
+    {
+      "path": "crates/vision-ffi/src/lib.rs",
+      "source": "crates/vision-ffi/src/lib.rs",
+      "bytes": 1848,
+      "sha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847"
+    },
+    {
+      "path": "crates/vision-ffi/src/shared.rs",
+      "source": "crates/vision-ffi/src/shared.rs",
+      "bytes": 2642,
+      "sha256": "9e0d2605f4b5a03d6ed219e2bc2a428f62d4e1f99429a84dd8ed78ba01c06475"
+    },
+    {
+      "path": "crates/vision-types/Cargo.toml",
+      "source": "crates/vision-types/Cargo.toml",
+      "bytes": 270,
+      "sha256": "50169f8e7023f7d255c5f6a8c7c643cffd9d23e9c2db06575bae3387778ffd37"
+    },
+    {
+      "path": "crates/vision-types/src/lib.rs",
+      "source": "crates/vision-types/src/lib.rs",
+      "bytes": 2845,
+      "sha256": "c98be30689144e0ac32b46e9417ffc202c27904e048c6bff90be02a19dbebc31"
+    },
+    {
+      "path": "crates/vision/Cargo.toml",
+      "source": "crates/vision/Cargo.toml",
+      "bytes": 764,
+      "sha256": "034454077caaa1098e33eabb804ed746be0441ac19fdd144c7e454934c43309d"
+    },
+    {
+      "path": "crates/vision/examples/inspect.rs",
+      "source": "crates/vision/examples/inspect.rs",
+      "bytes": 785,
+      "sha256": "5c2a9c34cfac269bd25f375585ac2cabe2657acb2de7a7718b95c7730f75dc3e"
+    },
+    {
+      "path": "crates/vision/resources/postprocess-reference-v1.json",
+      "source": "crates/vision/resources/postprocess-reference-v1.json",
+      "bytes": 7860,
+      "sha256": "18a031c335253a921a10658d3dac393297540b85b3d963f98968fd33941b0344"
+    },
+    {
+      "path": "crates/vision/resources/profiles.json",
+      "source": "crates/vision/resources/profiles.json",
+      "bytes": 3526,
+      "sha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc"
+    },
+    {
+      "path": "crates/vision/src/backend.rs",
+      "source": "crates/vision/src/backend.rs",
+      "bytes": 12045,
+      "sha256": "2a547cf15326cd01e70a96633cd80e0705070de034a58128c5380c571708d348"
+    },
+    {
+      "path": "crates/vision/src/decode.rs",
+      "source": "crates/vision/src/decode.rs",
+      "bytes": 3073,
+      "sha256": "6cf60088ede9c62a5e67beec8d7f9c34b92ff7d5782091decfd927ae3d440d70"
+    },
+    {
+      "path": "crates/vision/src/executor.rs",
+      "source": "crates/vision/src/executor.rs",
+      "bytes": 19350,
+      "sha256": "cacc684d33a56c5463c4fd581f63bfa4cf581944bcdb7d870dcb38da7740807d"
+    },
+    {
+      "path": "crates/vision/src/lib.rs",
+      "source": "crates/vision/src/lib.rs",
+      "bytes": 14921,
+      "sha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1"
+    },
+    {
+      "path": "crates/vision/src/preprocess.rs",
+      "source": "crates/vision/src/preprocess.rs",
+      "bytes": 3824,
+      "sha256": "862780607e9ac840fd83934450c78107e4aa69238bb5308fdf0cc929c213796f"
+    },
+    {
+      "path": "crates/vision/src/profiles/geometry.rs",
+      "source": "crates/vision/src/profiles/geometry.rs",
+      "bytes": 2313,
+      "sha256": "fcead75f15fb66de02825ed5f5cf63d9ac09e45f5200460ee2ef5af217347d30"
+    },
+    {
+      "path": "crates/vision/src/profiles/mask.rs",
+      "source": "crates/vision/src/profiles/mask.rs",
+      "bytes": 2828,
+      "sha256": "1455890ba644762d297f50fa303228672ec1ae8953e47b446af8f1cc428728c5"
+    },
+    {
+      "path": "crates/vision/src/profiles/mod.rs",
+      "source": "crates/vision/src/profiles/mod.rs",
+      "bytes": 5114,
+      "sha256": "b6e62092631732545a31cd3365cb795d4e14a4f973d1785a26a16a3a58126121"
+    },
+    {
+      "path": "crates/vision/src/profiles/reference_tests.rs",
+      "source": "crates/vision/src/profiles/reference_tests.rs",
+      "bytes": 4354,
+      "sha256": "dbaf880a923bb3f9b7e9cdb0246e460b3840d89a63f440f56465e79fd0d43452"
+    },
+    {
+      "path": "crates/vision/src/profiles/registry.rs",
+      "source": "crates/vision/src/profiles/registry.rs",
+      "bytes": 1866,
+      "sha256": "83124c5222843b2e0f4d39257809f8d4d8fa6aadf69a2539301de02a036d9570"
+    },
+    {
+      "path": "crates/vision/src/profiles/results.rs",
+      "source": "crates/vision/src/profiles/results.rs",
+      "bytes": 6701,
+      "sha256": "695cf736746db76a07955d2d499b097d02931810adbb22e932f76724baec6810"
+    },
+    {
+      "path": "crates/vision/src/profiles/tests.rs",
+      "source": "crates/vision/src/profiles/tests.rs",
+      "bytes": 6482,
+      "sha256": "737db32a00d880747c847bace27ebdd638785fa5cd2a3348fbbe1e0d6d7e38f1"
+    },
+    {
+      "path": "crates/vision/src/sdk/batch.rs",
+      "source": "crates/vision/src/sdk/batch.rs",
+      "bytes": 8413,
+      "sha256": "72e6da94b4e9c6bab50563d695a07361b1c5b7114f08d22a7c7f7602ea1eb331"
+    },
+    {
+      "path": "crates/vision/src/sdk/batch_tests.rs",
+      "source": "crates/vision/src/sdk/batch_tests.rs",
+      "bytes": 6066,
+      "sha256": "59d042dbbee19fdd01582b9603f3446500df66b0924ae175a01becd3458d98e2"
+    },
+    {
+      "path": "crates/vision/src/sdk/encoded.rs",
+      "source": "crates/vision/src/sdk/encoded.rs",
+      "bytes": 1294,
+      "sha256": "609c23435ddf9a8847387407f10a6eb307a14a0fe6de79be34a2441b3e941907"
+    },
+    {
+      "path": "crates/vision/src/sdk/mod.rs",
+      "source": "crates/vision/src/sdk/mod.rs",
+      "bytes": 480,
+      "sha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026"
+    },
+    {
+      "path": "crates/vision/src/sdk/model.rs",
+      "source": "crates/vision/src/sdk/model.rs",
+      "bytes": 14485,
+      "sha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd"
+    },
+    {
+      "path": "crates/vision/src/sdk/onnx.rs",
+      "source": "crates/vision/src/sdk/onnx.rs",
+      "bytes": 4922,
+      "sha256": "47704d0b9849a11b9c42cb9ae95def8c59a4be2c337e36e371f053a5c6174b7f"
+    },
+    {
+      "path": "crates/vision/src/sdk/pixels.rs",
+      "source": "crates/vision/src/sdk/pixels.rs",
+      "bytes": 4262,
+      "sha256": "9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e"
+    },
+    {
+      "path": "crates/vision/src/sdk/prepare.rs",
+      "source": "crates/vision/src/sdk/prepare.rs",
+      "bytes": 5932,
+      "sha256": "bf97f1899375ee41dd7bbea511d067d50aa67c239f92d3b139094b3c856ba4a0"
+    },
+    {
+      "path": "crates/vision/src/sdk/runtime.rs",
+      "source": "crates/vision/src/sdk/runtime.rs",
+      "bytes": 5149,
+      "sha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418"
+    },
+    {
+      "path": "crates/vision/src/sdk/runtime/windows.rs",
+      "source": "crates/vision/src/sdk/runtime/windows.rs",
+      "bytes": 4960,
+      "sha256": "ba36722147e2c0fc2fc3fde42ca49ecfbff0341fbda370b3106e0101683b5a4d"
+    },
+    {
+      "path": "crates/vision/src/sdk/tests.rs",
+      "source": "crates/vision/src/sdk/tests.rs",
+      "bytes": 3025,
+      "sha256": "b6d218fb9ef81420ecd2582a180ab63b574cd406220d2b9492e12e7266e8f157"
+    },
+    {
+      "path": "src/lib.rs",
+      "source": "sdk/src/lib.rs",
+      "bytes": 639,
+      "sha256": "d184eba0369b8ffc28619eee58a7fd1be0473ed3af128798e9da4d93360dce70"
+    },
+    {
+      "path": "sdk/README.md",
+      "source": "sdk/README.md",
+      "bytes": 9176,
+      "sha256": "7e244f6ee51f83811c3a9024bf3a6fedcd8fd527d85a2aea9de26675eae46139"
+    },
+    {
+      "path": "sdk/INTEGRATION.md",
+      "source": "sdk/INTEGRATION.md",
+      "bytes": 13755,
+      "sha256": "535a9039658bc1db5da1140e9d68719dfc44188d943ba057300f26a7fbe06dcc"
+    },
+    {
+      "path": "sdk/RELEASE-NOTES.md",
+      "source": "sdk/RELEASE-NOTES.md",
+      "bytes": 1327,
+      "sha256": "67ee64fc8ea7c313d569bb391efad44efc9165958dd163ef54851f729e5f3053"
+    },
+    {
+      "path": "Cargo.lock",
+      "source": "sdk/source.Cargo.lock",
+      "bytes": 44293,
+      "sha256": "8f2eeb6035999cfca927893b7f7970829a4036fbe0dff50bdb5548b861c10c8c"
+    },
+    {
+      "path": "scripts/sdk/check-boundary.mjs",
+      "source": "scripts/sdk/check-boundary.mjs",
+      "bytes": 1936,
+      "sha256": "5199b7ee503f65dff790572aa383d628f5cd72fe5db0bc47706fb1791ebd2deb"
+    },
+    {
+      "path": "scripts/sdk/source-fingerprint.mjs",
+      "source": "scripts/sdk/source-fingerprint.mjs",
+      "bytes": 1371,
+      "sha256": "f2d43a7400d82ef077f1cc165ce8547295169489abc1ebfe64e266c110a5661e"
+    },
+    {
+      "path": "scripts/sdk/source-fingerprint.test.mjs",
+      "source": "scripts/sdk/source-fingerprint.test.mjs",
+      "bytes": 1640,
+      "sha256": "5d07fa5195c323beb34a42cceed32602d94ec3ec42d3485f2cedc82d101fd2d5"
+    },
+    {
+      "path": "scripts/sdk/abi-model.mjs",
+      "source": "scripts/sdk/abi-model.mjs",
+      "bytes": 9292,
+      "sha256": "b05412ffff939201b99b157587254ebaec90ad2320f17d892aaf38704eeb91a1"
+    },
+    {
+      "path": "scripts/sdk/abi-defaults.mjs",
+      "source": "scripts/sdk/abi-defaults.mjs",
+      "bytes": 2350,
+      "sha256": "8c6bdaf8485c3be35dbf8ef0789b441c37a092f26132f044c78aa220e03853de"
+    },
+    {
+      "path": "scripts/sdk/generate-abi.mjs",
+      "source": "scripts/sdk/generate-abi.mjs",
+      "bytes": 5014,
+      "sha256": "7312ac0caf8fd71ebad53e4a2cdae2ec204bd17d84eba1dd53b4eb6b865a5694"
+    },
+    {
+      "path": "scripts/sdk/generate-rust-abi.mjs",
+      "source": "scripts/sdk/generate-rust-abi.mjs",
+      "bytes": 6277,
+      "sha256": "139cca21fb1a90c67a7d8d2cffe1182882f5d743cf8623a22b6de034d3fec934"
+    },
+    {
+      "path": "scripts/sdk/generate-python-abi.mjs",
+      "source": "scripts/sdk/generate-python-abi.mjs",
+      "bytes": 4893,
+      "sha256": "23f1459d7923e76d59a25638f53099bdd5edb2dfd52ce46b96b4ea9b24c6c757"
+    },
+    {
+      "path": "scripts/sdk/freeze-abi.mjs",
+      "source": "scripts/sdk/freeze-abi.mjs",
+      "bytes": 1856,
+      "sha256": "7f381fdedfa0a168e957506a6ed64de132ce61feec8024824cd107cc4df03439"
+    },
+    {
+      "path": "scripts/sdk/test-ffi-lifecycle.py",
+      "source": "scripts/sdk/test-ffi-lifecycle.py",
+      "bytes": 2397,
+      "sha256": "25cb560c1b58d3f8cf0cb8d436182e43f88508e35a409ba38aaafae4cd902f88"
+    },
+    {
+      "path": "scripts/sdk/test-shared-frames.py",
+      "source": "scripts/sdk/test-shared-frames.py",
+      "bytes": 12922,
+      "sha256": "82038044bca353e9ce0beeb2748b8e29ad28f5c804d131c10b1e587bd4b87473"
+    },
+    {
+      "path": "scripts/sdk/test-decoder.py",
+      "source": "scripts/sdk/test-decoder.py",
+      "bytes": 11852,
+      "sha256": "39c8c04eaa25434a58cd083b4b974b4ec9571f77d4b75d9781e7ffe0f1b58ade"
+    },
+    {
+      "path": "scripts/sdk/test-inference.py",
+      "source": "scripts/sdk/test-inference.py",
+      "bytes": 22566,
+      "sha256": "7f5957e088d5e3f8e209ecd4a48e2589bb42282ce1a1dfd26fbef5e19974c530"
+    },
+    {
+      "path": "scripts/sdk/test-tensors.py",
+      "source": "scripts/sdk/test-tensors.py",
+      "bytes": 14712,
+      "sha256": "0070f94457156e59ef8ab14acb879209435b02ece25dbb1b2131141ffb4491c6"
+    },
+    {
+      "path": "scripts/sdk/generate-tensor-samples.py",
+      "source": "scripts/sdk/generate-tensor-samples.py",
+      "bytes": 2195,
+      "sha256": "8607469aed38a2c65e5ef0e1ab4e87975e32a2017c70fb80a6d2d7194c7d01ad"
+    },
+    {
+      "path": "scripts/sdk/generate-batch-samples.py",
+      "source": "scripts/sdk/generate-batch-samples.py",
+      "bytes": 3544,
+      "sha256": "f6877a19c58933501b1390e19d425be89286f899a7145a94e47b8cb8f5e9a0eb"
+    },
+    {
+      "path": "scripts/sdk/test-batch-metadata.py",
+      "source": "scripts/sdk/test-batch-metadata.py",
+      "bytes": 3925,
+      "sha256": "d7f0274b948c4f0cacfd3d4d96403d0d938bd10157db12413e3eeee0555f3d32"
+    },
+    {
+      "path": "scripts/sdk/test-batch.py",
+      "source": "scripts/sdk/test-batch.py",
+      "bytes": 19625,
+      "sha256": "4c6a33684c703a6bb7e2406b620199a21a4f02983ad52c9051b25bbcbd213af9"
+    },
+    {
+      "path": "scripts/sdk/test-module-lifecycle.py",
+      "source": "scripts/sdk/test-module-lifecycle.py",
+      "bytes": 13677,
+      "sha256": "132a1c0c59521c0854d48f13ac666ee87a69f40c076bb866145440590a929373"
+    },
+    {
+      "path": "scripts/sdk/test-notify-stats.py",
+      "source": "scripts/sdk/test-notify-stats.py",
+      "bytes": 7539,
+      "sha256": "a9fb3f2fac5df9ce7307bb20fa5e6c148568e5a390727f937cb5ebb2e2b579ea"
+    },
+    {
+      "path": "scripts/sdk/test-backends.py",
+      "source": "scripts/sdk/test-backends.py",
+      "bytes": 5856,
+      "sha256": "ac53e5351334d953261adeb7a53b4776f083a6ce3ff142ced96650cfe6b7a517"
+    },
+    {
+      "path": "scripts/sdk/test-camera-pixels.py",
+      "source": "scripts/sdk/test-camera-pixels.py",
+      "bytes": 5999,
+      "sha256": "edb4c6468a7ff6f0bf567267683ba44815d3413d0184bbbec6e83b6607dbe26c"
+    },
+    {
+      "path": "scripts/sdk/test-camera-capture.py",
+      "source": "scripts/sdk/test-camera-capture.py",
+      "bytes": 11794,
+      "sha256": "be62dfbfdf39e94c2ccacf4940c671cbe4d8f686c04a47cbf59eded5aa88cafb"
+    },
+    {
+      "path": "scripts/sdk/test-camera-inference.py",
+      "source": "scripts/sdk/test-camera-inference.py",
+      "bytes": 4194,
+      "sha256": "722d49cf98381f30c8bb523e7367dc147bf14f05a87ce0a63689111c81ea7231"
+    },
+    {
+      "path": "scripts/sdk/test-camera-queue-stats.py",
+      "source": "scripts/sdk/test-camera-queue-stats.py",
+      "bytes": 3079,
+      "sha256": "d761c137807e93c08a9c3594b981444541ce0324dbf3e4846375ae840e4d4a25"
+    },
+    {
+      "path": "scripts/sdk/test-camera-probe.py",
+      "source": "scripts/sdk/test-camera-probe.py",
+      "bytes": 8995,
+      "sha256": "7be212fb06c4e3412f5f60b5b65f5a3d3c198cccfcde3521c9cf291c6be62acb"
+    },
+    {
+      "path": "scripts/sdk/test-camera-transport.py",
+      "source": "scripts/sdk/test-camera-transport.py",
+      "bytes": 21109,
+      "sha256": "f88717184761e79bb5a9e2e7a71c886ee5c835f9bb77cd38c6c95be97efb06b1"
+    },
+    {
+      "path": "scripts/sdk/generate-csharp-types.py",
+      "source": "scripts/sdk/generate-csharp-types.py",
+      "bytes": 2974,
+      "sha256": "d447e4d1f10c29e879ef1ada4431774ddea0b7c3dd6decefea745aa3d597f111"
+    },
+    {
+      "path": "scripts/sdk/test-language-bindings.py",
+      "source": "scripts/sdk/test-language-bindings.py",
+      "bytes": 6910,
+      "sha256": "1f05aa4b6da2d40ce6f57f974652f627f4ce737efc02cd4215fa777c5c15ce35"
+    },
+    {
+      "path": "scripts/sdk/test-safe-bindings.py",
+      "source": "scripts/sdk/test-safe-bindings.py",
+      "bytes": 4871,
+      "sha256": "7c90c3006fa0e10ac014de284d3053fb0ca4afe625b5357355bce5e79c363532"
+    },
+    {
+      "path": "scripts/sdk/test-sdk-load-diagnostics.py",
+      "source": "scripts/sdk/test-sdk-load-diagnostics.py",
+      "bytes": 9198,
+      "sha256": "511175bd9f5caab6df4152bf56219304c818c5f06abfff1492d30af8e66e7940"
+    },
+    {
+      "path": "scripts/sdk/test-native-diagnostics.py",
+      "source": "scripts/sdk/test-native-diagnostics.py",
+      "bytes": 6044,
+      "sha256": "c31d872e846cb42bebe7d6551bbee39fa3c98b3fd1b4743fa630f22102364138"
+    },
+    {
+      "path": "scripts/sdk/native_diagnostic_fixture.py",
+      "source": "scripts/sdk/native_diagnostic_fixture.py",
+      "bytes": 2412,
+      "sha256": "1aaec030f37c57a9be04aed60b9d04ba50dc8f2c61dd85a1c1ff7841c2d2909c"
+    },
+    {
+      "path": "scripts/sdk/fixtures/native-diagnostic.c",
+      "source": "scripts/sdk/fixtures/native-diagnostic.c",
+      "bytes": 169,
+      "sha256": "c9c59c4036dc9e26a7ee86c499d190a3f37a31c74c29d55c8f5ae0c0eed1dc5c"
+    },
+    {
+      "path": "scripts/sdk/build-ffmpeg-runtime.py",
+      "source": "scripts/sdk/build-ffmpeg-runtime.py",
+      "bytes": 11264,
+      "sha256": "5410484b5c1e9882b2843b39e0960e5f44e25fcb88b8800a839461fc6a462b84"
+    },
+    {
+      "path": "scripts/sdk/package-delivery.mjs",
+      "source": "scripts/sdk/package-delivery.mjs",
+      "bytes": 24260,
+      "sha256": "f435a6338cdd9fe712e1bd11078975567ad7dd1001f2309875f7ba9d8e8cacc0"
+    },
+    {
+      "path": "scripts/sdk/build-record.mjs",
+      "source": "scripts/sdk/build-record.mjs",
+      "bytes": 1465,
+      "sha256": "3637c8885ec3c9fc27c56af3cac474c4af4b81c916ae076b0a6b6a5da75695d3"
+    },
+    {
+      "path": "scripts/sdk/third-party-materials.mjs",
+      "source": "scripts/sdk/third-party-materials.mjs",
+      "bytes": 6385,
+      "sha256": "a2589a8591512e44eb65d7315ed90bb4f85ba54c9fede5e29771ca33145b8fb7"
+    },
+    {
+      "path": "scripts/sdk/fetch-third-party-materials.mjs",
+      "source": "scripts/sdk/fetch-third-party-materials.mjs",
+      "bytes": 3568,
+      "sha256": "1a82706cf3855c2c8f561ad78144ff1ff5faab35f3b045d6faae15bbbd905c96"
+    },
+    {
+      "path": "scripts/sdk/test-accelerated-backends.py",
+      "source": "scripts/sdk/test-accelerated-backends.py",
+      "bytes": 4447,
+      "sha256": "bccf66959637daa0bb853a0bcf60bca61efb846fb6afbb1751fe4e60f7db30c1"
+    },
+    {
+      "path": "scripts/sdk/generate-codec-samples.py",
+      "source": "scripts/sdk/generate-codec-samples.py",
+      "bytes": 2120,
+      "sha256": "7535757ff116e4a2ce2336fa7d6b10708fb701b530c5628bde596e998e01b529"
+    },
+    {
+      "path": "sdk/abi/constants.json",
+      "source": "sdk/abi/constants.json",
+      "bytes": 2268,
+      "sha256": "facd7b74ec96e98b6f4efc4555c95545dc70bf9509a13632a2f1ac573c65f4de"
+    },
+    {
+      "path": "sdk/abi/defaults.json",
+      "source": "sdk/abi/defaults.json",
+      "bytes": 1923,
+      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010"
+    },
+    {
+      "path": "sdk/abi/freeze-v1.json",
+      "source": "sdk/abi/freeze-v1.json",
+      "bytes": 1532,
+      "sha256": "add7a1ab62935e1d675f6d2d560ee349ba0d8da4019191d338d92fb4c1851059"
+    },
+    {
+      "path": "sdk/abi/history/freeze-v1-r1.json",
+      "source": "sdk/abi/history/freeze-v1-r1.json",
+      "bytes": 1434,
+      "sha256": "99541128e28d2b5e477753906f6db3cba4ba304e037d2d166db1998b3b1e9e75"
+    },
+    {
+      "path": "sdk/abi/history/freeze-v1-r2.json",
+      "source": "sdk/abi/history/freeze-v1-r2.json",
+      "bytes": 1531,
+      "sha256": "83b58adc66b1fcc798070546ab18c15abcebc1cff2b95675a008d80dba1c7f37"
+    },
+    {
+      "path": "sdk/abi/history/freeze-v1-r3.json",
+      "source": "sdk/abi/history/freeze-v1-r3.json",
+      "bytes": 1531,
+      "sha256": "20ed28bf3a9d35d711df83ea680e5da5bf1c4359e38aaa346aeebdc20b8c0f43"
+    },
+    {
+      "path": "sdk/abi/history/freeze-v1-r4.json",
+      "source": "sdk/abi/history/freeze-v1-r4.json",
+      "bytes": 1531,
+      "sha256": "51ffbc15d2577ed0f6f075278ce8d83b32b8ae508f1a140120d68c00cbf37042"
+    },
+    {
+      "path": "sdk/abi/layout-win-x64.json",
+      "source": "sdk/abi/layout-win-x64.json",
+      "bytes": 5245,
+      "sha256": "58a41d32cd4e639d1e0927a8225832c318add75867b0464f46d37b89aead0f92"
+    },
+    {
+      "path": "sdk/bindings/csharp/Camera.cs",
+      "source": "sdk/bindings/csharp/Camera.cs",
+      "bytes": 9229,
+      "sha256": "953999ec4546d2100c315a812f97645c6b2e0e60842075b1ff0b636ae8f1d310"
+    },
+    {
+      "path": "sdk/bindings/csharp/LoadDiagnostics.cs",
+      "source": "sdk/bindings/csharp/LoadDiagnostics.cs",
+      "bytes": 4300,
+      "sha256": "9a9a98e91c4cbb969edb2c2a8e923f2068bef1daa11043dff305199e31d43366"
+    },
+    {
+      "path": "sdk/bindings/csharp/Native.cs",
+      "source": "sdk/bindings/csharp/Native.cs",
+      "bytes": 9842,
+      "sha256": "3a3670eae35bdbe80e7980b36a00305c7d0a5523da3cb7c6e73cf02b9a471247"
+    },
+    {
+      "path": "sdk/bindings/csharp/NativeTypes.cs",
+      "source": "sdk/bindings/csharp/NativeTypes.cs",
+      "bytes": 12363,
+      "sha256": "a73b3c1cd83054aa6ada9d47067ed39f47e1720d6f934b3b99ac1f6eb11d96cb"
+    },
+    {
+      "path": "sdk/bindings/csharp/Ownership.cs",
+      "source": "sdk/bindings/csharp/Ownership.cs",
+      "bytes": 3989,
+      "sha256": "ab8648576d79672036ba2de8790fa75dd6fad098970dbf89546f76f77082f02c"
+    },
+    {
+      "path": "sdk/bindings/csharp/PixelBuffer.cs",
+      "source": "sdk/bindings/csharp/PixelBuffer.cs",
+      "bytes": 2615,
+      "sha256": "f2654c97512a075d1f3b8090381fd370ea6e851a5f5587247b1db8f9110cbe98"
+    },
+    {
+      "path": "sdk/bindings/csharp/Vision.cs",
+      "source": "sdk/bindings/csharp/Vision.cs",
+      "bytes": 11383,
+      "sha256": "6703a7864811ad9c012706a0c74f8dd828c367fd6c2bb8dd1c4d7c0cbccf97f0"
+    },
+    {
+      "path": "sdk/bindings/python/amrt_sdk.py",
+      "source": "sdk/bindings/python/amrt_sdk.py",
+      "bytes": 44553,
+      "sha256": "f4a1cc1058113b1c64fb598e4a73df7f667857801c7a240256bafa9cf75ddd28"
+    },
+    {
+      "path": "sdk/bindings/python/load_diagnostics.py",
+      "source": "sdk/bindings/python/load_diagnostics.py",
+      "bytes": 1529,
+      "sha256": "7b1912a133e88711d08bda089a612c42fe8fe778b8272937a3bce67f9588abf3"
+    },
+    {
+      "path": "sdk/bindings/python/safe_sdk.py",
+      "source": "sdk/bindings/python/safe_sdk.py",
+      "bytes": 17845,
+      "sha256": "274a03e40a29b0e9f55fe248ea21cc75cbb140f6c9d59d5336159f3d23f7c376"
+    },
+    {
+      "path": "sdk/examples/Inference.cs",
+      "source": "sdk/examples/Inference.cs",
+      "bytes": 2564,
+      "sha256": "6ccc018dabdf595b9ccbb67eaefff14a36856489600a1b08fe91afd87b834b09"
+    },
+    {
+      "path": "sdk/examples/Lifecycle.cs",
+      "source": "sdk/examples/Lifecycle.cs",
+      "bytes": 2253,
+      "sha256": "c9045251b5afc852c56c78214b340c5986672358507c3788366ade5f39c884b4"
+    },
+    {
+      "path": "sdk/examples/README.md",
+      "source": "sdk/examples/README.md",
+      "bytes": 3933,
+      "sha256": "b9cec08e5eb9f77d076c48eb59e653026ee3e6caefb1b9356590a24d8c7d1e45"
+    },
+    {
+      "path": "sdk/examples/camera.py",
+      "source": "sdk/examples/camera.py",
+      "bytes": 1312,
+      "sha256": "6b3763ee178f25553525ff2d54b66e216d4c579750965017a89312eeb780f592"
+    },
+    {
+      "path": "sdk/examples/inference.c",
+      "source": "sdk/examples/inference.c",
+      "bytes": 4611,
+      "sha256": "32cd0e87cbfbf372126d97021c525d38837a882237625146cce3957f9aaba863"
+    },
+    {
+      "path": "sdk/examples/inference.cpp",
+      "source": "sdk/examples/inference.cpp",
+      "bytes": 7417,
+      "sha256": "b5398bc5e15a74e2f8b6393ba34013c1783f9e463ee4dca56cbab40522c77c01"
+    },
+    {
+      "path": "sdk/examples/inference.py",
+      "source": "sdk/examples/inference.py",
+      "bytes": 2971,
+      "sha256": "4db5029be8c79f402da1693c1b7fe5a035c20f14a59e48a03800d706b79abea0"
+    },
+    {
+      "path": "sdk/examples/lifecycle.c",
+      "source": "sdk/examples/lifecycle.c",
+      "bytes": 3169,
+      "sha256": "b807b5318ccf82a948c1be82655237ccde44059159e96e0d575f33fef87b5740"
+    },
+    {
+      "path": "sdk/examples/lifecycle.cpp",
+      "source": "sdk/examples/lifecycle.cpp",
+      "bytes": 1057,
+      "sha256": "8bb2e80b8eeff9e593d0ad4ffe444fb4b25bcf6fefde7f1e22b4190418484fff"
+    },
+    {
+      "path": "sdk/examples/shared_frame.c",
+      "source": "sdk/examples/shared_frame.c",
+      "bytes": 3368,
+      "sha256": "68f04846f6344741e835c826b68624753e2f89388c6510a4a4c0c6d32313263e"
+    },
+    {
+      "path": "sdk/include/am_camera.h",
+      "source": "sdk/include/am_camera.h",
+      "bytes": 7795,
+      "sha256": "37e2ae17922bc7f49279796862a3c76d52d26666d9f4dad4cafba432739bf439"
+    },
+    {
+      "path": "sdk/include/am_sdk_types.h",
+      "source": "sdk/include/am_sdk_types.h",
+      "bytes": 64831,
+      "sha256": "153215983593445a5033531f8a4e507122a43dd2445295bf183bc4a577a29612"
+    },
+    {
+      "path": "sdk/include/am_vision.h",
+      "source": "sdk/include/am_vision.h",
+      "bytes": 5522,
+      "sha256": "77db1958648669b6fed0d0ba62865246fe2f4624211f5066b8386b444e2b0336"
+    },
+    {
+      "path": "sdk/runtime/README.md",
+      "source": "sdk/runtime/README.md",
+      "bytes": 5550,
+      "sha256": "01f588f68a1f1ba0e8a44950189089a3f17cede62e98aa9a040ccc0e0b308bce"
+    },
+    {
+      "path": "sdk/runtime/ffmpeg-build/README.md",
+      "source": "sdk/runtime/ffmpeg-build/README.md",
+      "bytes": 2782,
+      "sha256": "c54aaf385a4aaef697b0bda74fb3f963a4eb7e1fab58c7a38edf67ffd0cd06b6"
+    },
+    {
+      "path": "sdk/runtime/ffmpeg-build/minimal-20261026.json",
+      "source": "sdk/runtime/ffmpeg-build/minimal-20261026.json",
+      "bytes": 10886,
+      "sha256": "764ea2d3e0e199f06c71db93254778bcd85babf65dcdd55e906054f8460eec0a"
+    },
+    {
+      "path": "sdk/third-party/.gitattributes",
+      "source": "sdk/third-party/.gitattributes",
+      "bytes": 310,
+      "sha256": "7a54e399c62a7121fba8c11071007414b639a176f3e644881ab466fbdc4edfae"
+    },
+    {
+      "path": "sdk/third-party/NOTICE.md",
+      "source": "sdk/third-party/NOTICE.md",
+      "bytes": 1676,
+      "sha256": "2f8e9650f04f598eb273cc50c50d6d70e8adf956fd1aaa3f5254c10aaccebb4f"
+    },
+    {
+      "path": "sdk/third-party/README.md",
+      "source": "sdk/third-party/README.md",
+      "bytes": 5030,
+      "sha256": "4239211a52a2c1d09820066620782c9282df670b4ce348e6c53ce35555729566"
+    },
+    {
+      "path": "sdk/third-party/ffmpeg/COPYING.GPLv3",
+      "source": "sdk/third-party/ffmpeg/COPYING.GPLv3",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    },
+    {
+      "path": "sdk/third-party/ffmpeg/COPYING.LGPLv2.1",
+      "source": "sdk/third-party/ffmpeg/COPYING.LGPLv2.1",
+      "bytes": 26517,
+      "sha256": "246041b6ecf9bc32d718a62c57877c78b5eb397b6467e74ed7ae2626ab189c30"
+    },
+    {
+      "path": "sdk/third-party/ffmpeg/COPYING.LGPLv3",
+      "source": "sdk/third-party/ffmpeg/COPYING.LGPLv3",
+      "bytes": 7651,
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+    },
+    {
+      "path": "sdk/third-party/ffmpeg/LICENSE.md.original",
+      "source": "sdk/third-party/ffmpeg/LICENSE.md.original",
+      "bytes": 4352,
+      "sha256": "e6dc72d5665a1ebd6dcc841de59278dad4ca77ecc47b03f1064a55c3e9ea8bb8"
+    },
+    {
+      "path": "sdk/third-party/materials-lock.json",
+      "source": "sdk/third-party/materials-lock.json",
+      "bytes": 4736,
+      "sha256": "1abc09daba1c292fa9611bb202f70b8b237898197011f9dddc62ac2b7653abeb"
+    },
+    {
+      "path": "sdk/third-party/onnxruntime/LICENSE",
+      "source": "sdk/third-party/onnxruntime/LICENSE",
+      "bytes": 1094,
+      "sha256": "c250d6278f0b47a6439fb7592b08b58a55eb9f535aa49a1db63211c3f982b674"
+    },
+    {
+      "path": "sdk/third-party/profiles/minimal-20261026.json",
+      "source": "sdk/third-party/profiles/minimal-20261026.json",
+      "bytes": 8992,
+      "sha256": "e237f1203ad613376070cc74efd748add76a91e7bff9bdc5e146ef8b2f37a363"
+    },
+    {
+      "path": "sdk/third-party/toolchain/crt/COPYING",
+      "source": "sdk/third-party/toolchain/crt/COPYING",
+      "bytes": 2326,
+      "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+    },
+    {
+      "path": "sdk/third-party/toolchain/crt/COPYING.MinGW-w64-runtime.txt",
+      "source": "sdk/third-party/toolchain/crt/COPYING.MinGW-w64-runtime.txt",
+      "bytes": 12155,
+      "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+    },
+    {
+      "path": "sdk/third-party/toolchain/crt/COPYING.MinGW-w64.txt",
+      "source": "sdk/third-party/toolchain/crt/COPYING.MinGW-w64.txt",
+      "bytes": 5905,
+      "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+    },
+    {
+      "path": "sdk/third-party/toolchain/gcc-libs/COPYING.LIB",
+      "source": "sdk/third-party/toolchain/gcc-libs/COPYING.LIB",
+      "bytes": 26527,
+      "sha256": "a9bdde5616ecdd1e980b44f360600ee8783b1f99b8cc83a2beb163a0a390e861"
+    },
+    {
+      "path": "sdk/third-party/toolchain/gcc-libs/COPYING.RUNTIME",
+      "source": "sdk/third-party/toolchain/gcc-libs/COPYING.RUNTIME",
+      "bytes": 3324,
+      "sha256": "9d6b43ce4d8de0c878bf16b54d8e7a10d9bd42b75178153e3af6a815bdc90f74"
+    },
+    {
+      "path": "sdk/third-party/toolchain/gcc-libs/COPYING3",
+      "source": "sdk/third-party/toolchain/gcc-libs/COPYING3",
+      "bytes": 35147,
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+    },
+    {
+      "path": "sdk/third-party/toolchain/gcc-libs/README",
+      "source": "sdk/third-party/toolchain/gcc-libs/README",
+      "bytes": 236,
+      "sha256": "33400d067fa3e2bd670a0868dcdb60c9486e8f559b675cf9ff1ff55d4e0d06ab"
+    },
+    {
+      "path": "sdk/third-party/toolchain/headers/COPYING",
+      "source": "sdk/third-party/toolchain/headers/COPYING",
+      "bytes": 2326,
+      "sha256": "99a69660981156c21336fdb5661f89341b013c94e4bf9e1c7467b4745718397f"
+    },
+    {
+      "path": "sdk/third-party/toolchain/headers/COPYING.MinGW-w64-runtime.txt",
+      "source": "sdk/third-party/toolchain/headers/COPYING.MinGW-w64-runtime.txt",
+      "bytes": 12155,
+      "sha256": "1db8da07b436c68833c0673ffee3d9fcb2526047f3820b81661865dfedc79a1f"
+    },
+    {
+      "path": "sdk/third-party/toolchain/headers/COPYING.MinGW-w64.txt",
+      "source": "sdk/third-party/toolchain/headers/COPYING.MinGW-w64.txt",
+      "bytes": 5905,
+      "sha256": "f38e6194bd3bfa1b654f118e5acefe0aead437bbe669eee43957ccc65a7127f1"
+    },
+    {
+      "path": "sdk/third-party/toolchain/headers/ddk-readme.txt",
+      "source": "sdk/third-party/toolchain/headers/ddk-readme.txt",
+      "bytes": 762,
+      "sha256": "fdb6018009cec99085041e4fd1f13db7b82852e9aa73012d0cc7da6449b94f13"
+    },
+    {
+      "path": "sdk/third-party/toolchain/libwinpthread/COPYING",
+      "source": "sdk/third-party/toolchain/libwinpthread/COPYING",
+      "bytes": 2883,
+      "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+    },
+    {
+      "path": "sdk/third-party/toolchain/winpthreads/COPYING",
+      "source": "sdk/third-party/toolchain/winpthreads/COPYING",
+      "bytes": 2883,
+      "sha256": "63263614cdd29f2f93cba85e992f041b31f9fc7b4033692f31269489a8a1b177"
+    },
+    {
+      "path": "docs/design/dual-dll-sdk.md",
+      "source": "docs/design/dual-dll-sdk.md",
+      "bytes": 31409,
+      "sha256": "386153516c32fced31728159d309487d1820af7ffbfd2558ae9f6762e162555a"
+    },
+    {
+      "path": "docs/design/dual-dll-abi.md",
+      "source": "docs/design/dual-dll-abi.md",
+      "bytes": 141994,
+      "sha256": "c1998a6efca1ad0143101882eb3af9b3f8f63c42f88e67594b636e958c247e8b"
+    },
+    {
+      "path": "docs/design/dual-dll-abi-types.md",
+      "source": "docs/design/dual-dll-abi-types.md",
+      "bytes": 61649,
+      "sha256": "ccff621004fd9ba53b29e28ecc3ca705f8122b7492d7efdd182cb6de63ff2c01"
+    },
+    {
+      "path": "docs/design/dual-sdk-abi-freeze-v1.md",
+      "source": "docs/design/dual-sdk-abi-freeze-v1.md",
+      "bytes": 10527,
+      "sha256": "2c994a5c27bc48fd0a4ef7d1e82bd1c7afdf5883ad98c84e85a5b480870c5787"
+    },
+    {
+      "path": "docs/design/dual-sdk-shared-frames.md",
+      "source": "docs/design/dual-sdk-shared-frames.md",
+      "bytes": 12664,
+      "sha256": "8f5276f274aae0c25026a3d02dcacdb7d42582829f4f91de7416e73a7ff62efb"
+    },
+    {
+      "path": "docs/design/dual-sdk-shared-layout-v1.md",
+      "source": "docs/design/dual-sdk-shared-layout-v1.md",
+      "bytes": 4701,
+      "sha256": "4ce47bbbd92c80763c5d41fb2861f186e3639776958fc5f6fb6b5da44966f464"
+    },
+    {
+      "path": "LICENSE",
+      "source": "sdk/LICENSE",
+      "bytes": 11358,
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "NOTICE",
+      "source": "sdk/NOTICE",
+      "bytes": 302,
+      "sha256": "db4a775c61182643e53c6da2e7f45a4ff5e1515e24ddc378fbb2ce6af5f60180"
+    },
+    {
+      "path": "README.md",
+      "source": "sdk/FRAMEBRAID.md",
+      "bytes": 3651,
+      "sha256": "abe778e36c79e647171bcb78ec692b267789ca4b0e0c5fb4d893f7444b620dec"
+    },
+    {
+      "path": "sdk/LOCAL-VERIFICATION.md",
+      "source": "sdk/LOCAL-VERIFICATION.md",
+      "bytes": 1575,
+      "sha256": "f1d86f2216d8c22fa30c7fae626f30c085f0b8e0c047e9d7f5f0181fa4fc13ab"
+    },
+    {
+      "path": "Cargo.toml",
+      "source": "generated:standalone-workspace",
+      "bytes": 798,
+      "sha256": "ea1d4382437a036623a74884774c5819ec60ff16aeae29b76e4164ddb9087955"
+    }
+  ]
+}

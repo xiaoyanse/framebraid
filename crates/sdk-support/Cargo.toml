@@ -1,0 +1,17 @@
+[package]
+name = "am-sdk-support"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+publish = false
+
+[features]
+default = []
+shared-frames = []
+
+[dependencies]
+am-sdk-abi = { path = "../sdk-abi" }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Security", "Win32_Security_Authorization", "Win32_Security_Cryptography", "Win32_System_Memory", "Win32_System_Performance", "Win32_System_Threading", "Win32_System_RemoteDesktop"] }

@@ -1,0 +1,16 @@
+[package]
+name = "am-vision-ffi"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+publish = false
+[lib]
+name = "am_vision"
+crate-type = ["cdylib"]
+[features]
+default = []
+shared-frames = ["am-sdk-support/shared-frames"]
+[dependencies]
+am-sdk-support = { path = "../sdk-support" }
+am-vision-core = { package = "am-vision", path = "../vision" }

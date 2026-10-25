@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "scope": "Windows x64 CPU base package; OpenVINO/CUDA provider binaries excluded",
+  "artifacts": [
+    {
+      "id": "ort-wheel",
+      "file": "onnxruntime_openvino-1.24.1-cp312-cp312-win_amd64.whl",
+      "url": "https://files.pythonhosted.org/packages/59/37/d301f2c68b19a9485ed5db3047e0fb52478f3e73eb08c7d2a7c61be7cc1c/onnxruntime_openvino-1.24.1-cp312-cp312-win_amd64.whl",
+      "sha256": "f186335a9c9b255633275290da7521d3d4d14c7773fee3127bfa040234d3fa5a",
+      "bytes": 13658075
+    },
+    {
+      "id": "ffmpeg-distribution",
+      "file": "ffmpeg-N-127941-g303510f9d1-win64-lgpl-shared.zip",
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-22-13-06/ffmpeg-N-127941-g303510f9d1-win64-lgpl-shared.zip",
+      "sha256": "cf0a33cd8bd47da32d62541a9b87c02678e2c57d4ca508abf0b0400b11727e81",
+      "bytes": 82103053
+    },
+    {
+      "id": "ffmpeg-source",
+      "file": "ffmpeg-303510f9d1.tar.gz",
+      "url": "https://codeload.github.com/FFmpeg/FFmpeg/tar.gz/303510f9d1",
+      "sha256": "5a1063443078be230709462c289f10b6695dfc88e7fb7009d5a1c58885562f2a",
+      "bytes": 17964769
+    },
+    {
+      "id": "ffmpeg-build-recipes",
+      "file": "ffmpeg-builds-937868360a21d711ec94a33f5591d345ad9b7754.tar.gz",
+      "url": "https://codeload.github.com/BtbN/FFmpeg-Builds/tar.gz/937868360a21d711ec94a33f5591d345ad9b7754",
+      "sha256": "9ee4b55c6bf1ea2f9ee50a63bac8887532117ce9f7e7b0e2842a533b2d5f046a",
+      "bytes": 116848
+    }
+  ],
+  "texts": [
+    {
+      "path": "onnxruntime/LICENSE",
+      "sha256": "c250d6278f0b47a6439fb7592b08b58a55eb9f535aa49a1db63211c3f982b674",
+      "artifact": "ort-wheel",
+      "member": "onnxruntime/LICENSE"
+    },
+    {
+      "path": "onnxruntime/ThirdPartyNotices.txt",
+      "sha256": "fb0af774b4d7cffc5b9d046f2aaeade2f37df2f80abf8033c95dfffcc77a8866",
+      "artifact": "ort-wheel",
+      "member": "onnxruntime/ThirdPartyNotices.txt",
+      "external": true,
+      "externalPath": "texts/onnxruntime/ThirdPartyNotices.txt"
+    },
+    {
+      "path": "ffmpeg/COPYING.LGPLv3",
+      "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+      "artifact": "ffmpeg-source",
+      "member": "FFmpeg-303510f9d1/COPYING.LGPLv3"
+    },
+    {
+      "path": "ffmpeg/COPYING.GPLv3",
+      "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+      "artifact": "ffmpeg-source",
+      "member": "FFmpeg-303510f9d1/COPYING.GPLv3"
+    },
+    {
+      "path": "ffmpeg/LICENSE.md.original",
+      "sha256": "e6dc72d5665a1ebd6dcc841de59278dad4ca77ecc47b03f1064a55c3e9ea8bb8",
+      "artifact": "ffmpeg-source",
+      "member": "FFmpeg-303510f9d1/LICENSE.md"
+    }
+  ],
+  "binaries": [
+    {
+      "group": "ffmpeg",
+      "file": "avcodec-63.dll",
+      "sha256": "e10e95f0446308e649c67ece7d4e3d29f61227d9f4c7ccbff9271b2dd983cec9",
+      "artifact": "ffmpeg-distribution"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "avformat-63.dll",
+      "sha256": "41bd9c75dab9c28f740d3bbd6d453d3d3f2986ea7b44f1ecb580252634342a55",
+      "artifact": "ffmpeg-distribution"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "avutil-61.dll",
+      "sha256": "20dc2312c46fe3298d2f9c0bd1801ab8e7416c36a1399242b3b46182e1dfcfc2",
+      "artifact": "ffmpeg-distribution"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "swscale-10.dll",
+      "sha256": "8d0ee018d93c444fe1a0a5bb35479285c584843ba233e5ebb57bb7b1a9526a72",
+      "artifact": "ffmpeg-distribution"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "swresample-7.dll",
+      "sha256": "facc154cfaee211987c4563ce5f0b8250e6edb49d5b59e11dc628c341268e7b3",
+      "artifact": "ffmpeg-distribution"
+    },
+    {
+      "group": "onnxruntime-cpu",
+      "file": "onnxruntime.dll",
+      "sha256": "66e62f7bebf65b048ff1a93c40a73df93c36f93ce5bb085076de92b1a1e754fd",
+      "artifact": "ort-wheel"
+    }
+  ],
+  "sourceClosure": {
+    "ffmpegMainSource": "complete-at-303510f9d1",
+    "ffmpegBuildRecipes": "workflow-39776938430-head-937868360a21d711ec94a33f5591d345ad9b7754",
+    "ffmpegStaticDependencies": "incomplete-not-authorized-for-external-distribution",
+    "reason": "BtbN archive statically incorporates third-party components; release contains no full third-party notices/source bundle. Recipe scripts are not the corresponding source closure."
+  },
+  "vcRuntime": {
+    "packaged": false,
+    "officialInstaller": "https://aka.ms/vs/17/release/vc_redist.x64.exe",
+    "officialDocumentation": "https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170",
+    "instruction": "Install Microsoft-signed x64 redistributable if required; retain installer terms. No arbitrary system DLL redistribution."
+  }
+}

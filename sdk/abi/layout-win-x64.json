@@ -1,0 +1,301 @@
+{
+  "target": "windows-x64-default-packing",
+  "structures": {
+    "am_version_info_t": {
+      "size": 40,
+      "align": 8
+    },
+    "amc_init_params_t": {
+      "size": 48,
+      "align": 8
+    },
+    "amv_init_params_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_error_info_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_init_error_t": {
+      "size": 288,
+      "align": 8
+    },
+    "am_request_snapshot_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_queue_policy_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_credential_data_t": {
+      "size": 24,
+      "align": 8
+    },
+    "am_credential_provider_t": {
+      "size": 40,
+      "align": 8
+    },
+    "am_shared_frame_desc_t": {
+      "size": 184,
+      "align": 8
+    },
+    "am_shared_pool_config_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_shared_pool_attach_desc_t": {
+      "size": 72,
+      "align": 8
+    },
+    "am_shared_frame_view_t": {
+      "size": 232,
+      "align": 8
+    },
+    "am_shared_pool_stats_t": {
+      "size": 88,
+      "align": 8
+    },
+    "amc_capability_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_source_desc_t": {
+      "size": 64,
+      "align": 8
+    },
+    "am_source_status_t": {
+      "size": 40,
+      "align": 8
+    },
+    "am_reconnect_policy_t": {
+      "size": 20,
+      "align": 4
+    },
+    "am_probe_candidate_t": {
+      "size": 64,
+      "align": 8
+    },
+    "am_probe_request_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_probe_result_t": {
+      "size": 16,
+      "align": 8
+    },
+    "am_encoded_packet_t": {
+      "size": 80,
+      "align": 8
+    },
+    "am_encoded_sub_desc_t": {
+      "size": 24,
+      "align": 8
+    },
+    "am_frame_view_t": {
+      "size": 112,
+      "align": 8
+    },
+    "am_spatial_transform_t": {
+      "size": 24,
+      "align": 4
+    },
+    "am_frame_meta_t": {
+      "size": 104,
+      "align": 8
+    },
+    "am_scale_preset_t": {
+      "size": 8,
+      "align": 4
+    },
+    "am_frame_sub_desc_t": {
+      "size": 40,
+      "align": 8
+    },
+    "am_decoder_config_t": {
+      "size": 80,
+      "align": 8
+    },
+    "am_decoder_input_t": {
+      "size": 40,
+      "align": 8
+    },
+    "am_decoder_status_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_decoder_info_t": {
+      "size": 40,
+      "align": 8
+    },
+    "am_capture_request_t": {
+      "size": 28,
+      "align": 4
+    },
+    "am_captured_image_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_capture_continuous_desc_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_capture_stats_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_event_detail_t": {
+      "size": 40,
+      "align": 8
+    },
+    "amv_capability_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_backend_row_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_backend_matrix_t": {
+      "size": 16,
+      "align": 8
+    },
+    "am_backend_policy_t": {
+      "size": 12,
+      "align": 4
+    },
+    "am_raw_preprocess_t": {
+      "size": 56,
+      "align": 4
+    },
+    "am_model_desc_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_model_memory_desc_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_io_spec_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_backend_actual_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_model_identity_t": {
+      "size": 24,
+      "align": 8
+    },
+    "am_model_info_t": {
+      "size": 104,
+      "align": 8
+    },
+    "am_frame_assoc_t": {
+      "size": 80,
+      "align": 8
+    },
+    "am_image_input_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_infer_params_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_tensor_in_t": {
+      "size": 64,
+      "align": 8
+    },
+    "am_batch_item_t": {
+      "size": 48,
+      "align": 8
+    },
+    "am_batch_options_t": {
+      "size": 12,
+      "align": 4
+    },
+    "am_batch_receipt_t": {
+      "size": 24,
+      "align": 8
+    },
+    "am_preprocess_meta_t": {
+      "size": 48,
+      "align": 4
+    },
+    "am_tensor_out_t": {
+      "size": 56,
+      "align": 8
+    },
+    "am_keypoint_t": {
+      "size": 12,
+      "align": 4
+    },
+    "am_pose_detection_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_pose_result_t": {
+      "size": 16,
+      "align": 8
+    },
+    "am_detect_box_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_detect_result_t": {
+      "size": 16,
+      "align": 8
+    },
+    "am_classify_entry_t": {
+      "size": 32,
+      "align": 8
+    },
+    "am_classify_result_t": {
+      "size": 16,
+      "align": 8
+    },
+    "am_roi_map_t": {
+      "size": 20,
+      "align": 4
+    },
+    "am_segment_instance_t": {
+      "size": 72,
+      "align": 8
+    },
+    "am_segment_result_t": {
+      "size": 16,
+      "align": 8
+    },
+    "am_obb_instance_t": {
+      "size": 64,
+      "align": 4
+    },
+    "am_obb_result_t": {
+      "size": 16,
+      "align": 8
+    },
+    "amv_result_t": {
+      "size": 208,
+      "align": 8
+    },
+    "am_realtime_policy_t": {
+      "size": 20,
+      "align": 4
+    },
+    "am_limits_t": {
+      "size": 160,
+      "align": 8
+    },
+    "am_stats_t": {
+      "size": 232,
+      "align": 8
+    },
+    "am_pixel_view_t": {
+      "size": 48,
+      "align": 8
+    }
+  }
+}

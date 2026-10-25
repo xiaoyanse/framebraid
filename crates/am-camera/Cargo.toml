@@ -1,0 +1,32 @@
+[package]
+name = "am-camera"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license = "Apache-2.0"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+reqwest = { version = "0.12", default-features = false, features = ["blocking", "rustls-tls"] }
+base64 = "0.22"
+md5 = "0.7"
+uuid = { version = "1", features = ["v4"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
+sha2 = "0.10"
+libloading = "0.9"
+# 搬运会话客户端队列唤醒（仅 sync 原语，无 runtime）
+tokio = { version = "1", features = ["sync"] }
+
+# testkit：测试构建放大帧预算水位（对齐迁移前 app-core cfg(test) 行为），
+# 由 app-core 经 dev-dependencies 开启，生产构建不启用
+[features]
+default = []
+testkit = []
+
+
+[dev-dependencies]
+tempfile = "3"
+# 会话订阅异步用例（rt/macros/time 仅测试启用）
+tokio = { version = "1", features = ["rt", "macros", "time"] }

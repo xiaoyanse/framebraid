@@ -1,0 +1,307 @@
+mod admission;
+mod execution;
+mod native_execution;
+use super::{
+    error, lock,
+    models::ModelHandle,
+    results::ResultBuffer,
+    state::{Record, State},
+    submission::{Input, Plan},
+};
+use am_sdk_support::{
+    abi::*,
+    context::{Context, ThreadBudget},
+    handles::Entry,
+    Result,
+};
+use std::{
+    collections::VecDeque,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Arc, Condvar, Mutex, Weak,
+    },
+};
+
+static THREADS_PEAK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static ENGINE: Mutex<Option<Arc<Engine>>> = Mutex::new(None);
+struct Data {
+    queue: VecDeque<Job>,
+    contexts: Vec<Weak<State>>,
+    inflight: usize,
+    bytes: usize,
+    extra_threads: usize,
+    last: Option<(usize, u64)>,
+    waiters: usize,
+    models: usize,
+}
+struct Engine {
+    data: Mutex<Data>,
+    wake: Condvar,
+    budget: ThreadBudget,
+    stop: AtomicBool,
+    threads: Mutex<Vec<std::thread::JoinHandle<()>>>,
+}
+pub struct ModelPermit {
+    engine: Arc<Engine>,
+    extra: usize,
+}
+impl ModelPermit {
+    pub fn add_callback_thread(&mut self) -> Result<()> {
+        let mut data = lock(&self.engine.data)?;
+        if data.extra_threads + 1 + self.engine.budget.parallel as usize
+            > self.engine.budget.total as usize
+        {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        data.extra_threads += 1;
+        THREADS_PEAK.fetch_max(
+            data.extra_threads + self.engine.budget.parallel as usize,
+            Ordering::AcqRel,
+        );
+        self.extra += 1;
+        Ok(())
+    }
+    pub fn undo_callback_thread(&mut self) {
+        if let Ok(mut data) = self.engine.data.lock() {
+            data.extra_threads -= 1;
+            self.extra -= 1;
+        }
+    }
+}
+impl Drop for ModelPermit {
+    fn drop(&mut self) {
+        release_model(&self.engine, self.extra);
+    }
+}
+pub fn reserve_model(budget: ThreadBudget, extra: usize) -> Result<ModelPermit> {
+    if extra
+        .checked_add(budget.parallel as usize)
+        .is_none_or(|n| n > budget.total as usize)
+    {
+        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    }
+    let mut global = lock(&ENGINE)?;
+    if global.is_none() {
+        let engine = Arc::new(Engine {
+            data: Mutex::new(Data {
+                queue: VecDeque::new(),
+                contexts: Vec::new(),
+                inflight: 0,
+                bytes: 0,
+                extra_threads: 0,
+                last: None,
+                waiters: 0,
+                models: 0,
+            }),
+            wake: Condvar::new(),
+            budget,
+            stop: AtomicBool::new(false),
+            threads: Mutex::default(),
+        });
+        let mut threads = Vec::new();
+        for index in 0..budget.parallel {
+            let owned = engine.clone();
+            match std::thread::Builder::new()
+                .name(format!("am-sdk-infer-{index}"))
+                .spawn(move || execution::worker(owned))
+            {
+                Ok(t) => threads.push(t),
+                Err(_) => {
+                    engine.stop.store(true, Ordering::Release);
+                    engine.wake.notify_all();
+                    for t in threads {
+                        let _ = t.join();
+                    }
+                    return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+                }
+            }
+        }
+        *lock(&engine.threads)? = threads;
+        *global = Some(engine);
+    }
+    let engine = global.as_ref().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
+    if engine.budget != budget {
+        return Err(AM_ERR_SDK_DOMAIN_CONFLICT);
+    }
+    let mut data = lock(&engine.data)?;
+    if data.extra_threads + extra + budget.parallel as usize > budget.total as usize {
+        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    }
+    data.extra_threads += extra;
+    data.models += 1;
+    THREADS_PEAK.fetch_max(
+        data.extra_threads + budget.parallel as usize,
+        Ordering::AcqRel,
+    );
+    Ok(ModelPermit {
+        engine: engine.clone(),
+        extra,
+    })
+}
+fn release_model(engine: &Arc<Engine>, extra: usize) {
+    let Ok(mut global) = ENGINE.lock() else {
+        return;
+    };
+    if !global.as_ref().is_some_and(|e| Arc::ptr_eq(e, engine)) {
+        return;
+    }
+    let last = if let Ok(mut data) = engine.data.lock() {
+        data.extra_threads -= extra;
+        data.models -= 1;
+        data.models == 0
+    } else {
+        false
+    };
+    if last {
+        // 最后模型会话已释放；持域锁完成join，防止新旧执行器短暂重叠超出预算。
+        engine.stop.store(true, Ordering::Release);
+        engine.wake.notify_all();
+        if let Ok(mut threads) = engine.threads.lock() {
+            for thread in threads.drain(..) {
+                let _ = thread.join();
+            }
+        }
+        *global = None;
+    }
+}
+pub fn wake() {
+    if let Ok(global) = ENGINE.lock() {
+        if let Some(engine) = &*global {
+            engine.wake.notify_all();
+        }
+    }
+}
+fn engine() -> Result<Arc<Engine>> {
+    lock(&ENGINE)?.clone().ok_or(AM_ERR_SDK_INTERNAL_ERROR)
+}
+pub(super) struct Admission {
+    engine: Arc<Engine>,
+    bytes: usize,
+    items: usize,
+}
+impl Drop for Admission {
+    fn drop(&mut self) {
+        if let Ok(mut d) = self.engine.data.lock() {
+            d.inflight -= self.items;
+            d.bytes -= self.bytes;
+        }
+        self.engine.wake.notify_all();
+    }
+}
+struct Job {
+    model: Arc<Entry>,
+    input: Payload,
+    id: u64,
+    params: am_infer_params_t,
+    parallel: usize,
+    _admission: Admission,
+}
+enum Payload {
+    Single(Input),
+    Native { inputs: Vec<Input>, ids: Vec<u64> },
+}
+// params中raw_preprocess不跨线程使用，接受前已复制进Input；其余字段是纯值。
+unsafe impl Send for Job {}
+pub unsafe fn submit(entry: Arc<Entry>, plan: Plan) -> Result<u64> {
+    let result = unsafe { admission::submit(entry.clone(), &[&plan], false, false, None) };
+    if result
+        .as_ref()
+        .is_err_and(|e| matches!(*e, AM_ERR_SDK_QUEUE_FULL | AM_ERR_SDK_RESOURCE_EXHAUSTED))
+    {
+        entry
+            .data::<ModelHandle>()?
+            .state
+            .metrics
+            .rejected
+            .fetch_add(1, Ordering::AcqRel);
+    }
+    let ids = result?;
+    ids.first().copied().ok_or(AM_ERR_SDK_INTERNAL_ERROR)
+}
+pub(super) unsafe fn submit_offline(
+    entry: Arc<Entry>,
+    plans: &[&Plan],
+    native: bool,
+    deadline: Option<std::time::Instant>,
+) -> Result<Vec<u64>> {
+    unsafe { admission::submit(entry, plans, native, true, deadline) }
+}
+pub(super) fn reserve_metadata(state: &State, bytes: usize) -> Result<Admission> {
+    let e = engine()?;
+    let ctx = state.context()?;
+    let c = ctx.data::<Context>()?;
+    let max = lock(&c.limits)?
+        .preprocess_budget_bytes
+        .min(lock(&c.queues)?[AM_Q_OFFLINE_BATCH as usize].max_bytes) as usize;
+    let mut d = lock(&e.data)?;
+    if d.bytes.checked_add(bytes).is_none_or(|v| v > max) {
+        return Err(AM_ERR_SDK_QUEUE_FULL);
+    }
+    d.bytes += bytes;
+    Ok(Admission {
+        engine: e.clone(),
+        bytes,
+        items: 0,
+    })
+}
+pub(super) struct Waiter {
+    engine: Arc<Engine>,
+    state: Arc<State>,
+}
+impl Drop for Waiter {
+    fn drop(&mut self) {
+        if let Ok(mut d) = self.engine.data.lock() {
+            d.waiters -= 1;
+        }
+        self.state.usage.waiters.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+pub(super) fn waiter(state: Arc<State>, maximum: usize) -> Result<Waiter> {
+    let e = engine()?;
+    let mut d = lock(&e.data)?;
+    let max = maximum.min(16);
+    if d.waiters >= 16 || state.usage.waiters.load(Ordering::Acquire) >= max {
+        return Err(AM_ERR_SDK_QUEUE_FULL);
+    }
+    d.waiters += 1;
+    state.usage.waiters.fetch_add(1, Ordering::AcqRel);
+    Ok(Waiter {
+        engine: e.clone(),
+        state,
+    })
+}
+pub(super) fn wait(duration: std::time::Duration) -> Result<()> {
+    let e = engine()?;
+    let data = lock(&e.data)?;
+    let _ = e
+        .wake
+        .wait_timeout(data, duration.min(std::time::Duration::from_millis(50)))
+        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests;
+
+pub fn snapshot(state: &Arc<State>) -> Result<(usize, usize, usize, usize)> {
+    let global = lock(&ENGINE)?;
+    let Some(e) = global.as_ref() else {
+        return Ok((0, 0, 0, THREADS_PEAK.load(Ordering::Acquire)));
+    };
+    let d = lock(&e.data)?;
+    let jobs = d
+        .queue
+        .iter()
+        .filter(|j| {
+            j.model
+                .data::<ModelHandle>()
+                .is_ok_and(|m| Arc::ptr_eq(&m.state, state))
+        })
+        .collect::<Vec<_>>();
+    Ok((
+        jobs.iter().map(|j| j._admission.items).sum(),
+        jobs.iter().map(|j| j._admission.bytes).sum(),
+        d.extra_threads + e.budget.parallel as usize,
+        THREADS_PEAK.load(Ordering::Acquire),
+    ))
+}

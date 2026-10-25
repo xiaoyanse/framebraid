@@ -1,0 +1,4 @@
+# 保留提取源码原字节，避免跨平台检出改变来源指纹。
+* -text whitespace=cr-at-eol
+# 上游许可与属性文件的原始空白不得重写。
+sdk/third-party/** -whitespace
