@@ -2,6 +2,12 @@
 
 ## Unreleased / 未发布
 
+- Fixed runtime version diagnostics: Cargo package version, actual target, source commit/state,
+  build profile and shared-frame feature, without changing C ABI 1.0 layouts or exports.
+- Retained original extraction provenance and added an explicit source-revision overlay.
+
+修复运行时固定开发版本文本，新增构建身份回归验证；仅本地候选，未替换 v0.1.0 发布制品。
+
 - Added a staged optimization roadmap distinguishing existing capabilities, improvements
   and optional extensions, with soak and fault-injection acceptance criteria.
 - Documentation only; SDK code, ABI, v0.1.0 artifacts and support commitments unchanged.

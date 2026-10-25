@@ -1,6 +1,6 @@
 # FrameBraid 双 SDK 接入说明
 
-本说明面向使用 SDK 的开发者。交付主体是可独立构建的 Rust 源码 SDK；DLL 目标为 `am_camera.dll` 与 `am_vision.dll`，通过 C ABI 供 C/C++、C#、Python 调用。使用运行包不需要 Rust、FFmpeg 命令行或 AM-RT 业务服务。当前 FrameBraid 尚未公开发布，下面运行包布局是拟交付形态，不代表已有可下载的 FrameBraid Release；源码构建及运行见 [快速接入](../docs/GETTING_STARTED.zh-CN.md)。
+本说明面向使用 SDK 的开发者。交付主体是可独立构建的 Rust 源码 SDK；DLL 目标为 `am_camera.dll` 与 `am_vision.dll`，通过 C ABI 供 C/C++、C#、Python 调用。使用运行包不需要 Rust、FFmpeg 命令行或 AM-RT 业务服务。已发布版本及其真实验证范围见[交付状态](../docs/RELEASE_STATUS.md)；源码构建及运行见 [快速接入](../docs/GETTING_STARTED.zh-CN.md)。
 
 ## 1. 先分清两种包
 
@@ -46,6 +46,32 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 SDK DLL 搜索与上述运行库目录是两件事。Python 用 SDK DLL 绝对路径；C# 的 P/Invoke 将 SDK DLL 放到程序目录或仅为当前进程设置 DLL 搜索 PATH；C/C++ 可将两 DLL 放在 EXE 旁。FFmpeg 与 ORT 目录仍由初始化参数传入，不要将它们混成一个目录或随意换成其他版本。
 
 **无 ORT 的例外：** 双 SDK 编入共享帧功能，并显式启用 `AM_INIT_SHARED_FRAMES` 时，vision 可以在不传任何运行库目录的情况下只执行共享池 attach/borrow/return。它不能加载模型或执行推理。只要传了运行库目录，就按该目录严格初始化，错误不静默降级。相机 FFmpeg 在需要解码或取流时检查，不能把仅创建相机上下文成功当成 FFmpeg 已可用。
+
+### 2.1 运行时版本与构建身份
+
+在初始化运行库之前即可调用 `amc_get_version_info` / `amv_get_version_info`。
+输出先清零并设置 `struct_size = sizeof(am_version_info_t)`；字符串由 SDK 持有，调用方不释放，
+若要在卸载 DLL 后保存，应先复制。现有结构和 ABI 1.0 不变：
+
+| 字段 | 当前本地修复后的行为 |
+| --- | --- |
+| `package_version_utf8` | 来自构建该 crate 的 Cargo 包版本，不再固定追加 `-development`；开发期未升包版本的提交通过 notes 区分 |
+| `build_target_utf8` | Cargo 实际 target triple，例如 `x86_64-pc-windows-msvc`；不代表其他目标已运行验收 |
+| `runtime_notes_utf8` | 构建时 `source_commit`、`source_state`、`profile`、`support_shared_frames` 与 `runtimes=on-demand`；诊断键值非新的机器兼容协议 |
+
+`source_state` 只核对 `Cargo.toml`、`Cargo.lock`、`crates/`、`src/` 的源码输入，
+分为 clean/dirty/unknown；不代表整个文档工作区干净。提交为完整 Git SHA；
+无自身 Git 元数据或无法核实时明确 unknown，不借用外层宿主仓库提交。
+此身份是编译时快照，不在 DLL 运行时执行 Git，也不含本机源码路径或凭据。
+`support_shared_frames` 仅说明公共支撑层的编译特性；每库实际能力与启用状态仍须查询，不能由它推断。
+
+Runtime version diagnostics use the Cargo package version, actual target and build-time source
+identity. Source archives without their own Git metadata report unknown identity. Returned
+strings remain SDK-owned until module unload. A target triple does not imply platform acceptance.
+
+下游应核对实际加载的 DLL 绝对路径、对应制品 SHA-256、匹配的头文件/绑定，再做 ABI 与能力
+协商。提交号加 dirty 标记不是修改后源码的精确摘要，不能取代制品清单；旧版已发布 DLL
+仍保留旧行为，本地修复不会自动更新下载包或宿主程序。
 
 ## 3. 模型由调用方提供
 

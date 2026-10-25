@@ -1,0 +1,25 @@
+{
+  "formatVersion": 1,
+  "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
+  "reviewBaseCommit": "c4369d340dec6db8f60440cfbf9dd9c6b322e430",
+  "files": [
+    {
+      "path": "crates/sdk-support/src/common.rs",
+      "previousSha256": "f7b20e9c0ec6b67a5622de4dacd32a2c3002d214834a7aabc2c2dd09da2175bc",
+      "sha256": "9218513d586f729c28dbeff6d3cc7fcadfd0a960dc46749fdc84926cfb8e87d7",
+      "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
+    },
+    {
+      "path": "crates/sdk-support/build.rs",
+      "previousSha256": null,
+      "sha256": "aa4733ecf9efe019339f8b8641ee7df33fd3a673ffdd39d113b4ed1d6257125b",
+      "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
+    },
+    {
+      "path": "crates/sdk-support/tests/version.rs",
+      "previousSha256": null,
+      "sha256": "ec69c7a3f6a12c58ec335973b7f8400018a4e9ba8db1405ee31ef129af47a1e0",
+      "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
+    }
+  ]
+}

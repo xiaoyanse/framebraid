@@ -13,6 +13,10 @@ use std::{
     },
 };
 
+mod build_info {
+    include!(concat!(env!("OUT_DIR"), "/sdk_version.rs"));
+}
+
 #[derive(Default)]
 struct InitFailure {
     code: i32,
@@ -46,14 +50,9 @@ pub unsafe fn version(out: *mut am_version_info_t) -> Result<()> {
     let value = am_version_info_t {
         abi_major: 1,
         abi_minor: 0,
-        package_version_utf8: c"0.1.0-development".as_ptr(),
-        build_target_utf8: if cfg!(all(windows, target_arch = "x86_64")) {
-            c"windows-x64".as_ptr()
-        } else {
-            c"unverified-platform".as_ptr()
-        },
-        runtime_notes_utf8:
-            c"SDK implementation in progress; media/inference runtimes load on demand".as_ptr(),
+        package_version_utf8: build_info::PACKAGE_VERSION.as_ptr(),
+        build_target_utf8: build_info::BUILD_TARGET.as_ptr(),
+        runtime_notes_utf8: build_info::BUILD_NOTES.as_ptr(),
         ..Default::default()
     };
     unsafe { args::write(out, value) }

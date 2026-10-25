@@ -19,6 +19,16 @@ rights and model licensing remain separate.
 首次公开采用精简后的初始快照，本地旧历史保留。公开制品以各自清单记录源码提交、
 工具链、编译特性和指纹；下载校验使用 Release 中的 SHA256SUMS，下方是历史候选哈希。
 
+## Local unreleased runtime identity fix / 本地未发布版本诊断修复
+
+Runtime version text now comes from Cargo; target and source/build notes reflect compilation
+inputs. C ABI 1.0 layouts/exports remain unchanged. This local fix does not replace the public
+v0.1.0 assets or broaden runtime/platform acceptance. See the
+[scoped verification record](verification/runtime-version-20261026.md).
+
+已完成本地运行时版本诊断修复及定向验证；未发布、不覆盖 v0.1.0 制品，不代表重跑整包验收。
+源码包无自身 Git 时明确未知，具体二进制仍按制品校验和识别。
+
 ## Historical candidate identity / 历史候选身份
 
 - Source/build commit: `8f7fa3a444c07426a0402f931e3d390f680a5ce7`.

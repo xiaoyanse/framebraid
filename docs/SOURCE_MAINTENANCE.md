@@ -19,3 +19,14 @@ submodule or package-registry workflow.
 
 宿主接入负责人及固定版本迁移另行协调；本次开源不修改宿主，也不自动安装 Git 依赖、
 子模块或包注册流程。
+
+## Reviewed local source revisions / 已评审源码修订
+
+`sdk-source-manifest.json` remains the original extraction record. The optional
+`sdk-source-revisions.json` binds that exact file's SHA-256 and a review-base commit,
+then records each authorized replacement/addition with its previous/current digest and reason.
+The checker verifies unchanged files against the original and revised files against the overlay;
+unregistered drift still fails. Git history records the review and subsequent implementation commit.
+
+原始清单保留原字节；修订文件必须有前后摘要和原因，新增文件以前摘要 null 明确登记。
+修订不是自动信任机制，也不是正式发布记录；须人工审查差异，不能以覆盖指纹代替验证。

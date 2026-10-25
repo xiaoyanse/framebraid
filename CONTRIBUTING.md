@@ -67,14 +67,13 @@ language calls. Never hand-edit generated files or refresh hashes merely to sile
 下游固定版本并携带匹配的头文件、封装和文档，依协商与能力检查决定使用新能力、回退或拒绝。
 文档随同版本同步不等于宿主代码自动适配，也不默认联网升级或仅替换 DLL。
 
-Current limitation: runtime version queries still return the fixed `0.1.0-development`
-text in `crates/sdk-support/src/common.rs`; they do not expose an exact build fingerprint.
-Before the next release, correct and verify runtime identity against the candidate manifest
-and the library actually loaded. Until then, use matching artifact manifests/checksums for
-exact provenance. This documentation change does not implement that correction.
+Runtime version queries now read the Cargo package version and actual target triple.
+Existing notes expose build-time source commit, source-input state, profile and the shared support layer's shared-frame feature. Archives without their own Git repository report unknown source identity, never a
+parent repository's commit. These fields do not replace artifact SHA-256; see
+[version diagnostics](sdk/INTEGRATION.md#21-运行时版本与构建身份).
 
-当前限制：运行时版本查询仍是固定开发版文本，不提供精确构建指纹。下次发布前须修正并
-验证与候选清单、实际载入库一致；本轮只登记要求，不声称已完成该实现。
+运行时版本随 Cargo 包版本生成，并报告实际构建目标与构建时源码身份；无 Git 时明确未知。
+诊断信息不是二进制哈希，发布前仍须核对实际载入库与同版本制品清单。
 
 ## Checks / 检查
 
@@ -91,9 +90,9 @@ node scripts/sdk/freeze-abi.mjs --check
 node --test scripts/sdk/source-fingerprint.test.mjs
 ```
 
-The boundary checker uses offline Cargo metadata. Core fingerprints intentionally reject divergence from the extraction baseline; updating provenance needs a reviewed source-baseline change, not a blind hash refresh.
+The boundary checker uses offline Cargo metadata. Core fingerprints reject unregistered divergence. Authorized source fixes use `sdk-source-revisions.json`, bound to the unchanged extraction manifest SHA-256, review-base commit, previous/current file hashes and reasons. Register new core files explicitly; never replace historical extraction hashes to silence failures.
 
-边界检查需缓存依赖。核心指纹拒绝偏离提取基线，不能为消除失败而随意重算。
+边界检查需缓存依赖。核心指纹拒绝未登记漂移；授权修复使用独立修订清单记录变更前后摘要及原因，原始提取清单不覆盖。
 
 Runtime changes need targeted SDK tests and language calls using explicit compatible runtimes, synthetic data and isolated ports. Record actual pass/fail/skip counts. Historical fixed-port RTSP groups and three ignored tests need separate isolation/review, not blind execution against a shared machine. See [current validation scope](docs/RELEASE_STATUS.md).
 
