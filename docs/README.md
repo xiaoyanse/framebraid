@@ -10,7 +10,7 @@
 | Full lifecycle and language integration / 完整生命周期及接入 | [Integration / 接入说明](../sdk/INTEGRATION.md) |
 | Runnable examples / 可运行示例 | [Examples / 示例](../sdk/examples/README.md) |
 | Platform/feature limits / 平台与能力限制 | [Support / 支持边界](SUPPORT.md) |
-| Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — planned, not implemented / 规划，尚未实施 |
+| Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、参考索引与量化验收；尚未实施 |
 | Current validation / 当前验证 | [Local Release status / 本地 Release 状态](RELEASE_STATUS.md) |
 | Charts and numeric observations / 图表及数值观察 | [Test observations / 测试资料](BENCHMARKS.md) |
 | Visual identity / 视觉标识 | [Selected logo and banner / 已选 Logo 与横幅](../assets/brand/README.md) |
