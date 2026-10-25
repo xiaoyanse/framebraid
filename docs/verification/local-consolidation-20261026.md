@@ -38,8 +38,23 @@ excluded from source/public packages. Local archive is not an external backup.
 
 复制时逐文件验证；可重建缓存复用后会变化，不要求其持续保持旧字节。
 FFmpeg 来源树链接只解除链接本体，目标 10951 文件前后摘要不变。
-七个旧 D 目录删除被自动审批拒绝（`blocked by policy`），没有换方式重试；
-已向用户提供可手动删除的明确清单，尚未记录为已删除。其他团队工作树未动。
+此前七个旧 D 目录的自动删除被审批拒绝（`blocked by policy`），未绕过重试。
+2026-10-26 用户手动删除后，已核对 D 盘可访问且七个根路径均不存在（含失效链接检查）；
+本次七根回收完成，其他团队工作树未动，不声称清理过其他目录。
+
+删除后对照复制/类别调整清单逐文件复核 15259 个保留文件（1168630301 字节），
+SHA-256 全部一致、无缺失；原宿主 SDK tar 归档包含完整 159 个文件。
+52980 个可重建编译缓存/测试临时文件与不可变材料分别处理，分类目录均存在，
+复用后不要求其持续保持旧字节。明细在
+`.local/evidence/consolidation-20261026/cleanup-confirmation-20261026.json`。
+
+Post-cleanup checks: pinned host dependency check passed; SDK boundary check
+passed for seven packages/161 source files with no business/external local path
+dependencies; eight frozen ABI artifacts unchanged. No new SDK release or full
+runtime acceptance is implied. Implementation commits:
+AM-RT `2ab4851280ca4903e145f0c3e1efb78e43fbea71`,
+FrameBraid `e4f2b38fc21f056a00ce131bc8b37c85d0b602bc`.
+This follow-up only closes verification records and task status.
 
 This maintenance is committed locally only. No push, tag, upload or release.
 See Git history for the document's owning commit; no self-referential commit hash.
