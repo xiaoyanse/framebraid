@@ -22,6 +22,8 @@ Local R2/H2 explicit Rust hardware foundation is verified on synthetic H.264/HEV
 
 R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、跨语言诊断及H5推理选择尚未完成，不扩大公开CPU支持范围。
 
+R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); DLL/RTSP integration, runtime recovery and global budgets remain incomplete. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
+
 ## Public version / 公开版本
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)

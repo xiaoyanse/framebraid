@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "6134e1c7ed0ff8bd860dbb2775bf0aa979280f84",
+  "reviewBaseCommit": "0cbf638a2982c073c25536ea44066a09d697822b",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -52,28 +52,34 @@
       "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
     },
     {
-      "path": "crates/am-camera/src/media/codec.rs",
-      "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "f19707203c3f7607de8662ff45283fc2d8e14f40af40dbde0f8b11aec3be96ee",
-      "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
-    },
-    {
-      "path": "crates/am-camera/src/media/hardware.rs",
-      "previousSha256": null,
-      "sha256": "75a7e10bac939aaddfc96663ff14cc9c8185802e4f1f59805702789975363b06",
-      "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
-    },
-    {
       "path": "crates/am-camera/src/media/hardware/windows.rs",
       "previousSha256": null,
       "sha256": "257c86c5de2a17b969c75247d029305fa81a1926e1a04ea31e4e6c3947ce63f2",
       "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
     },
     {
+      "path": "crates/am-camera/src/media/codec.rs",
+      "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
+      "sha256": "a9d28fe86529cfe1aee7d04f2ff4175170842e7254d3168d43f9b1d10b806b48",
+      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+    },
+    {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
       "previousSha256": null,
-      "sha256": "c1bec83a315365c74abd759711c21c285976ecb2bfee150494ea6e43b9384135",
-      "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
+      "sha256": "450ae152780c013f3315c54e871ca0e46873c249ddbe25cf0df15a0f2fca73e5",
+      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/hardware.rs",
+      "previousSha256": null,
+      "sha256": "6204095d5b0ca765d9298fa0945a9f0787dd24013775cdb02d6bf7462dc228db",
+      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec/selection.rs",
+      "previousSha256": null,
+      "sha256": "9a2d90948c88039ac9e64f49562ce4f75d11d3134f66bcc7d66ddc96236fda17",
+      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
     }
   ]
 }

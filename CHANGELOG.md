@@ -2,6 +2,9 @@
 
 ## Unreleased / 未发布
 
+- Add a shared Rust SoftwareOnly/PreferHardware initialization factory with bounded attempts, owned diagnostics and CPU fallback for busy/missing/failed hardware; verify real output separately. DLL/RTSP integration and runtime recovery remain open.
+- 共用硬件选择工厂已三轮验证及故障注入，CPU默认路径不变；初始化选择不冒充目标码流与真实执行成功。
+
 - Add explicit bounded Windows adapter/device probes and Rust H.264/H.265 hardware decoding with CPU pixel readback; default CPU and C ABI behavior remain unchanged. Hardware policy integration is still in progress.
 - 增加原生设备探测与显式硬解原语，区分初始化与真实硬件帧；修正新FFmpeg构建缺少现代D3D11解码入口的问题。旧发布运行库不改写，自动选择/回退及跨语言诊断尚未完成。
 

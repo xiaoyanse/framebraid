@@ -8,14 +8,14 @@ pub(super) struct Binding {
     verified: AtomicBool,
 }
 impl Binding {
-    pub(super) unsafe fn attach(
-        api: Arc<FfmpegApi>,
-        ctx: *mut AVCodecContext,
+    pub(super) unsafe fn format(
+        api: &FfmpegApi,
         codec: *const core::ffi::c_void,
         backend: Backend,
-        adapter: &Adapter,
-    ) -> Result<Box<Self>> {
-        let mut format = None;
+    ) -> Option<i32> {
+        if codec.is_null() {
+            return None;
+        }
         for index in 0..64 {
             let config = unsafe { (api.avcodec_get_hw_config)(codec, index) };
             if config.is_null() {
@@ -25,11 +25,20 @@ impl Binding {
             if config.device_type == backend.device_type()
                 && config.methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX != 0
             {
-                format = Some(config.pix_fmt);
-                break;
+                return Some(config.pix_fmt);
             }
         }
-        let format = format.ok_or(DecodeError::InvalidInput)?;
+        None
+    }
+    pub(super) unsafe fn attach(
+        api: Arc<FfmpegApi>,
+        ctx: *mut AVCodecContext,
+        codec: *const core::ffi::c_void,
+        backend: Backend,
+        adapter: &Adapter,
+    ) -> Result<Box<Self>> {
+        let format =
+            unsafe { Self::format(&api, codec, backend) }.ok_or(DecodeError::InvalidInput)?;
         let device = Device::create(api.clone(), backend, adapter).map_err(|e| match e {
             ProbeError::DeviceInit(code) => DecodeError::Runtime(code),
             _ => DecodeError::InvalidInput,

@@ -2,6 +2,7 @@
 use super::{ffmpeg_lib::FfmpegApi, ffmpeg_sys::*};
 use std::{ptr, sync::Arc};
 mod hardware;
+pub mod selection;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum VideoCodec {
@@ -16,7 +17,7 @@ impl VideoCodec {
         }
     }
 }
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, serde::Serialize)]
 pub enum DecodeError {
     InvalidInput,
     AllocationFailed,

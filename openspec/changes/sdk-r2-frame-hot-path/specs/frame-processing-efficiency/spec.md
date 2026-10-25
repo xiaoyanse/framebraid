@@ -38,6 +38,20 @@ Rust设备探测入口 MUST 有界、显式且与普通状态查询分离；设�
 - **WHEN** 已接收硬件帧但CPU回读失败或输出预算不足
 - **THEN** 保留原待输出帧及时间戳供明确重试或关闭；不把GPU地址解释为CPU像素，最终由同一运行库释放资源
 
+### Requirement: Shared native selection policy
+
+直接解码和RTSP像素路径的初始化选择 SHALL 使用同一有界策略。SoftwareOnly不触发硬件探测；PreferHardware在目标解码器配置核对后按确定顺序选择，探测忙/耗尽或没有匹配设备时返回CPU与拥有的原因报告。初始化选择 MUST 与实际硬件输出分开，不永久缓存暂时失败。
+
+#### Scenario: Independent explicit probe is busy
+
+- **WHEN** 显式probe正在进行原生初始化，另一个调用请求PreferHardware
+- **THEN** 共用准入立即报告Busy并使用CPU，不同时放大硬件初始化、不把CPU标为硬件执行
+
+#### Scenario: Codec has no generic hardware configuration
+
+- **WHEN** 运行库能创建设备但目标解码器没有该设备的HW_DEVICE_CTX配置
+- **THEN** 不为该组合创建设备，保留缺配置原因，并继续有限候选或CPU回退
+
 ### Requirement: Reuse without changing output
 
 SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、分配或复制，保留原像素/张量与坐标映射合同。

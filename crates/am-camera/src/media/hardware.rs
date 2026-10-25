@@ -96,7 +96,7 @@ fn assign_dxva2_index(adapters: &mut [Adapter], luid: u64, index: u32) {
     }
 }
 
-fn enter_probe(budget: Duration) -> Result<MutexGuard<'static, ()>, ProbeError> {
+pub(crate) fn enter_probe(budget: Duration) -> Result<MutexGuard<'static, ()>, ProbeError> {
     if budget.is_zero() || budget > Duration::from_secs(5) {
         return Err(ProbeError::InvalidBudget);
     }
