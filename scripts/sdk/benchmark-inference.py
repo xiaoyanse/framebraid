@@ -7,7 +7,7 @@ from pathlib import Path
 import struct
 import sys
 import time
-from perf_common import SCHEMA, file_sha256, summarize, validate
+from perf_common import SCHEMA, deadline_observation, dll_build_identity, file_sha256, process_resources, summarize, validate, workload_budget
 
 sys.dont_write_bytecode = True
 spec = importlib.util.spec_from_file_location("tensor_test", Path(__file__).with_name("test-tensors.py"))
@@ -21,6 +21,8 @@ def run_case(lib, ctx, model, bursts, width, slow_ms, observed=True):
     durations, execution_ms = [], []
     rejected = 0
     before = snapshot(lib, ctx)
+    resources_before = process_resources()
+    observed_max = dict(queue_items=before["queue_items"], queue_bytes=before["queue_bytes"])
     sequence = 0
     started = time.perf_counter_ns()
     for _ in range(bursts):
@@ -66,7 +68,9 @@ def run_case(lib, ctx, model, bursts, width, slow_ms, observed=True):
                 del pending[rid]
                 progressed = True
             if observed:
-                snapshot(lib, ctx)
+                current = snapshot(lib, ctx)
+                for key in observed_max:
+                    observed_max[key] = max(observed_max[key], current[key])
             if not progressed:
                 time.sleep(.0005)
             if time.monotonic() > deadline:
@@ -79,7 +83,9 @@ def run_case(lib, ctx, model, bursts, width, slow_ms, observed=True):
     assert after["threads_peak"] <= 16
     return dict(samples_ns=durations, elapsed_ns=elapsed,
                 counts=dict(attempted=width * bursts, delivered=len(durations), rejected=rejected, dropped=0),
-                execution_samples_ms=execution_ms, stats_after=after)
+                execution_samples_ms=execution_ms, stats_after=after,
+                observed_queue_max=observed_max if observed else None,
+                process_resources=dict(before=resources_before, after=process_resources()))
 
 
 def snapshot(lib, ctx):
@@ -124,14 +130,18 @@ def main():
         policy.max_inflight, policy.replace_oldest = 8, 0
         policy.slot_count, policy.fair_round_robin = 1, 1
         check(lib.amv_set_realtime_policy(model, c.byref(policy)))
-        build = dict(source_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
-                     source_state="dirty" if subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT) else "clean",
-                     artifact_sha256=file_sha256(args.dll_dir / "am_vision.dll"), build_profile="release")
+        limits = size(a.am_limits_t)
+        check(lib.amv_get_limits(ctx, c.byref(limits)))
+        budget = workload_budget("inference")
+        budget["sdk_limits"] = {key: getattr(limits, key) for key in (
+            "infer_parallelism", "realtime_max_inflight", "preprocess_budget_bytes",
+            "result_budget_bytes", "result_max_items", "control_max_items")}
         version = size(a.am_version_info_t)
         check(lib.amv_get_version_info(c.byref(version)))
-        build["loaded_sdk"] = dict(package=version.package_version_utf8.decode(),
-                                   target=version.build_target_utf8.decode(),
-                                   notes=version.runtime_notes_utf8.decode())
+        build = dll_build_identity(args.dll_dir / "am_vision.dll", version.package_version_utf8.decode(),
+            version.build_target_utf8.decode(), version.runtime_notes_utf8.decode(),
+            subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
+            "dirty" if subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT) else "clean")
         runtime_hash = {p.name: file_sha256(p) for p in sorted(args.runtime_dir.glob("*.dll"))}
         import hashlib
         runtime_digest = hashlib.sha256(json.dumps(runtime_hash, sort_keys=True).encode()).hexdigest()
@@ -147,10 +157,11 @@ def main():
                         input_sha256=hashlib.sha256(b"sequence 1..width*32 repeated f32[1,3,2,2]").hexdigest(),
                         model_sha256=file_sha256(args.model), runtime_sha256=runtime_digest,
                         hardware=dict(os=platform.platform(), cpu=platform.processor()), backend="onnxruntime-cpu",
-                        threads=2, budgets=dict(slots=8, total_threads=16, request_timeout_ms=10_000), warmup=20,
+                        threads=2, budgets=budget, warmup=20,
                         timing_boundary="Python C ABI async submit through result fetch; includes polling/consumer delay, excludes validation/release"),
                     runtime_files=runtime_hash, unknown=dict(decode_latency=None, preprocess_latency=None, queue_wait_per_request=None),
                     **raw)
+                report["deadline_observation"] = deadline_observation(raw["samples_ns"], report["identity"]["budgets"]["result_age_budget_ms"])
                 validate(report)
                 (output / f"{name}-{round_id}.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
                 summaries[f"{name}-{round_id}"] = dict(latency=summarize(raw["samples_ns"]), counts=raw["counts"])

@@ -1,6 +1,8 @@
 import copy
 import unittest
-from perf_common import SCHEMA, IDENTITY_KEYS, MAX_SAMPLES, compare, summarize, validate
+import tempfile
+from pathlib import Path
+from perf_common import SCHEMA, IDENTITY_KEYS, MAX_SAMPLES, compare, dll_build_identity, summarize, validate
 
 
 def report():
@@ -16,6 +18,18 @@ def report():
 
 
 class EvidenceTests(unittest.TestCase):
+    def test_loaded_dll_identity_not_observer_checkout(self):
+        test_root = Path(__file__).resolve().parents[2] / ".local/tests"
+        test_root.mkdir(parents=True, exist_ok=True)
+        with tempfile.TemporaryDirectory(dir=test_root) as directory:
+            path = Path(directory) / "fixture.dll"
+            path.write_bytes(b"fixture")
+            item = dll_build_identity(path, "0.1.0", "x64", "source_commit=" + "a"*40 + ";source_state=clean;profile=release", "b"*40, "dirty")
+            self.assertEqual(item["source_commit"], "a"*40)
+            self.assertEqual(item["observer_commit"], "b"*40)
+            with self.assertRaises(ValueError):
+                dll_build_identity(path, "0.1.0", "x64", "profile=debug", "b"*40, "dirty")
+
     def test_percentiles_and_unknown(self):
         self.assertIsNone(summarize([])["p95_ms"])
         self.assertEqual(summarize([1e6, 2e6, 3e6, 4e6])["p95_ms"], 4)

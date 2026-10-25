@@ -109,6 +109,8 @@ FFmpeg、ONNX Runtime 在运行时动态加载，初始化显式传入兼容运�
 
 历史图表不是当前 FrameBraid Release 性能，单次测试硬件/二进制身份记录不完整；不推导 FPS 或推理延迟承诺。见[数据、队列图与方法](docs/BENCHMARKS.md)。
 
+当前本地测量见[可复现性能工具](docs/PERFORMANCE.md)：R1 CPU/合成基线与公开Release性能、硬件验收分别记录。
+
 ## 贡献与反馈
 
 见[贡献指南](CONTRIBUTING.md)。不要公开凭据、私有取流地址或客户图片。安全报告见[安全说明](SECURITY.md)，变更见[记录](CHANGELOG.md)。

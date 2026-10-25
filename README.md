@@ -109,6 +109,9 @@ See [support boundaries](docs/SUPPORT.md), [current local validation](docs/RELEA
 
 Historical figures are not current FrameBraid Release performance; per-run hardware/binary identity is incomplete. No FPS or inference-latency claim is derived. See [data, queue chart and methodology](docs/BENCHMARKS.md).
 
+For current local measurements, use the [reproducible performance tools](docs/PERFORMANCE.md).
+The R1 CPU/synthetic baseline is separate from public release benchmarks and hardware acceptance.
+
 ## Contribute and report
 
 Read [CONTRIBUTING.md](CONTRIBUTING.md). Do not post credentials, private stream URLs or customer images. Security reports follow [SECURITY.md](SECURITY.md). See [CHANGELOG.md](CHANGELOG.md).

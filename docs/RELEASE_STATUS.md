@@ -10,6 +10,10 @@ Local directory consolidation and host source pinning are recorded in [verificat
 
 本地目录与宿主版本维护见上述记录；本轮没有替换公开版本。
 
+Local R1 measurement tools and CPU/synthetic baselines are complete; see [R1 verification](verification/sdk-r1-complete-20261026.md). This is not R2–R5, hardware, real-model or production acceptance and does not replace public artifacts.
+
+本地R1观测与合成基线已完成，原生硬件能力、其他优化包及长跑仍未完成；未发布、不升级支持范围。
+
 ## Public version / 公开版本
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)

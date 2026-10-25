@@ -1,0 +1,33 @@
+{
+  "schema": "framebraid.performance-budgets.v1",
+  "scope": "Synthetic CPU/loopback regression workloads only; not application SLA or GPU acceptance",
+  "regression_warning_fraction": 0.05,
+  "max_samples": 100000,
+  "process_private_growth_warning_bytes": 67108864,
+  "prepare": {
+    "latency_budget_ms": 50,
+    "input_bytes": 8294400,
+    "output_bytes": 4915200,
+    "threads": 1
+  },
+  "decode": {
+    "latency_budget_ms": 20,
+    "max_pixels": 67108864,
+    "max_output_bytes": 268435456,
+    "threads": 1
+  },
+  "inference": {
+    "result_age_budget_ms": 100,
+    "observer_timeout_ms": 10000,
+    "slots": 8,
+    "workers": 2,
+    "total_threads": 16,
+    "request_input_bytes": 48
+  },
+  "capture": {
+    "result_age_budget_ms": 100,
+    "request_timeout_ms": 1000,
+    "observer_timeout_ms": 5000,
+    "workers": 4
+  }
+}

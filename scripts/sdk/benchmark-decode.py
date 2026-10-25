@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import platform
 import subprocess
-from perf_common import SCHEMA, file_sha256, summarize, validate
+from perf_common import SCHEMA, deadline_observation, file_sha256, summarize, validate, workload_budget
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -51,11 +51,12 @@ def main():
                 input_sha256=file_sha256(args.input), model_sha256="not-applicable:decode",
                 runtime_sha256=hashlib.sha256(json.dumps(runtimes, sort_keys=True).encode()).hexdigest(),
                 hardware=hardware, backend="ffmpeg-cpu", threads=1,
-                budgets=dict(max_pixels=8192*8192, output_bytes=8192*8192*4), warmup=args.warmup,
+                budgets=workload_budget("decode"), warmup=args.warmup,
                 timing_boundary="copy_rgba only; peek/decode and hash excluded; measured duration sum throughput"),
             counts=dict(attempted=len(samples), delivered=len(samples), rejected=0, dropped=0),
             elapsed_ns=sum(samples), samples_ns=samples,
             output_checksum_fnv1a64=raw.pop("checksum_fnv1a64"), runtime_files=runtimes, **raw)
+        report["deadline_observation"] = deadline_observation(samples, report["identity"]["budgets"]["latency_budget_ms"])
         validate(report)
         assert report["contexts_created"] == report["contexts_freed"], "conversion context leak"
         (output / f"round-{index+1}.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")

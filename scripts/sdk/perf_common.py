@@ -11,6 +11,45 @@ SCHEMA = "framebraid.performance.v1"
 MAX_SAMPLES = 100_000
 IDENTITY_KEYS = ("workload", "input_sha256", "model_sha256", "runtime_sha256",
                  "hardware", "backend", "threads", "budgets", "warmup", "timing_boundary")
+BUDGET_FILE = Path(__file__).with_name("perf-budgets.json")
+
+
+def workload_budget(name):
+    manifest = json.loads(BUDGET_FILE.read_text(encoding="utf-8"))
+    if manifest["schema"] != "framebraid.performance-budgets.v1":
+        raise ValueError("unsupported budget schema")
+    return dict(manifest[name], manifest_sha256=file_sha256(BUDGET_FILE),
+                process_private_growth_warning_bytes=manifest["process_private_growth_warning_bytes"])
+
+
+def deadline_observation(samples, budget_ms):
+    return dict(budget_ms=budget_ms, violations=sum(x > budget_ms * 1_000_000 for x in samples),
+                measured=len(samples), scope="local function or receipt-to-consumption; no camera exposure clock")
+
+
+def process_resources():
+    import ctypes as c
+    import os
+    if os.name != "nt":
+        return dict(private_bytes=None, working_set_bytes=None, handles=None)
+    class Counters(c.Structure):
+        _fields_ = [("size", c.c_uint32), ("faults", c.c_uint32)] + [
+            (name, c.c_size_t) for name in ("peak_working", "working", "peak_paged", "paged",
+                                          "peak_nonpaged", "nonpaged", "pagefile", "peak_pagefile", "private")]
+    kernel = c.WinDLL("kernel32", use_last_error=True)
+    kernel.GetCurrentProcess.restype = c.c_void_p
+    kernel.GetProcessHandleCount.argtypes = [c.c_void_p, c.POINTER(c.c_uint32)]
+    kernel.GetProcessHandleCount.restype = c.c_int
+    psapi = c.WinDLL("psapi", use_last_error=True)
+    psapi.GetProcessMemoryInfo.argtypes = [c.c_void_p, c.POINTER(Counters), c.c_uint32]
+    psapi.GetProcessMemoryInfo.restype = c.c_int
+    counter = Counters()
+    counter.size = c.sizeof(counter)
+    process = kernel.GetCurrentProcess()
+    handles = c.c_uint32()
+    if not psapi.GetProcessMemoryInfo(process, c.byref(counter), counter.size) or not kernel.GetProcessHandleCount(process, c.byref(handles)):
+        raise OSError(c.get_last_error(), "process resource query failed")
+    return dict(private_bytes=counter.private, working_set_bytes=counter.working, handles=handles.value)
 
 
 def file_sha256(path):
@@ -19,6 +58,19 @@ def file_sha256(path):
         for block in iter(lambda: source.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def dll_build_identity(path, package, target, notes, observer_commit, observer_state):
+    fields = dict(item.split("=", 1) for item in notes.split(";") if "=" in item)
+    if fields.get("profile") != "release":
+        raise ValueError("benchmark requires a DLL reporting a release build")
+    commit = fields.get("source_commit", "")
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValueError("loaded DLL does not report a full source commit")
+    return dict(source_commit=commit, source_state=fields.get("source_state", "unknown"),
+                artifact_sha256=file_sha256(path), build_profile=fields["profile"],
+                observer_commit=observer_commit, observer_state=observer_state,
+                loaded_sdk=dict(package=package, target=target, notes=notes))
 
 
 def summarize(samples_ns):

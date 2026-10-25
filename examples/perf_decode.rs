@@ -84,6 +84,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     let mut decoder = CpuDecoder::create(Arc::new(api), VideoCodec::H264, &[], 8192 * 8192)
         .map_err(|e| format!("create: {e:?}"))?;
+    let clock_average_ns = (0..1000)
+        .map(|_| {
+            let start = Instant::now();
+            start.elapsed().as_nanos()
+        })
+        .sum::<u128>()
+        / 1000;
     let mut durations = Vec::with_capacity(samples);
     let mut decode_durations = Vec::with_capacity(samples);
     let mut expected = None;
@@ -121,7 +128,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
     }
     drop(decoder);
-    println!("{{\"samples_ns\":{durations:?},\"decode_samples_ns\":{decode_durations:?},\"width\":{},\"height\":{},\"checksum_fnv1a64\":\"{:016x}\",\"contexts_created\":{},\"contexts_freed\":{},\"total_frames_with_warmup\":{}}}",
+    println!("{{\"samples_ns\":{durations:?},\"decode_samples_ns\":{decode_durations:?},\"clock_average_ns\":{clock_average_ns},\"width\":{},\"height\":{},\"checksum_fnv1a64\":\"{:016x}\",\"contexts_created\":{},\"contexts_freed\":{},\"total_frames_with_warmup\":{}}}",
         dimensions.0, dimensions.1, expected.ok_or("no output")?, CREATED.load(Ordering::Relaxed), FREED.load(Ordering::Relaxed), samples + warmup);
     Ok(())
 }

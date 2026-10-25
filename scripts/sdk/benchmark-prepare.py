@@ -8,7 +8,7 @@ from pathlib import Path
 import platform
 import subprocess
 import time
-from perf_common import SCHEMA, file_sha256, summarize, validate
+from perf_common import SCHEMA, deadline_observation, file_sha256, summarize, validate, workload_budget
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -58,17 +58,18 @@ def main():
                                         for i in range(1920 * 1080 * 4))).hexdigest(),
                                     model_sha256="not-applicable:no-model", runtime_sha256="not-applicable:rust-prepare",
                                     hardware=hardware, backend="cpu-rust", threads=1,
-                                    budgets=dict(input_bytes=1920*1080*4, tensor_bytes=640*640*12,
-                                                 max_samples=100_000, frame_age_ms="not-applicable:local-call"),
+                                    budgets=workload_budget("prepare"),
                                     warmup=args.warmup, timing_boundary=raw["boundary"]),
                       counts=dict(attempted=len(samples), delivered=len(samples), rejected=0, dropped=0),
                       elapsed_ns=sum(samples), samples_ns=samples,
                       output_checksum_fnv1a64=raw["checksum_fnv1a64"],
                       rust_allocations_per_prepare=raw["rust_allocations_per_prepare"],
                       rust_allocated_bytes_per_prepare=raw["rust_allocated_bytes_per_prepare"],
+                      clock_average_ns=raw["clock_average_ns"],
                       process_wall_ns=wall, checksum_total_ns_outside_timing=raw["checksum_total_ns_outside_timing"],
                       unknown=dict(decode_latency=None, queue_wait=None, infer_latency=None),
                       created_at=datetime.now(timezone.utc).isoformat())
+        report["deadline_observation"] = deadline_observation(samples, report["identity"]["budgets"]["latency_budget_ms"])
         validate(report)
         (output / f"round-{index+1}.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
         summaries.append(summarize(samples))

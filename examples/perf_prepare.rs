@@ -49,6 +49,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         color_range: 0,
     };
     let config = Preprocess::profile(640, false);
+    let clock_average_ns = (0..1000)
+        .map(|_| {
+            let start = Instant::now();
+            start.elapsed().as_nanos()
+        })
+        .sum::<u128>()
+        / 1000;
     COUNTING.store(true, Ordering::Relaxed);
     let counted = prepare(&pixels, "images", config, 8 * 1024 * 1024);
     COUNTING.store(false, Ordering::Relaxed);
@@ -79,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         black_box(&tensor);
     }
     println!(
-        "{{\"workload\":\"rgba1920x1080-letterbox640-nchw-f32\",\"warmup\":{warmup},\"samples_ns\":{durations:?},\"checksum_fnv1a64\":\"{:016x}\",\"rust_allocations_per_prepare\":{},\"rust_allocated_bytes_per_prepare\":{},\"checksum_total_ns_outside_timing\":{checksum_ns},\"boundary\":\"prepare only; excludes input generation, output hash and output drop\"}}",
+        "{{\"workload\":\"rgba1920x1080-letterbox640-nchw-f32\",\"warmup\":{warmup},\"samples_ns\":{durations:?},\"checksum_fnv1a64\":\"{:016x}\",\"rust_allocations_per_prepare\":{},\"rust_allocated_bytes_per_prepare\":{},\"clock_average_ns\":{clock_average_ns},\"checksum_total_ns_outside_timing\":{checksum_ns},\"boundary\":\"prepare only; excludes input generation, output hash and output drop\"}}",
         expected.ok_or("no output")?, ALLOCS.load(Ordering::Relaxed), BYTES.load(Ordering::Relaxed)
     );
     Ok(())
