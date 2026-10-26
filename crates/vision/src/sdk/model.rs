@@ -352,6 +352,10 @@ impl Model {
             Ok(result) => {
                 self.selection.native_runs = self.selection.native_runs.saturating_add(1);
                 self.selection.last_native_run_succeeded = Some(true);
+                // 原生执行观察独立于后续输出预算和交付成功。
+                super::runtime::executed(
+                    self.selection.selected.map_or(0, |target| target.backend),
+                );
                 result
             }
             Err(error) => {
@@ -390,7 +394,6 @@ impl Model {
             return Err(Error("vision.batchUnsupported".into()));
         }
         self.selection.delivered_runs = self.selection.delivered_runs.saturating_add(1);
-        super::runtime::executed(self.selection.selected.map_or(0, |target| target.backend));
         Ok(output)
     }
 }

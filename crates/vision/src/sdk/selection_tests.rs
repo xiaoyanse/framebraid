@@ -2,6 +2,64 @@ use super::{selection::*, *};
 use std::path::PathBuf;
 
 #[test]
+#[ignore = "独立测试进程和显式CPU ORT/Identity；验证原生执行不依赖结果交付"]
+fn native_success_is_observed_when_output_budget_rejects_delivery() {
+    initialize(&PathBuf::from(std::env::var("AM_SDK_ORT_LIBRARY").unwrap())).unwrap();
+    assert_eq!(
+        runtime::observations().unwrap().executed_mask,
+        0,
+        "须以精确测试名在独立进程运行，不能复用其他测试的执行观察"
+    );
+    let path = PathBuf::from(std::env::var("AM_SDK_RAW_MODEL").unwrap());
+    let cpu = BackendTarget {
+        backend: 0,
+        device_id: 0,
+    };
+    let policy = BackendSelectionPolicy {
+        priority: vec![cpu],
+        allow_fallback: false,
+        budget_ms: 5000,
+    };
+    let mut model = Model::load_selected(ModelSource::Path(&path), None, &policy, 1).unwrap();
+    assert_eq!(model.inputs.len(), 1);
+    assert_eq!(model.inputs[0].name, "images");
+    assert_eq!(model.inputs[0].dtype, 0);
+    assert_eq!(model.inputs[0].shape, [1, 3, 2, 2]);
+    let bytes: Vec<u8> = (0..12)
+        .flat_map(|i| (i as f32 / 4.0).to_ne_bytes())
+        .collect();
+    let input = TensorData::new(model.inputs[0].clone(), &bytes).unwrap();
+    assert_eq!(runtime::observations().unwrap().executed_mask, 0);
+    // 公开兼容字段不是实际选择的可信来源。
+    model.actual_backend = 2;
+    assert_eq!(
+        model.run(std::slice::from_ref(&input), 0).err().unwrap().0,
+        "sdk.resourceExhausted"
+    );
+    for _ in 0..3 {
+        let report = model.selection_report();
+        assert_eq!(report.selected, Some(cpu));
+        assert_eq!(report.native_runs, 1);
+        assert_eq!(report.delivered_runs, 0);
+        assert_eq!(report.native_failures, 0);
+        assert_eq!(report.last_native_run_succeeded, Some(true));
+        assert_eq!(report.attempts.len(), 1);
+        assert_eq!(runtime::observations().unwrap().executed_mask, 1);
+    }
+    println!(
+        "native-success-delivery-rejected {}",
+        serde_json::to_string(model.selection_report()).unwrap()
+    );
+    // 下一次仅来自调用方显式调用，不自动重放失败交付的请求。
+    let output = model.run(std::slice::from_ref(&input), 1024).unwrap();
+    assert_eq!(output.len(), 1);
+    assert_eq!(output[0].bytes(), bytes);
+    assert_eq!(model.selection_report().native_runs, 2);
+    assert_eq!(model.selection_report().delivered_runs, 1);
+    assert_eq!(runtime::observations().unwrap().executed_mask, 1);
+}
+
+#[test]
 #[ignore = "显式CPU ORT和越界Gather合成模型；真实Run错误不自动重放"]
 fn native_run_failure_is_reported_once_without_automatic_replay_or_model_switch() {
     initialize(&PathBuf::from(std::env::var("AM_SDK_ORT_LIBRARY").unwrap())).unwrap();
