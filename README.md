@@ -6,6 +6,8 @@
 
 **Reusable camera, video and ONNX inference building blocks for native applications.**
 
+Local ABI 1.1 r10 adds per-context Media SDK worker budgets and live/peak statistics, with Python/C# helpers; these count SDK workers, not CPU cores or all driver threads. Use matching local DLLs/bindings. [Contract and validation](docs/verification/sdk-r3-media-workers-20261027.md); not part of the published v0.1.0 assets.
+
 Local R2 work adds Rust hardware probes and direct C decoder automatic selection/recovery ([contract](docs/design/native-hardware.md), [local verification](docs/verification/sdk-r2-direct-auto-20261026.md)). Published assets remain CPU validated; RTSP hardware policies now run locally ([verification](docs/verification/sdk-r2-rtsp-hardware-20261026.md)); pressure isolation, complete device diagnostics and acceptance remain open. Hardware readback is not guaranteed faster than CPU.
 
 Local main now develops C ABI 1.1 probe/report extensions ([verification](docs/verification/sdk-r2-abi11-hardware-20261026.md)). Use matching source-built DLLs and bindings; v0.1.0 binaries still use ABI 1.0 and require their tagged bindings. This work is not published.

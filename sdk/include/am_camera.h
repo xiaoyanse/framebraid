@@ -93,6 +93,8 @@ AM_API am_status_t amc_shared_pool_close(amc_shared_pool_t* pool, uint32_t timeo
                                          am_lifecycle_state_t* out_state);
 AM_API am_status_t amc_shared_pool_get_stats(const amc_shared_pool_t* pool,
                                              am_shared_pool_stats_t* out_stats);
+AM_API am_status_t amc_set_worker_budget(amc_context_t* ctx, uint32_t max_workers);
+AM_API am_status_t amc_get_worker_budget(amc_context_t* ctx, uint32_t* out_max_workers);
 #ifdef __cplusplus
 }
 #endif

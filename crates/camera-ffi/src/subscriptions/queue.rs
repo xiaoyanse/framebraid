@@ -507,9 +507,11 @@ impl Subscription {
         if callback.is_some() && !self.alive.load(Ordering::Acquire) {
             self.alive.store(true, Ordering::Release);
             let this = self.clone();
-            match std::thread::Builder::new()
-                .name("amc-subscription".into())
-                .spawn(move || {
+            match self
+                .state
+                .metrics
+                .threads
+                .spawn("amc-subscription", move || {
                     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| this.run()));
                     if let Ok(mut data) = this.data.lock() {
                         data.busy = false;

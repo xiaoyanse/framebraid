@@ -36,6 +36,7 @@ struct Usage {
 }
 #[derive(Default)]
 pub struct CameraMetrics {
+    pub threads: Arc<crate::threads::Budget>,
     pub decoder_queue_items: std::sync::atomic::AtomicU64,
     pub decoder_queue_bytes: std::sync::atomic::AtomicU64,
     pub accepted: std::sync::atomic::AtomicU64,

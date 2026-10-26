@@ -1206,6 +1206,19 @@ AM_API am_status_t amv_shared_pool_get_stats(const amv_shared_pool_t* pool,
 
 ### R3 独立解码配置/参数集预算补充（兼容行为，本地未发布）
 
+### 本地ABI 1.1媒体工作线程预算扩展
+
+兼容新增`AMC_CAP_WORKER_BUDGET`能力位及下列函数，旧结构/签名/枚举数值不变。调用前检查ABI1.1和能力位；未开位旧库不尝试解析新增导出。
+
+```c
+AM_API am_status_t amc_set_worker_budget(amc_context_t* ctx, uint32_t max_workers);
+AM_API am_status_t amc_get_worker_budget(amc_context_t* ctx, uint32_t* out_max_workers);
+```
+
+`AM_MEDIA_WORKER_LIMIT=64`为默认和硬上限；每Context独立，与CPU核数不同（SDK线程含阻塞I/O/回调）。仅可收紧0..当前值，同值幂等，0禁止新增SDK线程；提高或超过64返回limitOutOfRange，低于当前在用/启动槽数返回resourceExhausted且旧值不变。setter禁止回调重入且只接受Running，getter允许Closing只读、Closed拒绝，失败输出置0。同步宿主线程不占槽。
+
+源取流、像素处理、推送回调、凭据提供器、源事件、异步抓图、连续抓图及探测均在SDK创建线程前共用该额度。spawn失败、实际函数返回或panic展开才归还；取消/超时不释放在读工作。FFmpeg thread_count=1运行在已有调用worker不重复计；驱动及其他原生库自建未知线程不纳入虚假保证。Media stats.threads_active/peak为本Context预留/存活SDK工作槽及历史峰值，不是CPU并行度或进程OS线程数；底层库线程另观测，不填假0。此扩展不改变推理原全局线程域及旧预算语义，不冒充整包耐压/完整硬件验收。
+
 R3媒体抓图索引：请求、合并Flight、最近图频率、消费者及活动订阅表的实际容量计控制字节，增长先保留新旧重叠，空闲容量持续计费至服务销毁。Flight本体另预付；请求仍占原控制项token，但不重复按记录len计本体字节，内部存储不新增外持关闭屏障。受理前记录表/订阅登记超额返回拒绝、无新ID/订阅；受理后Flight/HTTP/缓存失败则以原ID给失败终态，受理不代表图片成功。缓存失败须通知全部本Flight等待者并移除在途登记，不能留下永久Pending。已关闭但仍有句柄的订阅可退出活动索引，句柄本体和图片寿命不因此提前释放；降低允许新增源/订阅限额不撤销已打开源/订阅。Context queue_bytes仍为逻辑数据口径，不含全部控制容量或RSS，C ABI不变。见[验证](../verification/sdk-r3-capture-tables-20261027.md)。
 
 R3推理请求记录表：实际容量及增长新旧重叠先占Context控制字节，空闲容量持续计费到服务销毁；不是外持结果/快照，不增加控制快照项数或Context外持关闭屏障。预算不足返回resourceExhausted，不发布ID、不替换旧请求；既有记录数限制、TTL、取消与C ABI保持。已经保留的容量可以复用，后续降低控制上限不追溯撤销旧存储；新存储不得超额。get_stats(context).queue_bytes仍是逻辑在途/结果口径，不包含全部控制存储或进程RSS。见[验证](../verification/sdk-r3-record-storage-20261027.md)。

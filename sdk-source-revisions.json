@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "3e0898a77d7996d16ebcfb5b04d991dbea839fe6",
+  "reviewBaseCommit": "2883a2bd66ccc2aace7ca7ce86055888573f664c",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "95b79e9a4c73c9a261ff0a3c9ad0553f37c633a272d6c5898056eb1785404bce",
-      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+      "sha256": "c27fc59fd7fa9a110be21d64c4aedd9645bdb72e40fab4218484869a959a5003",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "ff4e7f1f7361213365137dab964e4fdcaa8cf682577ec2def3a44611e08deef7",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+      "sha256": "63cd5acf4fc5805501fcb2350617f00b5667df092473fff5ddc27a9bdd3392b7",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -168,8 +168,8 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "518928a2389b479fe3fd3c90111d39eacc1cae42a51df98a9554dcf91946cd20",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "e7cfa29f68a6b50b195b22c182cf33b36e2d1b5276a04d53c5fcd878ffdbc7e4",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -180,8 +180,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/queue.rs",
       "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-      "sha256": "43ddf93a0419a4e0dfbd61b6266a23c816c2451d087ec4b02f04c26d1112946e",
-      "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
+      "sha256": "a1244a8b6f01936d5b03ae86fbbd993d961767ad07211f37b2fe1cd5fef11ebe",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
@@ -204,14 +204,14 @@
     {
       "path": "crates/camera-ffi/src/lib.rs",
       "previousSha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82",
-      "sha256": "0e2fe5c99b7251cf17ff279d47db4840f52da8d3e2c52e2ddcfea628366daee8",
-      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+      "sha256": "999e8a336bf450535aba82d33508d47b2940727c0e6c2a2f6441b7e6911b281c",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "07c9edfdf6b395a3efbbb7975159dd6217ea58810ab39f4d0ee70db3ab46e444",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "256eb1d1c606100f4982902c5c626ef400f2fcca1ca045ae53263e7a2e252460",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/sdk-support/src/context.rs",
@@ -354,8 +354,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline.rs",
       "previousSha256": null,
-      "sha256": "9de41ba152a1df4c6a3942e38371dcf888526f5006ffcf1c4121d6420abf2871",
-      "reason": "R3 RTSP queue and receipt-time fixed backing capacity within existing credits, eviction before insertion; unchanged final timing window, epoch/sampling policies and C ABI, native loopback protection checks"
+      "sha256": "9d55635621ae509ea239e65047597682cd3b6e5b2e1d4d44ce1a2fb83ca0694b",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode.rs",
@@ -546,8 +546,8 @@
     {
       "path": "crates/camera-ffi/src/captures/continuous.rs",
       "previousSha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced",
-      "sha256": "055e604c6c12905ca2124e90678e7176f04c72fff66c6deff76f81a818901a21",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+      "sha256": "be9148ddfcdac6910ce8c2259f8c7336d5547af2ff514549c030ab7dd50ace4f",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/captures/io.rs",
@@ -582,8 +582,8 @@
     {
       "path": "crates/camera-ffi/src/probe.rs",
       "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
-      "sha256": "a15c13afed266d8db024f21925cade815a66cf4205315a9b427a7eb78bb7782f",
-      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+      "sha256": "87999f359c62369313eaf269e32d82271a418963cdda3c9b8873102fd63439cb",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/vision-ffi/src/inference/notify.rs",
@@ -618,8 +618,8 @@
     {
       "path": "crates/camera-ffi/src/sources/events.rs",
       "previousSha256": "b286bced772ab175d578db3cd9efc1c85ad5054c9d7bb9757f9f9b2ab71a5c71",
-      "sha256": "7247ffa627052f74e02fc10ce1d0f33554a0c8d8b68facab098fdf6fbf86f972",
-      "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
+      "sha256": "0ac4712b70c778215912b32c44d6f2e59045fb0e232cd2e075196d76441f8edc",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/sources/events/queue.rs",
@@ -708,8 +708,8 @@
     {
       "path": "crates/camera-ffi/src/captures/requests.rs",
       "previousSha256": "0b8b6901fb88baf76225e8f6bdf43d218304fe1c00ff39591f06360983ce2e2a",
-      "sha256": "f469229280877abcf871affc9453cea1682ca44c738289aea17561e983ded63d",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+      "sha256": "0a0e19252b9cafffa0233f11e50d4b4ebe2f202dddc6f749f0a5b4f09b2ce19c",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     },
     {
       "path": "crates/camera-ffi/src/captures/tables.rs",
@@ -722,6 +722,24 @@
       "previousSha256": null,
       "sha256": "1dcf609fc691939e2d924b48f4841afb5f3af68d9f2738a850f213dadc1ed7eb",
       "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/credentials.rs",
+      "previousSha256": "ea9e85be771b9ff1fece47e3e0921b6d8354bdce182a2f8fd665f9c2886f9106",
+      "sha256": "0e2265a4ab7e3489aefe93478214d120cdd1d7f55aba76ba457ebb4393e88862",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+    },
+    {
+      "path": "crates/camera-ffi/src/telemetry.rs",
+      "previousSha256": "750ec6a77e681771f38c9f269b233971ecbab34124a5a5ad99464e753540ea9a",
+      "sha256": "0cce70bb18bb342508fca6daff849c9c0e4dab955de9644b2335f7cb76ee8bc2",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+    },
+    {
+      "path": "crates/camera-ffi/src/threads.rs",
+      "previousSha256": null,
+      "sha256": "2143dd2ba71a45cf20592f7b80817d41c38b2dbfb908380f2bcd377d1b218a61",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
     }
   ]
 }

@@ -346,7 +346,11 @@ pub unsafe extern "C" fn amc_probe_streams(
         } else {
             req.timeout_ms
         }));
-        for group in misses.chunks(4) {
+        let width = state.metrics.threads.limit()?.min(4) as usize;
+        if width == 0 && !misses.is_empty() {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        for group in misses.chunks(width.max(1)) {
             let results = std::thread::scope(|scope| {
                 let mut threads = Vec::with_capacity(group.len());
                 for &index in group {
@@ -355,9 +359,12 @@ pub unsafe extern "C" fn amc_probe_streams(
                         .map_err(|_| AM_ERR_SDK_UTF8_INVALID)?;
                     let state = &state;
                     let secret = &secret;
-                    let handle = std::thread::Builder::new()
-                        .name("am-sdk-probe".into())
-                        .spawn_scoped(scope, move || probe(state, url, secret, timeout))
+                    let handle = state
+                        .metrics
+                        .threads
+                        .spawn_scoped(scope, "am-sdk-probe", move || {
+                            probe(state, url, secret, timeout)
+                        })
                         .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
                     threads.push((index, handle));
                 }

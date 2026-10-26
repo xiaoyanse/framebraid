@@ -71,6 +71,7 @@ pub unsafe extern "C" fn amc_get_stats(
         let shared = (0, 0, 0, 0);
         let m = &state.metrics;
         let received = m.newest_received.load(Ordering::Acquire);
+        let (threads_active, threads_peak) = m.threads.snapshot()?;
         let candidate = am_stats_t {
             scope_utf8: name.as_ptr(),
             queue_items,
@@ -82,6 +83,8 @@ pub unsafe extern "C" fn amc_get_stats(
             dropped: m.dropped.load(Ordering::Acquire),
             frames_decoded: m.decoded.load(Ordering::Acquire),
             frames_dropped: m.frames_dropped.load(Ordering::Acquire),
+            threads_active,
+            threads_peak,
             newest_frame_age_ms: if received > 0 {
                 clock::monotonic_ms().saturating_sub(received)
             } else {

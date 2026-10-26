@@ -322,7 +322,7 @@ fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<
         .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_add(1))
         .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
     Ok(Arc::new_cyclic(|myself| SharedSource {
-        state,
+        state: state.clone(),
         url,
         isapi,
         source_id,
@@ -343,7 +343,7 @@ fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<
         last_frame: AtomicI64::new(0),
         decode: Mutex::default(),
         owners: AtomicUsize::new(1),
-        credentials: Arc::new(Credentials::default()),
+        credentials: Arc::new(Credentials::new(state.metrics.threads.clone())),
         sources: Mutex::default(),
         myself: myself.clone(),
     }))

@@ -276,14 +276,15 @@ impl<'scope, 'env: 'scope> Execution<'scope, 'env> {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
         if self.pipe.is_none() {
-            let permit = Arc::new(self.source.state.decoder()?);
+            let decoder = self.source.state.decoder()?;
+            let thread = self.source.state.metrics.threads.reserve()?;
+            let permit = Arc::new(decoder);
             let pipe = Pipeline::new(self.source.state.clone())?;
             let worker = decode::Worker::new(self.hub, self.source, self.stamp, permit)?;
             let work = pipe.clone();
             self.handle = Some(
-                std::thread::Builder::new()
-                    .name("amc-source-pixels".into())
-                    .spawn_scoped(self.scope, move || {
+                thread
+                    .spawn_scoped(self.scope, "amc-source-pixels", move || {
                         let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                             worker.run(&work)
                         }));

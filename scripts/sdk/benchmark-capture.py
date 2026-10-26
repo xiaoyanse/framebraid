@@ -82,12 +82,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dll-dir", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--compatibility-baseline", action="store_true", help="旧r9无工作线程预算导出，仅用于同负载对照")
     args = parser.parse_args()
     output = args.output.resolve()
     if output.exists() or not output.is_relative_to((ROOT / ".local/evidence").resolve()):
         raise SystemExit("use a new output directory below .local/evidence")
     lib = c.CDLL(str((args.dll_dir / "am_camera.dll").resolve()))
-    a.bind(lib, "amc_", require_all=True)
+    missing = a.bind(lib, "amc_", require_all=not args.compatibility_baseline)
+    if args.compatibility_baseline:
+        assert set(missing) == {"amc_get_worker_budget", "amc_set_worker_budget"}, missing
     params = size(a.amc_init_params_t)
     params.abi_version = a.AM_ABI_VERSION
     ctx = c.POINTER(a.amc_context_t)()

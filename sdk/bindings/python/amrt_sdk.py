@@ -1229,6 +1229,7 @@ AM_SFP_DROP_OLDEST = 0
 AM_SFP_DROP_WAIT = 1
 AM_INIT_SHARED_FRAMES = 1
 AM_SHARED_PROTOCOL_VERSION = 1
+AM_MEDIA_WORKER_LIMIT = 64
 AM_ERR_SDK_OK = 0
 AM_ERR_SDK_ABI_UNSUPPORTED = 1
 AM_ERR_SDK_STRUCT_SIZE_INVALID = 2
@@ -1318,6 +1319,7 @@ AMC_CAP_SCALE = 2048
 AMC_CAP_BSF_ANNEXB = 4096
 AMC_CAP_BSF_LENGTH_PREFIX = 8192
 AMC_CAP_SHARED_FRAME_POOL = 16384
+AMC_CAP_WORKER_BUDGET = 32768
 AMV_CAP_IMAGE_INPUT = 1
 AMV_CAP_TENSOR_INPUT = 2
 AMV_CAP_RAW_MODEL = 4
@@ -1460,6 +1462,8 @@ FUNCTIONS = {
     "amv_shared_pool_return": (am_status_t, [POINTER(amv_shared_pool_t), POINTER(am_shared_frame_view_t)]),
     "amv_shared_pool_detach": (am_status_t, [POINTER(amv_shared_pool_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amv_shared_pool_get_stats": (am_status_t, [POINTER(amv_shared_pool_t), POINTER(am_shared_pool_stats_t)]),
+    "amc_set_worker_budget": (am_status_t, [POINTER(amc_context_t), c_uint32]),
+    "amc_get_worker_budget": (am_status_t, [POINTER(amc_context_t), POINTER(c_uint32)]),
 }
 
 def bind(library, prefix, require_all=False):

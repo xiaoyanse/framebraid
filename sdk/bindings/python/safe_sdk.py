@@ -376,6 +376,29 @@ def _read_decode_hardware_report(resource):
 
 
 class CameraContext(Context):
+    def _worker_budget_api(self):
+        version = self.library.amc_get_abi_version()
+        if version >> 16 != 1 or version < 0x10001:
+            raise NotImplementedError("Media worker budgets require ABI 1.1")
+        capability = sized(a.amc_capability_t)
+        self._check(self.library.amc_query_capability(self._require(), c.byref(capability)), "query camera capability")
+        if not capability.feature_bits & a.AMC_CAP_WORKER_BUDGET:
+            raise NotImplementedError("This Media SDK does not expose worker budgets")
+
+    def get_worker_budget(self):
+        with self._lock:
+            self._worker_budget_api()
+            value = c.c_uint32()
+            self._check(self.library.amc_get_worker_budget(self._require(), c.byref(value)), "get worker budget")
+            return value.value
+
+    def set_worker_budget(self, maximum):
+        if not isinstance(maximum, int) or not 0 <= maximum <= a.AM_MEDIA_WORKER_LIMIT:
+            raise ValueError("worker budget must be an integer in 0..%d" % a.AM_MEDIA_WORKER_LIMIT)
+        with self._lock:
+            self._worker_budget_api()
+            self._check(self.library.amc_set_worker_budget(self._require(), maximum), "set worker budget")
+
     def get_decode_hardware_report(self):
         return _read_decode_hardware_report(self)
 

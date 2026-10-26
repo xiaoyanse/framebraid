@@ -77,9 +77,11 @@ impl Events {
             };
             self.alive.store(true, Ordering::Release);
             let pump = self.clone();
-            let worker = std::thread::Builder::new()
-                .name("amc-source-events".into())
-                .spawn(move || pump.run(source));
+            let worker = self
+                .budget
+                .metrics
+                .threads
+                .spawn("amc-source-events", move || pump.run(source));
             match worker {
                 Ok(worker) => {
                     *slot = Some(worker);

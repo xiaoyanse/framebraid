@@ -11,6 +11,7 @@ mod shared;
 mod sources;
 mod subscriptions;
 mod telemetry;
+mod threads;
 am_sdk_support::queue_exports!(amc_context_t, amc_get_queue_policy, amc_set_queue_policy);
 am_sdk_support::common_exports!(
     false,
@@ -58,6 +59,9 @@ pub unsafe extern "C" fn amc_query_capability(
 ) -> i32 {
     status(domain(), ctx as usize, || unsafe {
         common::camera_capability(domain(), ctx as usize, out)?;
+        let mut budget_cap: amc_capability_t = am_sdk_support::args::read(out, 4)?;
+        budget_cap.feature_bits |= AMC_CAP_WORKER_BUDGET as u32;
+        am_sdk_support::args::write(out, budget_cap)?;
         if cfg!(all(windows, target_arch = "x86_64")) {
             let mut value: amc_capability_t = am_sdk_support::args::read(out, 4)?;
             value.feature_bits |= (AMC_CAP_DECODE_H264

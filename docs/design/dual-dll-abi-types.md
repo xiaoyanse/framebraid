@@ -869,8 +869,9 @@ typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文�
   double   actual_capture_fps;               /* 连续抓图实际频率（N02） */
   uint64_t native_rss_estimate_bytes;        /* 原生库（FFmpeg/ORT/驱动）内存观测（参考值，
                                                与 SDK 可管理硬限分列，B10；不承诺原生库 RSS 受控） */
-  uint32_t threads_active, threads_peak;     /* P4：执行器+原生库线程活跃/峰值（观测口径，
-                                               与 total_thread_budget 对照；推理域有效） */
+  uint32_t threads_active, threads_peak;     /* Vision为进程共享执行器/已预留ORT线程；
+                                               Media为本Context SDK预留/存活worker，驱动线程另观测。
+                                               peak跨本Context历史配置保留，不是CPU并行度或进程线程数。 */
   uint64_t shared_mapped_bytes, shared_metadata_bytes; /* ctx累计共享映射与元数据，含未安全回收旧池 */
   uint32_t shared_pool_count, shared_outstanding_borrows; /* 不同池身份数与在借租约数 */
   uint32_t reserved[6];

@@ -17,7 +17,7 @@ SELECTED = ["amc_init_params_t", "amv_init_params_t", "am_model_desc_t",
             "am_source_desc_t", "am_credential_data_t", "am_capture_request_t",
             "am_captured_image_t", "am_frame_sub_desc_t", "am_shared_pool_config_t",
             "am_shared_pool_attach_desc_t", "am_shared_frame_view_t", "am_backend_candidate_t",
-            "am_backend_selection_t", "am_model_memory_desc_t", "amv_capability_t"]
+            "am_backend_selection_t", "am_model_memory_desc_t", "amv_capability_t", "amc_capability_t"]
 
 
 def generate():
@@ -58,11 +58,12 @@ def generate():
 
 
 def hardware_functions():
-    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy", "amv_get_abi_version", "amv_query_capability", "amv_probe_inference_hardware", "amv_get_inference_hardware_report", "amv_model_load_selected", "amv_model_load_memory_selected", "amv_get_model_selection_report", "amv_get_selection_attempt_report"]
+    names = ["amc_query_capability", "amc_set_worker_budget", "amc_get_worker_budget", "amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy", "amv_get_abi_version", "amv_query_capability", "amv_probe_inference_hardware", "amv_get_inference_hardware_report", "amv_model_load_selected", "amv_model_load_memory_selected", "amv_get_model_selection_report", "amv_get_selection_attempt_report"]
     primitive = {c.c_uint32: "uint", c.c_uint64: "ulong", c.c_int32: "int"}
     lines = ["// Generated from the public ctypes ABI; do not edit.",
              "using System;", "using System.Runtime.InteropServices;",
              "namespace AmrtSdk {", "    internal static partial class Native {"]
+    lines.append("        internal const uint WorkerBudgetCapability = " + str(a.AMC_CAP_WORKER_BUDGET) + "U;")
     for name in names:
         result, args = a.FUNCTIONS[name]
         parameters = ", ".join(primitive.get(kind, "IntPtr") + " arg" + str(i) for i, kind in enumerate(args))
@@ -70,6 +71,11 @@ def hardware_functions():
         lines.append('        [DllImport("'+dll+'", CallingConvention=CallingConvention.Cdecl)]')
         lines.append("        internal static extern " + primitive[result] + " " + name + "(" + parameters + ");")
     return "\n".join(lines + ["    }", "}", ""])
+
+
+def write_generated(path, content):
+    newline = b"\r\n" if path.exists() and b"\r\n" in path.read_bytes() else b"\n"
+    path.write_bytes(content.encode("utf-8").replace(b"\n", newline))
 
 
 if __name__ == "__main__":
@@ -83,10 +89,10 @@ if __name__ == "__main__":
             raise SystemExit("C# ABI layouts differ; regenerate selected types")
     else:
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(expected, encoding="utf-8", newline="\n")
+        write_generated(target, expected)
     extension = SDK / "bindings/csharp/NativeHardware.cs"
     if args.check:
         if not extension.is_file() or extension.read_text(encoding="utf-8") != hardware_functions():
             raise SystemExit("C# hardware declarations differ; regenerate")
     else:
-        extension.write_text(hardware_functions(), encoding="utf-8", newline="\n")
+        write_generated(extension, hardware_functions())

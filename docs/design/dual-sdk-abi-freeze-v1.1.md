@@ -1,5 +1,7 @@
 # ABI 1.1 本地兼容扩展冻结依据
 
+本地r10兼容新增Media `amc_set_worker_budget`/`amc_get_worker_budget`及WORKER_BUDGET能力位，常量AM_MEDIA_WORKER_LIMIT=64。无结构/字段偏移变化，旧调用方初始化行为保留，新调用先协商ABI1.1/能力位并使用匹配绑定。r9冻结原字节保存至history/freeze-v1.1-r9.json，r10引用该SHA；不覆盖旧历史或替换公开制品。Media为每Context SDK工作槽，含启动预留，峰值保留历史；与推理全局ORT预算及进程/驱动实际线程分开。关闭、Context隔离、拒绝/像素资源等待和语言调用见[本地验证](../verification/sdk-r3-media-workers-20261027.md)，不冒充完整硬件或长跑通过。
+
 本地r9兼容新增路径/内存有序加载、模型选择报告和按ID尝试报告，共四函数；新增两个结构、能力位ORDERED_SELECTION，原结构的大小/对齐/字段偏移不变。先保存r8冻结原字节至`history/freeze-v1.1-r8.json`，r9引用其SHA。选择JSON的最小Schema纳入冻结。旧1.0/1.1入口不变，1.1尚未发布，使用r9新接口须检查能力位并配套绑定。见[本轮验证](../verification/sdk-h5-ordered-selection-20261026.md)。本地合同冻结不代表H5整包、加速EP或长期稳定性已通过。
 
 本地开发首组新增两个Media导出：显式解码设备初始化探测、已有context/decoder的UTF8 JSON快照查询。合同以dual-dll-abi.md §1.1扩展为准；旧结构、枚举、导出和所有权保持，旧1.0客户端仍可初始化新DLL。新客户端使用新增导出前须协商1.1；SDK包版本仍开发期，发布时另行定版。

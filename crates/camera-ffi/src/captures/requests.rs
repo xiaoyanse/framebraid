@@ -91,9 +91,12 @@ pub unsafe extern "C" fn amc_capture_async(
             id
         };
         let state_copy = state.clone();
-        if std::thread::Builder::new()
-            .name("amc-capture".into())
-            .spawn(move || {
+        if source
+            .state
+            .metrics
+            .threads
+            .clone()
+            .spawn("amc-capture", move || {
                 let _active = active;
                 let _worker = worker;
                 if let Ok(mut records) = state_copy.records.lock() {

@@ -6,6 +6,8 @@ Interface presence, tested behavior and release commitments are separate. No sup
 
 接口存在、实测通过与交付承诺分开，不承诺支持时限。
 
+Local C ABI 1.1 r10 exposes a Media worker budget per Context (default/ceiling 64, tightening only, zero disables new SDK workers). Counts cover the eight C ABI worker kinds, excluding caller threads and unmanaged driver threads. Direct Rust SessionPool configuration remains a separate audit path. Python/C# helpers and Windows x64 loopback checks are [recorded](verification/sdk-r3-media-workers-20261027.md); no published-platform or soak guarantee is added. / 历史峰值不随收紧清零，不能拿旧峰值与新上限误判超额。
+
 Local R2 introduces explicit Rust hardware primitives ([contract](design/native-hardware.md)); this does not upgrade the published Windows CPU scope or claim C ABI/RTSP automatic hardware selection is complete. / 本地硬解原语不改变公开CPU制品支持承诺，不代表C ABI/RTSP自动硬解已完成。
 
 The local direct C decoder now selects hardware and admits CPU recovery ([verification](verification/sdk-r2-direct-auto-20261026.md)); RTSP integration, rich device diagnostics and production acceptance remain open. / 直接C入口已有本地实测，仍不扩大旧公开制品支持范围。

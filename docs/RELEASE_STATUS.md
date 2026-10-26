@@ -2,6 +2,8 @@
 
 [Documentation / 文档入口](README.md) · [Release checklist / 发布清单](RELEASE_CHECKLIST.md)
 
+Local ABI 1.1 r10 adds `amc_set/get_worker_budget`, WORKER_BUDGET capability and Python/C# helpers. Media Context SDK workers now share a 64-slot ceiling and report reserved/live counts and historic peak; real quota/isolation/Closing checks and three five-worker RTSP cycles are [verified](verification/sdk-r3-media-workers-20261027.md). / 未发布，原生驱动未知线程、Rust直接会话、完整硬件及4h/24h仍待，不能用工作槽取代OS线程数。
+
 Local Media capture backing storage now includes request/coalescing/cadence/subscription index capacity and Flight bodies, with overlap reservation and retained idle credits. Cache errors publish a terminal result and retire the coalesced Flight. [Validation](verification/sdk-r3-capture-tables-20261027.md) covers actual low-budget admission/execution distinctions, failed-cache retries, closed-handle reuse, 53 unit tests and loopback Digest/cancellation/consumer isolation. / 未发布，不代表全部元数据、线程、硬件或长跑已验。
 
 Local R3 inference request storage now reserves exact backing capacity and growth overlap against control bytes; rejected growth neither publishes IDs nor replaces pending requests. Idle metadata does not hold Context closing. [Validation](verification/sdk-r3-record-storage-20261027.md): 21 shared-feature/20 no-default unit tests and actual CPU batch/notify/pressure checks passed, with raw latency variations retained. / 本地未发布补请求表预算，不代表R3全路径、硬件或长跑已通过。

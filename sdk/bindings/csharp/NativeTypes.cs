@@ -415,6 +415,19 @@ namespace AmrtSdk {
         public uint @shared_pool_state;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct amc_capability_t {
+        public uint @struct_size;
+        public uint @abi_minor;
+        public uint @feature_bits;
+        public uint @pixel_formats;
+        public uint @max_sources;
+        public uint @max_decoders;
+        public uint @max_subscribers_per_source;
+        public ulong @frame_budget_bytes;
+        public uint @shared_pool_state;
+    }
+
     public static class VisionCapabilities {
         public const uint OrderedSelection = 512U;
     }

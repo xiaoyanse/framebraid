@@ -79,6 +79,7 @@ impl Default for State {
     }
 }
 pub(super) struct Credentials {
+    threads: Arc<crate::threads::Budget>,
     state: Mutex<State>,
     changed: Condvar,
     alive: AtomicBool,
@@ -86,15 +87,19 @@ pub(super) struct Credentials {
 }
 impl Default for Credentials {
     fn default() -> Self {
+        Self::new(Arc::default())
+    }
+}
+impl Credentials {
+    pub fn new(threads: Arc<crate::threads::Budget>) -> Self {
         Self {
+            threads,
             state: Mutex::default(),
             changed: Condvar::new(),
             alive: AtomicBool::new(false),
             worker: Mutex::default(),
         }
     }
-}
-impl Credentials {
     pub fn version(&self) -> u32 {
         self.state.lock().map(|s| s.version).unwrap_or(0)
     }
@@ -219,9 +224,9 @@ impl Credentials {
         if provider.is_some() && !state.started {
             self.alive.store(true, Ordering::Release);
             let manager = self.clone();
-            let worker = std::thread::Builder::new()
-                .name("amc-credentials".into())
-                .spawn(move || manager.run(owner));
+            let worker = self
+                .threads
+                .spawn("amc-credentials", move || manager.run(owner));
             match worker {
                 Ok(worker) => {
                     *self.worker.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? = Some(worker);

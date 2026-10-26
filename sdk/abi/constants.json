@@ -65,7 +65,8 @@
     "AM_SFP_DROP_OLDEST": 0,
     "AM_SFP_DROP_WAIT": 1,
     "AM_INIT_SHARED_FRAMES": 1,
-    "AM_SHARED_PROTOCOL_VERSION": 1
+    "AM_SHARED_PROTOCOL_VERSION": 1,
+    "AM_MEDIA_WORKER_LIMIT": 64
   },
   "cameraCapabilities": [
     "ENCODED_H264",
@@ -82,7 +83,8 @@
     "SCALE",
     "BSF_ANNEXB",
     "BSF_LENGTH_PREFIX",
-    "SHARED_FRAME_POOL"
+    "SHARED_FRAME_POOL",
+    "WORKER_BUDGET"
   ],
   "visionCapabilities": [
     "IMAGE_INPUT",

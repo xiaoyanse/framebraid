@@ -87,9 +87,11 @@ impl Hub {
             let _ = old.join();
         }
         let this = hub.clone();
-        let thread = std::thread::Builder::new()
-            .name("amc-shared-source".into())
-            .spawn(move || {
+        let thread = source
+            .state
+            .metrics
+            .threads
+            .spawn("amc-shared-source", move || {
                 let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| this.run()));
                 if let Ok(mut token) = this.interrupt.lock() {
                     token.take();

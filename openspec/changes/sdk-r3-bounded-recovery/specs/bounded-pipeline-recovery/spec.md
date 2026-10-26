@@ -6,6 +6,20 @@
 
 ## ADDED Requirements
 
+### Requirement: Context-wide Media worker admission
+
+Media C ABI SDK MUST 在每个由该Context创建的SDK线程前取得同一Context的worker槽，默认及硬上限64，只允许收紧；0禁止新建工作线程。SDK MUST 兼容新增配置/查询和能力位，stats显示活槽与历史峰值，不将宿主同步线程或未知驱动线程计为SDK worker。直接Rust会话没有该Context时按其自身配置另核，不能冒充本Context预算覆盖。
+
+#### Scenario: Busy worker cannot be revoked by a lower limit
+
+- **WHEN** 新上限低于仍在执行或启动中的SDK工作槽数
+- **THEN** SDK返回resourceExhausted并保持原上限，取消/关闭等待真实归还，不能杀线程或另建替代线程
+
+#### Scenario: Two contexts have independent worker limits
+
+- **WHEN** 一个Context耗尽worker槽，另一Context仍有空闲额度
+- **THEN** 前者新建SDK线程被拒，后者可继续；活槽统计在实际退出归零且历史峰值保留
+
 ### Requirement: Capture metadata backing and flight completion
 
 Media SDK MUST 在抓图请求/合并采集/频率缓存/消费者/订阅索引分配前计控制字节，包含增长重叠及空闲保留容量；Flight本体独立计费，不将内部存储当外持缓冲或新增控制项目。

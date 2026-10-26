@@ -3,6 +3,13 @@ using System;
 using System.Runtime.InteropServices;
 namespace AmrtSdk {
     internal static partial class Native {
+        internal const uint WorkerBudgetCapability = 32768U;
+        [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]
+        internal static extern int amc_query_capability(IntPtr arg0, IntPtr arg1);
+        [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]
+        internal static extern int amc_set_worker_budget(IntPtr arg0, uint arg1);
+        [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]
+        internal static extern int amc_get_worker_budget(IntPtr arg0, IntPtr arg1);
         [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]
         internal static extern uint amc_get_abi_version();
         [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]

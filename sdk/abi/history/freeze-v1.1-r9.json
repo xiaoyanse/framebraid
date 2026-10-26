@@ -1,0 +1,64 @@
+{
+  "id": "am-sdk-cabi-1.1-20261026-r9",
+  "previousFreezeSha256": "b7120b478fe1bc52358c67ca656736270c45ddfbd432308c047b3dec7c96a3e9",
+  "abiVersion": 65537,
+  "designFrozen": true,
+  "runtimeAcceptance": "pending",
+  "files": [
+    {
+      "path": "sdk/include/am_camera.h",
+      "sha256": "620797d768231c98f5f41e8628ce69f78aba76c2a1a84aff9412be30e5b61d79",
+      "bytes": 8201
+    },
+    {
+      "path": "sdk/include/am_vision.h",
+      "sha256": "c67a4c9e3c2ba06f0ca15a715ef8692a50406a071805d99a02801e951fd4c55a",
+      "bytes": 6492
+    },
+    {
+      "path": "sdk/include/am_sdk_types.h",
+      "sha256": "59e5d72d5e1031d86581923bd0a2aae1e4a70bb6c6a3cfc4b242e43999ab66dc",
+      "bytes": 65616
+    },
+    {
+      "path": "sdk/abi/constants.json",
+      "sha256": "c6ab78fccf33e052565e2d5927667995bc964b6b6494ba841d5143b8f689df43",
+      "bytes": 2293
+    },
+    {
+      "path": "sdk/abi/defaults.json",
+      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010",
+      "bytes": 1923
+    },
+    {
+      "path": "sdk/abi/layout-win-x64.json",
+      "sha256": "2f20e5f4fa0989b3f40a2feda2f2502db516f919afe65b3f59caccc4c0cedb3a",
+      "bytes": 5392
+    },
+    {
+      "path": "sdk/abi/decode-hardware-report-v1.schema.json",
+      "sha256": "6f0c7422415653b3c3b55e4f0fd91afac1539ca7e7c15e167aaf8079c52449d0",
+      "bytes": 3811
+    },
+    {
+      "path": "sdk/abi/inference-hardware-report-v1.schema.json",
+      "sha256": "2d6dd24d8400f100f3cdcb6ec8bcd0801b20c92aab8e9023d6f06f81a20e17a9",
+      "bytes": 2171
+    },
+    {
+      "path": "sdk/abi/inference-selection-v1.schema.json",
+      "sha256": "3c56be61e0c28e34a2fd012f1826d378ad5aa4d70ba313d8d5e8af8495cc3465",
+      "bytes": 2887
+    },
+    {
+      "path": "crates/vision/resources/profiles.json",
+      "sha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
+      "bytes": 3526
+    },
+    {
+      "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",
+      "sha256": "13770dd5b80b0cbb3da4a6c35e8e6f4d6f89f4e8784161ce5a396cce1e171ecb",
+      "bytes": 2804
+    }
+  ]
+}

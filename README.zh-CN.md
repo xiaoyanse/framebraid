@@ -1,5 +1,7 @@
 # FrameBraid SDK
 
+本地ABI 1.1 r10新增Media每Context工作线程额度及活槽/峰值统计，Python/C#已有封装；工作槽不等于CPU核数或驱动全部线程。须使用匹配的本地DLL和绑定，详见[验证与边界](docs/verification/sdk-r3-media-workers-20261027.md)，未替换公开v0.1.0制品。
+
 ![FrameBraid SDK — Media SDK 与 Vision SDK](assets/brand/framebraid-banner.webp)
 
 [English](README.md) · [文档入口](docs/README.md) · [快速接入](docs/GETTING_STARTED.zh-CN.md) · [后续路线图](docs/ROADMAP.md)

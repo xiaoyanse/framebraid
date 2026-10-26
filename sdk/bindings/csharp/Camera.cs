@@ -11,6 +11,27 @@ namespace AmrtSdk {
         }
     }
     public sealed class CameraContext : OwnedResource {
+        private void RequireWorkerBudget(Arena arena) {
+            HardwareReports.RequireApi();
+            IntPtr cap = arena.Struct(Arena.Sized<amc_capability_t>());
+            Diagnostics.Check(Native.amc_query_capability(Raw, cap), "query camera capability", Raw, false);
+            if ((Arena.Read<amc_capability_t>(cap).feature_bits & Native.WorkerBudgetCapability) == 0)
+                throw new NotSupportedException("This Media SDK does not expose worker budgets.");
+        }
+        public uint GetWorkerBudget() {
+            lock (Gate) using (Arena arena = new Arena()) {
+                RequireWorkerBudget(arena);
+                IntPtr value = arena.Struct(0U);
+                Diagnostics.Check(Native.amc_get_worker_budget(Raw, value), "get worker budget", Raw, false);
+                return unchecked((uint)Marshal.ReadInt32(value));
+            }
+        }
+        public void SetWorkerBudget(uint maximum) {
+            lock (Gate) using (Arena arena = new Arena()) {
+                RequireWorkerBudget(arena);
+                Diagnostics.Check(Native.amc_set_worker_budget(Raw, maximum), "set worker budget", Raw, false);
+            }
+        }
         public string ProbeDecodeHardware(uint codec, uint budgetMs = 1500) {
             lock (Gate) {
                 HardwareReports.RequireApi();

@@ -249,9 +249,12 @@ pub unsafe extern "C" fn amc_capture_continuous_start(
     })
 }
 fn launch(sub: Arc<Subscription>) -> Result<()> {
-    std::thread::Builder::new()
-        .name("amc-isapi-sub".into())
-        .spawn(move || {
+    sub.source
+        .state
+        .metrics
+        .threads
+        .clone()
+        .spawn("amc-isapi-sub", move || {
             struct Running(Arc<Subscription>);
             impl Drop for Running {
                 fn drop(&mut self) {
