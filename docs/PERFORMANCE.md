@@ -17,6 +17,10 @@ measurements, not browser playback or end-to-end FPS. See [R2 budget/cache valid
 
 ## Acceptance policy / 验收口径
 
+Local R2 direct tensor preparation now removes one full temporary f32 allocation/copy while preserving complete tensor bytes and transforms. Allocation counts, paired timings and actual CPU Pose/retained-input checks are recorded in [verification](verification/sdk-r2-prepare-direct-20261026.md). The measured local preparation gain is not end-to-end inference, CPU offload or a published release claim.
+
+R2直写最终对齐张量已有限验证：每次640×640减少4,915,200字节临时分配/复制，保持完整输出；实际源采样低交付另行保留，不因本优化关闭。
+
 Current decisions use [MET-2](PERFORMANCE_ACCEPTANCE.md): separate resource offload, useful delivery, latency, correctness and recovery. A hardware path is not required to beat CPU latency. Legacy commands, JSON fields and 5% alerts remain unchanged. The separate MET-2 stream tool below now measures process CPU time, per-PID GPU counters and A/A variation; it does not automatically grant performance acceptance.
 
 用户已授权恢复开发。S1新增工具与基线见[本轮记录](verification/sdk-met2-s1-20261026.md)，旧工具/数据不改写；历史评价见[复核记录](verification/sdk-metrics-review-20261026.md)。

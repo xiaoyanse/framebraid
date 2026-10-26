@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Write image preprocessing directly into the final aligned owned tensor, removing one full temporary f32 buffer/copy. Byte/transform reference checks, allocation/paired local timings, actual CPU Pose/NV12 and retained-camera input regressions verified locally; public API/ABI, budgets and released assets unchanged. / 前处理内部直写，640×640每次少4,915,200字节临时分配与复制，局部收益不外推系统性能。
+
 - Add loopback RTSP sampling/mixed-consumer measurements tied to a rebuilt Media DLL. Preserve observed delivery shortfalls and distinguish active queued-frame quota from post-drain leaks; no sampling-contract or performance-support change. / 补实际采样基线，保留30 FPS低交付问题，不将测试工具完成当功能通过。
 
 - Add a frozen real-Pose CPU resource/async-response benchmark and isolated strict/fallback controls for missing accelerator EPs. Preserve actual DLL identities and raw A/A variation; no new selection ABI, accelerator execution or speedup claim. / 补真实模型资源基线与缺EP负控制，未扩大支持范围。

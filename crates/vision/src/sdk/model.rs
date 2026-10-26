@@ -52,6 +52,17 @@ impl TensorData {
         }
         Ok(unsafe { std::slice::from_raw_parts(self.words.as_ptr().cast(), self.len / 4) })
     }
+    pub(super) fn floats_mut(&mut self) -> Result<&mut [f32]> {
+        if self.info.dtype != 0 {
+            return Err(Error("vision.dtypeMismatch".into()));
+        }
+        if !self.len.is_multiple_of(4) || byte_count(self.info.dtype, &self.info.shape)? != self.len
+        {
+            return Err(Error("vision.inputBytesMismatch".into()));
+        }
+        // words独占、全初始化且八字节对齐；只暴露私有有效长度，不访问尾部填充。
+        Ok(unsafe { std::slice::from_raw_parts_mut(self.words.as_mut_ptr().cast(), self.len / 4) })
+    }
 }
 pub fn byte_count(dtype: u32, shape: &[i64]) -> Result<usize> {
     let width = match dtype {

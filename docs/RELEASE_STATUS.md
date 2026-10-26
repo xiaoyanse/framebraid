@@ -26,6 +26,8 @@ R2/H2.0b adds a locally verified Rust initialization selector ([record](verifica
 
 R2 H2.0c/1.1 readback reservations and conversion caches are locally verified ([record](verification/sdk-r2-readback-cache-20261026.md)); both pixel-copy entries use the budget adapter, but automatic native hardware activation/recovery and production/soak validation remain open. / 回读额度覆盖缓存寿命、转换缓存已验证，不改变公开CPU制品和未验事项。
 
+Local R2 direct tensor preparation is verified for allocation reduction, byte/transform equivalence and CPU Pose/retained-input regression ([record](verification/sdk-r2-prepare-direct-20261026.md)); published assets and support remain unchanged. MET-2 S1/S2/S3 baselines are available, while live 30-FPS sampling delivery, accelerated inference, recovery and soak acceptance remain open. / 本地直写张量已验证，原生真实采样不足和其他阶段继续，不扩大公开支持。
+
 ## Public version / 公开版本
 
 Local C ABI 1.1 probe/report extension is verified through C/Python/C# and ABI 1.0 initialization ([record](verification/sdk-r2-abi11-hardware-20261026.md)). Published v0.1.0 remains ABI 1.0; match DLLs and bindings by tag/build. / 本地扩展未发布，不以初始化探测替代真实码流验收，RTSP策略r7已接线，H5及完整硬件验收仍开放。

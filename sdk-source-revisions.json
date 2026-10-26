@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "5449e79ad8781ff9424840d86b7ecb413873e816",
+  "reviewBaseCommit": "ddae5152a8026090a55dd3501952c93e46922689",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "6fbf4104457a7c2a15a801f3348e56be4a2cf62d13eef323fdbf8fc1dc7cf07d",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+      "sha256": "8687035b27743343e213e9f77f160593860a99f33a337b4e2565fc1fe1488cf6",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -320,6 +320,24 @@
       "previousSha256": null,
       "sha256": "20044fd695cf6626fec13826d06d6f2c85595fe8ca2b82ff8aaff7a22693fe17",
       "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/prepare.rs",
+      "previousSha256": "bf97f1899375ee41dd7bbea511d067d50aa67c239f92d3b139094b3c856ba4a0",
+      "sha256": "adeec286e9579581b32b54fbb230ac95ecc7807640ece0d8d0e9f779471cb699",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+    },
+    {
+      "path": "crates/vision/src/sdk/prepare/reference.rs",
+      "previousSha256": null,
+      "sha256": "8c1ab84b5d8d25dc07ba90459297d47a2593e61a680c8b59610a9c4ab2d44837",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+    },
+    {
+      "path": "crates/vision/src/sdk/prepare/tests.rs",
+      "previousSha256": null,
+      "sha256": "5fb6243dee273586fbcdb107788710c689cde6d528b423f2ae9c650b370411e4",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
     }
   ]
 }

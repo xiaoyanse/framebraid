@@ -105,7 +105,18 @@ pub fn prepare(
             .max(0.0) as i32;
     }
     let area = (p.width * p.height) as usize;
-    let mut values = vec![0f32; area * 3];
+    let shape = if p.nhwc {
+        vec![1, p.height as i64, p.width as i64, 3]
+    } else {
+        vec![1, 3, p.height as i64, p.width as i64]
+    };
+    let mut tensor = TensorData::zeroed(TensorInfo {
+        name: name.into(),
+        dtype: 0,
+        shape,
+    })?;
+    // 直接写独占且已核长度的对齐拥有者，避免完整临时浮点数组及再次复制。
+    let values = tensor.floats_mut()?;
     for y in 0..p.height {
         for x in 0..p.width {
             let rgb = if p.resize == 0
@@ -145,44 +156,10 @@ pub fn prepare(
             }
         }
     }
-    let shape = if p.nhwc {
-        vec![1, p.height as i64, p.width as i64, 3]
-    } else {
-        vec![1, 3, p.height as i64, p.width as i64]
-    };
-    let data = unsafe { std::slice::from_raw_parts(values.as_ptr().cast(), bytes) };
-    Ok((
-        TensorData::new(
-            TensorInfo {
-                name: name.into(),
-                dtype: 0,
-                shape,
-            },
-            data,
-        )?,
-        m,
-    ))
+    Ok((tensor, m))
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn padded_bgr_and_letterbox_are_mapped() {
-        let bytes = [0, 0, 255, 0, 255, 0, 99, 99];
-        let pixels = Pixels {
-            width: 2,
-            height: 1,
-            format: 2,
-            planes: vec![&bytes],
-            strides: vec![8],
-            color_matrix: 0,
-            color_range: 0,
-        };
-        let (tensor, m) = prepare(&pixels, "images", Preprocess::profile(2, false), 1024).unwrap();
-        assert_eq!(m.top, 0);
-        assert_eq!(tensor.floats().unwrap()[0], 1.0);
-        assert_eq!(tensor.floats().unwrap()[3], 114.0 / 255.0);
-        assert!(prepare(&pixels, "images", Preprocess::profile(640, false), 12).is_err());
-    }
-}
+mod reference;
+#[cfg(test)]
+mod tests;
