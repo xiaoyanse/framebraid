@@ -1,4 +1,5 @@
 use super::*;
+use crate::frames::ControlCharge;
 use am_sdk_support::{buffers::Buffer, callbacks, handles::Managed};
 use std::{any::Any, thread::JoinHandle};
 
@@ -104,6 +105,7 @@ pub struct Subscription {
     wake: Condvar,
     alive: AtomicBool,
     handle: Mutex<Option<JoinHandle<()>>>,
+    _metadata: ControlCharge,
 }
 impl Managed for Subscription {
     fn as_any(&self) -> &dyn Any {
@@ -171,6 +173,19 @@ impl Subscription {
         {
             return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
         }
+        let presets = match &kind {
+            Kind::Frames { presets, .. } => presets.capacity() * size_of::<(u32, u32)>(),
+            _ => 0,
+        };
+        let metadata = state.control(
+            size_of::<Self>() + maximum as usize * size_of::<Item>() + presets,
+            false,
+        )?;
+        // 固定引用槽预留一次，控制计费覆盖整个订阅寿命。
+        let mut queue = VecDeque::new();
+        queue
+            .try_reserve_exact(maximum as usize)
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
         Ok(Arc::new(Self {
             key: AtomicUsize::new(0),
             kind,
@@ -182,12 +197,14 @@ impl Subscription {
             max_waiters: policy.max_waiters,
             deadline_ms: policy.wait_deadline_ms,
             data: Mutex::new(Data {
+                queue,
                 waiting_key: encoded,
                 ..Default::default()
             }),
             wake: Condvar::new(),
             alive: AtomicBool::new(false),
             handle: Mutex::default(),
+            _metadata: metadata,
         }))
     }
     pub fn stopped(&self) -> bool {

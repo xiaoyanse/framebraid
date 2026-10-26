@@ -5,6 +5,110 @@ static API: OnceLock<Arc<FfmpegApi>> = OnceLock::new();
 static CONVERSIONS: AtomicU64 = AtomicU64::new(0);
 
 #[test]
+fn subscription_metadata_rejects_before_exceeding_control_bytes() {
+    let (domain, source, hub, _) = fixture();
+    let cost = std::mem::size_of::<Subscription>() + 8 * std::mem::size_of::<Item>();
+    let context = source
+        .state
+        .ctx
+        .data::<am_sdk_support::context::Context>()
+        .unwrap();
+    context.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = cost as u64 - 1;
+    assert!(matches!(
+        Subscription::new(
+            source.state.clone(),
+            &hub,
+            Kind::Frames {
+                format: 0,
+                fps: 5,
+                presets: vec![]
+            },
+            AM_SUB_PULL,
+            8,
+            1024
+        ),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    ));
+    context.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = cost as u64;
+    let subscription = Subscription::new(
+        source.state.clone(),
+        &hub,
+        Kind::Frames {
+            format: 0,
+            fps: 5,
+            presets: vec![],
+        },
+        AM_SUB_PULL,
+        8,
+        1024,
+    )
+    .unwrap();
+    assert!(source.state.control(1, false).is_err());
+    drop(subscription);
+    drop(source.state.control(cost, false).unwrap());
+    let key = source.state.ctx_key;
+    drop((source, hub));
+    assert_eq!(domain.close(key, 100).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+    domain.destroy(key).unwrap();
+}
+
+#[test]
+fn subscription_metadata_is_held_until_all_object_references_are_gone() {
+    use am_sdk_support::handles::Managed;
+    let (domain, source, hub, _) = fixture();
+    let context = source
+        .state
+        .ctx
+        .data::<am_sdk_support::context::Context>()
+        .unwrap();
+    context.limits.lock().unwrap().control_max_items = 1;
+    let subscription = sub(&source, &hub, 5, AM_SUB_PULL);
+    let retained = subscription.clone();
+    subscription.request_close();
+    drop(subscription);
+    assert!(source.state.control(1, false).is_err());
+    drop(retained);
+    drop(source.state.control(1, false).unwrap());
+    let key = source.state.ctx_key;
+    drop((source, hub));
+    assert_eq!(domain.close(key, 100).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+    domain.destroy(key).unwrap();
+}
+
+#[test]
+fn subscription_scaled_preset_capacity_is_included_in_metadata_budget() {
+    let (domain, source, hub, _) = fixture();
+    let mut presets = Vec::with_capacity(16);
+    presets.push((64, 48));
+    let base = std::mem::size_of::<Subscription>() + 8 * std::mem::size_of::<Item>();
+    let context = source
+        .state
+        .ctx
+        .data::<am_sdk_support::context::Context>()
+        .unwrap();
+    context.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = (base + 8) as u64;
+    assert!(matches!(
+        Subscription::new(
+            source.state.clone(),
+            &hub,
+            Kind::Frames {
+                format: 0,
+                fps: 5,
+                presets
+            },
+            AM_SUB_PULL,
+            8,
+            1024
+        ),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    ));
+    let key = source.state.ctx_key;
+    drop((source, hub));
+    assert_eq!(domain.close(key, 100).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+    domain.destroy(key).unwrap();
+}
+
+#[test]
 #[ignore = "显式设置FFmpeg/H264合成1080p单AU；当前策略A/B，不是RTSP吞吐基准"]
 fn native_stream_policy_quantifies_processing_cost_and_delivery() {
     let sample = std::fs::read(std::env::var("AM_SDK_H264_SAMPLE").unwrap()).unwrap();

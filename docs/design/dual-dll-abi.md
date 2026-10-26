@@ -495,6 +495,10 @@ AM_API const char* amc_status_name(am_status_t status);
 
 `am_stats_t` 中 **SDK 可管理字节硬限用量与原生库（FFmpeg/驱动）内存观测分开字段**（B10）：前者受 §6 预算约束，后者（`native_rss_estimate_bytes`）为参考观测值，不承诺原生库总 RSS 严格受控。
 
+R3独立解码提交计数修复：有效解码句柄的每次`amc_decoder_submit`，实际复制入队后累计一次`accepted`，因输入队列数量/字节、同步竞争或域字节不足而返回QueueFull/ResourceExhausted时累计一次`rejected_backpressure`；参数、句柄、状态、编码校验错误不计入背压。统计为Context累计，不随reset清零；混合取流/抓图时accepted还包含其原有入队/采集口径，不把Context总数等同独立解码提交次数。本项不改变任何入队、错误码或ABI布局。
+
+Media订阅的对象、队列引用槽和缩放预设容量属于控制元数据，构造前占用`AM_Q_CONTROL`字节/项额度，直到对象最后引用释放才归还；队列的图片/包载荷继续按原数据额度计费，不重复把引用槽当载荷。低控制预算下可明确ResourceExhausted，即使该订阅的载荷预算尚有余量；关闭不能提前释放仍被对象持有的元数据额度。
+
 ## 3. am_vision.dll 函数清单
 
 ### 3.1 能力与后端矩阵（B14：单一 ORT 运行库 + 四层后端报告）

@@ -1,5 +1,9 @@
 # FrameBraid 双 SDK 接入说明
 
+## Admission statistics and metadata / 准入统计与元数据
+
+未发布修复：独立解码submit的真实入队/预算拒绝纳入Context累计计数，参数错误不作背压，reset不清历史；混合来源的accepted不代表唯一帧数。订阅对象、最大队列引用槽与缩放预设容量占控制额度，直到最后对象引用释放；载荷另计，低控制预算可明确拒绝。见[验证及剩余差异](../docs/verification/sdk-r3-budget-audit-20261027.md)。当前统计查询只实现NULL/`context`；旧对象scope合同差异仍待R4核齐，不将其冒充已支持。C ABI and external buffer ownership are unchanged.
+
 ## ISAPI interval-cache reclamation / 频率缓存回收
 
 未发布内部修复：最后一个同源同频率连续取图订阅排空时回收该频率缓存，其他频率仍运行，已交给调用方的图片继续按`amc_image_release`释放。验证见[记录](../docs/verification/sdk-r3-capture-cache-20261027.md)，复现工具`test-camera-capture-cache.py`只使用本地Digest HTTP合成图。This fixes stale interval-cache pressure without changing ABI, endpoint rules or conservative HTTP reservations.

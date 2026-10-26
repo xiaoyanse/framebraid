@@ -30,6 +30,16 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 - **WHEN** 一个慢频率消费者持续运行，其他频率订阅反复开始、取图并排空，或停止与HTTP结果提交重叠
 - **THEN** 最近图片缓存只保留活跃源×频率，最后同频订阅排空即释放其缓存；晚提交不能复活退役键、旧帧不能覆盖新帧，健康抓图不因历史频率缓存耗尽预算，实际读取中的外部引用仍保持到release
 
+#### Scenario: Standalone decoder rejects new input under pressure
+
+- **WHEN** 有效独立解码器因队列数量/字节或Context字节预算而拒绝新提交
+- **THEN** 队列占用不变、拒绝累计增加一次；成功入队增加一次接受累计，参数错误和reset不伪造拒绝或清除历史计数，其他Context不受影响
+
+#### Scenario: Media subscription metadata reaches the control limit
+
+- **WHEN** 订阅对象、最大引用队列或缩放预设容量超出Context控制预算
+- **THEN** 构造明确拒绝且不留下占用；被接受的对象持有控制额度至最后引用释放，载荷额度独立，不因关闭或清队列提前归还仍常驻的元数据
+
 #### Scenario: Rust H264Hub subscriber stalls or closes
 
 - **WHEN** Rust辅助分发的客户端停滞、视频和叠层共同占用队列，或关闭与等待/投递重叠

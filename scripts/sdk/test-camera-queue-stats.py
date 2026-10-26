@@ -1,6 +1,7 @@
 """独立解码输入队列统计与reset/close出账；使用显式合成样本和运行库。"""
 import argparse
 import ctypes as c
+import hashlib
 import importlib.util
 import json
 from pathlib import Path
@@ -23,9 +24,65 @@ def initialize(lib, runtime):
     return ctx
 
 
+def counters(lib, ctx):
+    value = c.POINTER(a.am_stats_t)()
+    check(lib.amc_get_stats(ctx, None, c.byref(value)))
+    try:
+        row = value.contents
+        return {name: getattr(row, name) for name in ["accepted", "rejected_backpressure", "queue_items", "queue_bytes"]}
+    finally:
+        check(lib.amc_stats_release(value))
+
+
+def admissions(lib, args):
+    rows = []
+    data = args.sample.read_bytes()
+    storage = (c.c_ubyte * len(data)).from_buffer_copy(data)
+    for mode, accepted, rejected in [("items", 2, a.AM_ERR_SDK_QUEUE_FULL),
+                                      ("bytes", 1, a.AM_ERR_SDK_QUEUE_FULL),
+                                      ("domain", 0, a.AM_ERR_SDK_RESOURCE_EXHAUSTED)]:
+        ctx, dec = initialize(lib, args.runtime_dir), c.POINTER(a.amc_decoder_t)()
+        try:
+            if mode == "domain":
+                limits = size(a.am_limits_t)
+                check(lib.amc_get_limits(ctx, c.byref(limits)))
+                limits.frame_budget_bytes = len(data) + 63
+                check(lib.amc_set_limits(ctx, c.byref(limits)))
+            cfg = size(a.am_decoder_config_t)
+            cfg.codec, cfg.output_pixel_format, cfg.hw_policy = a.AM_CODEC_H264, a.AM_PF_RGBA8, a.AM_DHW_SOFTWARE_ONLY
+            cfg.queue_max_items, cfg.queue_max_bytes = 2, len(data) + 64 if mode == "bytes" else 1024 * 1024
+            check(lib.amc_decoder_create(ctx, c.byref(cfg), c.byref(dec)))
+            packet = size(a.am_decoder_input_t)
+            packet.data, packet.size, packet.flags = storage, len(data), a.AM_PKT_AU_COMPLETE
+            packet.pts, packet.dts = -9223372036854775808, -9223372036854775808
+            for _ in range(accepted):
+                check(lib.amc_decoder_submit(dec, c.byref(packet)))
+            check(lib.amc_decoder_submit(dec, c.byref(packet)), rejected)
+            before_invalid = counters(lib, ctx)
+            check(lib.amc_decoder_submit(dec, None), a.AM_ERR_SDK_NULL_ARGUMENT)
+            after_invalid = counters(lib, ctx)
+            assert before_invalid == after_invalid
+            assert after_invalid["queue_items"] == accepted
+            assert after_invalid["queue_bytes"] == accepted * (len(data) + 64)
+            row = {"mode": mode, "accepted_calls": accepted, "rejected_calls": 1,
+                   "rejected_code": rejected, "snapshot": after_invalid}
+            check(lib.amc_decoder_reset(dec, None))
+            after_reset = counters(lib, ctx)
+            assert after_reset["queue_items"] == after_reset["queue_bytes"] == 0
+            assert all(after_reset[n] == after_invalid[n] for n in ["accepted", "rejected_backpressure"])
+            row["after_reset"] = after_reset
+            rows.append(row)
+        finally:
+            if dec:
+                t.close_object(lib, dec)
+            t.shared.close(lib, ctx, True)
+    return rows
+
+
 def run(args):
     lib = c.CDLL(str((args.dll_dir / "am_camera.dll").resolve()))
     a.bind(lib, "amc_")
+    admission_rows = admissions(lib, args)
     ctx, other = initialize(lib, args.runtime_dir), initialize(lib, args.runtime_dir)
     cfg = size(a.am_decoder_config_t)
     cfg.codec, cfg.output_pixel_format, cfg.hw_policy = a.AM_CODEC_H264, a.AM_PF_RGBA8, a.AM_DHW_SOFTWARE_ONLY
@@ -62,7 +119,13 @@ def run(args):
     t.shared.close(lib, other, True)
     t.shared.close(lib, ctx, True)
     print(json.dumps({"decoderInputAggregated": True, "receivedFrameIsExternal": True,
-                      "resetAndCloseUnaccount": True, "contextsIsolated": True}))
+                      "resetAndCloseUnaccount": True, "contextsIsolated": True, "admissions": admission_rows,
+                      "identity": {"dll_sha256": hashlib.sha256((args.dll_dir / "am_camera.dll").read_bytes()).hexdigest(),
+                                   "sample_sha256": hashlib.sha256(args.sample.read_bytes()).hexdigest()}}))
+    if args.require_admission_stats:
+        for row in admission_rows:
+            assert row["snapshot"]["accepted"] == row["accepted_calls"], row
+            assert row["snapshot"]["rejected_backpressure"] == row["rejected_calls"], row
 
 
 if __name__ == "__main__":
@@ -70,4 +133,5 @@ if __name__ == "__main__":
     parser.add_argument("--dll-dir", type=Path, required=True)
     parser.add_argument("--runtime-dir", type=Path, required=True)
     parser.add_argument("--sample", type=Path, required=True)
+    parser.add_argument("--require-admission-stats", action="store_true")
     run(parser.parse_args())

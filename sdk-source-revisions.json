@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "b09fd8270f51e5f9795fdf7dfac476167f79bd8a",
+  "reviewBaseCommit": "6acfc6ce29d3b7349f67854efdc9f232212f895f",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -114,8 +114,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "4655fe3006d826899e53bb145560c07f11c87d834ffe746ff5ed15e8374bebd1",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "3a2180469ffc4663bb5230cb0905d97f8ebd18edf202474e46217b8ba5e3c4e0",
+      "reason": "R3独立解码提交接受与背压拒绝累计，一次边界记账，参数/状态错误排除；真实数量/字节/域预算与reset/Context隔离回归，ABI不变，仅本地"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
@@ -180,8 +180,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/queue.rs",
       "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-      "sha256": "f979db48031e3a0fcd5837375e654f6065ecc466672d40fe2930050ff1946182",
-      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+      "sha256": "43ddf93a0419a4e0dfbd61b6266a23c816c2451d087ec4b02f04c26d1112946e",
+      "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
@@ -192,8 +192,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
       "previousSha256": null,
-      "sha256": "41bc0fc181512a3eeac9b8ae48ce76ed8c5201d3c8d0e483a51f6606f92db3ac",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "7bc0f870e3df3577e3c8bbb04c6ce49db0f1d2c554ff23a17970cdcbc07f0690",
+      "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
     },
     {
       "path": "crates/camera-ffi/Cargo.toml",
@@ -560,6 +560,12 @@
       "previousSha256": null,
       "sha256": "76ebc163ad0dc075846606f86b21f7f076cac3524e20bfd596648866f9d42b58",
       "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
+      "previousSha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c",
+      "sha256": "b621f27690c0fa9bacec19247329793a68ccd7c73c7966fe0b8f7b3f98e8709c",
+      "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
     }
   ]
 }

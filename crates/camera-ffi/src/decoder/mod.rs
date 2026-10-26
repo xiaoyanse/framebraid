@@ -221,68 +221,81 @@ pub unsafe extern "C" fn amc_decoder_submit(
     status(domain(), dec as usize, || {
         let entry = domain().active(dec as usize)?;
         let decoder = entry.data::<Decoder>()?;
-        if decoder.state.load(Ordering::Acquire) != AM_DEC_READY as u32 {
-            return Err(AM_ERR_CAMERA_DECODER_STATE_INVALID);
+        let result = unsafe { submit(decoder, pkt) };
+        match result {
+            Ok(()) => {
+                decoder.ctx.metrics.accepted.fetch_add(1, Ordering::AcqRel);
+            }
+            Err(AM_ERR_SDK_QUEUE_FULL | AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                decoder.ctx.metrics.rejected.fetch_add(1, Ordering::AcqRel);
+            }
+            _ => {}
         }
-        let packet = unsafe { args::read(pkt, size_of::<am_decoder_input_t>()) }?;
-        if packet.flags & !7 != 0 || packet.flags & AM_PKT_AU_COMPLETE == 0 {
-            return Err(AM_ERR_CAMERA_CODEC_UNSUPPORTED);
-        }
-        if packet.size == 0 || packet.size > SDK_DECODER_INPUT_BYTES - 64 {
-            return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
-        }
-        if packet.data.is_null() {
-            return Err(AM_ERR_SDK_NULL_ARGUMENT);
-        }
-        let mut locked = decoder
-            .inner
-            .try_lock()
-            .map_err(|_| AM_ERR_SDK_QUEUE_FULL)?;
-        let inner = locked.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
-        if decoder.state.load(Ordering::Acquire) != AM_DEC_READY as u32 {
-            return Err(AM_ERR_CAMERA_DECODER_STATE_INVALID);
-        }
-        if packet.pts != i64::MIN && inner.config.abi.time_base_den == 0 {
-            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
-        }
-        if inner.queue.len() >= inner.config.abi.queue_max_items as usize
-            || packet.size + 64
-                > inner
-                    .config
-                    .abi
-                    .queue_max_bytes
-                    .saturating_sub(inner.queue_bytes)
-        {
-            return Err(AM_ERR_SDK_QUEUE_FULL);
-        }
-        let data = unsafe { std::slice::from_raw_parts(packet.data, packet.size as usize) };
-        access_units(inner.config.codec, data).map_err(convert)?;
-        let charge = decoder.ctx.charge(packet.size + 64, false)?;
-        let mut bytes = Vec::new();
-        bytes
-            .try_reserve_exact(data.len() + 64)
-            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
-        bytes.extend_from_slice(data);
-        bytes.resize(data.len() + 64, 0);
-        inner.queue.push_back(Packet {
-            bytes,
-            valid: data.len(),
-            pts: packet.pts,
-            tag: i64::try_from(next(&PACKET_ID)?).map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?,
-            received: clock::monotonic_ms(),
-            _charge: charge,
-        });
-        inner.queue_bytes += packet.size + 64;
-        inner
-            .metrics
-            .decoder_queue_items
-            .fetch_add(1, Ordering::AcqRel);
-        inner
-            .metrics
-            .decoder_queue_bytes
-            .fetch_add(packet.size + 64, Ordering::AcqRel);
-        Ok(())
+        result
     })
+}
+unsafe fn submit(decoder: &Decoder, pkt: *const am_decoder_input_t) -> Result<()> {
+    if decoder.state.load(Ordering::Acquire) != AM_DEC_READY as u32 {
+        return Err(AM_ERR_CAMERA_DECODER_STATE_INVALID);
+    }
+    let packet = unsafe { args::read(pkt, size_of::<am_decoder_input_t>()) }?;
+    if packet.flags & !7 != 0 || packet.flags & AM_PKT_AU_COMPLETE == 0 {
+        return Err(AM_ERR_CAMERA_CODEC_UNSUPPORTED);
+    }
+    if packet.size == 0 || packet.size > SDK_DECODER_INPUT_BYTES - 64 {
+        return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+    }
+    if packet.data.is_null() {
+        return Err(AM_ERR_SDK_NULL_ARGUMENT);
+    }
+    let mut locked = decoder
+        .inner
+        .try_lock()
+        .map_err(|_| AM_ERR_SDK_QUEUE_FULL)?;
+    let inner = locked.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+    if decoder.state.load(Ordering::Acquire) != AM_DEC_READY as u32 {
+        return Err(AM_ERR_CAMERA_DECODER_STATE_INVALID);
+    }
+    if packet.pts != i64::MIN && inner.config.abi.time_base_den == 0 {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    if inner.queue.len() >= inner.config.abi.queue_max_items as usize
+        || packet.size + 64
+            > inner
+                .config
+                .abi
+                .queue_max_bytes
+                .saturating_sub(inner.queue_bytes)
+    {
+        return Err(AM_ERR_SDK_QUEUE_FULL);
+    }
+    let data = unsafe { std::slice::from_raw_parts(packet.data, packet.size as usize) };
+    access_units(inner.config.codec, data).map_err(convert)?;
+    let charge = decoder.ctx.charge(packet.size + 64, false)?;
+    let mut bytes = Vec::new();
+    bytes
+        .try_reserve_exact(data.len() + 64)
+        .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+    bytes.extend_from_slice(data);
+    bytes.resize(data.len() + 64, 0);
+    inner.queue.push_back(Packet {
+        bytes,
+        valid: data.len(),
+        pts: packet.pts,
+        tag: i64::try_from(next(&PACKET_ID)?).map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?,
+        received: clock::monotonic_ms(),
+        _charge: charge,
+    });
+    inner.queue_bytes += packet.size + 64;
+    inner
+        .metrics
+        .decoder_queue_items
+        .fetch_add(1, Ordering::AcqRel);
+    inner
+        .metrics
+        .decoder_queue_bytes
+        .fetch_add(packet.size + 64, Ordering::AcqRel);
+    Ok(())
 }
 impl Inner {
     fn front_packet(&self) -> Option<&Packet> {

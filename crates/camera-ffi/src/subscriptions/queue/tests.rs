@@ -11,6 +11,9 @@ fn context() -> (usize, Arc<CameraState>) {
 }
 fn subscription(state: Arc<CameraState>, mode: u32) -> Arc<Subscription> {
     Arc::new(Subscription {
+        _metadata: state
+            .control(size_of::<Subscription>() + 2 * size_of::<Item>(), false)
+            .unwrap(),
         key: AtomicUsize::new(0),
         kind: Kind::Encoded {
             mask: AM_CODEC_H264,
@@ -23,6 +26,7 @@ fn subscription(state: Arc<CameraState>, mode: u32) -> Arc<Subscription> {
         max_waiters: 2,
         deadline_ms: 1000,
         data: Mutex::new(Data {
+            queue: VecDeque::with_capacity(2),
             waiting_key: true,
             ..Default::default()
         }),
