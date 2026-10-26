@@ -180,8 +180,10 @@ pub unsafe fn borrow(
     let pointer = Arc::as_ptr(&lease) as usize;
     let view = lease.view;
     let mut initial = pool.initial.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+    // 登记buffer前预留固定槽；之后只写内联值，不再分配或失败。
+    let slot = initial.vacant()?;
     domain.buffers.insert(pointer, lease)?;
-    initial.insert(view.borrow_id, pointer);
+    initial.commit(slot, view.borrow_id, pointer);
     unsafe { args::write(out, view) }
 }
 fn find_lease(
