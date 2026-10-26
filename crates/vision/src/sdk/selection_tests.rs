@@ -240,3 +240,42 @@ fn selection_single_cpu_preserves_bytes_and_quantifies_load_and_run_overhead() {
         }
     }
 }
+
+#[test]
+#[ignore = "显式CPU ORT与隔离IO边界模型；数量检查须先于不支持dtype的元数据复制"]
+fn io_count_preflight_precedes_metadata_copy_and_accepts_the_boundary() {
+    initialize(&PathBuf::from(std::env::var("AM_SDK_ORT_LIBRARY").unwrap())).unwrap();
+    let directory = PathBuf::from(std::env::var("AM_SDK_IO_BOUNDARY_DIR").unwrap());
+    for name in ["inputs33.onnx", "outputs33.onnx"] {
+        let error = Model::load(ModelSource::Path(&directory.join(name)), None, 0, true, 1)
+            .err()
+            .unwrap();
+        assert_eq!(
+            error.0, "vision.ioUnsupported",
+            "数量超限必须先拒绝，不应遍历到最后一个不支持dtype"
+        );
+    }
+    let mut model = Model::load(
+        ModelSource::Path(&directory.join("boundary32.onnx")),
+        None,
+        0,
+        true,
+        1,
+    )
+    .unwrap();
+    assert_eq!(model.inputs.len(), 32);
+    assert_eq!(model.outputs.len(), 32);
+    let inputs = model
+        .inputs
+        .iter()
+        .map(|info| TensorData::new(info.clone(), &7.0_f32.to_ne_bytes()).unwrap())
+        .collect::<Vec<_>>();
+    let outputs = model.run(&inputs, 4096).unwrap();
+    assert_eq!(outputs.len(), 32);
+    assert!(outputs
+        .iter()
+        .all(|output| output.bytes() == 7.0_f32.to_ne_bytes()));
+    println!(
+        "io_preflight rejected inputs33/outputs33 before unsupported dtype; boundary32 Run passed"
+    );
+}

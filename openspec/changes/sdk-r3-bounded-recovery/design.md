@@ -1,5 +1,7 @@
 # Design
 
+探测缓存按实际引用槽持有metadata许可，条目URL另占control；过期/清条目不退空闲槽，结果不足时真正丢存储后重试，缓存失败只跳过。Context先验，固定栈借用UTF8规划结果本体/Arc头/ABI Box/两Vec/含NUL字符串及临时secret，准入后复制，临时拥有者销毁再缩额。模型session IO先核非空/各不超过32，再复制受限name/shape。固定服务体和全域索引按[基础清单](../../../docs/verification/sdk-r3-foundation-inventory-20261027.md)继续，不能借此关闭1.1。
+
 共享源别名登记：在持有共享源登记锁时、添加新Weak前清理死亡Weak，不依赖状态事件触发回收。只移除强引用数为零的条目，不抢收活Closed句柄、不改变共享所有权；原Vec容量仍保留高水位，完整基础/服务体预算另核。
 
 BP12 Rust辅助H264Hub：该路径不是C ABI Context，也没有名为SessionPool的当前类型。每Hub最多16个当前源登记，包含启动、运行及正在停止的核心；已退出旧核心仍由调用方订阅持有时不冒充活工作。启动存活标记在会话锁内发布，stop不等于退出，不以替换Map条目绕过旧线程。退出守卫在原生调用/用户resolver结束后关队列、清就绪/存活并按Arc身份回收，spawn失败或panic同样清理。退订绑定原Core，而非URL+可重置的客户端ID，避免旧订阅释放新会话。新增Rust DenyReason::TooManySources须让穷举匹配调用方补分支，C ABI/绑定不变。16为每实例辅助路径上限，不称整个进程线程上限；阻塞原生/resolver不能强杀。

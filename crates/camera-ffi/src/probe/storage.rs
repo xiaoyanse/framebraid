@@ -159,6 +159,10 @@ mod tests {
         assert_eq!(empty.0, 0);
         assert_eq!(full.1 - empty.1, "unsupported:test".len());
         assert_eq!(empty.1, 16 * size_of::<Cached>());
+        println!(
+            "probe_cache_full_bytes={}; retained_empty_bytes={}; slots=16",
+            full.1, empty.1
+        );
         cache.clear(true).unwrap();
         assert_eq!(state.control_usage_snapshot().unwrap(), (0, 0));
     }

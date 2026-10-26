@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+后续本地R3探测存储/结果准入及模型IO数量前置已验，见[记录](verification/sdk-r3-probe-storage-20261027.md)；这是AM-RT固定9ecd之后的未发布SDK改动，不自动改变宿主。完整基础容量/硬件/长跑继续。
+
 本地中间候选：R4通知缓冲256条、语言侧丢弃及真实CPU通知/共享租约通过；H5原生成功与交付成功分层记账通过；主线全工作区302项通过、20项显式忽略。见[语言记录](verification/r4-language-ownership-20261027.md)与[推理观察](verification/sdk-h5-native-observation-20261027.md)。未关闭整个R4、H2/H5硬件矩阵或4h/24h。
 
 R3本地源码修复共享源无事件时的别名登记增长，256次循环峰值257→2，7项定向测试及clippy通过，见[记录](verification/sdk-r3-source-aliases-20261027.md)。不替代Release DLL、完整预算矩阵或长跑验收。

@@ -6,6 +6,9 @@ import importlib.util
 import json
 from pathlib import Path
 import sys
+import subprocess
+import time
+from urllib.parse import quote
 import threading
 
 sys.dont_write_bytecode = True
@@ -39,6 +42,18 @@ def main(args):
     result = {"dll_sha256": hashlib.sha256(dll.read_bytes()).hexdigest(), "cases": {}}
     try:
         with Stream(work, args.mediamtx.resolve()) as stream:
+            # 进程存活不等于已发布首帧；先以独立读取确认夹具就绪，不重试SDK断言。
+            ready_url = stream.url.replace("rtsp://", "rtsp://" + quote(stream.user.decode(), safe="") + ":" + quote(stream.password.decode(), safe="") + "@", 1)
+            ready_until = time.monotonic() + 10
+            while True:
+                ready = subprocess.run(["ffprobe", "-v", "error", "-rtsp_transport", "tcp",
+                                        "-show_entries", "stream=codec_name,width,height", "-of", "json", ready_url],
+                                       capture_output=True, text=True, timeout=5)
+                if ready.returncode == 0 and any(v.get("codec_name") == "h264" and v.get("width") == 256 and v.get("height") == 144 for v in json.loads(ready.stdout).get("streams", [])):
+                    result["fixture_ready_ffprobe"] = True
+                    break
+                assert time.monotonic() < ready_until, "owned RTSP publisher did not become readable"
+                time.sleep(0.1)
             creds = h.sized(a.am_credential_data_t)
             creds.username_utf8, creds.password_utf8 = stream.user, stream.password
             limits = h.sized(a.am_limits_t)

@@ -21,7 +21,7 @@ fn borrowed_strings_validate_without_owning_or_scanning_past_limit() {
 }
 #[test]
 fn invalid_context_is_rejected_before_request_string_access() {
-    let mut output = 1usize as *mut am_probe_result_t;
+    let mut output = std::ptr::dangling_mut::<am_probe_result_t>();
     let code = unsafe { amc_probe_streams(std::ptr::null_mut(), std::ptr::null(), &mut output) };
     assert_eq!(code, AM_ERR_SDK_HANDLE_INVALID);
     assert!(output.is_null());
@@ -43,6 +43,14 @@ fn result_reservation_contains_every_owned_array_and_survives_until_release() {
         + 2 * "unsupported:a".len()
         + 2;
     assert_eq!(plan.result_bytes(), expected);
+    let legacy = size_of::<ProbeResult>()
+        + 2 * "unsupported:a".len()
+        + 2
+        + 2 * size_of::<am_probe_candidate_t>();
+    println!(
+        "probe_two_result_bytes={expected}; legacy_omitted_bytes={}",
+        expected - legacy
+    );
     let context = state.ctx.data::<Context>().unwrap();
     context.queues.lock().unwrap()[5].max_bytes = expected as u64 - 1;
     assert!(matches!(

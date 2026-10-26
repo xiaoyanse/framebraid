@@ -191,3 +191,17 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 
 - **WHEN** 非二次幂Job槽达到上限、Context索引增长或变为空闲
 - **THEN** Job/线程句柄实际容量预先固定，常驻索引及新旧重叠与输入暂存共同受原执行器总字节限制，拒绝不改旧请求或发布ID；清理和统计不创建无预算Vec快照，繁忙记录锁不阻塞其他Context清理
+
+### Requirement: Probe storage remains admitted before copying
+
+探测 SHALL 在有效Context内先以有界借用规划结果和临时复制成本，完整拥有对象/Box/数组/字符串在分配前准入。缓存引用槽与URL分账；空闲容量持续计费，可选缓存失败不得抹去探测结果。模型IO数量SHALL在SDK元信息复制前检查。
+
+#### Scenario: Cached entries expire while capacity stays allocated
+
+- **WHEN** 缓存过期或清条目但底层槽仍分配
+- **THEN** 槽字节额度保持到真实销毁，结果准入不足时可真正丢缓存后重试，最终结果release归还完整拥有额度
+
+#### Scenario: Model exceeds the named IO contract
+
+- **WHEN** 原生会话输入或输出超过32项
+- **THEN** SDK在复制各项name/shape前以ioUnsupported拒绝，合法边界不受影响，原生会话内存仍另列

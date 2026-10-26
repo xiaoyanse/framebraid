@@ -29,3 +29,15 @@
 - rustfmt 直接格式化：通过（未调用 Cargo）。
 - git diff --check：通过。
 - Cargo 编译、定向单测、实际 DLL、前后量化：待主代理统一执行。
+
+## 主线集成复核
+
+主代理已真实merge并复核，7项探测定向、camera-ffi 64通过/11忽略、vision 48通过/8忽略及受影响包clippy通过。首次clippy发现测试手造dangling指针，改标准dangling_mut后通过，初始日志保留。
+
+MET-2机制量化：默认16缓存槽实际2304字节，空闲时仍持有2304额度，只有销毁存储才归零；一个URL时总2320字节。两个unsupported候选的完整结果为308字节，旧公式漏64字节；307拒绝/308接受且结果release后用量与外持计数归零。模型IO前置检查也纳入本包：33输入/33输出在复制元信息前明确拒绝，合法32输入/32输出模型真实CPU Run逐值通过。原实现优先遇到末项不支持dtype，红测已保留，不把原生ORT会话内存当SDK复制消除。
+
+匹配Release两DLL已重建；真实探测Digest/候选独立状态/缓存与凭据隔离/强刷/失效及关闭外持通过；8候选最多4并发。HTTP/RTSP低预算均得到[OK,PENDING,OK]、HTTP低预算0网络请求。首轮RTSP返回UNREACHABLE（非unsupported），对照ffprobe证明发布夹具进程存在但未必首帧可读；仅给test-probe-budget补独立可读就绪检查后通过，未重试/放宽SDK断言。原始结果与夹具日志保留。
+
+私有证据`.local/evidence/r3-probe-and-io-20261027`，DLL/输入摘要在identity.json；不复制模型或运行库进Git。不改ABI/64KiB默认值/宿主锁，未宣称吞吐提升、全域基础容量或长跑已验。try_reserve真实系统OOM尚无故障注入验证，不把错误分支存在当已测。
+
+源码差异审查覆盖准入前后次序、缓存锁与usage锁、generation、临时Secret销毁后缩额、实际拥有数组与Box、失败回滚。无阻断项；基础索引高水位/原生内存/完整硬件和长期验证继续开放。

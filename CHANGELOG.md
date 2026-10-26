@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Account probe cache backing storage and complete result ownership before copying; preflight native model IO counts before SDK metadata duplication. / [验证](docs/verification/sdk-r3-probe-storage-20261027.md)，保持结果优先、默认预算和C ABI。
+
 - Bound Python/C# model notifications to 256 hints with language-side drop counters; record successful native inference even when delivery is rejected. / [语言缓冲](docs/verification/r4-language-ownership-20261027.md)与[执行观察](docs/verification/sdk-h5-native-observation-20261027.md)，C ABI不变。
 
 - Reclaim dead shared-source alias registrations even when no events occur; 256 reopen cycles retain at most two weak entries instead of 257. / 无事件共享源别名回收，见[定向验证](docs/verification/sdk-r3-source-aliases-20261027.md)，C ABI不变。

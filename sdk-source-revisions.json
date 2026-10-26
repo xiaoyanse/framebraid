@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "066409e5ca8fc9cc2f92ebc1abf2f80bbdc40f59",
+  "reviewBaseCommit": "69624cfbc2c294996f84233f3f821b9a6c8f175e",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "3736801c660777bffe8ce90947d5c50f6e18d8927046188fe19335b955e668fa",
-      "reason": "H5 native successful Run observation independent of output delivery; CPU output-budget failure and native-error non-replay regression; C ABI unchanged"
+      "sha256": "3e0af62e4331f7efad1f15673333dfee057d5721448408d2354e290bc226c7ef",
+      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -288,8 +288,8 @@
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
       "previousSha256": null,
-      "sha256": "e90dd9203f771b232a7390418c4ac47a35ceac785f15c40e07778973cdce9862",
-      "reason": "H5 native successful Run observation independent of output delivery; CPU output-budget failure and native-error non-replay regression; C ABI unchanged"
+      "sha256": "fec7f590db03da01250ebc87565fbf5763175a5b77f5417ea9af9a95923f9cfc",
+      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/session.rs",
@@ -582,8 +582,8 @@
     {
       "path": "crates/camera-ffi/src/probe.rs",
       "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
-      "sha256": "7d7a6f061fa13508b2567d8aae49daeb36c06b7eadf5955b16846faa7391e8a2",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "4cb2ab79d52af6ddec6660e23c8a495d6c7b3db91e15c17bd92e270b19230165",
+      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/notify.rs",
@@ -800,6 +800,24 @@
       "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
       "sha256": "51e3285b167d3c968a0e2583cba35407b62f2fd85fb7469aba4a349789df55c9",
       "reason": "R3 reclaim dead source aliases during registration without waiting for events; 256-cycle ownership regression, shared-source and callback/close tests; no C ABI change"
+    },
+    {
+      "path": "crates/camera-ffi/src/probe/planning.rs",
+      "previousSha256": null,
+      "sha256": "a44b11cc84054c725c44e209d47b2ca3db963b825b1a5fc713a1111bea9992e4",
+      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/probe/storage.rs",
+      "previousSha256": null,
+      "sha256": "2d53e3c8caa9142b72b576c3e49f12855835ced96434c63fbd8359831d00f049",
+      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/probe/tests.rs",
+      "previousSha256": null,
+      "sha256": "b74d373dfb8f4386bacda369316facf701b0c50802b49e09208417a2e2d9626a",
+      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
     }
   ]
 }

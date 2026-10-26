@@ -269,6 +269,14 @@ impl Model {
                 super::session::create(source, &bytes, target, threads)
             })?;
             let actual_backend = selection.selected.map_or(0, |target| target.backend);
+            // 先拒绝超出SDK合同的数量，再复制名称与形状；原生会话内存另计。
+            if session.inputs().is_empty()
+                || session.outputs().is_empty()
+                || session.inputs().len() > 32
+                || session.outputs().len() > 32
+            {
+                return Err(Error("vision.ioUnsupported".into()));
+            }
             let inputs = session
                 .inputs()
                 .iter()
@@ -279,9 +287,6 @@ impl Model {
                 .iter()
                 .map(|v| info(v.name(), v.dtype()))
                 .collect::<Result<Vec<_>>>()?;
-            if inputs.is_empty() || outputs.is_empty() || inputs.len() > 32 || outputs.len() > 32 {
-                return Err(Error("vision.ioUnsupported".into()));
-            }
             if let Some(profile) = p {
                 let matches = |actual: &[TensorInfo], expected: &[profiles::TensorSpec]| {
                     actual.len() == expected.len()
