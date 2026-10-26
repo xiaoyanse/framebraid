@@ -24,6 +24,11 @@ SDK MUST 为直接解码和流式像素输出提供策略约束下的硬件探�
 - **WHEN** 硬解运行中失效或重新配置
 - **THEN** 隔离旧输出代次、按关键帧恢复并报告实际回退，重试不循环放大资源；浏览器 WebCodecs 状态不冒充本 SDK 验收
 
+#### Scenario: Recover before the first published picture
+
+- **WHEN** 硬件失败且只接受过一张画面、未发布任何输出，保留的启动随机访问包仍拥有输入字节额度
+- **THEN** 先通过CPU首张输出及规范化暂存预算准入，最多重试该包一次，保留PTS/received并递增代次；有其他已接受画面或任何已发布输出时不重放历史包，等待新随机访问点；显式reset才重新探测硬件
+
 ### Requirement: Explicit native hardware foundation
 
 Rust设备探测入口 MUST 有界、显式且与普通状态查询分离；设备上下文初始化成功不得标记真实码流已验证。显式设备构造 MUST 保持默认CPU入口兼容，设备身份可靠、原生引用成对归还，输出预算不足或回读失败不得丢失待输出帧。

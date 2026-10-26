@@ -1,5 +1,6 @@
 use super::frames::{camera_state, CameraState, Charge, DecoderPermit, Frame};
 use super::*;
+use am_camera_core::media::codec::selection::{HardwarePolicy, SelectionReport};
 use am_camera_core::media::codec::{access_units, CpuDecoder, DecodeError, VideoCodec};
 use am_sdk_support::{args, clock, context::Context, handles::Managed, Result};
 use std::{
@@ -15,7 +16,12 @@ use std::{
 pub(crate) mod budget;
 pub(crate) mod config;
 mod diagnostics;
+mod receive;
+mod recovery;
 use config::{convert, runtime, Config, Gate};
+use receive::receive;
+#[cfg(test)]
+mod tests;
 
 struct Packet {
     bytes: Vec<u8>,
@@ -28,6 +34,11 @@ struct Packet {
 struct Inner {
     metrics: Arc<super::frames::CameraMetrics>,
     cpu: budget::BudgetedDecoder,
+    selection: SelectionReport,
+    hardware_failed: bool,
+    startup: Option<Packet>,
+    replay: Option<Packet>,
+    recovery_charge: Option<Charge>,
     config: Config,
     gate: Gate,
     queue: VecDeque<Packet>,
@@ -81,14 +92,18 @@ fn next(sequence: &AtomicU64) -> Result<u64> {
         .map(|n| n + 1)
         .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)
 }
-fn info(c: &Config, generation: u32) -> am_decoder_info_t {
+fn info(c: &Config, generation: u32, hardware_pending: bool) -> am_decoder_info_t {
     am_decoder_info_t {
         codec: c.abi.codec,
         bitstream_format: c.abi.bitstream_format,
         output_pixel_format: c.abi.output_pixel_format,
         hw_policy: c.abi.hw_policy,
         hw_accelerated: 0,
-        backend_name_utf8: c"ffmpeg-cpu".as_ptr(),
+        backend_name_utf8: if hardware_pending {
+            std::ptr::null()
+        } else {
+            c"ffmpeg-cpu".as_ptr()
+        },
         config_generation: generation,
         ..Default::default()
     }
@@ -99,11 +114,28 @@ fn make_inner(ctx: &CameraState, cfg: Config) -> Result<Inner> {
     if pixels == 0 {
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
-    let cpu = CpuDecoder::create(runtime(ctx)?, cfg.codec, &cfg.extra, pixels).map_err(convert)?;
+    let selected = CpuDecoder::create_with_policy(
+        runtime(ctx)?,
+        cfg.codec,
+        &cfg.extra,
+        pixels,
+        if cfg.abi.hw_policy == AM_DHW_SOFTWARE_ONLY as u32 {
+            HardwarePolicy::SoftwareOnly
+        } else {
+            HardwarePolicy::PreferHardware
+        },
+        Duration::from_millis(1500),
+    )
+    .map_err(convert)?;
     let gate = Gate::new(&cfg)?;
     Ok(Inner {
         metrics: ctx.metrics.clone(),
-        cpu: cpu.into(),
+        cpu: selected.decoder.into(),
+        selection: selected.report,
+        hardware_failed: false,
+        startup: None,
+        replay: None,
+        recovery_charge: None,
         config: cfg,
         gate,
         queue: VecDeque::new(),
@@ -130,8 +162,8 @@ pub unsafe extern "C" fn amc_decoder_create(
         let state = camera_state(ctx as usize)?;
         let permit = state.decoder()?;
         let config = unsafe { Config::read(cfg) }?;
-        let codec_info = Mutex::new(info(&config, 1));
         let inner = make_inner(&state, config)?;
+        let codec_info = Mutex::new(info(&inner.config, 1, inner.selection.selected.is_some()));
         let object = Arc::new(Decoder {
             inner: Mutex::new(Some(inner)),
             state: AtomicU32::new(AM_DEC_READY as u32),
@@ -221,160 +253,14 @@ pub unsafe extern "C" fn amc_decoder_submit(
         Ok(())
     })
 }
-fn receive(decoder: &Decoder, inner: &mut Inner) -> Result<Option<Arc<Frame>>> {
-    loop {
-        match inner.cpu.peek() {
-            Ok(Some(f)) => {
-                // 帧内保存内部唯一包号，再恢复原PTS；重复/未知PTS不能串到别帧。
-                let timing = inner
-                    .timings
-                    .iter_mut()
-                    .find(|t| t.tag == f.pts)
-                    .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
-                let (pts, received, config) = (timing.pts, timing.received, timing.config);
-                timing.delivered = true;
-                let format = inner.config.abi.output_pixel_format;
-                let bytes = super::frames::scale::bytes(f.width, f.height, format)?;
-                let charge = decoder.ctx.charge(bytes as u64, true)?;
-                // NV12经有预算的RGB中间帧规范化为601 limited，不冒充源流色彩元数据。
-                let scratch = if format == AM_PF_NV12 as u32 {
-                    Some(decoder.ctx.charge(f.rgba_bytes as u64, false)?)
-                } else {
-                    None
-                };
-                let decoded = budget::copy_pixels(
-                    &decoder.ctx,
-                    &mut inner.cpu,
-                    if scratch.is_some() {
-                        f.rgba_bytes
-                    } else {
-                        bytes
-                    },
-                    if scratch.is_some() {
-                        AM_PF_RGBA8 as u32
-                    } else {
-                        format
-                    },
-                )?
-                .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
-                let data = if scratch.is_some() {
-                    am_camera_core::media::pixel_ops::rgba_to_nv12(&decoded.data, f.width, f.height)
-                        .map_err(|_| AM_ERR_CAMERA_PIXEL_FORMAT_UNSUPPORTED)?
-                } else {
-                    decoded.data
-                };
-                drop(scratch);
-                let c = &inner.config.abi;
-                let meta = am_frame_meta_t {
-                    source_id: decoder.source,
-                    frame_id: crate::frames::next_frame_id()?,
-                    seq: next(&decoder.sequence)?,
-                    source_generation: decoder.generation.load(Ordering::Acquire),
-                    config_generation: config,
-                    pts,
-                    time_base_num: if pts != i64::MIN { c.time_base_num } else { 0 },
-                    time_base_den: if pts != i64::MIN { c.time_base_den } else { 0 },
-                    captured_at_ms: i64::MIN,
-                    received_at_ms: received,
-                    clock_quality: AM_CQ_LOCAL_RECEIPT as u32,
-                    clock_mask: AM_CLK_RECEIVED | if pts != i64::MIN { AM_CLK_PTS } else { 0 },
-                    transform: am_spatial_transform_t {
-                        scale_x: 1.,
-                        scale_y: 1.,
-                        valid: 1,
-                        ..Default::default()
-                    },
-                    ..Default::default()
-                };
-                return Ok(Some(Frame::with_format(
-                    data, f.width, f.height, format, meta, charge,
-                )?));
-            }
-            Err(DecodeError::Drained) => {
-                decoder
-                    .state
-                    .store(AM_DEC_DRAINED as u32, Ordering::Release);
-                return Err(AM_ERR_SDK_DRAINED);
-            }
-            Err(e) => return Err(convert(e)),
-            Ok(None) => {}
-        }
-        if let Some(packet) = inner.queue.front() {
-            let allowed = inner
-                .gate
-                .observe(inner.config.codec, &packet.bytes[..packet.valid])?;
-            if !allowed {
-                inner.pop_packet()?;
-                continue;
-            }
-            if inner.gate.dirty {
-                let config = inner.config_generation_checked(decoder)?;
-                let cpu = CpuDecoder::create(
-                    runtime(&decoder.ctx)?,
-                    inner.config.codec,
-                    &inner.gate.extra(),
-                    (decoder.ctx.limits()?.frame_budget_bytes / 4)
-                        .min(SDK_MAX_DYNAMIC_AXIS * SDK_MAX_DYNAMIC_AXIS),
-                )
-                .map_err(convert)?;
-                inner.cpu = cpu.into();
-                inner.timings.clear();
-                inner.gate.dirty = false;
-                decoder.config_generation.store(config, Ordering::Release);
-                *decoder
-                    .codec_info
-                    .lock()
-                    .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? = info(&inner.config, config);
-            }
-            let packet = inner.queue.front().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
-            let picture = access_units(inner.config.codec, &packet.bytes[..packet.valid])
-                .map_err(convert)?
-                .iter()
-                .any(|nal| {
-                    if inner.config.codec == VideoCodec::H264 {
-                        (1..=5).contains(&(nal[0] & 31))
-                    } else {
-                        (nal[0] >> 1) & 63 <= 31
-                    }
-                });
-            if picture && inner.timings.len() >= 256 {
-                if inner.timings.front().is_some_and(|t| t.delivered) {
-                    inner.timings.pop_front();
-                } else {
-                    return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
-                }
-            }
-            if !inner
-                .cpu
-                .send_padded(&packet.bytes, packet.valid, packet.tag, packet.tag)
-                .map_err(convert)?
-            {
-                return Err(AM_ERR_SDK_TRY_AGAIN);
-            }
-            if picture {
-                inner.timings.push_back(Timing {
-                    tag: packet.tag,
-                    pts: packet.pts,
-                    received: packet.received,
-                    config: decoder.config_generation.load(Ordering::Acquire),
-                    delivered: false,
-                });
-            }
-            inner.gate.started = true;
-            inner.pop_packet()?;
-            continue;
-        }
-        if decoder.state.load(Ordering::Acquire) == AM_DEC_DRAINING as u32 && !inner.flushed {
-            if inner.cpu.drain().map_err(convert)? {
-                inner.flushed = true;
-            }
-            continue;
-        }
-        return Ok(None);
-    }
-}
 impl Inner {
-    fn pop_packet(&mut self) -> Result<()> {
+    fn front_packet(&self) -> Option<&Packet> {
+        self.replay.as_ref().or_else(|| self.queue.front())
+    }
+    fn pop_packet(&mut self) -> Result<Packet> {
+        if let Some(packet) = self.replay.take() {
+            return Ok(packet);
+        }
         let removed = self.queue.pop_front().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
         self.queue_bytes -= removed.bytes.len() as u64;
         self.metrics
@@ -383,7 +269,7 @@ impl Inner {
         self.metrics
             .decoder_queue_bytes
             .fetch_sub(removed.bytes.len() as u64, Ordering::AcqRel);
-        Ok(())
+        Ok(removed)
     }
     fn config_generation_checked(&self, d: &Decoder) -> Result<u32> {
         d.config_generation
@@ -426,7 +312,7 @@ pub unsafe extern "C" fn amc_decoder_receive(
             }
             if let Ok(mut locked) = decoder.inner.try_lock() {
                 let inner = locked.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
-                if let Some(frame) = receive(decoder, inner)? {
+                if let Some(frame) = receive(dec as usize, decoder, inner)? {
                     let pointer = Arc::as_ptr(&frame) as usize;
                     domain().buffers.insert(pointer, frame)?;
                     unsafe {
@@ -491,8 +377,11 @@ pub unsafe extern "C" fn amc_decoder_reset(
         let rebuilt = make_inner(&d.ctx, config);
         match rebuilt {
             Ok(inner) => {
-                *d.codec_info.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? =
-                    info(&inner.config, config_generation);
+                *d.codec_info.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? = info(
+                    &inner.config,
+                    config_generation,
+                    inner.selection.selected.is_some(),
+                );
                 *guard = Some(inner);
                 d.generation.store(generation, Ordering::Release);
                 d.sequence.store(0, Ordering::Release);

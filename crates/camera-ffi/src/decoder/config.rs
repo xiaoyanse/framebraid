@@ -161,6 +161,11 @@ pub struct Gate {
     rasl: bool,
 }
 impl Gate {
+    pub fn restart(&mut self) {
+        self.started = false;
+        self.dirty = false;
+        self.rasl = false;
+    }
     pub fn new(cfg: &Config) -> Result<Self> {
         let mut g = Self::default();
         if !cfg.extra.is_empty() {

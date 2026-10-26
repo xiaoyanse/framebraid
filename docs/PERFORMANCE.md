@@ -17,6 +17,8 @@ measurements, not browser playback or end-to-end FPS. See [R2 budget/cache valid
 
 ## Reproduce / 复现
 
+Direct DLL native-policy smoke: `python scripts/sdk/test-decoder-hardware.py --dll-dir <release> --runtime-dir <matched-ffmpeg> --samples-dir <synthetic-inputs>`, adding `--software` for a same-build CPU control. Records actual backend, generations, pixel hashes, create/first-receive times; requires the documented four synthetic fixtures and real hardware for native mode. See [direct decoder verification](verification/sdk-r2-direct-auto-20261026.md). Cold-start costs are not sustained-stream FPS or a historical-binary A/B.
+
 在仓库根执行，先准备匹配 FFmpeg/ORT 运行库；下列目录是本地候选示例，
 不属于源码 SDK 的固定依赖。`--output` 必须是 `.local/evidence` 下尚不存在的目录，
 原始基线不会被覆盖。Release 与 Debug 不能直接对照。

@@ -1,4 +1,6 @@
 use super::*;
+#[cfg(test)]
+mod budget_tests;
 use am_sdk_support::{args, buffers::Buffer, context::Context, handles::Entry, Result};
 use std::{
     any::Any,
@@ -195,6 +197,41 @@ pub struct Charge {
     state: Arc<CameraState>,
     bytes: u64,
     external: bool,
+}
+impl Charge {
+    /// 将既有暂存额度转交外部帧，原子核持帧限制，不重复占总字节。
+    pub(crate) fn take_external(&mut self, bytes: u64) -> Result<Self> {
+        if self.external || bytes == 0 || bytes > self.bytes {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let limits = self.state.limits()?;
+        let ctx = self.state.ctx.data::<Context>()?;
+        let mut usage = self
+            .state
+            .usage
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        if usage.external_frames >= limits.external_hold_max_frames
+            || bytes
+                > limits
+                    .external_hold_max_bytes
+                    .saturating_sub(usage.external_bytes)
+        {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        self.bytes -= bytes;
+        usage.external_bytes += bytes;
+        usage.external_frames += 1;
+        ctx.buffers.fetch_add(1, Ordering::AcqRel);
+        Ok(Self {
+            state: self.state.clone(),
+            bytes,
+            external: true,
+        })
+    }
+    pub(crate) fn bytes(&self) -> u64 {
+        self.bytes
+    }
 }
 impl Drop for Charge {
     fn drop(&mut self) {

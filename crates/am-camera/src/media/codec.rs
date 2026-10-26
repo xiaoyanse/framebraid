@@ -200,6 +200,15 @@ impl CpuDecoder {
     pub fn hardware_backend(&self) -> Option<super::hardware::Backend> {
         self.hardware.as_ref().and_then(|h| h.verified_backend())
     }
+    /// 仅作恢复预算提示，不将参数解析成功当真实出帧；非法尺寸不提供提示。
+    pub fn dimensions_hint(&self) -> Option<(u32, u32)> {
+        let (width, height) = unsafe { ((*self.ctx).width, (*self.ctx).height) };
+        if width <= 0 || height <= 0 || width > 8192 || height > 8192 {
+            return None;
+        }
+        let pixels = width as u64 * height as u64;
+        (pixels <= self.max_pixels).then_some((width as u32, height as u32))
+    }
     /// false表示FFmpeg暂未接受，可在receive后重试同一包；true后不可重发。
     pub fn send(&mut self, bytes: &[u8], pts: i64, dts: i64) -> Result<bool> {
         if bytes.is_empty() || bytes.len() > 16 * 1024 * 1024 || self.ended {

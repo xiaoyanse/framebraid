@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Execute the existing direct-decoder PREFER_HW policy using the shared native selector; report unknown until real output, reserve CPU recovery bytes, preserve source generations and retained frames, and permit only one unpublished startup picture replay. Explicit reset retries hardware. Validate actual codecs, readback faults and CPU compatibility locally; RTSP and rich device diagnostics remain pending. / 直接DLL自动硬解与有预算恢复，旧公开制品未变。
+
 - Add Rust decoder reconfiguration that retains the selected native device, resets execution verification and preserves the original context on failure; explicit CPU reconstruction supports caller-controlled recovery. Native synthetic validation and construction-only timings are recorded locally; DLL automatic recovery remains pending. / 参数重建复用设备引用，失败不破坏原上下文，不扩大公开硬解支持承诺。
 
 - Account aligned native readback buffers before allocation, retain domain reservations for a bounded single-frame cache, and reuse per-decoder SwsContext without changing pixel algorithms. Validate scoped cleanup, recovery and old-frame independence.

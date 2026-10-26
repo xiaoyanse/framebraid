@@ -8,6 +8,8 @@ Interface presence, tested behavior and release commitments are separate. No sup
 
 Local R2 introduces explicit Rust hardware primitives ([contract](design/native-hardware.md)); this does not upgrade the published Windows CPU scope or claim C ABI/RTSP automatic hardware selection is complete. / 本地硬解原语不改变公开CPU制品支持承诺，不代表C ABI/RTSP自动硬解已完成。
 
+The local direct C decoder now selects hardware and admits CPU recovery ([verification](verification/sdk-r2-direct-auto-20261026.md)); RTSP integration, rich device diagnostics and production acceptance remain open. / 直接C入口已有本地实测，仍不扩大旧公开制品支持范围。
+
 | Area / 方面 | Initial scope / 首发范围 | Limits / 限制 |
 | --- | --- | --- |
 | Platform / 平台 | Windows x64 CPU | Linux/macOS/mobile and other architectures separately verified / 其他平台架构另验 |

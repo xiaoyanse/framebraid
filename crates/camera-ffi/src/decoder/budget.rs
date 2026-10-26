@@ -28,7 +28,7 @@ impl std::ops::DerefMut for BudgetedDecoder {
     }
 }
 impl BudgetedDecoder {
-    fn clear_cache(&mut self) {
+    pub(super) fn clear_cache(&mut self) {
         self.raw.release_readback_cache();
         self.reservation.take();
         self.bytes = 0;

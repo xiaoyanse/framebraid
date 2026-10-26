@@ -1,10 +1,10 @@
 # FrameBraid 双 SDK 接入说明
 
-原生硬件探测与显式设备解码的本地Rust合同见[硬件接入](../docs/design/native-hardware.md)。CPU默认路径与1.0 C ABI未改变，C#/Python不能仅凭这次Rust新增就启用自动硬解；自动策略和诊断导出仍在H2实施中。
+原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP和完整设备诊断仍在H2实施中。
 
-Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥有的原因报告，仍须在送包/收帧后核实实际后端；运行期故障不能无条件重发已接受包。见[选择层验证](../docs/verification/sdk-r2-hardware-selection-20261026.md)，DLL和RTSP入口暂未接入。
+Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥有的原因报告，仍须在送包/收帧后核实实际后端。直接DLL在创建/reset时选择硬件，初始化选中但未出帧时get_info后端NULL；真实出帧后返回ffmpeg-d3d11va/dxva2/cpu。硬件运行失败先过CPU预算，递增代次并等待关键帧；仅首次输出前单启动画面允许保留原输入重试一次，显式reset才重试硬件。见[直接入口验证](../docs/verification/sdk-r2-direct-auto-20261026.md)。初始化1.5秒为原生调用间软预算，不强杀驱动；不保证GPU启动或每帧比CPU更快。
 
-底层Rust回读可选择作用域预算复制或单缓冲复用，复用时许可须持有到清缓存/销毁；输出Vec独立。C ABI像素复制入口已由SDK自动管理暂存Charge，调用方无需自行管理；这不表示其自动硬解已启用。见[回读与转换缓存记录](../docs/verification/sdk-r2-readback-cache-20261026.md)。
+底层Rust回读可选择作用域预算复制或单缓冲复用，复用时许可须持有到清缓存/销毁；输出Vec独立。C ABI像素复制入口由SDK自动管理暂存Charge，调用方无需自行管理；CPU恢复预留可转交外部帧且仍核持帧上限。见[回读与转换缓存记录](../docs/verification/sdk-r2-readback-cache-20261026.md)。
 
 本地未发布R5优化可及时释放未执行且已取消/替换的排队输入；正在读取的输入及含有效项的原生批次仍须等实际结束，不能把cancel当作可立即释放调用方缓冲。见[优先项验证与限制](../docs/verification/sdk-r5-priority-20261026.md)，旧发布包能力不因此改变。
 

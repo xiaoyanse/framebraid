@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "9252a010347c8cf0297a882ee0597fa920452172",
+  "reviewBaseCommit": "ed9c5c16bf2f7b9a9710aa2e3cbbfc5d400eb565",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -72,8 +72,8 @@
     {
       "path": "crates/am-camera/src/media/codec.rs",
       "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "834b0349a54b9b0671e18b173ebe9f367aa88d5044b5f19b386d026f613599f3",
-      "reason": "H2.0d reviewed independent codec contexts retain native device reference; synthetic native construction and ownership validation; unchanged C ABI"
+      "sha256": "f95bb84ceab15732626657abe32af9126a9768a7abd33a33ddac859fdfdd2fa2",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
     },
     {
       "path": "crates/am-camera/src/media/codec/convert.rs",
@@ -114,20 +114,56 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "eccbec1ef8917bef2294a62f5fa1e8dd72558ec0dcc4636a075f449580bb2903",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "5e6380a4bbb4635bbd7588dbcfa24a3a537aeaea64b2a778f4cec1b36685ac1e",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
       "previousSha256": null,
-      "sha256": "28c95596514481ff5c5b580fcc25d54340165b8845e4d6ff48b6e28467e6fc34",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "f4f4cc110818a5c633b5d61e2993b292995e8f9bca7c82ba9cfa0f2299c957d4",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
       "sha256": "7754cac7425dbf2e863e26f97d5bd3de9b40d29789162744f8d86e43798e13fd",
       "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/config.rs",
+      "previousSha256": "9d504128dd8b83e86ab16a001047e1900e88dd6a5a1e5d0241e6b8bc6aafdf57",
+      "sha256": "8a09eee9270591ad2e643e2925e70e318322fffdcd332a787cf3086ec6061e86",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/frames.rs",
+      "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
+      "sha256": "23c393dee8d5db552e80046be9dc46453e1ef959a66a236b7e79dc772605a4dc",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/receive.rs",
+      "previousSha256": null,
+      "sha256": "b3f0040b29468cc52da1cd4bc03fc10a0d83e9d56a0d09cf82fa4fe2a73097f9",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/recovery.rs",
+      "previousSha256": null,
+      "sha256": "369058dda5ced9ccbf047247118ccc399353f16da67a2a7643997c30d085796b",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/tests.rs",
+      "previousSha256": null,
+      "sha256": "08e14e981eeb6d597407e1f193c5bea273766f29ebb20c5148daf3de13a92005",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/frames/budget_tests.rs",
+      "previousSha256": null,
+      "sha256": "ff0a3aa8fb697922dfa38bfa66f63f01b76255fc01e57d6b1d2ee82c9ee222af",
+      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
     }
   ]
 }

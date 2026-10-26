@@ -6,7 +6,7 @@
 
 **可复用的相机接入、视频处理与 ONNX 推理基础组件。**
 
-本地R2新增Rust显式硬件探测与解码原语（见[合同](docs/design/native-hardware.md)）；公开制品仍按CPU验收范围，C ABI自动硬件选择尚未完成。
+本地R2已接入Rust硬件探测和直接C解码入口的自动选择/恢复（见[合同](docs/design/native-hardware.md)、[实测](docs/verification/sdk-r2-direct-auto-20261026.md)）；公开制品仍按CPU验收范围，RTSP自动硬解和完整设备诊断尚未完成。
 
 FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入，一个仓库管理两个组件：
 
