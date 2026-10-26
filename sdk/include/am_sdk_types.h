@@ -54,6 +54,8 @@ typedef struct am_event_detail_s am_event_detail_t;
 typedef struct amv_capability_s amv_capability_t;
 typedef struct am_backend_row_s am_backend_row_t;
 typedef struct am_backend_matrix_s am_backend_matrix_t;
+typedef struct am_backend_candidate_s am_backend_candidate_t;
+typedef struct am_backend_selection_s am_backend_selection_t;
 typedef struct am_backend_policy_s am_backend_policy_t;
 typedef struct am_raw_preprocess_s am_raw_preprocess_t;
 typedef struct am_model_desc_s am_model_desc_t;
@@ -248,6 +250,7 @@ typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DON
 #define AMV_CAP_RESULT_RAW_TENSOR (UINT64_C(1) << 6)
 #define AMV_CAP_PUSH_NOTIFY (UINT64_C(1) << 7)
 #define AMV_CAP_SHARED_FRAME_POOL (UINT64_C(1) << 8)
+#define AMV_CAP_ORDERED_SELECTION (UINT64_C(1) << 9)
 typedef int32_t am_status_t;  /* 0=AM_OK；非 0 为稳定数值错误码（§6/主文件 §7），字符串名可查 */
 typedef uint32_t am_lifecycle_state_t; /* 关闭查询输出；枚举常量见主文件§5.4，固定4字节 */
 
@@ -723,6 +726,16 @@ typedef struct am_backend_matrix_s {
   const am_backend_row_t* rows;  /* 缓冲有效到下次同函数调用 */
 } am_backend_matrix_t;
 /* 每进程单一兼容 ORT 运行库+多 EP 会话：冲突组合在行内 note 与 vision.backendConflict 报告（B14） */
+
+/* H5 r9：候选是固定布局叶子，后续新增参数通过外层指针结构演进。 */
+typedef struct am_backend_candidate_s { uint32_t backend; uint32_t device_id; } am_backend_candidate_t;
+typedef struct am_backend_selection_s {
+  uint32_t struct_size;
+  uint32_t candidate_count;              /* 1..3；禁止重复同backend/device */
+  const am_backend_candidate_t* candidates;
+  uint32_t allow_fallback;               /* 0只尝试首项；1按列表继续，不暗加CPU */
+  uint32_t budget_ms;                    /* 1..5000；原生调用间检查的软预算 */
+} am_backend_selection_t;
 
 typedef struct am_backend_policy_s {
   uint32_t struct_size;

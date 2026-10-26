@@ -377,4 +377,45 @@ namespace AmrtSdk {
         public uint[] @reserved;
     }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_backend_candidate_t {
+        public uint @backend;
+        public uint @device_id;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_backend_selection_t {
+        public uint @struct_size;
+        public uint @candidate_count;
+        public IntPtr @candidates;
+        public uint @allow_fallback;
+        public uint @budget_ms;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_model_memory_desc_t {
+        public uint @struct_size;
+        public IntPtr @bytes;
+        public ulong @size;
+        public uint @load_mode;
+        public IntPtr @profile_id;
+        public IntPtr @backend;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct amv_capability_t {
+        public uint @struct_size;
+        public uint @abi_minor;
+        public uint @feature_bits;
+        public uint @dtype_bits;
+        public uint @max_batch_items;
+        public uint @max_models;
+        public uint @infer_parallelism;
+        public ulong @result_retention_default_ms;
+        public uint @shared_pool_state;
+    }
+
+    public static class VisionCapabilities {
+        public const uint OrderedSelection = 512U;
+    }
 }

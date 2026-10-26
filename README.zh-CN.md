@@ -125,6 +125,8 @@ Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse)。
 
 自有代码采用 [Apache-2.0](LICENSE)，按其条款允许商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可，见 [NOTICE](NOTICE) 和[第三方材料](sdk/third-party/README.md)。
 
-Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; C model-selection extensions, accelerated inference and recovery acceptance remain open. See [core verification](docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
+Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; Local r9 now adds ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports; accelerated inference and recovery acceptance remain open. See [core verification](docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
 
 性能评价已统一为[MET-2指标与验收目标](docs/PERFORMANCE_ACCEPTANCE.md)，[历史结论复核](docs/verification/sdk-metrics-review-20261026.md)单独保留：区分CPU卸载、有效交付、延迟与恢复，不要求硬解必比CPU快。本次只改文档，没有新性能结果或发布，原始数据不改写。
+
+Local ordered-selection validation / 本地有序选择验证: [H5 r9](docs/verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.

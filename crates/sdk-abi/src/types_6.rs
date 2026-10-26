@@ -2,6 +2,20 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_pose_detection_t {
+    pub bounds: [f32; 4],
+    pub confidence: f32,
+    pub kpt_count: u32,
+    pub keypoints: *const am_keypoint_t,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_pose_result_t {
+    pub count: u32,
+    pub detections: *const am_pose_detection_t,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_detect_box_t {
     pub bounds: [f32; 4],
     pub confidence: f32,
@@ -68,52 +82,4 @@ pub struct am_obb_instance_t {
     pub confidence: f32,
     pub class_id: i32,
     pub angle_normalized: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_obb_result_t {
-    pub count: u32,
-    pub instances: *const am_obb_instance_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct amv_result_t {
-    pub struct_size: u32,
-    pub request_id: u64,
-    pub task: am_task_e,
-    pub frame: *const am_frame_assoc_t,
-    pub model: am_model_identity_t,
-    pub execution: am_backend_actual_t,
-    pub transform: *const am_preprocess_meta_t,
-    pub pose: am_pose_result_t,
-    pub detect: am_detect_result_t,
-    pub classify: am_classify_result_t,
-    pub segment: am_segment_result_t,
-    pub obb: am_obb_result_t,
-    pub raw_output_count: u32,
-    pub raw_outputs: *const am_tensor_out_t,
-    pub infer_start_ms: i64,
-    pub infer_end_ms: i64,
-}
-impl Default for amv_result_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            request_id: Default::default(),
-            task: Default::default(),
-            frame: Default::default(),
-            model: Default::default(),
-            execution: Default::default(),
-            transform: Default::default(),
-            pose: Default::default(),
-            detect: Default::default(),
-            classify: Default::default(),
-            segment: Default::default(),
-            obb: Default::default(),
-            raw_output_count: Default::default(),
-            raw_outputs: Default::default(),
-            infer_start_ms: Default::default(),
-            infer_end_ms: Default::default(),
-        }
-    }
 }

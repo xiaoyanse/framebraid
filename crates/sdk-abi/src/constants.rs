@@ -72,3 +72,4 @@ pub const AMV_CAP_BATCH: u64 = 1 << 5;
 pub const AMV_CAP_RESULT_RAW_TENSOR: u64 = 1 << 6;
 pub const AMV_CAP_PUSH_NOTIFY: u64 = 1 << 7;
 pub const AMV_CAP_SHARED_FRAME_POOL: u64 = 1 << 8;
+pub const AMV_CAP_ORDERED_SELECTION: u64 = 1 << 9;

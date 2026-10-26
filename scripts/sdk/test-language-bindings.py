@@ -74,6 +74,8 @@ def main():
             assert int(rows[name+"."+field]) == getattr(native, field).offset, (name, field)
             fields += 1
     invoke(options+["/out:"+str(inference_exe), *map(str, sources), str(SDK / "examples/Inference.cs")])
+    selection_exe = output / "Selection.exe"
+    invoke(options+["/out:"+str(selection_exe), *map(str, sources), str(SDK / "examples/Selection.cs")])
     summary = {"pythonParsed": len(python_files), "csharpStructures": len(names), "csharpFields": fields,
                "pythonOwnershipTests": 6, "csharpCompile": "passed", "runtime": "not requested"}
     native_executables = []
@@ -106,6 +108,7 @@ def main():
         summary["python"] = invoke([sys.executable, str(SDK / "examples/inference.py"), "--dll-dir", str(args.dll_dir.resolve()),
                                     "--runtime-dir", str(args.runtime_dir.resolve()), "--model", str(args.model.resolve())], env).strip()
         summary["csharp"] = invoke([str(inference_exe), str(args.runtime_dir.resolve()), str(args.model.resolve())], env).strip()
+        summary["csharpSelection"] = invoke([str(selection_exe), str(args.runtime_dir.resolve()), str(args.model.resolve())], env).strip()
         for suffix, executable in native_executables:
             summary[suffix] = invoke([str(executable), str(args.runtime_dir.resolve()), str(args.model.resolve())], env).strip()
         summary["runtime"] = "CPU Identity and shared frames passed"

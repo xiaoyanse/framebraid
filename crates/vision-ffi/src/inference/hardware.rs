@@ -16,7 +16,8 @@ use std::{
 };
 
 const CACHE_RESERVATION: usize = 16 * 1024;
-const QUERY_RESERVATION: usize = 48 * 1024;
+// 序列化直接借用缓存，仅分配32KiB定容输出；不重复预留不存在的JSON Value副本。
+const QUERY_RESERVATION: usize = 32 * 1024;
 const MAX_REPORT: usize = 64 * 1024;
 struct Cached {
     report: devices::DeviceProbeReport,
@@ -78,7 +79,7 @@ pub unsafe extern "C" fn amv_probe_inference_hardware(
         Ok(())
     })
 }
-unsafe fn copy_report(
+pub(super) unsafe fn copy_report(
     bytes: &[u8],
     buffer: *mut c_char,
     capacity: u64,

@@ -1,5 +1,20 @@
 # FrameBraid 双 SDK 接入说明
 
+## Local ordered model selection / 本地有序选择
+
+ABI1.1 r9未发布，须使用同提交DLL/绑定并检查`AMV_CAP_ORDERED_SELECTION`。路径和内存均可选择；最多3个(backend, device_id)候选，CPU=0、OpenVINO CPU=1、CUDA=2。`allow_fallback=false`只尝试首项；没有列CPU就不会回退CPU；`budget_ms`为1～5000软预算，不能强杀原生Session构造。运行库仍由调用方初始化，不自动替换CPU/GPU版ORT。
+
+```python
+with VisionContext(dll_path, [ort_directory]) as ctx:
+    with ctx.load_model_selected(model_path, [(2, 0), (0, 0)],
+                                 profile="pose-yolo26-e2e-coco17-v1") as model:
+        print(model.get_selection_report())
+```
+
+加载失败的`SdkError.attempt_id`或C# `out attemptId`非0时，可读context尝试报告；只保留最近开始的一次，已覆盖返回resultExpired。成功模型有独立缓存，Run计数仅代表core执行/输出，不代表业务已消费。旧入口返回legacy_model而不虚构新诊断。C查询采用容量+required含NUL模式，详见ABI §3.2和`inference-selection-v1.schema.json`；查询不触发驱动/ORT操作。C#完整示例见`examples/Selection.cs`，调用示例以CPU版ORT作strict负向控制。
+
+Python方法`load_model_memory_selected`与C# `LoadModelMemorySelected`复制接受的模型字节；原数据可在加载返回后回收。结果拥有其设备/回退字符串，模型关闭后仍可读到结果release。多模型诊断计control额度，资源不足明确拒绝，不增默认额度。加速实机/故障恢复/长跑尚未验收，见[阶段记录](../docs/verification/sdk-h5-ordered-selection-20261026.md)。
+
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
 Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥有的原因报告，仍须在送包/收帧后核实实际后端。直接DLL在创建/reset时选择硬件，初始化选中但未出帧时get_info后端NULL；真实出帧后返回ffmpeg-d3d11va/dxva2/cpu。硬件运行失败先过CPU预算，递增代次并等待关键帧；仅首次输出前单启动画面允许保留原输入重试一次，显式reset才重试硬件。见[直接入口验证](../docs/verification/sdk-r2-direct-auto-20261026.md)。初始化1.5秒为原生调用间软预算，不强杀驱动；不保证GPU启动或每帧比CPU更快。
@@ -237,3 +252,5 @@ Local RTSP parameter changes reuse the existing selected device and decoder perm
 Unpublished ABI1.1 r8 only: use bindings and DLL from the same source revision. C callers invoke `amv_probe_inference_hardware(ctx, 1500)` explicitly, then `amv_get_inference_hardware_report(ctx, buffer, 65536, &required)`; required includes NUL. Zero-capacity length lookup does not probe. Python: `VisionContext(..., shared_frames=True).probe_inference_hardware()` / `.get_inference_hardware_report()`; C#: `ProbeInferenceHardware()` / `GetInferenceHardwareReport()`. Close/dispose the context normally. Examples of exact raw calls and buffer/error handling are in `scripts/sdk/test-inference-hardware.py`.
 
 设备报告可在无ORT的纯共享帧context查询，显卡被枚举不等于ORT/CUDA可用。常规查询不刷新驱动；缺失/失败读device_probe.stopped，不要当作零设备。observations为SDK域累计观察，非当前模型健康/全GPU节点证明；模型选择仍按原C接口或新增Rust策略，本阶段不扩旧运行库替换合同。默认64KiB控制预算内缓存16KiB、查询48KiB，两者各一项；其他控制对象或并发查询可能明确resourceExhausted，应归还控制对象/减少并发，不能无限重试。关闭态仅返回空快照。
+
+有序选择的context尝试是加载时快照，Run只刷新模型缓存。Python/C#为关闭安全串行化同一资源操作；需边执行边查状态时选择异步推理。新查询不提供后台刷新或驱动测速。

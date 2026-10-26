@@ -141,7 +141,64 @@ class Context(Resource):
         return self._prefix
 
 
+def _selection_report(owner, function, *arguments):
+    output, count = c.create_string_buffer(8192), c.c_uint64()
+    owner._check(function(*arguments, output, len(output), c.byref(count)), "read selection report")
+    if not 1 <= count.value <= len(output):
+        raise RuntimeError("Invalid selection report length")
+    return json.loads(output.raw[:count.value - 1])
+
+
 class VisionContext(Context):
+    def get_selection_attempt_report(self, attempt_id):
+        with self._lock:
+            return _selection_report(self, self.library.amv_get_selection_attempt_report,
+                                     self._require(), attempt_id)
+
+    def load_model_selected(self, path, candidates, profile=None, allow_fallback=True, budget_ms=1500):
+        """candidates为(backend, device_id)序列；不会自动添加CPU。"""
+        return self._load_selected(path, candidates, profile, allow_fallback, budget_ms, False)
+
+    def load_model_memory_selected(self, data, candidates, profile=None, allow_fallback=True, budget_ms=1500):
+        return self._load_selected(data, candidates, profile, allow_fallback, budget_ms, True)
+
+    def _load_selected(self, source, candidates, profile, fallback, budget, memory):
+        with self._lock:
+            handle = self._require()
+            capability = sized(a.amv_capability_t)
+            self._check(self.library.amv_query_capability(handle, c.byref(capability)), "query selection capability")
+            if not capability.feature_bits & a.AMV_CAP_ORDERED_SELECTION:
+                raise NotImplementedError("Ordered selection requires matching FrameBraid ABI 1.1 bindings and library")
+            candidates = tuple(candidates)
+            if not 1 <= len(candidates) <= 3:
+                raise ValueError("Provide one to three backend/device candidates")
+            values = (a.am_backend_candidate_t * len(candidates))(
+                *(a.am_backend_candidate_t(backend, device) for backend, device in candidates))
+            policy = sized(a.am_backend_selection_t)
+            policy.candidate_count, policy.candidates = len(values), values
+            policy.allow_fallback, policy.budget_ms = int(fallback), budget
+            desc = sized(a.am_model_memory_desc_t if memory else a.am_model_desc_t)
+            desc.load_mode = a.AM_LOAD_PROFILE if profile else a.AM_LOAD_RAW
+            desc.profile_id = profile.encode("utf-8") if profile else None
+            model, attempt = c.POINTER(a.amv_model_t)(), c.c_uint64()
+            if memory:
+                storage = (c.c_ubyte * len(source)).from_buffer_copy(source)
+                desc.bytes, desc.size = storage, len(storage)
+                code = self.library.amv_model_load_memory_selected(handle, c.byref(desc), c.byref(policy),
+                                                                  2, c.byref(model), c.byref(attempt))
+            else:
+                desc.path_utf8, desc.intra_threads = str(Path(source).resolve()).encode("utf-8"), 2
+                code = self.library.amv_model_load_selected(handle, c.byref(desc), c.byref(policy),
+                                                           c.byref(model), c.byref(attempt))
+            try:
+                self._check(code, "load selected model")
+            except SdkError as error:
+                error.attempt_id = attempt.value
+                raise
+            result = Model(self, model, self.library.amv_model_close)
+            result.selection_attempt_id = attempt.value
+            return result
+
     def get_inference_hardware_report(self):
         with self._lock:
             version = self.library.amv_get_abi_version()
@@ -232,6 +289,10 @@ class Result(Resource):
 
 
 class Model(Resource):
+    def get_selection_report(self):
+        with self._lock:
+            return _selection_report(self, self.library.amv_get_model_selection_report, self._require())
+
     def __init__(self, *args):
         super().__init__(*args)
         self._notify = None

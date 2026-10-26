@@ -16,7 +16,8 @@ SELECTED = ["amc_init_params_t", "amv_init_params_t", "am_model_desc_t",
             "am_frame_meta_t", "am_pixel_view_t", "am_frame_assoc_t",
             "am_source_desc_t", "am_credential_data_t", "am_capture_request_t",
             "am_captured_image_t", "am_frame_sub_desc_t", "am_shared_pool_config_t",
-            "am_shared_pool_attach_desc_t", "am_shared_frame_view_t"]
+            "am_shared_pool_attach_desc_t", "am_shared_frame_view_t", "am_backend_candidate_t",
+            "am_backend_selection_t", "am_model_memory_desc_t", "amv_capability_t"]
 
 
 def generate():
@@ -50,12 +51,14 @@ def generate():
                 target = typename(value)
             lines.append("        public %s @%s;" % (target, field))
         lines += ["    }", ""]
-    lines += ["}", ""]
+    lines += ["    public static class VisionCapabilities {",
+              "        public const uint OrderedSelection = %dU;" % a.AMV_CAP_ORDERED_SELECTION,
+              "    }", "}", ""]
     return "\n".join(lines)
 
 
 def hardware_functions():
-    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy", "amv_get_abi_version", "amv_probe_inference_hardware", "amv_get_inference_hardware_report"]
+    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy", "amv_get_abi_version", "amv_query_capability", "amv_probe_inference_hardware", "amv_get_inference_hardware_report", "amv_model_load_selected", "amv_model_load_memory_selected", "amv_get_model_selection_report", "amv_get_selection_attempt_report"]
     primitive = {c.c_uint32: "uint", c.c_uint64: "ulong", c.c_int32: "int"}
     lines = ["// Generated from the public ctypes ABI; do not edit.",
              "using System;", "using System.Runtime.InteropServices;",

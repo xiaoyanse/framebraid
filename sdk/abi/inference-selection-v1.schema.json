@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "framebraid.inference-selection/1",
+  "type": "object",
+  "required": ["schema", "state", "attempt_id", "outcome_status", "observed_at_ms", "selection"],
+  "additionalProperties": false,
+  "$defs": {
+    "target": {
+      "type": "object",
+      "required": ["backend", "device_id"],
+      "additionalProperties": false,
+      "properties": {
+        "backend": {"type": "integer", "minimum": 0, "maximum": 2},
+        "device_id": {"type": "integer", "minimum": 0, "maximum": 2147483647}
+      }
+    }
+  },
+  "properties": {
+    "schema": {"const": "framebraid.inference-selection/1"},
+    "state": {"enum": ["pending", "ready", "failed", "legacy_model", "closing", "closed"]},
+    "attempt_id": {"type": "integer", "minimum": 0},
+    "outcome_status": {"type": "integer"},
+    "observed_at_ms": {"type": ["integer", "null"]},
+    "selection": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["candidates", "allow_fallback", "budget_ms", "selected", "attempts", "elapsed_ms", "soft_budget_exceeded", "model_accepted", "native_runs", "delivered_runs", "native_failures", "last_native_run_succeeded", "last_native_error_code", "placement_verified"],
+          "properties": {
+            "candidates": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/target"}},
+            "allow_fallback": {"type": "boolean"},
+            "budget_ms": {"type": "integer", "minimum": 1, "maximum": 5000},
+            "selected": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/target"}]},
+            "attempts": {
+              "type": "array", "maxItems": 3,
+              "items": {
+                "type": "object", "additionalProperties": false,
+                "required": ["target", "stage", "error", "native_code", "elapsed_us"],
+                "properties": {
+                  "target": {"$ref": "#/$defs/target"},
+                  "stage": {"type": "string"},
+                  "error": {"type": ["string", "null"]},
+                  "native_code": {"type": ["integer", "null"]},
+                  "elapsed_us": {"type": "integer", "minimum": 0}
+                }
+              }
+            },
+            "elapsed_ms": {"type": "integer", "minimum": 0},
+            "soft_budget_exceeded": {"type": "boolean"},
+            "model_accepted": {"type": "boolean"},
+            "native_runs": {"type": "integer", "minimum": 0},
+            "delivered_runs": {"type": "integer", "minimum": 0},
+            "native_failures": {"type": "integer", "minimum": 0},
+            "last_native_run_succeeded": {"type": ["boolean", "null"]},
+            "last_native_error_code": {"type": ["integer", "null"]},
+            "placement_verified": {"type": "boolean"}
+          }
+        }
+      ]
+    }
+  }
+}

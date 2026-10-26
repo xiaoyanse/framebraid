@@ -1,6 +1,46 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_pose_detection_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_pose_detection_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_pose_detection_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_pose_detection_t, bounds),
+        0,
+        "am_pose_detection_t.bounds"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pose_detection_t, confidence),
+        16,
+        "am_pose_detection_t.confidence"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pose_detection_t, kpt_count),
+        20,
+        "am_pose_detection_t.kpt_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pose_detection_t, keypoints),
+        24,
+        "am_pose_detection_t.keypoints"
+    );
+}
+#[test]
+fn am_pose_result_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_pose_result_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_pose_result_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_pose_result_t, count),
+        0,
+        "am_pose_result_t.count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pose_result_t, detections),
+        8,
+        "am_pose_result_t.detections"
+    );
+}
+#[test]
 fn am_detect_box_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_detect_box_t>(), 32);
     assert_eq!(core::mem::align_of::<am_detect_box_t>(), 8);
@@ -223,105 +263,5 @@ fn am_obb_instance_t_matches_c() {
         core::mem::offset_of!(am_obb_instance_t, angle_normalized),
         60,
         "am_obb_instance_t.angle_normalized"
-    );
-}
-#[test]
-fn am_obb_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_obb_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_obb_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_obb_result_t, count),
-        0,
-        "am_obb_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_result_t, instances),
-        8,
-        "am_obb_result_t.instances"
-    );
-}
-#[test]
-fn amv_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<amv_result_t>(), 208);
-    assert_eq!(core::mem::align_of::<amv_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, struct_size),
-        0,
-        "amv_result_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, request_id),
-        8,
-        "amv_result_t.request_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, task),
-        16,
-        "amv_result_t.task"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, frame),
-        24,
-        "amv_result_t.frame"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, model),
-        32,
-        "amv_result_t.model"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, execution),
-        56,
-        "amv_result_t.execution"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, transform),
-        88,
-        "amv_result_t.transform"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, pose),
-        96,
-        "amv_result_t.pose"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, detect),
-        112,
-        "amv_result_t.detect"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, classify),
-        128,
-        "amv_result_t.classify"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, segment),
-        144,
-        "amv_result_t.segment"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, obb),
-        160,
-        "amv_result_t.obb"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, raw_output_count),
-        176,
-        "amv_result_t.raw_output_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, raw_outputs),
-        184,
-        "amv_result_t.raw_outputs"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, infer_start_ms),
-        192,
-        "amv_result_t.infer_start_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, infer_end_ms),
-        200,
-        "amv_result_t.infer_end_ms"
     );
 }

@@ -161,6 +161,14 @@
       "size": 16,
       "align": 8
     },
+    "am_backend_candidate_t": {
+      "size": 8,
+      "align": 4
+    },
+    "am_backend_selection_t": {
+      "size": 24,
+      "align": 8
+    },
     "am_backend_policy_t": {
       "size": 12,
       "align": 4

@@ -532,12 +532,30 @@ AM_API am_status_t amv_model_load(amv_context_t* ctx, const am_model_desc_t* des
 /* 内存加载（P1）：能力位开才可用，未开返回 sdk.notSupported；bytes 借用至本函数返回（接受时复制），
    大小上限见 §6；初始化失败时本次已接管资源全部释放 */
 AM_API am_status_t amv_model_load_memory(amv_context_t* ctx, const am_model_memory_desc_t* desc, amv_model_t** out_model);
+/* H5 r9：旧desc.backend须NULL；旧入口原有requested/strict语义保持。
+   候选/字节/路径仅借用到返回；attempt_id与model输出不可别名，须不同可写地址。
+   校验/预算拒绝前attempt_id=0；准入后成功/失败均返回非零ID，失败model=NULL。 */
+AM_API am_status_t amv_model_load_selected(amv_context_t* ctx, const am_model_desc_t* desc,
+    const am_backend_selection_t* selection, amv_model_t** out_model, uint64_t* out_attempt_id);
+AM_API am_status_t amv_model_load_memory_selected(amv_context_t* ctx, const am_model_memory_desc_t* desc,
+    const am_backend_selection_t* selection, uint32_t intra_threads,
+    amv_model_t** out_model, uint64_t* out_attempt_id);
+/* UTF-8 JSON+NUL；required含NUL，0容量只测长；上限8192字节，短缓冲不截断JSON。
+   读缓存，不探测/建Session、不等待正在运行的ORT。关闭态只返回空状态。 */
+AM_API am_status_t amv_get_model_selection_report(const amv_model_t* model, char* buffer, uint64_t capacity, uint64_t* required);
+AM_API am_status_t amv_get_selection_attempt_report(amv_context_t* ctx, uint64_t attempt_id, char* buffer, uint64_t capacity, uint64_t* required);
 /* 关闭（三段式）：在途请求各自到达终态后释放；新旧模型身份独立，旧结果不冒充新版本（§3.7） */
 AM_API am_status_t amv_model_close(amv_model_t* model, uint32_t timeout_ms, am_lifecycle_state_t* out_state);
 /* 模型签名与状态：命名输入输出/dtype/shape（动态维度+公布范围）/native_batch 声明/加载模式/
    档案 ID/实际执行后端+回退原因+子图回退；只读并发安全 */
 AM_API am_status_t amv_model_get_info(const amv_model_t* model, am_model_info_t* out_info);
 ```
+
+**H5 r9有序选择**：新能力位`AMV_CAP_ORDERED_SELECTION`，ABI1.1本地未发布演进，旧结构/导出不变。候选CPU=0/OpenVINO=1/CUDA=2；非CUDA device_id必须0，CUDA≤INT32_MAX，最多3项。allow_fallback=0只试首项；1也只访问允许列表，预算到期不再试下一项，不强杀已经进入ORT的调用。文件/档案/模型约定错误不靠更换设备重试。OpenVINO仍CPU；单ORT与单加速域约束保持。
+
+选择快照schema=`framebraid.inference-selection/1`，包含state、attempt_id、outcome_status、observed_at_ms、selection（Rust有序候选/尝试阶段/原生代码/实际target/Run计数/placement_verified）。context仅缓存最近开始的一次尝试，旧尝试完成不覆盖更新ID；覆盖或未知ID返回sdk.resultExpired，调用方用自身load返回ID防止并发串读。成功模型拥有独立缓存，即使context缓存被覆盖也可查；旧模型入口的selection为null（legacy_model），继续用旧get_info，不能虚构旧模型有新诊断。Session成功与真实Run分开，Run之后才刷新计数；计数反映core输出，不等于SDK结果被业务消费。GPU节点放置未知不报已全GPU。
+
+新选择每个context尝试缓存8KiB，每个新策略模型缓存8KiB，查询临时16KiB，均按既有control项数/字节准入；超额resourceExhausted，不增加预算或线程。初始化/模型失败也保存已准入尝试的稳定错误及阶段，无路径/原生消息。关闭释放模型缓存、停止后查询不分配工作服务；context缓存不作为外部持有阻塞关闭。运行期失败只结束当前请求，不自动重放；恢复由显式排空/关闭旧模型再加载新身份，完整故障/真实加速矩阵仍按H5后续验收。
 
 **raw 模式语义（B05）**：
 

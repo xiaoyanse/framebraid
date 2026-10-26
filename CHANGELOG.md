@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Add ordered model selection to the local ABI 1.1 candidate: path/memory loading, bounded attempt/model diagnostics and Python/C# helpers. Explicit allowlists govern fallback; retained results own their actual-device strings. CPU and missing-EP controls are verified separately from accelerated execution. / H5有序选择接线，见[验证](docs/verification/sdk-h5-ordered-selection-20261026.md)，未发布。
+
 - Extend capped sampling verification to HEVC/MJPEG and three-codec spatial changes; validate observer codec/dimensions before opening sources. No production ABI change or new release support claim. / 补齐采样编码与尺寸覆盖，见[记录](docs/verification/sdk-r2-codec-sampling-20261026.md)。
 
 - Restore capped RTSP pixel delivery using strict integer deadlines, bounded worker-local waiting and sampled-only stale-picture coalescing. Three paired local H.264 runs improve a 30-FPS consumer from roughly 16 to 29.5 FPS, with higher but bounded measured receipt age; full codec/hardware/soak acceptance remains open. / 修复实际采样节拍，保留延迟代价与完整矩阵未验项，见[验证](docs/verification/sdk-r2-cadence-20261026.md)。

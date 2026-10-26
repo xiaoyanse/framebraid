@@ -1,6 +1,6 @@
 use super::{
     lock,
-    models::{execution, ModelHandle},
+    models::ModelHandle,
     state::{ControlCharge, ResultCharge, State},
 };
 use am_sdk_support::{abi::*, buffers::Buffer, context::Context, Result};
@@ -19,6 +19,8 @@ pub struct ResultBuffer {
     frame: Option<Box<am_frame_assoc_t>>,
     transform: Option<Box<am_preprocess_meta_t>>,
     profile: CString,
+    device: CString,
+    fallback_reason: Option<CString>,
     raw: Vec<TensorData>,
     _names: Vec<CString>,
     views: Vec<am_tensor_out_t>,
@@ -91,6 +93,8 @@ impl ResultBuffer {
                 })
             }),
             profile,
+            device: model.info.device.clone(),
+            fallback_reason: model.info.fallback_reason.clone(),
             raw,
             _names: names,
             views,
@@ -201,7 +205,14 @@ impl ResultBuffer {
                 model_version: 1,
                 profile_id: data.profile.as_ptr(),
             },
-            execution: execution(model.info.actual, model.info.fallback),
+            execution: am_backend_actual_t {
+                device_utf8: data.device.as_ptr(),
+                fallback_reason_utf8: data
+                    .fallback_reason
+                    .as_ref()
+                    .map_or(std::ptr::null(), |s| s.as_ptr()),
+                ..model.info.execution()
+            },
             transform: data.transform.as_deref().map_or(std::ptr::null(), |v| v),
             pose: am_pose_result_t {
                 count: data.pose.len() as u32,

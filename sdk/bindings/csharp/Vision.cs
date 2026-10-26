@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace AmrtSdk {
-    public sealed class VisionContext : OwnedResource {
+    public sealed partial class VisionContext : OwnedResource {
         public string GetInferenceHardwareReport() { lock (Gate) return HardwareReports.Read(Raw, true); }
         public string ProbeInferenceHardware(uint budgetMs = 1500) {
             lock (Gate) {
@@ -73,7 +73,7 @@ namespace AmrtSdk {
         internal RequestTimeoutException(ulong id) : base("Inference continues; query/fetch/ack RequestId") { RequestId = id; }
     }
 
-    public sealed class Model : OwnedResource {
+    public sealed partial class Model : OwnedResource {
         private readonly VisionContext context;
         private static readonly ConcurrentDictionary<IntPtr, Native.Notify> callbacks = new ConcurrentDictionary<IntPtr, Native.Notify>();
         private readonly ConcurrentQueue<Tuple<ulong, uint>> notifications = new ConcurrentQueue<Tuple<ulong, uint>>();

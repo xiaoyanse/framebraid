@@ -54,7 +54,8 @@ pub unsafe extern "C" fn amv_query_capability(
                 | AMV_CAP_MEMORY_MODEL
                 | AMV_CAP_IMAGE_PREPROCESS_RAW
                 | AMV_CAP_RESULT_RAW_TENSOR
-                | AMV_CAP_PUSH_NOTIFY) as u32,
+                | AMV_CAP_PUSH_NOTIFY
+                | AMV_CAP_ORDERED_SELECTION) as u32,
             31,
         )
     })

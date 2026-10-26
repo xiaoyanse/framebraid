@@ -53,7 +53,7 @@ that planned capabilities are implemented or production-accepted.
 | 共享帧与跨语言传输 | 显式启用的共享池、发布/借用/归还、租约引用及异步持有桥接 | 发布入池仍复制；优先减少重复分配和转换，池内直写按收益再评估 | R2/R4 |
 | 媒体转换与采样 | 转换上下文/有预算回读缓存复用及需求前移已保存，有限定H.264局部证据 | 真实网络有效采样、其他编码/尺寸与混合负载仍待；机制减少不外推整机CPU收益 | R2 |
 | 原生硬件解码 | 本地C ABI/RTSP已接PREFER_HW/软件策略及参数重建设备复用；本机有限Intel/NVIDIA合成硬解、新运行库现代D3D11入口通过，旧包不变，见[重建记录](verification/sdk-r2-rtsp-reconfigure-20261026.md) | 完整设备/码流/耐压隔离及性能对照仍待H2.1～H2.4；参数重建局部验证不代表GPU卸载或所有设备验收，与浏览器分开 | R2-H2 前置 |
-| 推理硬件选择 | Rust允许列表/strict/CPU回退、显式CUDA设备探测和C缓存报告已保存；有GPU不等于实际执行 | 模型C策略、真实加速模型、运行期恢复及旧矩阵迁移仍待；OpenVINO当前仍CPU，不承诺自动选最快 | R5-H5 前置 |
+| 推理硬件选择 | Rust允许列表/strict/CPU回退、显式CUDA设备探测和C缓存报告已保存；有GPU不等于实际执行 | 模型C策略已接线；真实加速模型、运行期恢复及旧矩阵迁移仍待；OpenVINO当前仍CPU，不承诺自动选最快 | R5-H5 前置 |
 | 张量前处理 | 已融合变换并直写最终对齐拥有者；972种配置/实际CPU链与少一块分配已验证，见[记录](verification/sdk-r2-prepare-direct-20261026.md) | 共享帧/其他搬运、受控SIMD、真实多路及持续负载仍待；局部收益不外推系统CPU | R2 |
 | 有界队列与恢复 | 数量/字节预算、背压、重连/慢客户端重同步；RTSP像素worker已与压缩读流隔离并共用decoder额度，见[记录](verification/sdk-r3-pixel-worker-20261026.md) | 全通道预算审计、真实故障组合/公平性/关闭竞争与长跑仍待；受控阻塞不代表所有驱动故障已验 | R3 |
 | 推理与批次 | 同步/异步/显式 batch，模型批次声明、后端选择/查询/重试及执行预算 | 不等于自动跨请求凑批；自适应与运行期切换需独立验证 | R5 |
@@ -321,3 +321,5 @@ HEAD 仅标记定位快照，其他团队的未提交工作不被本路线归档
 本地H5.0a：Rust有界选择、显式驱动枚举和模型真实Run诊断完成首组功能验证，见[记录](verification/sdk-h5-selection-core-20261026.md)。C导出/运行库选择、加速EP/运行期恢复继续开放。H2-STREAM-01改为跨后端取舍待量化：硬解RGBA慢于CPU不单独算缺陷；CPU卸载、GPU引擎及延迟/并发预算仍须实测。旧5%事件转为MET-2待复核，H2-STREAM-02读流隔离问题独立保持开放。
 
 本地H5.0b显式推理探测/缓存报告已进入C ABI1.1 r8并配套Python/C#，见[验证](verification/sdk-h5-inference-report-20261026.md)。支持无ORT使用，设备发现不冒充加速Session/Run；旧矩阵缓存迁移、模型C选择策略和恢复保持开放。
+
+本地H5.2有序模型选择C导出、Python/C#、实际CPU Run与缺EP strict/回退已验证，见[记录](verification/sdk-h5-ordered-selection-20261026.md)。不关闭H5.1/3/4、旧矩阵迁移、组批和压力长跑；ABI1.1 r9未发布。

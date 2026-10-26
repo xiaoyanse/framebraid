@@ -7,6 +7,7 @@
 - [x] H5.0a Rust核心前置：有界允许列表/严格与CPU回退、显式CUDA驱动枚举、会话/真实Run分层快照及短锁记账；旧C入口回归、真实CPU错误和同预算短测通过功能检查，微型P95告警保留。见[记录](../../../docs/verification/sdk-h5-selection-core-20261026.md)。本项不关闭以下C导出、加速EP/运行期恢复及整包耐压任务。
 - [x] H5.0b 显式推理设备probe/C缓存报告及Python/C#、控制预算/关闭/缓冲测试；见[验证](../../../docs/verification/sdk-h5-inference-report-20261026.md)。仅设备及累计观察，以下模型C策略/加速执行/恢复不勾选。
 - [x] H5.0c MET-2真实Pose CPU三轮资源/异步响应基线及独立进程缺EP strict/CPU回退控制完成，见[记录](../../../docs/verification/sdk-met2-s3-20261026.md)。不关闭H5.1～H5.4真实加速/模型策略/恢复与压力矩阵。
+- [x] H5.0d 有序模型C路径/内存加载、按ID尝试/独立模型缓存、Python/C#、实际CPU Identity/Pose及缺EP strict/回退验证，ABI1.1本地r9历史与Schema同步，见[验证](../../../docs/verification/sdk-h5-ordered-selection-20261026.md)。仅完成C接线阶段；旧矩阵迁移、实际加速、资源竞争/恢复及完整H5.1～H5.4验收继续，不用本项代替整包通过。
 - [ ] H5.1 补齐 CPU/OpenVINO/CUDA 的设备发现、依赖、provider 加载、目标模型会话和真实推理状态；缺失/失败/未测分开，不能仅依赖 nvidia-smi 或将有显卡等同可用。
 - [ ] H5.2 实现调用方允许列表/优先级及 strict/fallback 约束下的自动选择，查询请求与实际 provider/设备/回退原因；OpenVINO 仍按当前 CPU 合同，不暗增 GPU 支持。兼容新增先更新合同、生成器与语言封装，不重定义既有策略值。
 - [ ] H5.3 验证缺依赖、provider 加载失败、模型不兼容、设备忙/内存不足、运行期故障及显式重试；不迁移在读输入、不自动重放已完成或状态不确定请求，不突破当前单加速后端共存约束。探测可刷新且有界，不将暂时故障永久缓存。

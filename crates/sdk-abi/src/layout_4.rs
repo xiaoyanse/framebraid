@@ -1,6 +1,51 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_backend_candidate_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_backend_candidate_t>(), 8);
+    assert_eq!(core::mem::align_of::<am_backend_candidate_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_backend_candidate_t, backend),
+        0,
+        "am_backend_candidate_t.backend"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_candidate_t, device_id),
+        4,
+        "am_backend_candidate_t.device_id"
+    );
+}
+#[test]
+fn am_backend_selection_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_backend_selection_t>(), 24);
+    assert_eq!(core::mem::align_of::<am_backend_selection_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_backend_selection_t, struct_size),
+        0,
+        "am_backend_selection_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_selection_t, candidate_count),
+        4,
+        "am_backend_selection_t.candidate_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_selection_t, candidates),
+        8,
+        "am_backend_selection_t.candidates"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_selection_t, allow_fallback),
+        16,
+        "am_backend_selection_t.allow_fallback"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_selection_t, budget_ms),
+        20,
+        "am_backend_selection_t.budget_ms"
+    );
+}
+#[test]
 fn am_backend_policy_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_backend_policy_t>(), 12);
     assert_eq!(core::mem::align_of::<am_backend_policy_t>(), 4);
@@ -278,115 +323,5 @@ fn am_model_info_t_matches_c() {
         core::mem::offset_of!(am_model_info_t, execution),
         72,
         "am_model_info_t.execution"
-    );
-}
-#[test]
-fn am_frame_assoc_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_frame_assoc_t>(), 80);
-    assert_eq!(core::mem::align_of::<am_frame_assoc_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, struct_size),
-        0,
-        "am_frame_assoc_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, source_id),
-        8,
-        "am_frame_assoc_t.source_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, frame_id),
-        16,
-        "am_frame_assoc_t.frame_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, source_generation),
-        24,
-        "am_frame_assoc_t.source_generation"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, config_generation),
-        28,
-        "am_frame_assoc_t.config_generation"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, pts),
-        32,
-        "am_frame_assoc_t.pts"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, time_base_num),
-        40,
-        "am_frame_assoc_t.time_base_num"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, time_base_den),
-        44,
-        "am_frame_assoc_t.time_base_den"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, captured_at_ms),
-        48,
-        "am_frame_assoc_t.captured_at_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, received_at_ms),
-        56,
-        "am_frame_assoc_t.received_at_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, clock_mask),
-        64,
-        "am_frame_assoc_t.clock_mask"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, clock_quality),
-        68,
-        "am_frame_assoc_t.clock_quality"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_frame_assoc_t, valid),
-        72,
-        "am_frame_assoc_t.valid"
-    );
-}
-#[test]
-fn am_image_input_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_image_input_t>(), 48);
-    assert_eq!(core::mem::align_of::<am_image_input_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, struct_size),
-        0,
-        "am_image_input_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, kind),
-        4,
-        "am_image_input_t.kind"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, encoded),
-        8,
-        "am_image_input_t.encoded"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, encoded_size),
-        16,
-        "am_image_input_t.encoded_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, view),
-        24,
-        "am_image_input_t.view"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, assoc),
-        32,
-        "am_image_input_t.assoc"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_image_input_t, flags),
-        40,
-        "am_image_input_t.flags"
     );
 }

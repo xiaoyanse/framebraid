@@ -93,3 +93,17 @@ C调用方 SHALL 可显式触发有软预算的设备发现，并查询有界缓
 
 - **WHEN** 优选EP不可用而允许列表中的CPU执行成功
 - **THEN** 可记录策略/故障功能通过，CPU/GPU收益与资源竞争另按代表模型验证，不以此宣称推理提速
+
+### Requirement: Ordered model selection through C ABI
+
+SDK SHALL 提供路径/内存有序候选加载和模型/尝试缓存查询，保持旧加载入口行为；限定允许列表、软预算及control额度，报告请求与实际设备，不暗加CPU。
+
+#### Scenario: Concurrent attempts complete out of order
+
+- **WHEN** 同context的较旧选择在较新选择开始后才完成
+- **THEN** 旧完成不覆盖新缓存，调用方按各自ID读取，已覆盖返回resultExpired；成功模型拥有独立快照，查询不阻塞原生Run
+
+#### Scenario: CUDA device is not ordinal zero
+
+- **WHEN** 显式选择非零CUDA设备并成功创建模型
+- **THEN** 模型信息和保留结果的设备字符串均使用实际设备号，结果关闭模型后仍可读，不引用已释放的模型字符串

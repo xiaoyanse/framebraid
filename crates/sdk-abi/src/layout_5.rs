@@ -1,6 +1,116 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_frame_assoc_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_frame_assoc_t>(), 80);
+    assert_eq!(core::mem::align_of::<am_frame_assoc_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, struct_size),
+        0,
+        "am_frame_assoc_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, source_id),
+        8,
+        "am_frame_assoc_t.source_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, frame_id),
+        16,
+        "am_frame_assoc_t.frame_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, source_generation),
+        24,
+        "am_frame_assoc_t.source_generation"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, config_generation),
+        28,
+        "am_frame_assoc_t.config_generation"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, pts),
+        32,
+        "am_frame_assoc_t.pts"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, time_base_num),
+        40,
+        "am_frame_assoc_t.time_base_num"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, time_base_den),
+        44,
+        "am_frame_assoc_t.time_base_den"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, captured_at_ms),
+        48,
+        "am_frame_assoc_t.captured_at_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, received_at_ms),
+        56,
+        "am_frame_assoc_t.received_at_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, clock_mask),
+        64,
+        "am_frame_assoc_t.clock_mask"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, clock_quality),
+        68,
+        "am_frame_assoc_t.clock_quality"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_assoc_t, valid),
+        72,
+        "am_frame_assoc_t.valid"
+    );
+}
+#[test]
+fn am_image_input_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_image_input_t>(), 48);
+    assert_eq!(core::mem::align_of::<am_image_input_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, struct_size),
+        0,
+        "am_image_input_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, kind),
+        4,
+        "am_image_input_t.kind"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, encoded),
+        8,
+        "am_image_input_t.encoded"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, encoded_size),
+        16,
+        "am_image_input_t.encoded_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, view),
+        24,
+        "am_image_input_t.view"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, assoc),
+        32,
+        "am_image_input_t.assoc"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, flags),
+        40,
+        "am_image_input_t.flags"
+    );
+}
+#[test]
 fn am_infer_params_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_infer_params_t>(), 48);
     assert_eq!(core::mem::align_of::<am_infer_params_t>(), 8);
@@ -293,45 +403,5 @@ fn am_keypoint_t_matches_c() {
         core::mem::offset_of!(am_keypoint_t, confidence),
         8,
         "am_keypoint_t.confidence"
-    );
-}
-#[test]
-fn am_pose_detection_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_pose_detection_t>(), 32);
-    assert_eq!(core::mem::align_of::<am_pose_detection_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_pose_detection_t, bounds),
-        0,
-        "am_pose_detection_t.bounds"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pose_detection_t, confidence),
-        16,
-        "am_pose_detection_t.confidence"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pose_detection_t, kpt_count),
-        20,
-        "am_pose_detection_t.kpt_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pose_detection_t, keypoints),
-        24,
-        "am_pose_detection_t.keypoints"
-    );
-}
-#[test]
-fn am_pose_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_pose_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_pose_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_pose_result_t, count),
-        0,
-        "am_pose_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pose_result_t, detections),
-        8,
-        "am_pose_result_t.detections"
     );
 }

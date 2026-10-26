@@ -8,6 +8,10 @@ mod notify;
 mod receipt;
 mod results;
 mod scheduler;
+mod selected_exports;
+mod selection;
+#[cfg(test)]
+mod selection_tests;
 mod state;
 mod submission;
 mod telemetry;

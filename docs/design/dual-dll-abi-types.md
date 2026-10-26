@@ -553,6 +553,16 @@ typedef struct am_backend_matrix_s {
 ### 3.2 模型描述与信息（B05/B14）
 
 ```c
+/* H5 r9：候选是固定布局叶子，后续新增参数通过外层指针结构演进。 */
+typedef struct am_backend_candidate_s { uint32_t backend; uint32_t device_id; } am_backend_candidate_t;
+typedef struct am_backend_selection_s {
+  uint32_t struct_size;
+  uint32_t candidate_count;              /* 1..3；禁止重复同backend/device */
+  const am_backend_candidate_t* candidates;
+  uint32_t allow_fallback;               /* 0只尝试首项；1按列表继续，不暗加CPU */
+  uint32_t budget_ms;                    /* 1..5000；原生调用间检查的软预算 */
+} am_backend_selection_t;
+
 typedef struct am_backend_policy_s {
   uint32_t struct_size;
   uint32_t requested;   /* am_backend_e */

@@ -69,6 +69,8 @@ fn local_digest_capture_preserves_original_and_query_uri() {
                         Err(error) => panic!("{error}"),
                     }
                 };
+                // Windows接受的连接可能继承listener非阻塞状态；夹具按阻塞逐字节读取HTTP头。
+                stream.set_nonblocking(false).unwrap();
                 stream
                     .set_read_timeout(Some(Duration::from_secs(2)))
                     .unwrap();

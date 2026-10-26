@@ -19,6 +19,13 @@ AM_API am_status_t amv_query_backends(amv_context_t* ctx, am_backend_matrix_t* o
 AM_API am_status_t amv_backend_retry(const amv_init_params_t* params);
 AM_API am_status_t amv_model_load(amv_context_t* ctx, const am_model_desc_t* desc, amv_model_t** out_model);
 AM_API am_status_t amv_model_load_memory(amv_context_t* ctx, const am_model_memory_desc_t* desc, amv_model_t** out_model);
+AM_API am_status_t amv_model_load_selected(amv_context_t* ctx, const am_model_desc_t* desc,
+    const am_backend_selection_t* selection, amv_model_t** out_model, uint64_t* out_attempt_id);
+AM_API am_status_t amv_model_load_memory_selected(amv_context_t* ctx, const am_model_memory_desc_t* desc,
+    const am_backend_selection_t* selection, uint32_t intra_threads,
+    amv_model_t** out_model, uint64_t* out_attempt_id);
+AM_API am_status_t amv_get_model_selection_report(const amv_model_t* model, char* buffer, uint64_t capacity, uint64_t* required);
+AM_API am_status_t amv_get_selection_attempt_report(amv_context_t* ctx, uint64_t attempt_id, char* buffer, uint64_t capacity, uint64_t* required);
 AM_API am_status_t amv_model_close(amv_model_t* model, uint32_t timeout_ms, am_lifecycle_state_t* out_state);
 AM_API am_status_t amv_model_get_info(const amv_model_t* model, am_model_info_t* out_info);
 AM_API am_status_t amv_infer_image_sync(amv_model_t* model, const am_image_input_t* input,

@@ -14,6 +14,7 @@ use std::{
 static MODEL_ID: AtomicU64 = AtomicU64::new(1);
 pub struct ModelHandle {
     pub session: Mutex<Option<Model>>,
+    pub selection: Mutex<Option<Arc<super::selection::Cached>>>,
     pub info: Info,
     pub state: Arc<State>,
     pub inflight: AtomicUsize,
@@ -45,6 +46,9 @@ impl Managed for ModelHandle {
     }
     fn close_resources(&self) {
         self.notify.join();
+        if let Ok(mut cache) = self.selection.lock() {
+            cache.take();
+        }
         if let Ok(mut session) = self.session.lock() {
             session.take();
         }
@@ -71,7 +75,8 @@ pub struct Info {
     pub profile: CString,
     pub mode: u32,
     pub actual: u32,
-    pub fallback: bool,
+    pub device: CString,
+    pub fallback_reason: Option<CString>,
     pub native_batch: u32,
     input_owners: Vec<Io>,
     output_owners: Vec<Io>,
@@ -141,25 +146,31 @@ impl Info {
             inputs: self.inputs.as_ptr(),
             outputs: self.outputs.as_ptr(),
             native_batch: self.native_batch,
-            execution: execution(self.actual, self.fallback),
+            execution: self.execution(),
             ..Default::default()
         }
     }
 }
-pub fn execution(actual: u32, fallback: bool) -> am_backend_actual_t {
-    am_backend_actual_t {
-        actual,
-        device_utf8: match actual {
-            1 => c"OpenVINO:CPU".as_ptr(),
-            2 => c"CUDA:0".as_ptr(),
-            _ => c"CPU".as_ptr(),
-        },
-        subgraph_cpu_nodes: if actual == 0 { 0 } else { -1 },
-        fallback_reason_utf8: if fallback {
-            c"vision.backendStrictUnavailable".as_ptr()
-        } else {
-            std::ptr::null()
-        },
+impl Info {
+    pub fn execution(&self) -> am_backend_actual_t {
+        am_backend_actual_t {
+            actual: self.actual,
+            device_utf8: self.device.as_ptr(),
+            subgraph_cpu_nodes: if self.actual == 0 { 0 } else { -1 },
+            fallback_reason_utf8: self
+                .fallback_reason
+                .as_ref()
+                .map_or(std::ptr::null(), |s| s.as_ptr()),
+        }
+    }
+}
+impl ModelHandle {
+    pub fn refresh_selection(&self, model: &Model) {
+        if let Ok(cache) = self.selection.lock() {
+            if let Some(cache) = cache.as_ref() {
+                cache.refresh(model.selection_report());
+            }
+        }
     }
 }
 pub unsafe fn load(
@@ -169,6 +180,41 @@ pub unsafe fn load(
     backend: *const am_backend_policy_t,
     threads: u32,
     source: ModelSource<'_>,
+) -> Result<usize> {
+    unsafe { load_inner(ctx, mode, profile, backend, threads, source, None) }
+}
+pub unsafe fn load_selected(
+    ctx: usize,
+    mode: u32,
+    profile: *const std::ffi::c_char,
+    threads: u32,
+    source: ModelSource<'_>,
+    policy: &am_vision_core::sdk::selection::BackendSelectionPolicy,
+    attempt: &super::selection::Attempt,
+) -> Result<usize> {
+    unsafe {
+        load_inner(
+            ctx,
+            mode,
+            profile,
+            std::ptr::null(),
+            threads,
+            source,
+            Some((policy, attempt)),
+        )
+    }
+}
+unsafe fn load_inner(
+    ctx: usize,
+    mode: u32,
+    profile: *const std::ffi::c_char,
+    backend: *const am_backend_policy_t,
+    threads: u32,
+    source: ModelSource<'_>,
+    selected: Option<(
+        &am_vision_core::sdk::selection::BackendSelectionPolicy,
+        &super::selection::Attempt,
+    )>,
 ) -> Result<usize> {
     am_sdk_support::callbacks::reject_reentry()?;
     let active = crate::domain().active(ctx)?;
@@ -216,7 +262,18 @@ pub unsafe fn load(
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
     let extra = threads as usize - 1
-        + if policy.requested == AM_BACKEND_OPENVINO as u32 {
+        + if policy.requested == AM_BACKEND_OPENVINO as u32
+            || selected.is_some_and(|(p, _)| {
+                p.priority
+                    .iter()
+                    .take(if p.allow_fallback {
+                        p.priority.len()
+                    } else {
+                        1
+                    })
+                    .any(|v| v.backend == AM_BACKEND_OPENVINO as u32)
+            })
+        {
             threads as usize
         } else {
             0
@@ -228,14 +285,28 @@ pub unsafe fn load(
             return Err(e);
         }
     };
-    let model = Model::load(
-        source,
-        profile.as_deref(),
-        policy.requested,
-        policy.strict != 0,
-        threads as usize,
-    )
-    .map_err(error);
+    let model = if let Some((selected_policy, attempt)) = selected {
+        match Model::load_selected(
+            source,
+            profile.as_deref(),
+            selected_policy,
+            threads as usize,
+        ) {
+            Ok(model) => attempt.record(model.selection_report()).map(|()| model),
+            Err(failure) => attempt
+                .record(&failure.report)
+                .and(Err(error(failure.error))),
+        }
+    } else {
+        Model::load(
+            source,
+            profile.as_deref(),
+            policy.requested,
+            policy.strict != 0,
+            threads as usize,
+        )
+        .map_err(error)
+    };
     let model = match model {
         Ok(m) => m,
         Err(e) => {
@@ -245,25 +316,54 @@ pub unsafe fn load(
         }
     };
     let info_result = (|| {
+        let selection = selected.map(|(_, a)| a.model_cache(&state)).transpose()?;
         let (input_owners, inputs) = ios(&model.inputs, model.native_batch())?;
         let (output_owners, outputs) = ios(&model.outputs, model.native_batch())?;
-        Ok(Info {
-            key: AtomicUsize::new(0),
-            uid: MODEL_ID.fetch_add(1, Ordering::Relaxed),
-            profile: CString::new(profile.unwrap_or_default())
-                .map_err(|_| AM_ERR_SDK_INVALID_ARGUMENT)?,
-            mode,
-            actual: model.actual_backend,
-            fallback: model.fallback,
-            native_batch: model.native_batch(),
-            input_owners,
-            output_owners,
-            inputs,
-            input_specs: model.inputs.clone(),
-            outputs,
-        })
+        Ok((
+            Info {
+                key: AtomicUsize::new(0),
+                uid: MODEL_ID.fetch_add(1, Ordering::Relaxed),
+                profile: CString::new(profile.unwrap_or_default())
+                    .map_err(|_| AM_ERR_SDK_INVALID_ARGUMENT)?,
+                mode,
+                actual: model.actual_backend,
+                device: CString::new(match model.actual_backend {
+                    1 => "OpenVINO:CPU".to_owned(),
+                    2 => format!(
+                        "CUDA:{}",
+                        model.selection_report().selected.map_or(0, |v| v.device_id)
+                    ),
+                    _ => "CPU".to_owned(),
+                })
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?,
+                fallback_reason: if model.fallback {
+                    Some(
+                        CString::new(if selected.is_some() {
+                            model
+                                .selection_report()
+                                .attempts
+                                .iter()
+                                .find_map(|v| v.error.as_deref())
+                                .unwrap_or("vision.backendStrictUnavailable")
+                        } else {
+                            "vision.backendStrictUnavailable"
+                        })
+                        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?,
+                    )
+                } else {
+                    None
+                },
+                native_batch: model.native_batch(),
+                input_owners,
+                output_owners,
+                inputs,
+                input_specs: model.inputs.clone(),
+                outputs,
+            },
+            selection,
+        ))
     })();
-    let info = match info_result {
+    let (info, selection) = match info_result {
         Ok(v) => v,
         Err(e) => {
             state.models.fetch_sub(1, Ordering::AcqRel);
@@ -273,6 +373,7 @@ pub unsafe fn load(
     };
     let handle = Arc::new(ModelHandle {
         session: Mutex::new(Some(model)),
+        selection: Mutex::new(selection),
         info,
         state,
         inflight: AtomicUsize::new(0),

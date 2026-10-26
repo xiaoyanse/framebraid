@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "2d44efa8c3a9560c3e0e15210db11f255693a6bb",
+  "reviewBaseCommit": "c7c9df827d10f32d511399cf05bb11e70559b758",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -36,8 +36,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "46d01fae79a14230918a1a66a2c8269a26d378db4957c32d875713011ed10c85",
-      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
+      "sha256": "87fc215ae8e9acef2b99a6f278ba68a2c1ea7445bab1d1ab773197b5a0f076da",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -210,8 +210,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "96ffb33253cb890bf20c1c45024d22d88511cdecb51b11a8c05344921922cb44",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "07c9edfdf6b395a3efbbb7975159dd6217ea58810ab39f4d0ee70db3ab46e444",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
     },
     {
       "path": "crates/sdk-support/src/context.rs",
@@ -306,8 +306,8 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "21ba460717f4ffeaa1f9219fdaf02e2155c7c0a02dcd2dc3e685165df02d7c54",
-      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+      "sha256": "ceca1a2350bc8d8869bb3654f95cc25fd1323eb3386096a0aad87ece776a5fd5",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
     },
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
@@ -318,8 +318,8 @@
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
       "previousSha256": null,
-      "sha256": "20044fd695cf6626fec13826d06d6f2c85595fe8ca2b82ff8aaff7a22693fe17",
-      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+      "sha256": "c9e212a7a37b7599efb57210be3e3c081516979602b7da0da5065ecaf2b665a2",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
     },
     {
       "path": "crates/vision/src/sdk/prepare.rs",
@@ -386,6 +386,126 @@
       "previousSha256": null,
       "sha256": "4a73b54664d9a3c8598e6edefb1aaba7867784da74347bdad305ca3a7a1d8128",
       "reason": "R2 actual worker three-codec sampling/spatial coverage; exact pre/post-change intervals and generation/ownership checks; cfg(test) only, production ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_4.rs",
+      "previousSha256": "264a66eedc78912e040c20c5df24d9a03387273120f1a3e46c202b1a053ab556",
+      "sha256": "2931fe8061d14550a8a10679b05512b219c0458564cfb83d97bfa0e5b4b7a146",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_5.rs",
+      "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
+      "sha256": "6f622fa670b4fb04128fbd18b4b70968dc27be512fe0fcbe4409b65d5f8f6f0c",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_6.rs",
+      "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
+      "sha256": "cd7f017b7eb2d5c7de300dcf59136b75634335aa3bf9714d42805c7e4a8cdeff",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_7.rs",
+      "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
+      "sha256": "5b6bb20174fc52e505c0a73e58823a9e81da96b39832c41d193a7ff2cdc18f93",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_4.rs",
+      "previousSha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36",
+      "sha256": "d4047c31c7a130f0f2782f3b6a28f09e4954ac18a7af37687bbf2ec424289ba5",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_5.rs",
+      "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
+      "sha256": "61bd3281717db344a069e6cc5dec20e2214dbc2d473aaa7188f7ae86d65d398a",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_6.rs",
+      "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
+      "sha256": "aef7dfe78c573c63592db5457bed1db6ad4c46ef0d2abb408d078038464c9849",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_7.rs",
+      "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
+      "sha256": "3e9edfbaa4113e2b660542dfd6e0f33d31da5ec4904da8c3b7fd440c01b37c8f",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_4.rs",
+      "previousSha256": "941040d1aaae58ec6e04e58aad256d3b80608e27ec6f7051992a2ffcb2146d36",
+      "sha256": "694d2d3dd2289bcd6e7160b4ab5a325eb4019b1374a4ed3faf6670687ded379a",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_5.rs",
+      "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
+      "sha256": "66d2a3b4f59a9885b5ac0006bbb0490b5ed37f702d5354686e0eac08f909e2b0",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_6.rs",
+      "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
+      "sha256": "8814c34e55053907666ea4ce11900d1268c46a2be2a0251ef687f3b09825c138",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_7.rs",
+      "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
+      "sha256": "87da96595e5dbd39f815bb0a4bf8501cca9b5a1f89c036190d272ae69f7d0ec2",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/models.rs",
+      "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
+      "sha256": "072ad7f4d0f7dc669744235beaf26031c6de9c8e80cb86009e54533f9e09f2e2",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/results.rs",
+      "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
+      "sha256": "6065cda85e9ea38d8cc419b6d9e29150aad2e9704aca43ce4c6af22d1bc6c9d7",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
+      "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
+      "sha256": "a0da600b783dc6d09f2497cadaf8919d84be26ea54b6bc3bd566b0605dcd72eb",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/selected_exports.rs",
+      "previousSha256": null,
+      "sha256": "f17e19e0de80f411788a423330fa8145dbc3ac2251b35a831795030082faa80b",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/selection.rs",
+      "previousSha256": null,
+      "sha256": "638eae6d22a9045069e2d6a5bf9fda301bccaa3c401439a89e69c8d789a18085",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/selection_tests.rs",
+      "previousSha256": null,
+      "sha256": "b1edcb767f854415d8595d7f809c8f27dd63df9dd51fd863b332ba23b2a969e6",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/vision-ffi/src/lib.rs",
+      "previousSha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847",
+      "sha256": "b12dce8060304f5e8d8734b9f7ab5dda82d5c512f0f062ef10139ddcb4d23e03",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/tests.rs",
+      "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
+      "sha256": "f3b581fe29ed15a977782bdb16ec80240a05098f703d46cb3371c8cc81f885a4",
+      "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior"
     }
   ]
 }

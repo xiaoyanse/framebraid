@@ -277,7 +277,9 @@ fn run(
     }
     let charge = model.state.charge(reserve)?;
     let start = am_sdk_support::clock::monotonic_ms();
-    let raw = session.run(prepared.tensors(), reserve).map_err(error)?;
+    let output = session.run(prepared.tensors(), reserve);
+    model.refresh_selection(session);
+    let raw = output.map_err(error)?;
     let prediction = if let Some(profile) = session.profile {
         let shapes = raw
             .iter()

@@ -121,6 +121,12 @@ class am_backend_row_t(Structure):
 class am_backend_matrix_t(Structure):
     pass
 
+class am_backend_candidate_t(Structure):
+    pass
+
+class am_backend_selection_t(Structure):
+    pass
+
 class am_backend_policy_t(Structure):
     pass
 
@@ -815,6 +821,19 @@ am_backend_matrix_t._fields_ = [
     ("rows", POINTER(am_backend_row_t)),
 ]
 
+am_backend_candidate_t._fields_ = [
+    ("backend", c_uint32),
+    ("device_id", c_uint32),
+]
+
+am_backend_selection_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("candidate_count", c_uint32),
+    ("candidates", POINTER(am_backend_candidate_t)),
+    ("allow_fallback", c_uint32),
+    ("budget_ms", c_uint32),
+]
+
 am_backend_policy_t._fields_ = [
     ("struct_size", c_uint32),
     ("requested", c_uint32),
@@ -1308,6 +1327,7 @@ AMV_CAP_BATCH = 32
 AMV_CAP_RESULT_RAW_TENSOR = 64
 AMV_CAP_PUSH_NOTIFY = 128
 AMV_CAP_SHARED_FRAME_POOL = 256
+AMV_CAP_ORDERED_SELECTION = 512
 
 FUNCTIONS = {
     "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),
@@ -1387,6 +1407,10 @@ FUNCTIONS = {
     "amv_backend_retry": (am_status_t, [POINTER(amv_init_params_t)]),
     "amv_model_load": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_desc_t), POINTER(POINTER(amv_model_t))]),
     "amv_model_load_memory": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_memory_desc_t), POINTER(POINTER(amv_model_t))]),
+    "amv_model_load_selected": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_desc_t), POINTER(am_backend_selection_t), POINTER(POINTER(amv_model_t)), POINTER(c_uint64)]),
+    "amv_model_load_memory_selected": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_memory_desc_t), POINTER(am_backend_selection_t), c_uint32, POINTER(POINTER(amv_model_t)), POINTER(c_uint64)]),
+    "amv_get_model_selection_report": (am_status_t, [POINTER(amv_model_t), c_char_p, c_uint64, POINTER(c_uint64)]),
+    "amv_get_selection_attempt_report": (am_status_t, [POINTER(amv_context_t), c_uint64, c_char_p, c_uint64, POINTER(c_uint64)]),
     "amv_model_close": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amv_model_get_info": (am_status_t, [POINTER(amv_model_t), POINTER(am_model_info_t)]),
     "amv_infer_image_sync": (am_status_t, [POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),

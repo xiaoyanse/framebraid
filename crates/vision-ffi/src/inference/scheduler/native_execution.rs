@@ -97,13 +97,13 @@ fn run(
         .map(|_| model.state.charge(row_bytes + overhead))
         .collect::<Result<Vec<_>>>()?;
     let start = am_sdk_support::clock::monotonic_ms();
-    let output = session
-        .run_batch(
-            &prepared.iter().map(|p| p.tensors()).collect::<Vec<_>>(),
-            input_budget,
-            row_bytes * inputs.len() * 2,
-        )
-        .map_err(error)?;
+    let output = session.run_batch(
+        &prepared.iter().map(|p| p.tensors()).collect::<Vec<_>>(),
+        input_budget,
+        row_bytes * inputs.len() * 2,
+    );
+    model.refresh_selection(session);
+    let output = output.map_err(error)?;
     let end = am_sdk_support::clock::monotonic_ms();
     drop(temporary);
     output
