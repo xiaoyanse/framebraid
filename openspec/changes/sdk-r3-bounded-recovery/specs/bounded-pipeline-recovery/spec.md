@@ -47,8 +47,13 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 
 #### Scenario: Inference notification has less than one entry of control bytes
 
-- **WHEN** 控制剩余额度不足一个包含其拥有权许可的完整通知条目
-- **THEN** 不接受该通知，丢弃计数明确；已接受通知持有实际条目额度直到消费/注销/停止释放，不将通知丢弃改成推理失败
+- **WHEN** 尚无预付存储且控制剩余额度不足一个包含其拥有权许可的完整通知条目
+- **THEN** 明确拒绝注册或新通知，丢弃计数明确；已接受通知持有预付条目存储及活项额度直到消费/注销/停止释放，不将通知丢弃改成推理失败
+
+#### Scenario: Inference notification queue retains spare storage
+
+- **WHEN** 通知队列留有空闲槽、反复注册或在忙回调期间停止
+- **THEN** 队列分配前预留控制存储额度、固定容量且空闲槽不提前退账；活通知项数和关闭屏障独立保留而不重复计存储字节，排空后存储和许可一并归还；预算不足的首次注册不残留工作线程
 
 #### Scenario: Rust H264Hub subscriber stalls or closes
 
