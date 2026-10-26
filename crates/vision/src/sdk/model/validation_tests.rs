@@ -28,7 +28,7 @@ unsafe impl GlobalAlloc for Counter {
 }
 #[global_allocator]
 static ALLOCATOR: Counter = Counter;
-fn measured(action: impl FnOnce()) -> usize {
+pub(super) fn measured(action: impl FnOnce()) -> usize {
     CALLS.with(|v| v.set(0));
     ACTIVE.with(|v| v.set(true));
     action();

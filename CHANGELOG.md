@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Bound file-model preflight reads to the opened size and borrow memory-model inputs during synchronous loading. / [测量与调用边界](docs/verification/sdk-r3-model-read-20261027.md)；不改变C ABI或声称原生内存有界。
+
 - Serialize borrowed decode hardware reports into admitted fixed storage instead of building JSON trees; record fixed foundation body costs. / [验证与取舍](docs/verification/sdk-r3-report-storage-20261027.md)，C ABI和JSON字段不变。
 
 - Make bounded model IO ownership copies fallible, release native sessions before failed-load permits, and borrow input metadata instead of cloning on each Run; use fixed source snapshots for events/statistics. / [量化和验证](docs/verification/sdk-r3-model-metadata-20261027.md)，C ABI不变。

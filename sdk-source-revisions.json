@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "9079b0d264b83cfd0e04c4af5c3ed978a09a14c4",
+  "reviewBaseCommit": "b50e3e9740e8e94637c43ae401d0bf4f2463ac2a",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "3a6fc50d1ec044e3da4c2cfce7481477496d1ffd1f798f4762f12906f54eca00",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+      "sha256": "be8fbcc796c9d55d1cc5c7e13b6e87d9b5bbb48eb2566cbde9d3f4d824f19402",
+      "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -900,14 +900,20 @@
     {
       "path": "crates/vision/src/sdk/model/validation_tests.rs",
       "previousSha256": null,
-      "sha256": "aeaeed8c0207f4b226f872de768d0b375475011f91f092ba1e9dd45b023a30c3",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+      "sha256": "c66b81b5f2659f4f0c2ecafa43208152e5f53e3a9f5e6f731bf0f1424a37a166",
+      "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
     },
     {
       "path": "crates/camera-ffi/src/hardware/tests.rs",
       "previousSha256": null,
       "sha256": "10fbc67c60d3ed91aa000385fb2daedb5dc80f83d090f5debf633df4afc5b201",
       "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+    },
+    {
+      "path": "crates/vision/src/sdk/model/source.rs",
+      "previousSha256": null,
+      "sha256": "5e6c721a587cfb5f8edcb6c213206a43ba2f722ed32c7711da0c8425a385770e",
+      "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
     }
   ]
 }

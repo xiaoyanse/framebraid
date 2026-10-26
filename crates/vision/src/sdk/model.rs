@@ -6,6 +6,8 @@ use ort::{
 };
 use std::path::Path;
 
+mod source;
+
 #[derive(Clone, Debug)]
 pub struct TensorInfo {
     pub name: String,
@@ -238,24 +240,7 @@ impl Model {
                 return Err(Error("sdk.invalidArgument".into()));
             }
             let p = profile.map(profiles::find).transpose()?;
-            let length = match source {
-                ModelSource::Path(path) => std::fs::metadata(path)
-                    .map_err(|_| Error("vision.modelLoadFailed".into()))?
-                    .len(),
-                ModelSource::Memory(b) => b.len() as u64,
-            };
-            if length > 256 * 1024 * 1024 {
-                return Err(Error("vision.modelTooLarge".into()));
-            }
-            let bytes = match source {
-                ModelSource::Path(path) => {
-                    std::fs::read(path).map_err(|_| Error("vision.modelLoadFailed".into()))?
-                }
-                ModelSource::Memory(b) => b.to_vec(),
-            };
-            if bytes.len() > 256 * 1024 * 1024 {
-                return Err(Error("vision.modelTooLarge".into()));
-            }
+            let bytes = source::read(source)?;
             super::onnx::validate_external(
                 &bytes,
                 match source {

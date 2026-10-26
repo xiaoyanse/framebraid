@@ -192,3 +192,5 @@ Local R3 prepays continuous-capture reference slots and 120-entry FPS history, f
 Local R3 accounts fixed executor Job/worker-handle slots and retained Context-index capacity against the existing global ceiling, including growth overlap before ID commit. Bounded stack snapshots/direct folds replace temporary Vec lists. 18 unit tests and CPU isolation/batch/cancellation/notification/pressure controls pass. Initial latency spikes and bounded neighboring comparisons remain in the [record](verification/sdk-r3-executor-storage-20261027.md); no overall speedup claim. BP10 record storage, BP12 Media threads, hardware and soak remain open; no publication.
 
 R3媒体硬件报告暂存已改为有界借用序列化，208→1次构造分配；351项/真实硬解与回退及CPU压力见[记录](verification/sdk-r3-report-storage-20261027.md)。固定服务体已测；父项仍待模型文件并发增长的读取上限修复，不把局部许可当进程RSS上限。当前不升级宿主或发布。
+
+R3 SDK受控容量收口：模型文件预检查限制打开句柄尺寸、拒绝读中增长，内存模型同步借用；354项及同候选CPU/回环/共享帧见[记录](verification/sdk-r3-model-read-20261027.md)。文件路径在ORT中会重新打开，稳定可信输入仍由调用方保障；后续加固与R2/R4/R5未完成项独立继续，不自动升级宿主或发布。
