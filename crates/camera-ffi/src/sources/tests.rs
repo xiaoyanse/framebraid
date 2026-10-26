@@ -385,3 +385,27 @@ fn source_event_unregister_waits_for_callback_and_rejects_blocking_reentry() {
     assert!(completed.load(Ordering::Acquire));
     assert_eq!(gate.calls.load(Ordering::Acquire), 1);
 }
+
+#[test]
+fn reused_source_registry_reclaims_dead_aliases_without_events() {
+    let mut f = Fixture::new();
+    let anchor = f.open(std::ptr::null(), std::ptr::null(), 1);
+    let shared = get(anchor)
+        .unwrap()
+        .data::<Source>()
+        .unwrap()
+        .shared
+        .clone();
+    let mut peak = 0;
+    for _ in 0..256 {
+        let alias = f.open(std::ptr::null(), std::ptr::null(), 1);
+        assert_eq!(status_of(alias).source_id, shared.source_id);
+        peak = peak.max(shared.sources.lock().unwrap().len());
+        assert_eq!(f.sources.pop(), Some(alias));
+        domain().close(alias, 100).unwrap();
+        domain().destroy(alias).unwrap();
+    }
+    eprintln!("alias_registry_peak={peak}; cycles=256");
+    assert_eq!(peak, 2, "无事件的共享源不能累积已销毁句柄的Weak和Arc分配体");
+    assert_eq!(status_of(anchor).state, AM_SRC_WAITING_CREDENTIALS);
+}

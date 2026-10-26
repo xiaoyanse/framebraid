@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "9d157500fb5a29d2536c84af2abcc5af5a8f6922",
+  "reviewBaseCommit": "ca537222f040c122fe6549d01607be9446340ced",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -228,8 +228,8 @@
     {
       "path": "crates/camera-ffi/src/sources/tests.rs",
       "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-      "sha256": "a1fa512154dd0c3b626c0ea234651afec6853f6fdb4d7afb5ee5797085910824",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "e402d619a16b1d4db18c20f6218b8ccba6d5722f0885d4dabf4284dd1d2687d3",
+      "reason": "R3 reclaim dead source aliases during registration without waiting for events; 256-cycle ownership regression, shared-source and callback/close tests; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/mod.rs",
@@ -794,6 +794,12 @@
       "previousSha256": null,
       "sha256": "91d3c634da10dddbd5f25dce279982f6271a94401a1b24a798b7b4a5eba78fbc",
       "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/api.rs",
+      "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
+      "sha256": "51e3285b167d3c968a0e2583cba35407b62f2fd85fb7469aba4a349789df55c9",
+      "reason": "R3 reclaim dead source aliases during registration without waiting for events; 256-cycle ownership regression, shared-source and callback/close tests; no C ABI change"
     }
   ]
 }

@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+R3本地源码修复共享源无事件时的别名登记增长，256次循环峰值257→2，7项定向测试及clippy通过，见[记录](verification/sdk-r3-source-aliases-20261027.md)。不替代Release DLL、完整预算矩阵或长跑验收。
+
 本地Rust源码候选R3 1.1r：H264Hub源/工作占位及原Core退订修复、6项定向和301项全工作区验证见[记录](verification/sdk-r3-rust-hub-20261027.md)。Rust穷举匹配须适配TooManySources；本阶段验证Rust源码路径，不替换既有DLL或发布制品，不关闭整包硬件/长跑。
 
 R3 1.1q本地候选固定域登记索引/隔离区，最终DLL布局/132导出、400生命周期和媒体/CPU推理压力已验；固定启动存储、排序索引局部代价及未验范围见[记录](verification/sdk-r3-domain-registry-20261027.md)。不替换发布制品。

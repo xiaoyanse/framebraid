@@ -97,6 +97,8 @@ pub unsafe extern "C" fn amc_source_open(
             }
         };
         source.key.store(key, Ordering::Release);
+        // 共享源可能长期没有事件；登记时也回收旧Weak，避免重开累积Arc分配体。
+        sources.retain(|source| source.strong_count() > 0);
         sources.push(Arc::downgrade(&source));
         drop(sources);
         registry.sources.push(Arc::downgrade(&source));
