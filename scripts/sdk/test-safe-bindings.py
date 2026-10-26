@@ -1,9 +1,13 @@
 """只测语言侧所有权，不加载 DLL，不重复核心推理回归。"""
 import ctypes as c
+import gc
 from pathlib import Path
+import queue
 import sys
+import threading
 import types
 import unittest
+import weakref
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk" if (ROOT / "sdk").is_dir() else ROOT
@@ -125,6 +129,78 @@ class OwnershipTests(unittest.TestCase):
         self.assertIsNone(model._notify)
         self.assertNotIn(4, _CALLBACKS)
         self.assertFalse(owner.callback)
+        model.close()
+        owner.close()
+
+    def test_notification_backlog_drops_oldest_at_fixed_capacity(self):
+        owner = Owner()
+        model = Model(owner, 4, owner.close_native)
+        model.enable_notifications()
+        for rid in range(10000):
+            owner.callback(None, rid, a.AM_REQ_DONE, None)
+        self.assertEqual(model.notifications.qsize(), model.NOTIFICATION_CAPACITY)
+        self.assertEqual(model.notifications_dropped, 10000 - model.NOTIFICATION_CAPACITY)
+        self.assertFalse(model.notifications.empty())
+        self.assertEqual(model.notifications.get()[0], 10000 - model.NOTIFICATION_CAPACITY)
+        self.assertEqual([model.notifications.get_nowait()[0] for _ in range(255)], list(range(9745, 10000)))
+        self.assertTrue(model.notifications.empty())
+        model.close()
+        owner.close()
+
+    def test_notification_producers_account_for_bounded_backlog(self):
+        owner = Owner()
+        model = Model(owner, 4, owner.close_native)
+        model.enable_notifications()
+        producers = [threading.Thread(target=lambda offset=offset: [
+            owner.callback(None, offset + rid, a.AM_REQ_DONE, None) for rid in range(1000)
+        ]) for offset in range(0, 4000, 1000)]
+        for producer in producers:
+            producer.start()
+        consumed = []
+        while any(producer.is_alive() for producer in producers):
+            try:
+                consumed.append(model.notifications.get(timeout=0.001)[0])
+            except queue.Empty:
+                pass
+            self.assertLessEqual(model.notifications.qsize(), model.NOTIFICATION_CAPACITY)
+        for producer in producers:
+            producer.join()
+        while not model.notifications.empty():
+            consumed.append(model.notifications.get_nowait()[0])
+        self.assertEqual(len(consumed) + model.notifications_dropped, 4000)
+        self.assertEqual(len(consumed), len(set(consumed)))
+        self.assertIsNone(model.notification_error)
+        model.close()
+        owner.close()
+
+    def test_callback_owner_survives_gc_and_unregister_releases_root(self):
+        owner = Owner()
+        model = Model(owner, 4, owner.close_native)
+        model.enable_notifications()
+        weak_model = weakref.ref(model)
+        del model
+        gc.collect()
+        self.assertIsNotNone(weak_model())
+        owner.callback(None, 12, a.AM_REQ_DONE, None)
+        model = weak_model()
+        self.assertEqual(model.notifications.get_nowait(), (12, a.AM_REQ_DONE))
+        model.enable_notifications(False)
+        model.close()
+        del model
+        gc.collect()
+        self.assertIsNone(weak_model())
+        owner.close()
+
+    def test_notification_allocation_failure_does_not_escape_callback(self):
+        owner = Owner()
+        model = Model(owner, 4, owner.close_native)
+        model.enable_notifications()
+        def fail(*_):
+            raise MemoryError("injected queue failure")
+        model.notifications.put_nowait = fail
+        owner.callback(None, 1, a.AM_REQ_DONE, None)
+        self.assertIsInstance(model.notification_error, MemoryError)
+        self.assertEqual(model.notifications_dropped, 1)
         model.close()
         owner.close()
 

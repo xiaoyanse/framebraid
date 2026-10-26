@@ -77,7 +77,7 @@ def main():
     selection_exe = output / "Selection.exe"
     invoke(options+["/out:"+str(selection_exe), *map(str, sources), str(SDK / "examples/Selection.cs")])
     summary = {"pythonParsed": len(python_files), "csharpStructures": len(names), "csharpFields": fields,
-               "pythonOwnershipTests": 6, "csharpCompile": "passed", "runtime": "not requested"}
+               "pythonOwnershipTests": 10, "csharpCompile": "passed", "runtime": "not requested"}
     native_executables = []
     native_env = None
     if args.vcvars64:

@@ -76,8 +76,11 @@ namespace AmrtSdk {
     public sealed partial class Model : OwnedResource {
         private readonly VisionContext context;
         private static readonly ConcurrentDictionary<IntPtr, Native.Notify> callbacks = new ConcurrentDictionary<IntPtr, Native.Notify>();
-        private readonly ConcurrentQueue<Tuple<ulong, uint>> notifications = new ConcurrentQueue<Tuple<ulong, uint>>();
+        public const int NotificationCapacity = 256;
+        private readonly object notificationGate = new object();
+        private readonly Queue<Tuple<ulong, uint>> notifications = new Queue<Tuple<ulong, uint>>(NotificationCapacity);
         private long notificationsDropped;
+        // 仅统计语言缓冲丢弃，不包含原生通知队列的统计。
         public long NotificationsDropped { get { return Interlocked.Read(ref notificationsDropped); } }
         internal Model(VisionContext owner, IntPtr raw) : base(raw, owner, Native.amv_model_close, Native.amv_object_destroy, null) { context = owner; }
         public void EnableNotifications(bool enable) {
@@ -86,7 +89,14 @@ namespace AmrtSdk {
                 if (enable) {
                     // 原生线程只入队，不执行业务委托，避免异常或重入越过 C ABI。
                     Native.Notify callback = delegate(IntPtr m, ulong id, uint state, IntPtr user) {
-                        try { notifications.Enqueue(Tuple.Create(id, state)); }
+                        try {
+                            lock (notificationGate) {
+                                if (notifications.Count == NotificationCapacity) {
+                                    notifications.Dequeue(); Interlocked.Increment(ref notificationsDropped);
+                                }
+                                notifications.Enqueue(Tuple.Create(id, state));
+                            }
+                        }
                         catch { Interlocked.Increment(ref notificationsDropped); }
                     };
                     Native.Notify previous;
@@ -105,7 +115,12 @@ namespace AmrtSdk {
                 }
             }
         }
-        public bool TryTakeNotification(out Tuple<ulong, uint> notification) { return notifications.TryDequeue(out notification); }
+        public bool TryTakeNotification(out Tuple<ulong, uint> notification) {
+            lock (notificationGate) {
+                if (notifications.Count == 0) { notification = null; return false; }
+                notification = notifications.Dequeue(); return true;
+            }
+        }
         internal override void BeforeClose() { EnableNotifications(false); }
         public InferenceResult InferEncoded(byte[] bytes, bool png, out ulong request, am_raw_preprocess_t? preprocessing) {
             lock (Gate) using (Arena arena = new Arena()) {
