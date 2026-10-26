@@ -1,5 +1,7 @@
 # FrameBraid 双 SDK 接入说明
 
+本地未发布R3：内部Context服务登记使用16个内联槽（Windows x64为512字节），按需关闭钩子对象为8个弱引用槽（本体136字节，不含Arc头）。固定基础存储与控制载荷预算分列，不是零分配或RSS上限。直接操作`Context.services`/`CloseHooks`的Rust源码调用方须按匹配提交重编译并使用新登记方法；C布局、导出及绑定不变。见[验证](../docs/verification/sdk-r3-context-services-20261027.md)。
+
 ## Admission statistics and metadata / 准入统计与元数据
 
 未发布修复：独立解码submit的真实入队/预算拒绝纳入Context累计计数，参数错误不作背压，reset不清历史；混合来源的accepted不代表唯一帧数。订阅对象、最大队列引用槽与缩放预设容量占控制额度，直到最后对象引用释放；载荷另计，低控制预算可明确拒绝。见[验证及剩余差异](../docs/verification/sdk-r3-budget-audit-20261027.md)。当前统计查询只实现NULL/`context`；旧对象scope合同差异仍待R4核齐，不将其冒充已支持。C ABI and external buffer ownership are unchanged.

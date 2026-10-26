@@ -102,20 +102,21 @@ impl State {
         if prefix > 65535 {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
-        let value = Arc::new(Self {
-            ctx: Arc::downgrade(&ctx),
-            prefix: prefix << 48,
-            next: AtomicU64::new(1),
-            records: Mutex::default(),
-            changed: Condvar::new(),
-            usage: Arc::default(),
-            models: AtomicUsize::new(0),
-            running: AtomicUsize::new(0),
-            metrics: Default::default(),
-            backends: Mutex::default(),
-        });
-        services.insert(TypeId::of::<State>(), value.clone());
-        Ok(value)
+        let value = services.get_or_insert_with(TypeId::of::<State>(), || {
+            Arc::new(Self {
+                ctx: Arc::downgrade(&ctx),
+                prefix: prefix << 48,
+                next: AtomicU64::new(1),
+                records: Mutex::default(),
+                changed: Condvar::new(),
+                usage: Arc::default(),
+                models: AtomicUsize::new(0),
+                running: AtomicUsize::new(0),
+                metrics: Default::default(),
+                backends: Mutex::default(),
+            })
+        })?;
+        value.downcast().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
     }
     pub fn context(&self) -> Result<Arc<Entry>> {
         self.ctx.upgrade().ok_or(AM_ERR_SDK_HANDLE_CLOSED)

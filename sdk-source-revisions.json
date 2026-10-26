@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "2883a2bd66ccc2aace7ca7ce86055888573f664c",
+  "reviewBaseCommit": "26058585542cd4ca553e2e241d757feaeec035cf",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "63cd5acf4fc5805501fcb2350617f00b5667df092473fff5ddc27a9bdd3392b7",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "98eb66e2372fc510c9789e638779397d2d8bf87da83f77ffe587aa3f783f032b",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -216,14 +216,14 @@
     {
       "path": "crates/sdk-support/src/context.rs",
       "previousSha256": "5bbc555780e27a91f722499d4012582970535cd96ac8da7dc5a34a2a9c88a170",
-      "sha256": "97b25f1623f767530f674183e43fc5ea30855eec891e782af211a1f5e2290ee9",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "a7d2eb210fdf715d50158613e67445d29d281a19142315f08d8b7162c9c09cc1",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/camera-ffi/src/hardware.rs",
       "previousSha256": null,
-      "sha256": "b08c333e754aadb4e6c809a167a36c16dc485fa177a6cf3806a3c5a7140e727a",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "3bb05497f420f7c0ef59c7af76c9a1c9d28a56c1fe22713a83d6bb455b2bb745",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/camera-ffi/src/sources/tests.rs",
@@ -312,14 +312,14 @@
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
       "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
-      "sha256": "1d951d67514af78ebd559256900f80f09753f767cbc38ded1fd0b218ac6a0393",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+      "sha256": "2fdd2d9f6ea36080db2c34d9e28eab3022419fdd23d9a7ce2a7a8801267ec56a",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
       "previousSha256": null,
-      "sha256": "c9e212a7a37b7599efb57210be3e3c081516979602b7da0da5065ecaf2b665a2",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "e06239d0d7fa1ca3376707061dc912f913e0735806375db59dc6586c750cf640",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/vision/src/sdk/prepare.rs",
@@ -486,8 +486,8 @@
     {
       "path": "crates/vision-ffi/src/inference/selection.rs",
       "previousSha256": null,
-      "sha256": "638eae6d22a9045069e2d6a5bf9fda301bccaa3c401439a89e69c8d789a18085",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "5de45b9bf47a6624ba9a722e02932b571fd6f98cf119214805310885a350fae2",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/vision-ffi/src/inference/selection_tests.rs",
@@ -540,8 +540,8 @@
     {
       "path": "crates/camera-ffi/src/captures/state.rs",
       "previousSha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5",
-      "sha256": "9cb2947c244441dc6876fa3f0170dc08de26069cf1a0d23ec5ac708e5a8bfd4d",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+      "sha256": "0d2fccb4770dea519ad699ac1a0803af06f9cc710c8f1af094bb3ae0eedff4a8",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/camera-ffi/src/captures/continuous.rs",
@@ -582,8 +582,8 @@
     {
       "path": "crates/camera-ffi/src/probe.rs",
       "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
-      "sha256": "87999f359c62369313eaf269e32d82271a418963cdda3c9b8873102fd63439cb",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "7d7a6f061fa13508b2567d8aae49daeb36c06b7eadf5955b16846faa7391e8a2",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change；R3固定Context服务登记/关闭基础存储并接线"
     },
     {
       "path": "crates/vision-ffi/src/inference/notify.rs",
@@ -740,6 +740,24 @@
       "previousSha256": null,
       "sha256": "2143dd2ba71a45cf20592f7b80817d41c38b2dbfb908380f2bcd377d1b218a61",
       "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+    },
+    {
+      "path": "crates/sdk-support/src/lib.rs",
+      "previousSha256": "1cd2b9e675a0871b578701daa6271848a7da6957da1a71e046b022d54c789128",
+      "sha256": "3b141ce4c25ad7cd6a81d9f95de19172bc828c9c41dc2bd236966b465aff9d35",
+      "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证"
+    },
+    {
+      "path": "crates/sdk-support/src/services.rs",
+      "previousSha256": null,
+      "sha256": "7384cf47cb5555ef8d3a66bb4b30e5fd68f56f6fdb336f9e5a10bf82423a0063",
+      "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证"
+    },
+    {
+      "path": "crates/sdk-support/tests/services.rs",
+      "previousSha256": null,
+      "sha256": "48f56025352d2db1bb4beb0083b974359e7f38e187b0ce23cb2730aabfdf27c2",
+      "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证"
     }
   ]
 }

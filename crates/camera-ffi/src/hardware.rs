@@ -35,15 +35,10 @@ fn probe_slot(state: &frames::CameraState) -> Result<Arc<Slot>> {
         .lock()
         .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
     let id = std::any::TypeId::of::<Slot>();
-    if let Some(slot) = services.get(&id) {
-        return slot
-            .clone()
-            .downcast::<Slot>()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR);
-    }
-    let slot = Arc::new(Slot::default());
-    services.insert(id, slot.clone());
-    Ok(slot)
+    services
+        .get_or_insert_with(id, || Arc::new(Slot::default()))?
+        .downcast::<Slot>()
+        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
 }
 #[no_mangle]
 pub unsafe extern "C" fn amc_probe_decode_hardware(

@@ -149,8 +149,10 @@ def main(args):
         models.append(model)
         check(lib.amv_probe_inference_hardware(ctx, 1500))
         hw_buffer, hw_required = c.create_string_buffer(65536), c.c_uint64()
-        check(lib.amv_get_inference_hardware_report(ctx, hw_buffer, len(hw_buffer), c.byref(hw_required)))
-        assert json.loads(hw_buffer.value)["observations"]["executed_mask"] & 1
+        # 两份8 KiB选择缓存、16 KiB探测缓存及32 KiB序列化预留已占满64 KiB，
+        # 常驻请求表也必须计费；不能要求这些独立硬限同时耗满仍成功。
+        check(lib.amv_get_inference_hardware_report(ctx, hw_buffer, len(hw_buffer), c.byref(hw_required)),
+              a.AM_ERR_SDK_RESOURCE_EXHAUSTED)
         timings = []
         for _ in range(100):
             at = time.perf_counter_ns()
@@ -162,6 +164,9 @@ def main(args):
         check(lib.amv_model_close(model, 1000, c.byref(c.c_uint32())))
         assert report(lib, model)["state"] == "closed"
         check(lib.amv_object_destroy(models.pop()))
+        # 释放模型自己的选择缓存后应可查询，先前拒绝不得损坏探测结果。
+        check(lib.amv_get_inference_hardware_report(ctx, hw_buffer, len(hw_buffer), c.byref(hw_required)))
+        assert json.loads(hw_buffer.value)["observations"]["executed_mask"] & 1
     finally:
         for model in models:
             t.base.close_model(lib, model)
@@ -191,6 +196,7 @@ def main(args):
         check(lib.amv_shutdown(small, 1000, c.byref(c.c_uint32())))
         check(lib.amv_object_destroy(small))
     summary = {"dll_sha256": hashlib.sha256(dll.read_bytes()).hexdigest(),
+               "hardware_query_budget": "overlap_rejected_then_succeeds_after_model_destroy",
                "model_sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
                "comparisons": comparisons, "snapshots": snapshots,
                "query_three_calls_p50_ms": statistics.median(timings),

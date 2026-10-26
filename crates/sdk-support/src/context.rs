@@ -18,8 +18,7 @@ pub struct ThreadBudget {
     pub total: u32,
     pub slots: u64,
 }
-/// 只保留弱引用，context关闭先清业务无关缓存，不制造服务与拥有者环。
-pub struct CloseHooks(pub Mutex<Vec<std::sync::Weak<dyn Managed>>>);
+pub use crate::services::CloseHooks;
 pub struct Context {
     pub limits: Mutex<am_limits_t>,
     pub queues: Mutex<[am_queue_policy_t; 6]>,
@@ -27,7 +26,7 @@ pub struct Context {
     pub runtime_dirs: Vec<String>,
     pub buffers: AtomicUsize,
     pub thread_budget: Option<ThreadBudget>,
-    pub services: Mutex<std::collections::HashMap<std::any::TypeId, Arc<dyn Any + Send + Sync>>>,
+    pub services: Mutex<crate::services::Services>,
     #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
     pub shared: Mutex<crate::shared::Ledger>,
     #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
@@ -48,18 +47,7 @@ impl Managed for Context {
             .and_then(|s| s.get(&std::any::TypeId::of::<CloseHooks>()).cloned())
             .and_then(|s| s.downcast::<CloseHooks>().ok());
         if let Some(hooks) = hooks {
-            let items = hooks
-                .0
-                .lock()
-                .map(|h| {
-                    h.iter()
-                        .filter_map(std::sync::Weak::upgrade)
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default();
-            for hook in items {
-                hook.request_close();
-            }
+            hooks.request_close();
         }
     }
     fn drained(&self) -> bool {

@@ -94,16 +94,10 @@ pub fn camera_state(key: usize) -> Result<Arc<CameraState>> {
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         let id = std::any::TypeId::of::<Mutex<Usage>>();
-        if let Some(value) = services.get(&id) {
-            value
-                .clone()
-                .downcast::<Mutex<Usage>>()
-                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-        } else {
-            let usage = Arc::new(Mutex::<Usage>::default());
-            services.insert(id, usage.clone());
-            usage
-        }
+        services
+            .get_or_insert_with(id, || Arc::new(Mutex::<Usage>::default()))?
+            .downcast::<Mutex<Usage>>()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
     };
     let metrics = {
         let mut services = ctx
@@ -112,16 +106,10 @@ pub fn camera_state(key: usize) -> Result<Arc<CameraState>> {
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         let id = std::any::TypeId::of::<CameraMetrics>();
-        if let Some(value) = services.get(&id) {
-            value
-                .clone()
-                .downcast::<CameraMetrics>()
-                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-        } else {
-            let metrics = Arc::new(CameraMetrics::default());
-            services.insert(id, metrics.clone());
-            metrics
-        }
+        services
+            .get_or_insert_with(id, || Arc::new(CameraMetrics::default()))?
+            .downcast::<CameraMetrics>()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
     };
     let state = Arc::new(CameraState {
         ctx,

@@ -6,6 +6,17 @@
 
 ## ADDED Requirements
 
+### Requirement: Context service bookkeeping has fixed storage
+SDK SHALL 为内部服务索引及关闭钩子提供固定容量，登记已满时在构造或发布新服务之前拒绝；服务构造失败不得缓存不可用对象。SDK SHALL 在关闭时使用有界快照且不持登记锁调用服务钩子。固定基础开销与通道载荷预算分列，受Context总数约束，不将元数据存储说成RSS硬限。
+
+#### Scenario: Full registry or failed setup
+- **WHEN** 内部登记槽已满或新服务关闭钩子登记失败
+- **THEN** 返回资源不足或具体构造错误，不发布该服务，既有服务可读且失败允许重试
+
+#### Scenario: Reentrant close hook
+- **WHEN** 关闭钩子在关闭通知期间再次查询或登记
+- **THEN** 通知不持登记锁，快照固定容量，不临时构造堆列表，旧弱引用失效后槽可回收
+
 ### Requirement: Context-wide Media worker admission
 
 Media C ABI SDK MUST 在每个由该Context创建的SDK线程前取得同一Context的worker槽，默认及硬上限64，只允许收紧；0禁止新建工作线程。SDK MUST 兼容新增配置/查询和能力位，stats显示活槽与历史峰值，不将宿主同步线程或未知驱动线程计为SDK worker。直接Rust会话没有该Context时按其自身配置另核，不能冒充本Context预算覆盖。

@@ -1,5 +1,7 @@
 # FrameBraid 后续优化路线图 / Optimization roadmap
 
+R3 1.1p固定Context服务索引/关闭钩子及关闭栈快照，登记5服务的索引分配2→0、钩子登记及关闭列表各1→0；每Context512字节固定索引的代价单列，C ABI不变。见[验证](verification/sdk-r3-context-services-20261027.md)。BP10域句柄/Buffer及其他索引、BP12与长跑继续开放。
+
 [文档入口 / Documentation](README.md) · [当前交付 / Release status](RELEASE_STATUS.md) · [支持范围 / Support](SUPPORT.md)
 
 日期：2026-10-27。公开基线仍为`5ee707153796cf1d8f9dd7118c664bacf757f97b`（v0.1.0）。MET-2后续本地实现及候选身份见各阶段验证；旧原始数据不覆盖，未替换公开制品。

@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+本地未发布R3 1.1p：Context服务/关闭钩子固定容量，满额/失败不发布、通知无堆快照，机制计数与固定内存代价见[记录](verification/sdk-r3-context-services-20261027.md)。C ABI及已发布制品不变；域注册、完整矩阵/长跑仍待。
+
 [Documentation / 文档入口](README.md) · [Release checklist / 发布清单](RELEASE_CHECKLIST.md)
 
 Local ABI 1.1 r10 adds `amc_set/get_worker_budget`, WORKER_BUDGET capability and Python/C# helpers. Media Context SDK workers now share a 64-slot ceiling and report reserved/live counts and historic peak; real quota/isolation/Closing checks and three five-worker RTSP cycles are [verified](verification/sdk-r3-media-workers-20261027.md). / 未发布，原生驱动未知线程、Rust直接会话、完整硬件及4h/24h仍待，不能用工作槽取代OS线程数。

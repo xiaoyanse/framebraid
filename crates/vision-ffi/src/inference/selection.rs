@@ -41,9 +41,7 @@ pub(super) struct Attempt {
 fn slot(context: &Context) -> Result<Arc<Slot>> {
     let mut services = lock(&context.services)?;
     services
-        .entry(TypeId::of::<Slot>())
-        .or_insert_with(|| Arc::new(Slot::default()))
-        .clone()
+        .get_or_insert_with(TypeId::of::<Slot>(), || Arc::new(Slot::default()))?
         .downcast()
         .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
 }

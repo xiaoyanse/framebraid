@@ -165,11 +165,8 @@ pub(crate) fn invalidate(ctx: usize) -> Result<()> {
 fn cache(state: &CameraState) -> Result<Arc<Cache>> {
     let ctx = state.ctx.data::<Context>()?;
     let mut services = ctx.services.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-    let stored = services
-        .entry(TypeId::of::<Cache>())
-        .or_insert_with(|| Arc::new(Cache::new()));
-    stored
-        .clone()
+    services
+        .get_or_insert_with(TypeId::of::<Cache>(), || Arc::new(Cache::new()))?
         .downcast()
         .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
 }

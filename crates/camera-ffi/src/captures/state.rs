@@ -87,30 +87,34 @@ impl State {
         if prefix > 65535 {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
-        let value = Arc::new(Self {
-            ctx: Arc::downgrade(&camera.ctx),
-            prefix: prefix << 48,
-            next: AtomicU64::new(1),
-            records: Mutex::default(),
-            flights: Mutex::default(),
-            recent: Mutex::default(),
-            running: AtomicUsize::new(0),
-            continuous: AtomicUsize::new(0),
-            consumers: Mutex::default(),
-            subscriptions: Mutex::default(),
-            closed: AtomicBool::new(false),
-            changed: Condvar::new(),
-        });
         let hooks = services
-            .entry(TypeId::of::<CloseHooks>())
-            .or_insert_with(|| Arc::new(CloseHooks(Mutex::default())))
-            .clone();
-        let hooks = hooks
+            .get_or_insert_with(TypeId::of::<CloseHooks>(), || {
+                Arc::new(CloseHooks::default())
+            })?
             .downcast::<CloseHooks>()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        let managed: Arc<dyn Managed> = value.clone();
-        lock(&hooks.0)?.push(Arc::downgrade(&managed));
-        services.insert(TypeId::of::<Self>(), value.clone());
+        let value = services
+            .try_get_or_insert_with(TypeId::of::<Self>(), || {
+                let value = Arc::new(Self {
+                    ctx: Arc::downgrade(&camera.ctx),
+                    prefix: prefix << 48,
+                    next: AtomicU64::new(1),
+                    records: Mutex::default(),
+                    flights: Mutex::default(),
+                    recent: Mutex::default(),
+                    running: AtomicUsize::new(0),
+                    continuous: AtomicUsize::new(0),
+                    consumers: Mutex::default(),
+                    subscriptions: Mutex::default(),
+                    closed: AtomicBool::new(false),
+                    changed: Condvar::new(),
+                });
+                let managed: Arc<dyn Managed> = value.clone();
+                hooks.register(Arc::downgrade(&managed))?;
+                Ok(value)
+            })?
+            .downcast::<Self>()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         Ok(value)
     }
     pub fn context(key: usize) -> Result<Arc<Self>> {

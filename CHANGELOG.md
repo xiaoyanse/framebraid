@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Bound Context service/close-hook storage and remove temporary close lists; no public C ABI change. / 固定服务索引和关闭钩子，分配计数、固定开销与未验边界见[验证](docs/verification/sdk-r3-context-services-20261027.md)。
+
 - Add compatible ABI 1.1 Media worker-budget setters/getters and capability, per-Context admission for all eight C ABI worker kinds, and live/peak statistics with Python/C# helpers. / 统一媒体线程准入与关闭归还，不误报0、不把工作槽当CPU核数；见[验证](docs/verification/sdk-r3-media-workers-20261027.md)，本地未发布。
 
 - Account retained capture record/coalescing/cache/consumer/subscription index capacity and Flight bodies; complete coalesced failures before retiring their index. / 修复媒体抓图元数据漏计与缓存失败的等待者收口，保留控制项数及外持关闭边界；见[验证](docs/verification/sdk-r3-capture-tables-20261027.md)，C ABI不变。
