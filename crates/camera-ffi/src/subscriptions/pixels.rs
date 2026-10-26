@@ -5,7 +5,7 @@ use am_camera_core::media::sdk_io::StreamInfo;
 #[allow(clippy::too_many_arguments)]
 pub fn fanout(
     source: &Arc<SharedSource>,
-    subscribers: &[Arc<Subscription>],
+    subscribers: &hub::Snapshot,
     rgba: Vec<u8>,
     w: u32,
     h: u32,

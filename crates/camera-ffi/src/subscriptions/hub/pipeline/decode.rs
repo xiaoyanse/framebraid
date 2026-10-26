@@ -226,7 +226,7 @@ impl<'a> Worker<'a> {
     fn jpeg(
         &self,
         job: &Job,
-        subscribers: &[Arc<Subscription>],
+        subscribers: &Snapshot,
         delivery: &mut Delivery<'_>,
     ) -> std::result::Result<(), IoError> {
         let source = self.source;

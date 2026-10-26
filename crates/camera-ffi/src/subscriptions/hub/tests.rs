@@ -156,7 +156,7 @@ fn native_stream_policy_quantifies_processing_cost_and_delivery() {
                     &source,
                     &mut native.raw,
                     &info,
-                    std::slice::from_ref(&subscription),
+                    &Snapshot::from_iter([subscription.clone()]),
                     &VecDeque::from([(n, 1000 + n)]),
                     stamp,
                 )
@@ -208,7 +208,7 @@ unsafe extern "C" fn scale(
     CONVERSIONS.fetch_add(1, Ordering::Relaxed);
     unsafe { (API.get().unwrap().sws_scale)(ctx, src, stride, y, h, dst, out_stride) }
 }
-pub(super) fn fixture() -> (
+pub(in crate::subscriptions) fn fixture() -> (
     am_sdk_support::handles::Domain,
     Arc<SharedSource>,
     Arc<Hub>,
@@ -240,7 +240,12 @@ pub(super) fn fixture() -> (
     });
     (domain, source, hub, nanos)
 }
-pub(super) fn sub(source: &SharedSource, hub: &Arc<Hub>, fps: u32, mode: u32) -> Arc<Subscription> {
+pub(in crate::subscriptions) fn sub(
+    source: &SharedSource,
+    hub: &Arc<Hub>,
+    fps: u32,
+    mode: u32,
+) -> Arc<Subscription> {
     Subscription::new(
         source.state.clone(),
         hub,
@@ -310,7 +315,7 @@ fn native_sampling_preserves_outputs_and_quantifies_conversion_savings() {
         };
         for early in modes {
             let (domain, source, hub, nanos) = fixture();
-            let subscribers: Vec<_> = fps
+            let subscribers: Snapshot = fps
                 .iter()
                 .map(|fps| sub(&source, &hub, *fps, AM_SUB_PULL))
                 .collect();

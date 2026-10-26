@@ -64,13 +64,15 @@ fn subscribe(source: usize, kind: Kind, mode: u32, items: u32, bytes: u64) -> Re
     let sub = Subscription::new(shared.state.clone(), &hub, kind, mode, items, bytes)?;
     let mut decode = lock(&shared.decode)?;
     let mut subscribers = lock(&hub.subscribers)?;
-    subscribers.retain(|s| s.upgrade().is_some_and(|s| s.occupies_slot()));
-    if subscribers.len() >= shared.state.limits()?.max_subscribers_per_source as usize {
+    subscribers.prune();
+    if subscribers.len() >= shared.state.limits()?.max_subscribers_per_source as usize
+        || subscribers.is_full()
+    {
         return Err(AM_ERR_CAMERA_SUBSCRIBER_LIMIT_REACHED);
     }
     let key = domain().insert(source, sub.clone())?;
     sub.key.store(key, Ordering::Release);
-    subscribers.push(Arc::downgrade(&sub));
+    subscribers.push_reserved(Arc::downgrade(&sub));
     if matches!(sub.kind, Kind::Frames { .. }) {
         decode.locked = true;
     }

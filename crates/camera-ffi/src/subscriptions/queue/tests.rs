@@ -206,3 +206,26 @@ fn unsubscribe_wakes_blocked_pull_and_mode_is_exclusive() {
     drop(sub);
     cleanup(ctx, state);
 }
+
+#[test]
+fn hub_slot_survives_stopped_subscription_until_callback_thread_drains() {
+    let (domain, source, hub, _) = super::super::hub::tests::fixture();
+    let subscription = super::super::hub::tests::sub(&source, &hub, 5, AM_SUB_PULL);
+    subscription.alive.store(true, Ordering::Release);
+    subscription.request_close();
+    assert!(subscription.occupies_slot());
+    {
+        let mut registry = hub.subscribers.lock().unwrap();
+        registry.push(Arc::downgrade(&subscription)).unwrap();
+        registry.prune();
+        assert_eq!(registry.len(), 1);
+        subscription.alive.store(false, Ordering::Release);
+        registry.prune();
+        assert_eq!(registry.len(), 0);
+    }
+    drop(subscription);
+    let key = source.state.ctx_key;
+    drop((source, hub));
+    domain.close(key, 0).unwrap();
+    domain.destroy(key).unwrap();
+}
