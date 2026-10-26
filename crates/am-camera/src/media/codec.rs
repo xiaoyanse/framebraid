@@ -1,7 +1,9 @@
 //! 与网络源无关的同步解码原语；默认CPU，显式设备路径验证后才能报告硬解。
 use super::{ffmpeg_lib::FfmpegApi, ffmpeg_sys::*};
 use std::{ptr, sync::Arc};
+mod convert;
 mod hardware;
+mod readback;
 pub mod selection;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -48,6 +50,7 @@ pub struct CpuDecoder {
     max_pixels: u64,
     hardware: Option<Box<hardware::Binding>>,
     transfer: *mut AVFrame,
+    converter: Option<convert::Converter>,
 }
 // 原语可在调用线程间移动；上层Mutex保证同一解码器不会并发访问FFmpeg上下文。
 unsafe impl Send for CpuDecoder {}
@@ -101,6 +104,7 @@ impl CpuDecoder {
             max_pixels,
             hardware: None,
             transfer: ptr::null_mut(),
+            converter: None,
         };
         if ctx.is_null() {
             return Err(DecodeError::AllocationFailed);
@@ -250,11 +254,9 @@ impl CpuDecoder {
             self.pending = false;
             unsafe {
                 (self.api.av_frame_unref)(self.frame);
-                if !self.transfer.is_null() {
-                    (self.api.av_frame_unref)(self.transfer);
-                }
             }
         }
+        self.release_readback_cache();
         Ok(())
     }
     pub fn copy_rgba(&mut self, max_bytes: usize) -> Result<Option<DecodedRgba>> {
@@ -262,6 +264,52 @@ impl CpuDecoder {
     }
     /// 直接写目标平面，避免转换格式时再经RGBA中转。
     pub fn copy_pixels(&mut self, max_bytes: usize, format: u32) -> Result<Option<DecodedRgba>> {
+        self.copy_pixels_reusing_readback(max_bytes, format, usize::MAX)
+    }
+    /// 待输出硬件帧所需CPU暂存；上层先取得字节许可，再调用有预算的copy入口。
+    pub fn hardware_readback_bytes(&mut self) -> Result<usize> {
+        let Some(info) = self.peek()? else {
+            return Ok(0);
+        };
+        Ok(self.readback_plan(info)?.map_or(0, |plan| plan.bytes))
+    }
+    pub fn copy_pixels_with_readback_budget(
+        &mut self,
+        max_bytes: usize,
+        format: u32,
+        max_readback_bytes: usize,
+    ) -> Result<Option<DecodedRgba>> {
+        let result = self.copy_pixels_inner(max_bytes, format, max_readback_bytes);
+        // 原硬件帧出错时仍保留；CPU目标帧在所有退出路径归还，不越过Charge寿命。
+        if !self.transfer.is_null() {
+            unsafe { (self.api.av_frame_unref)(self.transfer) };
+        }
+        result
+    }
+    /// 复用最多一张CPU回读帧；上层许可须保留到release_readback_cache或解码器销毁。
+    pub fn copy_pixels_reusing_readback(
+        &mut self,
+        max_bytes: usize,
+        format: u32,
+        max_readback_bytes: usize,
+    ) -> Result<Option<DecodedRgba>> {
+        let result = self.copy_pixels_inner(max_bytes, format, max_readback_bytes);
+        if result.is_err() {
+            self.release_readback_cache();
+        }
+        result
+    }
+    pub fn release_readback_cache(&mut self) {
+        if !self.transfer.is_null() {
+            unsafe { (self.api.av_frame_unref)(self.transfer) };
+        }
+    }
+    fn copy_pixels_inner(
+        &mut self,
+        max_bytes: usize,
+        format: u32,
+        max_readback_bytes: usize,
+    ) -> Result<Option<DecodedRgba>> {
         let Some(info) = self.peek()? else {
             return Ok(None);
         };
@@ -282,26 +330,27 @@ impl CpuDecoder {
         if bytes > max_bytes {
             return Err(DecodeError::FrameTooLarge);
         }
-        let source = self.pixel_source()?;
+        let source = self.pixel_source(info, max_readback_bytes)?;
         let frame = unsafe { &*source };
         let mut data = vec![0u8; bytes];
-        let sws = unsafe {
-            (self.api.sws_get_context)(
-                frame.width,
-                frame.height,
-                frame.format,
-                frame.width,
-                frame.height,
-                pixel_format,
-                2,
-                ptr::null_mut(),
-                ptr::null_mut(),
-                ptr::null(),
-            )
+        let key = convert::Key {
+            width: frame.width,
+            height: frame.height,
+            source: frame.format,
+            target: pixel_format,
         };
-        if sws.is_null() {
-            return Err(DecodeError::AllocationFailed);
+        if self
+            .converter
+            .as_ref()
+            .is_none_or(|converter| converter.key != key)
+        {
+            self.converter = Some(convert::Converter::create(self.api.clone(), key)?);
         }
+        let sws = self
+            .converter
+            .as_ref()
+            .ok_or(DecodeError::AllocationFailed)?
+            .pointer;
         let mut planes = [ptr::null_mut(); 4];
         planes[0] = data.as_mut_ptr();
         let strides = [stride as i32, 0, 0, 0];
@@ -316,29 +365,33 @@ impl CpuDecoder {
                 strides.as_ptr(),
             )
         };
-        unsafe {
-            (self.api.sws_free_context)(sws);
-        }
         if rows != frame.height {
+            self.converter.take();
             return Err(DecodeError::Runtime(rows));
         }
         self.pending = false;
         unsafe {
             (self.api.av_frame_unref)(self.frame);
-            if !self.transfer.is_null() {
-                (self.api.av_frame_unref)(self.transfer);
-            }
         }
         Ok(Some(DecodedRgba { info, data }))
     }
 
-    fn pixel_source(&mut self) -> Result<*mut AVFrame> {
+    fn readback_plan(&self, info: FrameInfo) -> Result<Option<readback::Plan>> {
         if !self
             .hardware
             .as_ref()
             .is_some_and(|h| h.matches(unsafe { (*self.frame).format }))
         {
+            return Ok(None);
+        }
+        unsafe { readback::Plan::query(&self.api, (*self.ctx).hw_frames_ctx, info).map(Some) }
+    }
+    fn pixel_source(&mut self, info: FrameInfo, max_readback_bytes: usize) -> Result<*mut AVFrame> {
+        let Some(plan) = self.readback_plan(info)? else {
             return Ok(self.frame);
+        };
+        if plan.bytes > max_readback_bytes {
+            return Err(DecodeError::FrameTooLarge);
         }
         if self.transfer.is_null() {
             self.transfer = unsafe { (self.api.av_frame_alloc)() };
@@ -346,7 +399,16 @@ impl CpuDecoder {
                 return Err(DecodeError::AllocationFailed);
             }
         }
-        unsafe { (self.api.av_frame_unref)(self.transfer) };
+        let reusable = unsafe {
+            (*self.transfer).format == plan.format
+                && (*self.transfer).width == plan.width
+                && (*self.transfer).height == plan.height
+                && !(self.api.av_frame_get_plane_buffer)(self.transfer, 0).is_null()
+        };
+        if !reusable {
+            unsafe { (self.api.av_frame_unref)(self.transfer) };
+            unsafe { plan.allocate(&self.api, self.transfer) }?;
+        }
         let rc = unsafe { (self.api.av_hwframe_transfer_data)(self.transfer, self.frame, 0) };
         if rc < 0 {
             return Err(DecodeError::Runtime(rc));
@@ -432,49 +494,4 @@ pub fn access_units(codec: VideoCodec, data: &[u8]) -> Result<Vec<&[u8]>> {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn rejects_split_private_and_invalid_nal_headers() {
-        assert!(access_units(VideoCodec::H264, &[0, 0, 1, 0x65, 3]).is_ok());
-        assert!(access_units(VideoCodec::H264, &[0, 0, 1, 0xe5, 3]).is_err());
-        assert!(access_units(VideoCodec::H264, &[0x65, 3]).is_err());
-        assert!(access_units(VideoCodec::H265, &[0, 0, 1, 0x26, 1, 3]).is_ok());
-        assert!(access_units(VideoCodec::H265, &[0, 0, 1, 0x26, 0, 3]).is_err());
-        assert!(access_units(VideoCodec::H265, &[0, 0, 1, 0x26]).is_err());
-        assert!(access_units(VideoCodec::H264, &[0, 0, 1, 0, 0, 1]).is_err());
-    }
-    #[test]
-    #[ignore = "显式设置AM_SDK_FFMPEG_DIR和AM_SDK_CODEC_SAMPLES，使用隔离运行库及合成视频"]
-    fn real_h264_and_h265_decode_keep_pts_and_pending_frame() {
-        let runtime = std::env::var_os("AM_SDK_FFMPEG_DIR").expect("缺少隔离运行库目录");
-        let samples = std::env::var_os("AM_SDK_CODEC_SAMPLES").expect("缺少合成样本目录");
-        let api = Arc::new(FfmpegApi::load_from(std::path::Path::new(&runtime)).unwrap());
-        for (codec, file) in [
-            (VideoCodec::H264, "one.h264"),
-            (VideoCodec::H265, "one.hevc"),
-        ] {
-            let data = std::fs::read(std::path::Path::new(&samples).join(file)).unwrap();
-            assert!(access_units(codec, &data).is_ok());
-            let mut decoder = CpuDecoder::create(api.clone(), codec, &[], 256 * 144).unwrap();
-            assert!(decoder.send(&data, 90000, 90000).unwrap());
-            // H.265允许延迟输出，排空后仍应能取得该帧。
-            if decoder.peek().unwrap().is_none() {
-                assert!(decoder.drain().unwrap());
-            }
-            let info = decoder.peek().unwrap().unwrap();
-            assert_eq!((info.width, info.height, info.pts), (256, 144, 90000));
-            assert!(matches!(
-                decoder.copy_rgba(1),
-                Err(DecodeError::FrameTooLarge)
-            ));
-            assert_eq!(decoder.peek().unwrap().unwrap().pts, 90000);
-            let frame = decoder.copy_rgba(info.rgba_bytes).unwrap().unwrap();
-            for pixel in frame.data.chunks_exact(4) {
-                assert!(pixel[0] >= 250 && pixel[1] <= 3 && pixel[2] <= 3 && pixel[3] == 255);
-            }
-            decoder.drain().unwrap();
-            assert!(matches!(decoder.peek(), Err(DecodeError::Drained)));
-        }
-    }
-}
+mod tests;

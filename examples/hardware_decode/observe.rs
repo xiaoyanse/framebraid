@@ -11,7 +11,7 @@ use std::sync::{
 type Receive = unsafe extern "C" fn(*mut AVCodecContext, *mut AVFrame) -> i32;
 type Transfer = unsafe extern "C" fn(*mut AVFrame, *const AVFrame, i32) -> i32;
 static FUNCTIONS: OnceLock<(Receive, Transfer)> = OnceLock::new();
-static PIXELS: Mutex<Option<Vec<u8>>> = Mutex::new(None);
+static PIXELS: Mutex<Option<Vec<u16>>> = Mutex::new(None);
 static FAIL_NEXT: AtomicBool = AtomicBool::new(false);
 static FAILED: AtomicBool = AtomicBool::new(false);
 
@@ -30,7 +30,7 @@ pub fn install(api: &mut FfmpegApi) -> Result<(), &'static str> {
     api.av_hwframe_transfer_data = transfer;
     Ok(())
 }
-pub fn take() -> Option<Vec<u8>> {
+pub fn take() -> Option<Vec<u16>> {
     PIXELS.lock().ok()?.take()
 }
 unsafe fn capture(frame: *const AVFrame) {
@@ -38,8 +38,8 @@ unsafe fn capture(frame: *const AVFrame) {
         return;
     }
     let frame = unsafe { &*frame };
-    // 本例固定8-bit 4:2:0合成样本；其他位深另行验收，不误读硬件表面。
-    if ![0, 23].contains(&frame.format) || frame.width <= 0 || frame.height <= 0 {
+    // 只读取已回CPU的8/10-bit 4:2:0平面，不误读硬件表面。
+    if ![0, 23, 62, 158].contains(&frame.format) || frame.width <= 0 || frame.height <= 0 {
         return;
     }
     let Ok(mut captured) = PIXELS.lock() else {
@@ -55,11 +55,9 @@ unsafe fn capture(frame: *const AVFrame) {
     let mut output = Vec::with_capacity(w * h * 3 / 2);
     for plane in 0..3 {
         let (pw, ph) = if plane == 0 { (w, h) } else { (w / 2, h / 2) };
-        let source_plane = if frame.format == 23 && plane > 0 {
-            1
-        } else {
-            plane
-        };
+        let semiplanar = [23, 158].contains(&frame.format);
+        let wide = [62, 158].contains(&frame.format);
+        let source_plane = if semiplanar && plane > 0 { 1 } else { plane };
         let stride = frame.linesize[source_plane] as isize;
         let data = frame.data[source_plane];
         if data.is_null() {
@@ -67,12 +65,20 @@ unsafe fn capture(frame: *const AVFrame) {
         }
         for y in 0..ph {
             for x in 0..pw {
-                let column = if frame.format == 23 && plane > 0 {
+                let column = if semiplanar && plane > 0 {
                     x * 2 + plane - 1
                 } else {
                     x
                 };
-                output.push(unsafe { *data.offset(y as isize * stride + column as isize) });
+                let column = column * if wide { 2 } else { 1 };
+                let address = unsafe { data.offset(y as isize * stride + column as isize) };
+                let value = if wide {
+                    u16::from_le(unsafe { address.cast::<u16>().read_unaligned() })
+                        >> if frame.format == 158 { 6 } else { 0 }
+                } else {
+                    u16::from(unsafe { *address })
+                };
+                output.push(value);
             }
         }
     }

@@ -12,6 +12,7 @@ use std::{
     },
     time::{Duration, Instant},
 };
+pub(crate) mod budget;
 pub(crate) mod config;
 mod diagnostics;
 use config::{convert, runtime, Config, Gate};
@@ -26,7 +27,7 @@ struct Packet {
 }
 struct Inner {
     metrics: Arc<super::frames::CameraMetrics>,
-    cpu: CpuDecoder,
+    cpu: budget::BudgetedDecoder,
     config: Config,
     gate: Gate,
     queue: VecDeque<Packet>,
@@ -102,7 +103,7 @@ fn make_inner(ctx: &CameraState, cfg: Config) -> Result<Inner> {
     let gate = Gate::new(&cfg)?;
     Ok(Inner {
         metrics: ctx.metrics.clone(),
-        cpu,
+        cpu: cpu.into(),
         config: cfg,
         gate,
         queue: VecDeque::new(),
@@ -241,22 +242,21 @@ fn receive(decoder: &Decoder, inner: &mut Inner) -> Result<Option<Arc<Frame>>> {
                 } else {
                     None
                 };
-                let decoded = inner
-                    .cpu
-                    .copy_pixels(
-                        if scratch.is_some() {
-                            f.rgba_bytes
-                        } else {
-                            bytes
-                        },
-                        if scratch.is_some() {
-                            AM_PF_RGBA8 as u32
-                        } else {
-                            format
-                        },
-                    )
-                    .map_err(convert)?
-                    .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
+                let decoded = budget::copy_pixels(
+                    &decoder.ctx,
+                    &mut inner.cpu,
+                    if scratch.is_some() {
+                        f.rgba_bytes
+                    } else {
+                        bytes
+                    },
+                    if scratch.is_some() {
+                        AM_PF_RGBA8 as u32
+                    } else {
+                        format
+                    },
+                )?
+                .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
                 let data = if scratch.is_some() {
                     am_camera_core::media::pixel_ops::rgba_to_nv12(&decoded.data, f.width, f.height)
                         .map_err(|_| AM_ERR_CAMERA_PIXEL_FORMAT_UNSUPPORTED)?
@@ -317,7 +317,7 @@ fn receive(decoder: &Decoder, inner: &mut Inner) -> Result<Option<Arc<Frame>>> {
                         .min(SDK_MAX_DYNAMIC_AXIS * SDK_MAX_DYNAMIC_AXIS),
                 )
                 .map_err(convert)?;
-                inner.cpu = cpu;
+                inner.cpu = cpu.into();
                 inner.timings.clear();
                 inner.gate.dirty = false;
                 decoder.config_generation.store(config, Ordering::Release);

@@ -27,6 +27,10 @@ type AvHwdeviceCtxCreateFn = unsafe extern "C" fn(
     c_int,
 ) -> c_int;
 type AvHwframeTransferDataFn = unsafe extern "C" fn(*mut AVFrame, *const AVFrame, c_int) -> c_int;
+type AvHwframeTransferFormatsFn =
+    unsafe extern "C" fn(*mut AVBufferRef, c_int, *mut *mut c_int, c_int) -> c_int;
+type AvFrameGetBufferFn = unsafe extern "C" fn(*mut AVFrame, c_int) -> c_int;
+type AvImageGetBufferSizeFn = unsafe extern "C" fn(c_int, c_int, c_int, c_int) -> c_int;
 type AvStrerrorFn = unsafe extern "C" fn(c_int, *mut core::ffi::c_char, usize) -> c_int;
 type AvMemdupFn = unsafe extern "C" fn(*const core::ffi::c_void, usize) -> *mut core::ffi::c_void;
 type AvcodecFindDecoderFn = unsafe extern "C" fn(c_int) -> *const core::ffi::c_void;
@@ -145,6 +149,11 @@ pub struct FfmpegApi {
     pub av_hwdevice_iterate_types: AvHwdeviceIterateTypesFn,
     pub av_hwdevice_ctx_create: AvHwdeviceCtxCreateFn,
     pub av_hwframe_transfer_data: AvHwframeTransferDataFn,
+    pub av_hwframe_transfer_get_formats: AvHwframeTransferFormatsFn,
+    pub av_frame_get_buffer: AvFrameGetBufferFn,
+    pub av_frame_get_plane_buffer: unsafe extern "C" fn(*const AVFrame, c_int) -> *mut AVBufferRef,
+    pub av_image_get_buffer_size: AvImageGetBufferSizeFn,
+    pub av_free: unsafe extern "C" fn(*mut core::ffi::c_void),
     pub av_strerror: AvStrerrorFn,
     pub av_log_get_level: unsafe extern "C" fn() -> c_int,
     pub av_log_set_level: unsafe extern "C" fn(c_int),
@@ -367,6 +376,14 @@ impl FfmpegApi {
                 av_hwdevice_iterate_types: get_fn(avutil, b"av_hwdevice_iterate_types\0")?,
                 av_hwdevice_ctx_create: get_fn(avutil, b"av_hwdevice_ctx_create\0")?,
                 av_hwframe_transfer_data: get_fn(avutil, b"av_hwframe_transfer_data\0")?,
+                av_hwframe_transfer_get_formats: get_fn(
+                    avutil,
+                    b"av_hwframe_transfer_get_formats\0",
+                )?,
+                av_frame_get_buffer: get_fn(avutil, b"av_frame_get_buffer\0")?,
+                av_frame_get_plane_buffer: get_fn(avutil, b"av_frame_get_plane_buffer\0")?,
+                av_image_get_buffer_size: get_fn(avutil, b"av_image_get_buffer_size\0")?,
+                av_free: get_fn(avutil, b"av_free\0")?,
                 av_strerror: get_fn(avutil, b"av_strerror\0")?,
                 av_log_get_level: get_fn(avutil, b"av_log_get_level\0")?,
                 av_log_set_level: get_fn(avutil, b"av_log_set_level\0")?,

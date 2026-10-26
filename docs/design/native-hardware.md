@@ -28,6 +28,18 @@ D3D11创建后从真实设备查询IDXGIAdapter LUID，与请求快照核对；�
 
 ## 运行库与验收
 
+### 回读预算接线（H2.0c 实施合同）
+
+`hardware_readback_bytes()`在取得待输出帧后返回CPU回读所需保守字节数；CPU帧为0。`copy_pixels_with_readback_budget(max_output_bytes, format, max_readback_bytes)`先核两项预算，再分配和回读，所有退出路径释放CPU暂存；`copy_pixels_reusing_readback`最多保留一张CPU目标帧供复用，调用方许可必须覆盖缓存全寿命，直至`release_readback_cache`/丢弃/关闭，不能在copy返回时提前归还。预算不足或回读失败保持原硬件帧/PTS供重试。
+
+默认Rust copy保持原有“会话内最多一张回读缓存”的有界使用方式（旧实现对应原生transfer pool），资源域管理则由内部`BudgetedDecoder`透明持有Charge。尺寸/格式变化先释放旧缓冲和旧许可，再取得新许可并创建目标帧；失败归还许可且不覆写已经输出的Vec。字段析构保证原生缓存先销毁，Charge随后归还。直接解码与RTSP像素复制共用该预算适配器，不让调用方自己管理C ABI暂存。
+
+回读不再让`av_hwframe_transfer_data`自动分配到原生transfer pool，而是以`av_frame_get_buffer(...,64)`显式创建单张CPU目标帧，再传输到已有缓冲；可按上述作用域释放或在预算覆盖下复用。首步只接受运行库报告可传输的NV12/P010LE，其他格式明确拒绝，供上层回退。所需字节按32行对齐、64字节步长的`av_image_get_buffer_size`加512字节平面/地址填充计算，并通过`av_frame_get_plane_buffer`核实际大小，依据锁定libavutil61 `ff_frame_get_video_buffer`；不读取GPU地址或猜显存布局。驱动/解码DPB内存仍单列原生观测，不冒充SDK托管硬限。
+
+这一步不改变C ABI或默认CPU路径；两个入口已共用实际Charge适配器，真实硬件组件测试覆盖预算拒绝/恢复/缓存持有/释放，但自动选择尚未接入，不冒充两入口整链硬解完成。Rust `HardwarePolicy`不能直接强转C ABI数值：既有C合同PREFER_HW=0、SOFTWARE_ONLY=1，装配层须显式映射。
+
+转换上下文按输入格式、输出格式及尺寸键控，每个解码器最多一个，参数变化重建；转换失败则失效重建。保持原有缩放标志与色彩算法，不为提速改变像素。测试覆盖同尺寸不同图、RGB/BGR、尺寸变化、8/10-bit格式变化、构造/转换失败及关闭，并对拍新旧校验值。
+
 FFmpeg的`h264_d3d11va`/`hevc_d3d11va`为旧AD_HOC接口，不等于现代AVHWDeviceContext解码。新构建必须启用`h264_d3d11va2`/`hevc_d3d11va2`，并对每个编码调用`avcodec_get_hw_config`确认D3D11VA和DXVA2均具有HW_DEVICE_CTX方法。设备类型可枚举不替代此检查。旧公开运行库及冻结哈希保留原字节，更新另建候选。
 
 `hardware_probe`示例区分原生与注入失败；创建/归还计数配对。`hardware_decode`只读取本地合成8-bit 4:2:0单AU，重复12次验证时间戳与CPU/HW像素。YUV首帧对拍用于区分解码差异与不同swscale输入格式的插值差异；RGBA逐帧记录平均和最大差异，不以宽松整图平均掩盖解码内容错误。该示例含观测拷贝，不作为性能基准；单AU不证明P/B帧、格式切换、断流、长跑或生产画面通过。

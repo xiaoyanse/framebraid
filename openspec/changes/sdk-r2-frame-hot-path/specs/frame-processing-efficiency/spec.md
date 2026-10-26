@@ -70,6 +70,15 @@ SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、�
 - **WHEN** 30 FPS 输入被不同 FPS 消费者订阅
 - **THEN** 交付率按各订阅配置验证，减少转换不等于任意跳过压缩参考帧解码
 
+### Requirement: Hardware readback reservation
+
+SDK SHALL 在CPU回读目标帧分配前核对其对齐与填充后的保守字节数，不能只检查输出RGBA字节。可缓存一张目标帧，但预算许可 MUST 覆盖其完整寿命，先释放缓冲再归还许可；错误或重新配置不得遗留未计费缓存。
+
+#### Scenario: Readback exceeds remaining domain budget
+
+- **WHEN** 目标帧回读所需字节超出资源域剩余额度
+- **THEN** 分配前明确拒绝，待输出硬件帧与PTS保留；额度恢复后可重试，丢弃/关闭后回读额度归零
+
 ### Requirement: Bounded reusable ownership
 
 复用缓冲 MUST 受数量/字节预算限制，不覆写外部持有帧，耗尽时明确拒绝或有界退化。

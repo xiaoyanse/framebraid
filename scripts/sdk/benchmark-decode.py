@@ -22,6 +22,8 @@ def main():
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--samples", type=int, default=200)
     parser.add_argument("--warmup", type=int, default=20)
+    parser.add_argument("--backend", choices=("cpu","d3d11va","dxva2"),default="cpu")
+    parser.add_argument("--adapter",type=int,default=0)
     args = parser.parse_args()
     output = args.output.resolve()
     if output.exists() or not output.is_relative_to((ROOT / ".local/evidence").resolve()):
@@ -36,27 +38,37 @@ def main():
     build = dict(source_commit=command("git", "rev-parse", "HEAD"),
                  source_state="dirty" if command("git", "status", "--porcelain") else "clean",
                  artifact_sha256=file_sha256(exe), build_profile="release",
-                 source_sha256={p: file_sha256(ROOT / p) for p in (
-                     "examples/perf_decode.rs", "crates/am-camera/src/media/codec.rs", "Cargo.lock")},
+                 source_sha256={p: file_sha256(ROOT / p) for p in sorted({
+                     "examples/perf_decode.rs", "examples/perf_decode/timing.rs", "crates/am-camera/src/media/codec.rs", "Cargo.lock",
+                     "crates/am-camera/src/media/ffmpeg_lib.rs", "crates/am-camera/src/media/ffmpeg_sys.rs",
+                     *[p.relative_to(ROOT).as_posix() for p in (ROOT/"crates/am-camera/src/media/codec").rglob("*.rs")],
+                 })},
                  toolchain=command("rustc", "-Vv"))
     hardware = dict(os=platform.platform(), cpu=platform.processor())
     output.mkdir(parents=True)
     summaries = []
     for index in range(3):
+        device_args=[] if args.backend=="cpu" else [args.backend,str(args.adapter)]
         raw = json.loads(command(str(exe), str(args.runtime_dir.resolve()), str(args.input.resolve()),
-                                str(args.samples), str(args.warmup)))
+                                str(args.samples), str(args.warmup),*device_args))
+        actual_backend=raw.pop("actual_backend")
+        adapter_luid=raw.pop("adapter_luid")
+        if actual_backend!="ffmpeg-"+args.backend or (args.backend!="cpu" and adapter_luid is None):
+            raise SystemExit("requested backend did not produce verified output")
         samples = raw.pop("samples_ns")
         report = dict(schema=SCHEMA, build=build,
             identity=dict(workload=dict(codec="h264-single-idr", width=raw["width"], height=raw["height"], output="rgba"),
                 input_sha256=file_sha256(args.input), model_sha256="not-applicable:decode",
                 runtime_sha256=hashlib.sha256(json.dumps(runtimes, sort_keys=True).encode()).hexdigest(),
-                hardware=hardware, backend="ffmpeg-cpu", threads=1,
+                hardware=hardware, backend=actual_backend, threads=1,
                 budgets=workload_budget("decode"), warmup=args.warmup,
                 timing_boundary="copy_rgba only; peek/decode and hash excluded; measured duration sum throughput"),
             counts=dict(attempted=len(samples), delivered=len(samples), rejected=0, dropped=0),
             elapsed_ns=sum(samples), samples_ns=samples,
             output_checksum_fnv1a64=raw.pop("checksum_fnv1a64"), runtime_files=runtimes, **raw)
         report["deadline_observation"] = deadline_observation(samples, report["identity"]["budgets"]["latency_budget_ms"])
+        if adapter_luid is not None:
+            report["identity"]["hardware"]=dict(hardware,adapter_luid=adapter_luid)
         validate(report)
         assert report["contexts_created"] == report["contexts_freed"], "conversion context leak"
         (output / f"round-{index+1}.json").write_text(json.dumps(report, indent=2)+"\n", encoding="utf-8")

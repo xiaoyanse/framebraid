@@ -381,7 +381,10 @@ impl Hub {
             gate.dirty = false;
         }
         drop(_initial_charge);
-        let mut decoder: Option<(CpuDecoder, crate::frames::DecoderPermit)> = None;
+        let mut decoder: Option<(
+            crate::decoder::budget::BudgetedDecoder,
+            crate::frames::DecoderPermit,
+        )> = None;
         let mut times = VecDeque::new();
         let _times_charge = source
             .state
@@ -523,7 +526,7 @@ impl Hub {
                         .min(8192 * 8192),
                     )
                     .map_err(|_| IoError::Unsupported)?;
-                    decoder = Some((cpu, permit));
+                    decoder = Some((crate::decoder::budget::BudgetedDecoder::from(cpu), permit));
                 }
                 times.push_back((packet.pts, received));
                 while times.len() > 128 {
@@ -611,7 +614,7 @@ impl Hub {
     fn emit_decoded(
         &self,
         source: &Arc<SharedSource>,
-        cpu: &mut CpuDecoder,
+        cpu: &mut crate::decoder::budget::BudgetedDecoder,
         info: &StreamInfo,
         subs: &[Arc<Subscription>],
         times: &VecDeque<(i64, i64)>,
@@ -642,12 +645,26 @@ impl Hub {
                     continue;
                 }
             };
-            let Some(frame) = cpu
-                .copy_rgba(next.rgba_bytes)
-                .map_err(|_| IoError::Invalid)?
-            else {
-                break;
-            };
+            let frame =
+                match crate::decoder::budget::copy_pixels(&source.state, cpu, next.rgba_bytes, 0) {
+                    Ok(Some(frame)) => frame,
+                    Ok(None) => break,
+                    Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                        cpu.discard_frame().map_err(|_| IoError::Invalid)?;
+                        source
+                            .state
+                            .metrics
+                            .frames_dropped
+                            .fetch_add(1, Ordering::AcqRel);
+                        source.report(
+                            AM_SRC_LIVE as u32,
+                            AM_FAULT_RESOURCE as u32,
+                            c"camera.readbackBudgetExceeded",
+                        );
+                        continue;
+                    }
+                    Err(_) => return Err(IoError::Invalid),
+                };
             let received = times
                 .iter()
                 .rev()

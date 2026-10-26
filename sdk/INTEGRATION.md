@@ -4,6 +4,8 @@
 
 Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥有的原因报告，仍须在送包/收帧后核实实际后端；运行期故障不能无条件重发已接受包。见[选择层验证](../docs/verification/sdk-r2-hardware-selection-20261026.md)，DLL和RTSP入口暂未接入。
 
+底层Rust回读可选择作用域预算复制或单缓冲复用，复用时许可须持有到清缓存/销毁；输出Vec独立。C ABI像素复制入口已由SDK自动管理暂存Charge，调用方无需自行管理；这不表示其自动硬解已启用。见[回读与转换缓存记录](../docs/verification/sdk-r2-readback-cache-20261026.md)。
+
 本地未发布R5优化可及时释放未执行且已取消/替换的排队输入；正在读取的输入及含有效项的原生批次仍须等实际结束，不能把cancel当作可立即释放调用方缓冲。见[优先项验证与限制](../docs/verification/sdk-r5-priority-20261026.md)，旧发布包能力不因此改变。
 
 本说明面向使用 SDK 的开发者。交付主体是可独立构建的 Rust 源码 SDK；DLL 目标为 `am_camera.dll` 与 `am_vision.dll`，通过 C ABI 供 C/C++、C#、Python 调用。使用运行包不需要 Rust、FFmpeg 命令行或 AM-RT 业务服务。已发布版本及其真实验证范围见[交付状态](../docs/RELEASE_STATUS.md)；源码构建及运行见 [快速接入](../docs/GETTING_STARTED.zh-CN.md)。

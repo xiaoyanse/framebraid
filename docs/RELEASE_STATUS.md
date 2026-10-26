@@ -24,6 +24,8 @@ R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、
 
 R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); DLL/RTSP integration, runtime recovery and global budgets remain incomplete. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
 
+R2 H2.0c/1.1 readback reservations and conversion caches are locally verified ([record](verification/sdk-r2-readback-cache-20261026.md)); both pixel-copy entries use the budget adapter, but automatic native hardware activation/recovery and production/soak validation remain open. / 回读额度覆盖缓存寿命、转换缓存已验证，不改变公开CPU制品和未验事项。
+
 ## Public version / 公开版本
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)

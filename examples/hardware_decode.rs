@@ -5,6 +5,8 @@ use am_camera::media::{
     hardware::{self, Adapter, Backend},
 };
 use std::{collections::BTreeMap, path::Path, sync::Arc, time::Instant};
+#[path = "hardware_decode/allocation.rs"]
+mod allocation;
 #[path = "hardware_decode/observe.rs"]
 mod observe;
 type DecodeRun = (BTreeMap<i64, Vec<u8>>, f64, bool);
@@ -15,10 +17,31 @@ fn collect(decoder: &mut CpuDecoder, frames: &mut BTreeMap<i64, Vec<u8>>) -> Res
             Ok(None) | Err(DecodeError::Drained) => return Ok(()),
             Err(e) => return Err(format!("receive: {e:?}")),
             Ok(Some(info)) => {
+                let reservation = decoder
+                    .hardware_readback_bytes()
+                    .map_err(|e| format!("readback budget: {e:?}"))?;
+                let before = allocation::created();
+                if reservation > 0
+                    && !matches!(
+                        decoder.copy_pixels_with_readback_budget(
+                            info.rgba_bytes,
+                            0,
+                            reservation - 1
+                        ),
+                        Err(DecodeError::FrameTooLarge)
+                    )
+                {
+                    return Err("readback budget was not enforced".into());
+                }
                 if !matches!(decoder.copy_rgba(1), Err(DecodeError::FrameTooLarge)) {
                     return Err("output budget was not enforced before transfer".into());
                 }
-                let copied = decoder.copy_rgba(8192 * 8192 * 4);
+                if allocation::created() != before {
+                    return Err("rejected budget allocated CPU buffer".into());
+                }
+                allocation::limit(reservation);
+                let copied =
+                    decoder.copy_pixels_with_readback_budget(8192 * 8192 * 4, 0, reservation);
                 let copied = if matches!(copied, Err(DecodeError::Runtime(-5)))
                     && observe::injected_failure()
                 {
@@ -30,13 +53,14 @@ fn collect(decoder: &mut CpuDecoder, frames: &mut BTreeMap<i64, Vec<u8>>) -> Res
                     {
                         return Err("failed transfer lost the pending frame".into());
                     }
-                    decoder.copy_rgba(8192 * 8192 * 4)
+                    decoder.copy_pixels_with_readback_budget(8192 * 8192 * 4, 0, reservation)
                 } else {
                     copied
                 };
                 let frame = copied
                     .map_err(|e| format!("copy: {e:?}"))?
                     .ok_or("pending frame disappeared")?;
+                allocation::summary()?;
                 if frame.info.width != info.width || frame.info.height != info.height {
                     return Err("frame dimensions changed during copy".into());
                 }
@@ -113,6 +137,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     };
     let mut api = FfmpegApi::load_from(Path::new(&args[1]))?;
     observe::install(&mut api)?;
+    allocation::install(&mut api)?;
     let api = Arc::new(api);
     let packet = std::fs::read(&args[2])?;
     if packet.len() > 16 * 1024 * 1024 {
@@ -158,7 +183,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "{}",
         serde_json::to_string_pretty(
-            &serde_json::json!({"codec":args[3],"cpu_decode_rgba_ms":cpu_ms,"frames":reference.len(),"attempts":reports})
+            &serde_json::json!({"codec":args[3],"cpu_decode_rgba_ms":cpu_ms,"frames":reference.len(),"attempts":reports,"readback_allocations":allocation::summary()?})
         )?
     );
     Ok(())

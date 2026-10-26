@@ -3,6 +3,7 @@ use am_camera::media::{
     codec::{CpuDecoder, VideoCodec},
     ffmpeg_lib::FfmpegApi,
     ffmpeg_sys::SwsContext,
+    hardware::{self, Backend},
 };
 use std::{
     ffi::{c_int, c_void},
@@ -14,6 +15,8 @@ use std::{
     time::Instant,
 };
 
+#[path = "perf_decode/timing.rs"]
+mod timing;
 type Create = unsafe extern "C" fn(
     c_int,
     c_int,
@@ -64,8 +67,8 @@ unsafe extern "C" fn free(pointer: *mut SwsContext) {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().collect();
-    if args.len() != 5 {
-        return Err("usage: perf_decode runtime_dir single_au.h264 samples warmup".into());
+    if args.len() != 5 && args.len() != 7 {
+        return Err("usage: perf_decode runtime_dir single_au.h264 samples warmup [d3d11va|dxva2 adapter_index]".into());
     }
     let samples: usize = args[3].parse()?;
     let warmup: usize = args[4].parse()?;
@@ -78,12 +81,34 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|_| "already initialized")?;
     api.sws_get_context = create;
     api.sws_free_context = free;
+    timing::install(&mut api)?;
     let packet = std::fs::read(&args[2])?;
     if packet.len() > 16 * 1024 * 1024 {
         return Err("packet budget exceeded".into());
     }
-    let mut decoder = CpuDecoder::create(Arc::new(api), VideoCodec::H264, &[], 8192 * 8192)
-        .map_err(|e| format!("create: {e:?}"))?;
+    let selected = if args.len() == 7 {
+        let backend = match args[5].as_str() {
+            "d3d11va" => Backend::D3d11va,
+            "dxva2" => Backend::Dxva2,
+            _ => return Err("unsupported backend".into()),
+        };
+        let index: u32 = args[6].parse()?;
+        let adapter = hardware::adapters()?
+            .into_iter()
+            .find(|a| a.index == index && !a.software)
+            .ok_or("hardware adapter not found")?;
+        Some((backend, adapter))
+    } else {
+        None
+    };
+    let api = Arc::new(api);
+    let mut decoder = match &selected {
+        Some((backend, adapter)) => {
+            CpuDecoder::create_on_device(api, VideoCodec::H264, &[], 8192 * 8192, *backend, adapter)
+        }
+        None => CpuDecoder::create(api, VideoCodec::H264, &[], 8192 * 8192),
+    }
+    .map_err(|e| format!("create: {e:?}"))?;
     let clock_average_ns = (0..1000)
         .map(|_| {
             let start = Instant::now();
@@ -93,6 +118,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         / 1000;
     let mut durations = Vec::with_capacity(samples);
     let mut decode_durations = Vec::with_capacity(samples);
+    let mut transfer_durations = Vec::with_capacity(samples);
+    let mut scale_durations = Vec::with_capacity(samples);
     let mut expected = None;
     let mut dimensions = (0, 0);
     for index in 0..(samples + warmup) {
@@ -109,12 +136,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .ok_or("single AU did not produce a frame")?;
         let decode_ns = start.elapsed().as_nanos();
         dimensions = (info.width, info.height);
+        timing::reset();
         let start = Instant::now();
         let frame = decoder
             .copy_rgba(8192 * 8192 * 4)
             .map_err(|e| format!("convert: {e:?}"))?
             .ok_or("missing frame")?;
         let elapsed = start.elapsed().as_nanos();
+        let (transfer_ns, scale_ns) = timing::samples();
         let checksum = frame.data.iter().fold(0xcbf29ce484222325u64, |h, b| {
             (h ^ u64::from(*b)).wrapping_mul(0x100000001b3)
         });
@@ -125,10 +154,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if index >= warmup {
             durations.push(elapsed);
             decode_durations.push(decode_ns);
+            transfer_durations.push(transfer_ns);
+            scale_durations.push(scale_ns);
         }
     }
+    if selected
+        .as_ref()
+        .is_some_and(|(backend, _)| decoder.hardware_backend() != Some(*backend))
+    {
+        return Err("requested hardware did not produce hardware frames".into());
+    }
+    let actual_backend = match decoder.hardware_backend() {
+        Some(Backend::D3d11va) => "ffmpeg-d3d11va",
+        Some(Backend::Dxva2) => "ffmpeg-dxva2",
+        None => "ffmpeg-cpu",
+    };
+    let luid = selected.as_ref().map(|(_, adapter)| adapter.luid);
     drop(decoder);
-    println!("{{\"samples_ns\":{durations:?},\"decode_samples_ns\":{decode_durations:?},\"clock_average_ns\":{clock_average_ns},\"width\":{},\"height\":{},\"checksum_fnv1a64\":\"{:016x}\",\"contexts_created\":{},\"contexts_freed\":{},\"total_frames_with_warmup\":{}}}",
-        dimensions.0, dimensions.1, expected.ok_or("no output")?, CREATED.load(Ordering::Relaxed), FREED.load(Ordering::Relaxed), samples + warmup);
+    println!(
+        "{}",
+        serde_json::json!({"samples_ns":durations,"decode_samples_ns":decode_durations,"transfer_samples_ns":transfer_durations,"scale_samples_ns":scale_durations,"clock_average_ns":clock_average_ns,"width":dimensions.0,"height":dimensions.1,"checksum_fnv1a64":format!("{:016x}",expected.ok_or("no output")?),"contexts_created":CREATED.load(Ordering::Relaxed),"contexts_freed":FREED.load(Ordering::Relaxed),"total_frames_with_warmup":samples+warmup,"actual_backend":actual_backend,"adapter_luid":luid})
+    );
     Ok(())
 }

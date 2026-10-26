@@ -2,6 +2,9 @@
 
 ## Unreleased / 未发布
 
+- Account aligned native readback buffers before allocation, retain domain reservations for a bounded single-frame cache, and reuse per-decoder SwsContext without changing pixel algorithms. Validate scoped cleanup, recovery and old-frame independence.
+- 硬件回读预算适配与转换缓存已本地验证；上下文创建/释放220→1。保留初期性能告警和交替短测结论，不宣称通用提速或整链硬解完成。
+
 - Add a shared Rust SoftwareOnly/PreferHardware initialization factory with bounded attempts, owned diagnostics and CPU fallback for busy/missing/failed hardware; verify real output separately. DLL/RTSP integration and runtime recovery remain open.
 - 共用硬件选择工厂已三轮验证及故障注入，CPU默认路径不变；初始化选择不冒充目标码流与真实执行成功。
 

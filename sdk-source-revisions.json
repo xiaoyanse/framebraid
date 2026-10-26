@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "0cbf638a2982c073c25536ea44066a09d697822b",
+  "reviewBaseCommit": "fe6fae4f3e72fa6c971796e188f729c02bdf2cb6",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -52,18 +52,6 @@
       "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
     },
     {
-      "path": "crates/am-camera/src/media/hardware/windows.rs",
-      "previousSha256": null,
-      "sha256": "257c86c5de2a17b969c75247d029305fa81a1926e1a04ea31e4e6c3947ce63f2",
-      "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
-    },
-    {
-      "path": "crates/am-camera/src/media/codec.rs",
-      "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "a9d28fe86529cfe1aee7d04f2ff4175170842e7254d3168d43f9b1d10b806b48",
-      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
-    },
-    {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
       "previousSha256": null,
       "sha256": "450ae152780c013f3315c54e871ca0e46873c249ddbe25cf0df15a0f2fca73e5",
@@ -80,6 +68,66 @@
       "previousSha256": null,
       "sha256": "9a2d90948c88039ac9e64f49562ce4f75d11d3134f66bcc7d66ddc96236fda17",
       "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec.rs",
+      "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
+      "sha256": "09c99da76433509b33db1410062c1d8f22fd92d2350a1513f259703bb73ee645",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec/convert.rs",
+      "previousSha256": null,
+      "sha256": "2b07b38df79ee775ae5767211fac470215bb823026fbf1eb1c483b4f29e1642e",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec/readback.rs",
+      "previousSha256": null,
+      "sha256": "ca1bc6a4373aaa06831a8da1d594f51a36cc2c0eb1f91cb8e9bd28954babc09f",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec/tests.rs",
+      "previousSha256": null,
+      "sha256": "5c1f2b7cd866f12231201d20a9789c425f75a326e7f4dfd509ac02fac45f4954",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
+      "previousSha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592",
+      "sha256": "d37a21783ef2c5eb01475b92242d3c18cbb3460e2791e6b1d80580878795f917",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
+      "previousSha256": "22eaeb29796bdb8268427a16fd4e363a2fcbab2a32da4a5a40c2b63de3015798",
+      "sha256": "d7019521db0a77e66dd21cfa04032dea145a0d4b829ed35992fe3d6c24ad1a38",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/hardware/windows.rs",
+      "previousSha256": null,
+      "sha256": "26a070aad8054f4d59c29e0ef595e9e50676bcf29d0af135e303e84dcfd13d1a",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/mod.rs",
+      "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
+      "sha256": "eccbec1ef8917bef2294a62f5fa1e8dd72558ec0dcc4636a075f449580bb2903",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/budget.rs",
+      "previousSha256": null,
+      "sha256": "28c95596514481ff5c5b580fcc25d54340165b8845e4d6ff48b6e28467e6fc34",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub.rs",
+      "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
+      "sha256": "7754cac7425dbf2e863e26f97d5bd3de9b40d29789162744f8d86e43798e13fd",
+      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
     }
   ]
 }

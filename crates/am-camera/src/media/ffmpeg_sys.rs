@@ -279,10 +279,12 @@ pub struct AVStream {
     pub codecpar: *mut AVCodecParameters,
 }
 
-/// AVBufferRef 与 SwsContext 按不透明指针使用。
+/// AVBufferRef（libavutil/buffer.h）；用于核对实际CPU回读分配大小。
 #[repr(C)]
 pub struct AVBufferRef {
-    _opaque: [u8; 0],
+    pub buffer: *mut c_void,
+    pub data: *mut u8,
+    pub size: usize,
 }
 
 #[repr(C)]

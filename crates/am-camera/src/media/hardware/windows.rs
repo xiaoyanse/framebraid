@@ -64,16 +64,9 @@ mod native {
             kind: i32,
             hwctx: *mut c_void,
         }
-        #[repr(C)]
-        struct BufferRef {
-            buffer: *mut c_void,
-            data: *mut u8,
-            size: usize,
-        }
         const { assert!(std::mem::offset_of!(DeviceContext, hwctx) == 16) };
-        const { assert!(std::mem::offset_of!(BufferRef, data) == 8) };
-        let reference = unsafe { reference.cast::<BufferRef>().as_ref() }
-            .ok_or(ProbeError::AdapterIdentityMismatch)?;
+        const { assert!(std::mem::offset_of!(crate::media::ffmpeg_sys::AVBufferRef, data) == 8) };
+        let reference = unsafe { reference.as_ref() }.ok_or(ProbeError::AdapterIdentityMismatch)?;
         let context = unsafe { reference.data.cast::<DeviceContext>().as_ref() }
             .ok_or(ProbeError::AdapterIdentityMismatch)?;
         if context.kind != crate::media::ffmpeg_sys::AV_HWDEVICE_TYPE_D3D11VA

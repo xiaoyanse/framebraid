@@ -1,12 +1,19 @@
 # Performance measurement / 性能测量
 
 These local tools call the real SDK DLL or Rust production functions. They do not
-claim YOLO accuracy, hardware acceleration or camera-to-display performance.
+claim YOLO accuracy, universal hardware support or camera-to-display performance.
 Reports are written under ignored `.local/evidence`; synthetic fixtures stay under
 `.local/tests`. Nothing is published by these commands.
 
 这些工具测量实际调用边界，不把合成模型当真实业务性能。首轮基线和限制见
 [R1 阶段验收](verification/sdk-r1-complete-20261026.md)，早期工具检查点另行保留。
+
+Native decode measurements may explicitly request `--backend d3d11va --adapter 0`
+or `--backend dxva2`; CPU remains the default. The tool checks real hardware output,
+records backend/LUID and separates transfer/scale timing. These are function-boundary
+measurements, not browser playback or end-to-end FPS. See [R2 budget/cache validation](verification/sdk-r2-readback-cache-20261026.md).
+
+硬件路径需明确请求，并以真实输出核后端；报告GPU回读与颜色转换分段，不把偏好或短测等同完整硬件支持。构建源码摘要包含拆出的转换/回读模块，比较前核输入、实际后端、设备和输出校验一致。
 
 ## Reproduce / 复现
 
