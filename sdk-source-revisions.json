@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "5f329641e3a307db540c2d8a20ed517684acdad9",
+  "reviewBaseCommit": "eec8251c2d87dd1bfe3c545db9806c52d4c27a35",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -168,8 +168,8 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "48ca8567660e2c28fb2d9e83e111be6c75960a89a7c8aad2cc450fddfbfaa7d9",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "133a5519e601885e0362909935de67197fd3f6d012e90139391de3d5f110a480",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "3e0af62e4331f7efad1f15673333dfee057d5721448408d2354e290bc226c7ef",
-      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+      "sha256": "3a6fc50d1ec044e3da4c2cfce7481477496d1ffd1f798f4762f12906f54eca00",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -462,8 +462,8 @@
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "9134c2d499949f3e57771869636185bf3b2437d9400353b75b3253d23b7ee62d",
-      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
+      "sha256": "b25d9c309e98cd3c5ce37ef5a64e5b8df6f3e2345d89a0b2bc475d0cbb96f877",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/results.rs",
@@ -872,6 +872,36 @@
       "previousSha256": "f094c593ebda7526975f63a6edfb716eb3960da9e2cf9afea4ce3efd82e90bf2",
       "sha256": "02ac99429adcbe453433e2e5569be97ee0725778058261c807095582273804e9",
       "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/snapshot.rs",
+      "previousSha256": null,
+      "sha256": "a604dd43932a19c7f301b7ccb08cdecf96e5b35d20d01a0e934854d42b4d0d34",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/snapshot/tests.rs",
+      "previousSha256": null,
+      "sha256": "e7beb15143add0364c19b19d4ff500ae4c23faef8f94ff72735a8510e14d2fbf",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/models/metadata.rs",
+      "previousSha256": null,
+      "sha256": "35cc10c3ed6feb9dbcfc1ae9e6ccda445fc8716bb02ec82e29d9b55c749ff5d4",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/models/metadata/tests.rs",
+      "previousSha256": null,
+      "sha256": "7aa6474335b5a3bcada882e3f0e15a2adf97ae4d7f7d5e7ace8a0a9908dd977f",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/sdk/model/validation_tests.rs",
+      "previousSha256": null,
+      "sha256": "aeaeed8c0207f4b226f872de768d0b375475011f91f092ba1e9dd45b023a30c3",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
     }
   ]
 }

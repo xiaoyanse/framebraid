@@ -87,50 +87,8 @@ pub struct Info {
 // 所有指针只指向本拥有者的堆缓冲；构造后不移动缓冲、不改元数据。
 unsafe impl Send for Info {}
 unsafe impl Sync for Info {}
-fn ios(specs: &[TensorInfo], batch: u32) -> Result<(Vec<Io>, Vec<am_io_spec_t>)> {
-    let owners = specs
-        .iter()
-        .map(|s| {
-            Ok(Io {
-                name: CString::new(s.name.clone()).map_err(|_| AM_ERR_VISION_IO_UNSUPPORTED)?,
-                shape: s.shape.clone(),
-                min: s
-                    .shape
-                    .iter()
-                    .map(|v| if *v < 0 { 1 } else { *v })
-                    .collect(),
-                max: s
-                    .shape
-                    .iter()
-                    .enumerate()
-                    .map(|(axis, v)| {
-                        if *v >= 0 {
-                            *v
-                        } else if axis == 0 && batch == 1 {
-                            64
-                        } else {
-                            8192
-                        }
-                    })
-                    .collect(),
-            })
-        })
-        .collect::<Result<Vec<_>>>()?;
-    let views = owners
-        .iter()
-        .zip(specs)
-        .map(|(o, s)| am_io_spec_t {
-            name: o.name.as_ptr(),
-            dtype: s.dtype,
-            shape: o.shape.as_ptr(),
-            shape_len: o.shape.len() as u32,
-            dyn_min: o.min.as_ptr(),
-            dyn_max: o.max.as_ptr(),
-            ..Default::default()
-        })
-        .collect();
-    Ok((owners, views))
-}
+mod metadata;
+use metadata::{clone_specs, ios};
 impl Info {
     pub fn value(&self) -> am_model_info_t {
         let _ = (&self.input_owners, &self.output_owners);
@@ -361,7 +319,7 @@ unsafe fn load_inner(
                 input_owners,
                 output_owners,
                 inputs,
-                input_specs: model.inputs.clone(),
+                input_specs: clone_specs(&model.inputs)?,
                 outputs,
             },
             selection,
@@ -370,6 +328,8 @@ unsafe fn load_inner(
     let (info, selection) = match info_result {
         Ok(v) => v,
         Err(e) => {
+            // 元数据构造失败也先结束原生会话，再归还模型与线程额度。
+            drop(model);
             state.models.fetch_sub(1, Ordering::AcqRel);
             drop(permit);
             return Err(e);

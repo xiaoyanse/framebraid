@@ -82,11 +82,17 @@ pub fn byte_count(dtype: u32, shape: &[i64]) -> Result<usize> {
 }
 /// 接受前只校验小型元数据，不等待正在运行的会话或读取张量内容。
 pub fn validate_input_infos(expected: &[TensorInfo], inputs: &[TensorInfo]) -> Result<()> {
+    validate_infos(expected, inputs.iter())
+}
+fn validate_infos<'a>(
+    expected: &[TensorInfo],
+    inputs: impl ExactSizeIterator<Item = &'a TensorInfo> + Clone,
+) -> Result<()> {
     if inputs.len() != expected.len() {
         return Err(Error("vision.inputNameUnknown".into()));
     }
     for spec in expected {
-        let mut matches = inputs.iter().filter(|v| v.name == spec.name);
+        let mut matches = inputs.clone().filter(|v| v.name == spec.name);
         let actual = matches
             .next()
             .ok_or_else(|| Error("vision.inputNameUnknown".into()))?;
@@ -111,10 +117,7 @@ pub fn validate_input_infos(expected: &[TensorInfo], inputs: &[TensorInfo]) -> R
     Ok(())
 }
 pub(super) fn validate_input_data(expected: &[TensorInfo], inputs: &[TensorData]) -> Result<()> {
-    validate_input_infos(
-        expected,
-        &inputs.iter().map(|v| v.info.clone()).collect::<Vec<_>>(),
-    )?;
+    validate_infos(expected, inputs.iter().map(|v| &v.info))?;
     for value in inputs {
         // Rust调用方也可改公开元数据；不能按新shape分配后按旧长度复制。
         if byte_count(value.info.dtype, &value.info.shape)? != value.bytes().len() {
@@ -436,3 +439,6 @@ mod tensor_tests {
         assert!(byte_count(0, &[0]).is_err());
     }
 }
+
+#[cfg(test)]
+mod validation_tests;

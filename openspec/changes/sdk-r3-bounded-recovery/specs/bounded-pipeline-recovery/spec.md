@@ -237,3 +237,17 @@ SDK SHALL 在复制运行库目录前预留域绑定Context初始化槽，在册
 
 - **WHEN** 本包相关功能/故障/资源/接口定向验证已按范围完成，但没有全硬件组合或固定时长长跑结果
 - **THEN** 不得仅因缺这两项阻塞本包收口；仍如实列实际设备/模型和测试范围，其他未完成实现或必验项照常保持开放
+
+### Requirement: Model metadata and temporary source snapshots stay bounded
+
+SDK SHALL 在模型IO副本分配前核每向32项/name4096字节/rank8，Ffi实际容量和分配失败可核对；失败不得保留部分副本或在原生会话退出前释放线程额度。输入校验 SHALL 借用现有元数据，不先克隆任意长度输入列表。来源状态/统计 SHALL 使用已登记4096项上界的完整强引用快照，锁外按源身份去重，不按URL合并独立源。
+
+#### Scenario: IO metadata allocation fails or input count is invalid
+
+- **WHEN** Ffi元数据任一受控分配失败，或输入数与模型不匹配
+- **THEN** 返回明确错误且不发布半构造模型/悬空视图；有效输入不发生校验用元数据克隆，既有名字/类型/shape/实际字节检查保持
+
+#### Scenario: A source closes during event or statistics consumption
+
+- **WHEN** 完整来源快照已捕获后发生新增/关闭
+- **THEN** 保留当次成员的强引用、锁外消费和关闭过滤，不重复计算共享源或遗漏快照成员；明确固定栈成本，不宣称所有规模更快

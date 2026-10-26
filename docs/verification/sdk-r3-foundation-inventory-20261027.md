@@ -18,3 +18,5 @@
 后续1.1u已修共享源别名Table实际容量/增长重叠，见[记录](sdk-r3-alias-storage-20261027.md)；原表中的全域Source/SharedSource登记、Hub和临时快照仍待，不抹去初始观察。
 
 基础包整合已完成pending目录准入、固定8状态/64Hub快照、共享4/32/8表及全域源4096预留，具体边界/取舍/329项及真实DLL见[整合记录](sdk-r3-foundation-integration-20261027.md)。剩余重点为事件/stats临时快照、模型IO多份元数据fallible复制与服务固定本体汇总；不再将已收口项重复列为待实施。
+
+后续模型FFI元数据fallible复制/实际容量和每Run校验克隆、来源事件/stats临时快照已收口，见[模型记录](sdk-r3-model-metadata-20261027.md)及[快照记录](sdk-r3-source-snapshots-20261027.md)。剩余仅为固定服务体/核心与原生元信息、硬件JSON暂存及宿主调用栈的边界汇总，非新增完整硬件或长跑门槛。
