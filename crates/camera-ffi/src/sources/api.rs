@@ -84,6 +84,9 @@ pub unsafe extern "C" fn amc_source_open(
             .sources
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        // 增长先核新旧存储重叠；失败不能发布句柄或泄漏共享所有权。
+        sources.retain(|_, source| source.strong_count() > 0);
+        sources.reserve(&shared.state, 1, SDK_MAX_REGISTERED_HANDLES as usize)?;
         let key = match domain().insert(ctx as usize, source.clone()) {
             Ok(key) => key,
             Err(code) => {
@@ -98,8 +101,7 @@ pub unsafe extern "C" fn amc_source_open(
         };
         source.key.store(key, Ordering::Release);
         // 共享源可能长期没有事件；登记时也回收旧Weak，避免重开累积Arc分配体。
-        sources.retain(|source| source.strong_count() > 0);
-        sources.push(Arc::downgrade(&source));
+        sources.insert(key, Arc::downgrade(&source));
         drop(sources);
         registry.sources.push(Arc::downgrade(&source));
         if fresh && desc.reuse == 1 {
@@ -300,11 +302,7 @@ pub unsafe extern "C" fn amc_source_set_event_callback(
             .sources
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-            .iter()
-            .find(|s| {
-                s.upgrade()
-                    .is_some_and(|s| s.key.load(Ordering::Acquire) == src as usize)
-            })
+            .get(&(src as usize))
             .cloned()
             .ok_or(AM_ERR_SDK_HANDLE_INVALID)?;
         source.events.set(weak, cb, user as usize)

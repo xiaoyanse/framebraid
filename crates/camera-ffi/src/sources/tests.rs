@@ -409,3 +409,55 @@ fn reused_source_registry_reclaims_dead_aliases_without_events() {
     assert_eq!(peak, 2, "无事件的共享源不能累积已销毁句柄的Weak和Arc分配体");
     assert_eq!(status_of(anchor).state, AM_SRC_WAITING_CREDENTIALS);
 }
+
+#[test]
+fn alias_storage_is_charged_and_failed_growth_keeps_owner_and_registry() {
+    use am_sdk_support::context::Context;
+    let mut f = Fixture::new();
+    let anchor = f.open(std::ptr::null(), std::ptr::null(), 1);
+    let entry = get(anchor).unwrap();
+    let shared = entry.data::<Source>().unwrap().shared.clone();
+    drop(entry);
+    let unit = size_of::<(usize, Weak<Source>)>();
+    let camera = &shared.state;
+    let initial = camera.control_usage_snapshot().unwrap();
+    assert_eq!(initial, (0, unit), "源别名底层槽必须持续计控制字节");
+    let context = camera.ctx.data::<Context>().unwrap();
+    context.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = (3 * unit - 1) as u64;
+    let desc = am_source_desc_t {
+        kind: AM_SRC_ISAPI_URL as u32,
+        url_utf8: c"http://127.0.0.1:9/ISAPI/Streaming/channels/101/picture".as_ptr(),
+        reuse: 1,
+        ..Default::default()
+    };
+    let before = shared.owners.load(Ordering::Acquire);
+    let mut out = std::ptr::dangling_mut();
+    let result = unsafe { amc_source_open(f.ctx as _, &desc, &mut out) };
+    if !out.is_null() {
+        domain().close(out as usize, 100).unwrap();
+        domain().destroy(out as usize).unwrap();
+    }
+    assert_eq!(result, AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    assert!(out.is_null());
+    assert_eq!(shared.owners.load(Ordering::Acquire), before);
+    assert_eq!(shared.sources.lock().unwrap().len(), 1);
+    assert_eq!(camera.control_usage_snapshot().unwrap(), initial);
+    context.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = (3 * unit) as u64;
+    let alias = f.open(std::ptr::null(), std::ptr::null(), 1);
+    assert_eq!(status_of(alias).source_id, shared.source_id);
+    assert_eq!(camera.control_usage_snapshot().unwrap(), (0, 2 * unit));
+    assert_eq!(context.buffers.load(Ordering::Acquire), 0);
+    let mut lifecycle = 0;
+    assert_eq!(
+        unsafe { amc_source_close(alias as _, 100, &mut lifecycle) },
+        0
+    );
+    assert_eq!(camera.control_usage_snapshot().unwrap(), (0, 2 * unit));
+    assert_eq!(shared.owners.load(Ordering::Acquire), 1);
+    eprintln!(
+        "alias_slot_bytes={unit}; initial={}; growth_overlap={}; retained={}",
+        unit,
+        3 * unit,
+        2 * unit
+    );
+}

@@ -1,5 +1,7 @@
 # Design
 
+共享源别名引用槽复用内部有序Table，以实际capacity×(key,Weak)尺寸计control metadata，增长旧+新重叠先准入，失败在发布域句柄前归还claim。死亡引用清理不退空闲容量，Closed句柄仍保留；最终共享对象销毁才释放。全域注册表及事件/统计快照另核，不把本项当父预算闭环。
+
 探测缓存按实际引用槽持有metadata许可，条目URL另占control；过期/清条目不退空闲槽，结果不足时真正丢存储后重试，缓存失败只跳过。Context先验，固定栈借用UTF8规划结果本体/Arc头/ABI Box/两Vec/含NUL字符串及临时secret，准入后复制，临时拥有者销毁再缩额。模型session IO先核非空/各不超过32，再复制受限name/shape。固定服务体和全域索引按[基础清单](../../../docs/verification/sdk-r3-foundation-inventory-20261027.md)继续，不能借此关闭1.1。
 
 共享源别名登记：在持有共享源登记锁时、添加新Weak前清理死亡Weak，不依赖状态事件触发回收。只移除强引用数为零的条目，不抢收活Closed句柄、不改变共享所有权；原Vec容量仍保留高水位，完整基础/服务体预算另核。

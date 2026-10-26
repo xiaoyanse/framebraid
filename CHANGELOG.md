@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Admit shared-source alias backing and growth overlap before handle publication; retain idle capacity accounting and roll back shared ownership on refusal. / [定向及真实DLL验证](docs/verification/sdk-r3-alias-storage-20261027.md)，C ABI不变。
+
 - Add owner-locked Python/C# pixel operations for frames, shared borrows and RGB inputs; explicit copy helpers preserve legacy low-level interfaces. / [验证](docs/verification/sdk-r4-owned-pixels-20261027.md)，C ABI不变，异步默认复制而非全链零拷贝。
 
 - Account probe cache backing storage and complete result ownership before copying; preflight native model IO counts before SDK metadata duplication. / [验证](docs/verification/sdk-r3-probe-storage-20261027.md)，保持结果优先、默认预算和C ABI。

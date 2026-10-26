@@ -205,3 +205,12 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 
 - **WHEN** 原生会话输入或输出超过32项
 - **THEN** SDK在复制各项name/shape前以ioUnsupported拒绝，合法边界不受影响，原生会话内存仍另列
+
+### Requirement: Shared-source alias backing remains admitted
+
+Media SDK SHALL 在共享源别名表增长前预留实际引用槽及新旧重叠控制字节；空闲保留容量不提前退账。登记失败 SHALL 不发布源句柄，不泄漏已领取的共享所有权，不清除仍活的Closed外持对象。
+
+#### Scenario: Alias growth exceeds the control budget
+
+- **WHEN** 已有共享源可复用，但新增别名所需新旧容量超过控制字节
+- **THEN** 返回resourceExhausted且输出NULL，旧源/别名/所有权保持，后续可在足够预算的Context内正常登记和关闭

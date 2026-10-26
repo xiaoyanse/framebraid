@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "69624cfbc2c294996f84233f3f821b9a6c8f175e",
+  "reviewBaseCommit": "5f329641e3a307db540c2d8a20ed517684acdad9",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -168,8 +168,8 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "e7cfa29f68a6b50b195b22c182cf33b36e2d1b5276a04d53c5fcd878ffdbc7e4",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "1177f6ab2888ad1c16a5aaef6a7f75c34443fb69db159b7b6902c281ff0d9f83",
+      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -228,8 +228,8 @@
     {
       "path": "crates/camera-ffi/src/sources/tests.rs",
       "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-      "sha256": "e402d619a16b1d4db18c20f6218b8ccba6d5722f0885d4dabf4284dd1d2687d3",
-      "reason": "R3 reclaim dead source aliases during registration without waiting for events; 256-cycle ownership regression, shared-source and callback/close tests; no C ABI change"
+      "sha256": "885f5745b66655e21b88aa272a3195fd831b47710c01924b6ce5095b8771126c",
+      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/mod.rs",
@@ -702,8 +702,8 @@
     {
       "path": "crates/camera-ffi/src/captures/mod.rs",
       "previousSha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981",
-      "sha256": "e813b88c76422d19ed91928dc5a230d84a1746d7a57fad3a2b146fd77607797c",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+      "sha256": "68b432386081fabbe8bd3e3541ab480fe9e21e165cfb7b845d6e9ec79521e970",
+      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/requests.rs",
@@ -798,8 +798,8 @@
     {
       "path": "crates/camera-ffi/src/sources/api.rs",
       "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
-      "sha256": "51e3285b167d3c968a0e2583cba35407b62f2fd85fb7469aba4a349789df55c9",
-      "reason": "R3 reclaim dead source aliases during registration without waiting for events; 256-cycle ownership regression, shared-source and callback/close tests; no C ABI change"
+      "sha256": "dfffaf35d3866a43b8f03c22c119568053d522f8d1aae91cd292a035691ec29f",
+      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/probe/planning.rs",

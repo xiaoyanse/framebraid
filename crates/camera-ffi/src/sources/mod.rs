@@ -51,7 +51,7 @@ pub struct SharedSource {
     pub(crate) decode: Mutex<hardware::DecodeState>,
     owners: AtomicUsize,
     credentials: Arc<Credentials>,
-    sources: Mutex<Vec<Weak<Source>>>,
+    sources: Mutex<crate::captures::tables::Table<usize, Weak<Source>>>,
     myself: Weak<SharedSource>,
 }
 impl SharedSource {
@@ -59,7 +59,7 @@ impl SharedSource {
         if let Ok((_, detail)) = am_sdk_support::diagnostics::snapshot(domain(), self.state.ctx_key)
         {
             if let Ok(sources) = self.sources.lock() {
-                for source in sources.iter().filter_map(Weak::upgrade) {
+                for source in sources.values().filter_map(Weak::upgrade) {
                     domain().record_error_detail(source.key.load(Ordering::Acquire), code, detail);
                 }
             }
@@ -123,8 +123,11 @@ impl SharedSource {
             .sources
             .lock()
             .map(|mut sources| {
-                sources.retain(|s| s.strong_count() > 0);
-                sources.iter().filter_map(Weak::upgrade).collect::<Vec<_>>()
+                sources.retain(|_, s| s.strong_count() > 0);
+                sources
+                    .values()
+                    .filter_map(Weak::upgrade)
+                    .collect::<Vec<_>>()
             })
             .unwrap_or_default();
         for source in sources {

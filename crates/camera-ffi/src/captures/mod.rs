@@ -11,7 +11,7 @@ mod images;
 mod io;
 mod requests;
 mod state;
-mod tables;
+pub(crate) mod tables;
 
 pub(crate) fn queue_usage(ctx: usize) -> Result<(u64, u64)> {
     use am_sdk_support::context::Context;
