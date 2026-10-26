@@ -1,5 +1,9 @@
 # FrameBraid 双 SDK 接入说明
 
+## Local recovery verification / 本地恢复验证
+
+Windows开发环境可运行`scripts/sdk/test-camera-recovery.py`，显式提供`--dll-dir`、`--runtime-dir`（FFmpeg）、`--mediamtx`和新的仓内`--work-dir`。默认20次故障、100次源启停及5次预热，随机回环端口、自产H.264和仅本轮合成认证，不使用相机地址；输出逐次结果与所拥有进程退出记录，拒绝覆盖旧测试目录。`test-inference-recovery-ownership.py`另需CPU ORT与合成Tensor/Batch模型目录。完整命令及范围见[验证](../docs/verification/sdk-r3-c-recovery-20261027.md)。These are local developer checks, not a hardware/soak support promise; no production interface changes.
+
 ## Local Rust H264Hub bounds / 本地Rust辅助分发约束
 
 未发布修复：`am_camera::media::h264::session::H264Hub`的每订阅队列最多36项、8 MiB载荷（`fanout::CLIENT_QUEUE_MAX_BYTES`），GOP预滚最多35包并保留配置的字节上限。长GOP或种子超限时只先给配置，等待下一关键帧；持续视频分发不因此降采样。读取`ResyncRequired`时应重建消费端参考链，再从新关键帧继续。单包超8 MiB收到`Closed(1009, "media.packetTooLarge")`，持续不消费可收到1011；终态之后不再有新配置/包/叠层。叠层低优先级，仅保留最新一项，过载时先让位视频。
