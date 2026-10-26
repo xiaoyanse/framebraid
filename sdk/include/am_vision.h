@@ -5,6 +5,9 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+AM_API am_status_t amv_probe_inference_hardware(amv_context_t* ctx, uint32_t budget_ms);
+AM_API am_status_t amv_get_inference_hardware_report(amv_context_t* ctx, char* buffer_utf8,
+                                                   uint64_t capacity, uint64_t* required);
 AM_API uint32_t amv_get_abi_version(void);
 AM_API am_status_t amv_get_version_info(am_version_info_t* out_info);
 AM_API am_status_t amv_init(const amv_init_params_t* params, amv_context_t** out_ctx);

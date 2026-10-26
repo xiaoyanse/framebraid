@@ -65,3 +65,17 @@ SDK MUST 区分硬件可见、依赖存在、provider 可加载、目标模型�
 - **WHEN** 优选后端缺依赖或资源竞争且策略允许回退
 - **THEN** 按合同回退或明确拒绝，不静默重放已完成请求，不扩大线程预算
 
+
+### Requirement: Explicit inference probe and bounded cached C report
+
+C调用方 SHALL 可显式触发有软预算的设备发现，并查询有界缓存及累计执行观察；无ORT共享帧context MUST 可独立探测。报告 MUST 区分未探测、失败/未知与真实原生执行，不重新装配运行库。内部缓存 SHALL 计控制额度但不作为外部租约阻塞关闭。
+
+#### Scenario: Repeated query and concurrent shutdown
+
+- **WHEN** 调用方反复读取设备报告，同时context关闭
+- **THEN** 查询不调用驱动或改探测完成时间，读与最终释放安全互斥；关闭态返回无设备/观察的空快照，destroy后不再访问
+
+#### Scenario: Insufficient control quota on refresh
+
+- **WHEN** 显式新探测没有足够控制额度
+- **THEN** 撤销旧成功缓存并明确resourceExhausted，不扩大默认控制预算，不把旧结果伪装为新成功

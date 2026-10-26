@@ -11,6 +11,7 @@ const artifacts = [
   'sdk/abi/defaults.json',
   'sdk/abi/layout-win-x64.json',
   'sdk/abi/decode-hardware-report-v1.schema.json',
+  'sdk/abi/inference-hardware-report-v1.schema.json',
   'crates/vision/resources/profiles.json',
   'docs/design/dual-sdk-abi-freeze-v1.1.md',
 ];
@@ -27,9 +28,9 @@ export async function freezeAbi({ check = false } = {}) {
   const content =
     JSON.stringify(
       {
-        id: 'am-sdk-cabi-1.1-20261026-r7',
+        id: 'am-sdk-cabi-1.1-20261026-r8',
         previousFreezeSha256: createHash('sha256')
-          .update(await fs.readFile(path.join(root, 'sdk/abi/history/freeze-v1.1-r6.json')))
+          .update(await fs.readFile(path.join(root, 'sdk/abi/history/freeze-v1.1-r7.json')))
           .digest('hex'),
         abiVersion: 65537,
         designFrozen: true,

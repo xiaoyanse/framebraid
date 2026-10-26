@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "83fcaebcb350eae750ea9ba045ba4eb06efe9459",
+  "reviewBaseCommit": "5449e79ad8781ff9424840d86b7ecb413873e816",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -270,8 +270,8 @@
     {
       "path": "crates/vision/src/sdk/runtime.rs",
       "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
-      "sha256": "d412102a094159c6511e5e527b6c90a430c9ea4a1f8b5b0b2b859c49c3fe3150",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+      "sha256": "3468d59f246943fb7477aa449346e3ad787ada1fada4346ec647358a54fc91ce",
+      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
     },
     {
       "path": "crates/vision/src/sdk/runtime/devices.rs",
@@ -296,6 +296,30 @@
       "previousSha256": null,
       "sha256": "c5d637f90fdcb7912d25dddc62071d9211289621d5c83d3dfc9326effee072b0",
       "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision-ffi/Cargo.toml",
+      "previousSha256": "21100d26118bea4e9987e2b8ed9ae9994556fffd30aee76b84d69f95aca9251c",
+      "sha256": "d389582d52ccc85e879cdad63d2a5e0f0092efe773773b15ef7267ef62c58c56",
+      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/mod.rs",
+      "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
+      "sha256": "21ba460717f4ffeaa1f9219fdaf02e2155c7c0a02dcd2dc3e685165df02d7c54",
+      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/state.rs",
+      "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
+      "sha256": "8c341423f8063c2f493520eb27061e1fc1df297a8a0073c75e65836454a2ae98",
+      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/hardware.rs",
+      "previousSha256": null,
+      "sha256": "20044fd695cf6626fec13826d06d6f2c85595fe8ca2b82ff8aaff7a22693fe17",
+      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
     }
   ]
 }

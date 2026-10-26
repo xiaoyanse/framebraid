@@ -224,4 +224,10 @@ cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-c
 
 查询返回requested_policy/effective_policy、初始化selection、实际actual_backend、last_failure/last_status、decode_generation；仅有真实帧才stream_verified。像素失败后新关键帧恢复CPU，不重放旧RTSP包，不改变压缩配置代次；无像素消费者不创建decoder。初始化与解码目前在源线程同步执行，仍可能延迟压缩读取；不要把队列隔离当延迟隔离，详见[限制和量化](../docs/verification/sdk-r2-rtsp-hardware-20261026.md)。本机RGBA回读硬件慢于CPU，按宿主需求选择策略，不保证自动最快。
 
-Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. New C selection/report exports, accelerated inference and recovery acceptance remain open. See [core verification](../docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
+Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; C model-selection extensions, accelerated inference and recovery acceptance remain open. See [core verification](../docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
+
+### Local inference device reports / 本地推理设备报告
+
+Unpublished ABI1.1 r8 only: use bindings and DLL from the same source revision. C callers invoke `amv_probe_inference_hardware(ctx, 1500)` explicitly, then `amv_get_inference_hardware_report(ctx, buffer, 65536, &required)`; required includes NUL. Zero-capacity length lookup does not probe. Python: `VisionContext(..., shared_frames=True).probe_inference_hardware()` / `.get_inference_hardware_report()`; C#: `ProbeInferenceHardware()` / `GetInferenceHardwareReport()`. Close/dispose the context normally. Examples of exact raw calls and buffer/error handling are in `scripts/sdk/test-inference-hardware.py`.
+
+设备报告可在无ORT的纯共享帧context查询，显卡被枚举不等于ORT/CUDA可用。常规查询不刷新驱动；缺失/失败读device_probe.stopped，不要当作零设备。observations为SDK域累计观察，非当前模型健康/全GPU节点证明；模型选择仍按原C接口或新增Rust策略，本阶段不扩旧运行库替换合同。默认64KiB控制预算内缓存16KiB、查询48KiB，两者各一项；其他控制对象或并发查询可能明确resourceExhausted，应归还控制对象/减少并发，不能无限重试。关闭态仅返回空快照。

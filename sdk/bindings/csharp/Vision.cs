@@ -7,6 +7,14 @@ using System.Threading;
 
 namespace AmrtSdk {
     public sealed class VisionContext : OwnedResource {
+        public string GetInferenceHardwareReport() { lock (Gate) return HardwareReports.Read(Raw, true); }
+        public string ProbeInferenceHardware(uint budgetMs = 1500) {
+            lock (Gate) {
+                HardwareReports.RequireApi(true);
+                Diagnostics.Check(Native.amv_probe_inference_hardware(Raw, budgetMs), "probe inference hardware", Raw, true);
+                return HardwareReports.Read(Raw, true);
+            }
+        }
         public VisionContext(string[] runtimeDirectories, bool sharedFrames) : base(Create(runtimeDirectories, sharedFrames), null,
             Native.amv_shutdown, Native.amv_object_destroy, null) { }
         private static IntPtr Create(string[] directories, bool shared) {

@@ -1,6 +1,6 @@
 {
-  "id": "am-sdk-cabi-1.1-20261026-r7",
-  "previousFreezeSha256": "b324937c208df704a4ad6df402184d1474115031b46485a9ea4b383154cb6fb1",
+  "id": "am-sdk-cabi-1.1-20261026-r8",
+  "previousFreezeSha256": "c1094bb943c899fffcf7af55c98a9e38d824c6838a384e768c8b2dd9e0fad3d9",
   "abiVersion": 65537,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
@@ -12,8 +12,8 @@
     },
     {
       "path": "sdk/include/am_vision.h",
-      "sha256": "77db1958648669b6fed0d0ba62865246fe2f4624211f5066b8386b444e2b0336",
-      "bytes": 5522
+      "sha256": "348b3117440664a2db084fcf80e0f9d53cdeb5d552c0ba72fe947712746a94bb",
+      "bytes": 5795
     },
     {
       "path": "sdk/include/am_sdk_types.h",
@@ -41,14 +41,19 @@
       "bytes": 3811
     },
     {
+      "path": "sdk/abi/inference-hardware-report-v1.schema.json",
+      "sha256": "2d6dd24d8400f100f3cdcb6ec8bcd0801b20c92aab8e9023d6f06f81a20e17a9",
+      "bytes": 2171
+    },
+    {
       "path": "crates/vision/resources/profiles.json",
       "sha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
       "bytes": 3526
     },
     {
       "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",
-      "sha256": "c56a69ff9fe08f5a87276399cd5ebffb20d7014080e7e90d7793d4cb16ee55f0",
-      "bytes": 1875
+      "sha256": "4e6ade8ac09abeb604f7d4360f750cb0937b7078b9f799bc2349693715190ef8",
+      "bytes": 2235
     }
   ]
 }

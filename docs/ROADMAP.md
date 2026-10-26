@@ -329,3 +329,5 @@ HEAD 仅标记定位快照，其他团队的未提交工作不被本路线归档
 本地R2/H2 r7：RTSP共享策略与源报告已接线，H264/HEVC实际D3D11VA、MJPEG软件及强制CPU对照通过；原生Rext错误后像素分支恢复CPU、压缩队列及其代次不变。见[记录](verification/sdk-r2-rtsp-hardware-20261026.md)。H2-STREAM-01：本机1080p RGBA回读硬件P95高于CPU，不能宣称提速；H2-STREAM-02：同步读流阻塞隔离交R3执行。设备复用/完整矩阵/H5/4h/24h保持开放。
 
 本地H5.0a：Rust有界选择、显式驱动枚举和模型真实Run诊断完成首组功能验证，见[记录](verification/sdk-h5-selection-core-20261026.md)。C导出/运行库选择、加速EP/运行期恢复继续开放。H2-STREAM-01改为跨后端取舍待量化：硬解RGBA慢于CPU不单独算缺陷；CPU卸载、GPU引擎及延迟/并发预算仍须实测。同后端改前改后5%警戒和H2-STREAM-02读流隔离问题不变。
+
+本地H5.0b显式推理探测/缓存报告已进入C ABI1.1 r8并配套Python/C#，见[验证](verification/sdk-h5-inference-report-20261026.md)。支持无ORT使用，设备发现不冒充加速Session/Run；旧矩阵缓存迁移、模型C选择策略和恢复保持开放。

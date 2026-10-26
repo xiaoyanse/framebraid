@@ -65,6 +65,8 @@ version = "0.1.0"
 dependencies = [
  "am-sdk-support",
  "am-vision",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,6 +1,7 @@
 pub(crate) mod backends;
 mod batch_exports;
 mod exports;
+mod hardware;
 mod input;
 mod models;
 mod notify;

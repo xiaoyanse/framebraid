@@ -14,3 +14,5 @@ shared-frames = ["am-sdk-support/shared-frames"]
 [dependencies]
 am-sdk-support = { path = "../sdk-support" }
 am-vision-core = { package = "am-vision", path = "../vision" }
+serde_json = "1"
+serde = { version = "1", features = ["derive"] }

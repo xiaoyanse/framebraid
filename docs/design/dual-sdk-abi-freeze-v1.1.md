@@ -9,3 +9,5 @@
 本地r7兼容增加amc_source_set_decode_policy，原get_decode_hardware_report接受source句柄；不改旧结构/枚举。RTSP默认PREFER_HW，单拥有者在首次像素订阅前设置，push尚未装回调也冻结；同值幂等、共享/冻结后改变或ISAPI均modeConflict。source关闭快照无实际活动值，不读取其他共享拥有者后续状态。JSON新增source种类、等待状态、image-cpu后端及decode_generation诊断值，既有必需字段/意义保持。
 
 r6当前冻结原件先存sdk/abi/history/freeze-v1.1-r6.json，r7引用该原件SHA；r6所引用的历史文件可按Git b065bf1查原字节。1.1尚未公开发布，当前main绑定与同提交DLL配套，不混用r6开发制品。故障仅清像素队列、不改变压缩配置代次，详细边界见native-hardware.md；本地冻结不冒充R3耐压或H2/H5全量完成。
+
+本地r8兼容新增amv_probe_inference_hardware/amv_get_inference_hardware_report，旧布局/枚举不变。r7冻结原件存sdk/abi/history/freeze-v1.1-r7.json，r8引用其SHA；原r7工件按Git 5449e79核原字节。新增推理JSON最小合同纳入冻结；显式探测与历史执行观察不冒充模型自动选择C接口或真实加速执行。

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "framebraid.inference-hardware/1",
+  "type": "object",
+  "required": ["schema", "state", "completed_at_ms", "device_probe", "observations", "runtime_initialized"],
+  "properties": {
+    "schema": {"const": "framebraid.inference-hardware/1"},
+    "state": {"enum": ["not_probed", "probe_complete", "closing", "closed"]},
+    "completed_at_ms": {"type": ["integer", "null"]},
+    "runtime_initialized": {"type": ["boolean", "null"]},
+    "device_probe": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["schema", "cpu_logical_parallelism", "cuda_driver_present", "cuda_initialized", "cuda_driver_version", "cuda_visible_count", "cuda_devices", "limit_reached", "stopped", "elapsed_ms", "soft_budget_exceeded"],
+          "properties": {
+            "schema": {"const": "framebraid.inference-devices/1"},
+            "cpu_logical_parallelism": {"type": "integer", "minimum": 1},
+            "cuda_driver_present": {"type": "boolean"},
+            "cuda_initialized": {"type": "boolean"},
+            "cuda_driver_version": {"type": ["integer", "null"]},
+            "cuda_visible_count": {"type": ["integer", "null"]},
+            "cuda_devices": {"type": "array", "maxItems": 16, "items": {
+              "type": "object", "required": ["ordinal", "name", "uuid"],
+              "properties": {"ordinal": {"type": "integer", "minimum": 0}, "name": {"type": "string"}, "uuid": {"type": ["string", "null"]}}
+            }},
+            "limit_reached": {"type": "boolean"},
+            "stopped": {"type": ["string", "object", "null"]},
+            "elapsed_ms": {"type": "integer", "minimum": 0},
+            "soft_budget_exceeded": {"type": "boolean"}
+          }
+        }
+      ]
+    },
+    "observations": {
+      "oneOf": [{"type": "null"}, {"type": "object", "required": ["accelerator_domain", "loaded_mask", "executed_mask"],
+        "properties": {"accelerator_domain": {"enum": [null, 1, 2]}, "loaded_mask": {"type": "integer", "minimum": 0, "maximum": 7}, "executed_mask": {"type": "integer", "minimum": 0, "maximum": 7}}}]
+    }
+  }
+}

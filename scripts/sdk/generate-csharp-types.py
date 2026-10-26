@@ -55,7 +55,7 @@ def generate():
 
 
 def hardware_functions():
-    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy"]
+    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy", "amv_get_abi_version", "amv_probe_inference_hardware", "amv_get_inference_hardware_report"]
     primitive = {c.c_uint32: "uint", c.c_uint64: "ulong", c.c_int32: "int"}
     lines = ["// Generated from the public ctypes ABI; do not edit.",
              "using System;", "using System.Runtime.InteropServices;",
@@ -63,7 +63,8 @@ def hardware_functions():
     for name in names:
         result, args = a.FUNCTIONS[name]
         parameters = ", ".join(primitive.get(kind, "IntPtr") + " arg" + str(i) for i, kind in enumerate(args))
-        lines.append('        [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]')
+        dll = 'am_camera.dll' if name.startswith('amc_') else 'am_vision.dll'
+        lines.append('        [DllImport("'+dll+'", CallingConvention=CallingConvention.Cdecl)]')
         lines.append("        internal static extern " + primitive[result] + " " + name + "(" + parameters + ");")
     return "\n".join(lines + ["    }", "}", ""])
 

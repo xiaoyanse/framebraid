@@ -142,6 +142,25 @@ class Context(Resource):
 
 
 class VisionContext(Context):
+    def get_inference_hardware_report(self):
+        with self._lock:
+            version = self.library.amv_get_abi_version()
+            if version >> 16 != 1 or version < 0x10001:
+                raise NotImplementedError("Inference hardware reports require C ABI 1.1")
+            output, count = c.create_string_buffer(65536), c.c_uint64()
+            self._check(self.library.amv_get_inference_hardware_report(self._require(), output, len(output), c.byref(count)), "read inference hardware report")
+            if not 1 <= count.value <= len(output):
+                raise RuntimeError("Invalid inference hardware report length")
+            return json.loads(output.raw[:count.value - 1])
+
+    def probe_inference_hardware(self, budget_ms=1500):
+        with self._lock:
+            version = self.library.amv_get_abi_version()
+            if version >> 16 != 1 or version < 0x10001:
+                raise NotImplementedError("Inference hardware reports require C ABI 1.1")
+            self._check(self.library.amv_probe_inference_hardware(self._require(), budget_ms), "probe inference hardware")
+            return self.get_inference_hardware_report()
+
     def __init__(self, dll_path, runtime_dirs=(), shared_frames=False):
         super().__init__(dll_path, runtime_dirs, shared_frames, True)
 

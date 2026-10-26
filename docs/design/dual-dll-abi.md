@@ -124,6 +124,20 @@ JSON必需字段schema、kind、state、selection、actual_backend、last_failur
 
 探测缓存每context最多一份，探测阶段预留64KiB控制额度，完成后按缓冲capacity及拥有者开销收缩，许可覆盖缓存寿命；同context最多一轮，重叠调用返回tryAgain。显式新探测先撤销旧缓存，期间查询not_probed，失败不伪装成旧成功。查询decoder的序列化暂存预留32KiB控制额度；余额不足明确返回resourceExhausted，不为查询扩大默认控制预算。无持久化、后台探测线程或无界诊断历史。本扩展不承诺RTSP自动硬解已完成，也不把GPU冷启动当吞吐提升。
 
+### H5.0b 显式推理设备探测与只读报告（ABI 1.1 本地r8）
+
+```c
+AM_API am_status_t amv_probe_inference_hardware(amv_context_t* ctx, uint32_t budget_ms);
+AM_API am_status_t amv_get_inference_hardware_report(amv_context_t* ctx, char* buffer_utf8,
+                                                   uint64_t capacity, uint64_t* required);
+```
+
+probe只接受活动context，回调内拒绝；预算1..5000ms，最多16个CUDA ordinal，进程单轮原生驱动准入，重叠返回tryAgain。不创建ORT模型、GPU计算上下文或更换运行库，无ORT纯共享帧context也可用。原生调用不能强杀，超软预算据实标记。缺驱动/驱动失败/预算中止作为完整报告内stopped状态保存，成功返回表示已记录结果，不表示设备或provider可用。参数、准入、资源和句柄错误仍返回错误码。显式新probe先清旧报告，失败不冒充旧成功；无后台探测。
+
+get只复制缓存设备报告及进程累计后端观察，schema=framebraid.inference-hardware/1，最大64KiB含NUL；NULL+0查长度，小缓冲写required、首字节清0并返回limitOutOfRange，缓冲与required不重叠；并发状态变化时按新required重试或直接分配64KiB。回调中允许只读查询。state为not_probed/probe_complete/closing/closed；completed_at_ms为单调完成时间，未探测为null。device_probe含CPU可用逻辑并行度、CUDA驱动/初始化/版本、可见数/最多16设备、stopped、elapsed_ms和soft_budget_exceeded；CPU并行度不是物理核心数，CUDA ordinal/UUID不得当DXGI标识。缺驱动不是已确认无GPU。observations字段accelerator_domain/loaded_mask/executed_mask只表示当前SDK域的历史观察，不是当前模型健康、全节点GPU放置或运行库依赖清单。runtime_initialized区分是否初始化ORT，不据显卡存在设provider成功。
+
+关闭中/完成后可查询空快照，隐藏设备与观察，绝不重新分配服务或访问驱动；destroy后句柄不得再用。缓存每context一份，probe预留16KiB内部控制额度（设备名称原始最多256字节，UTF8容错最多768字节），报告缓存不作为外部租约阻塞shutdown；查询临时预留48KiB（含32KiB定容序列化缓冲，无JSON树副本），余额不足resourceExhausted。不改旧query_backends的已发布行为；其缓存迁移、模型策略C入口/恢复仍在H5后续，不以两导出宣称全量完成。英文/中文接入说明与Python/C#便捷封装配套同提交DLL，旧开发r7不能加载新入口。旧1.0/1.1结构/枚举/导出全保留；r7冻结原件保留，新r8指纹绑定JSON最小合同。
+
 ### 1.1 句柄体系与对象生命周期总则（B07）
 
 ```

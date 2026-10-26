@@ -1,12 +1,16 @@
 use crate::{Error, Result};
 use std::{
     path::{Path, PathBuf},
-    sync::Mutex,
+    sync::{
+        atomic::{AtomicBool, Ordering},
+        Mutex,
+    },
 };
 pub mod devices;
 mod windows;
 
 static RUNTIME: Mutex<Option<PathBuf>> = Mutex::new(None);
+static INITIALIZED: AtomicBool = AtomicBool::new(false);
 /// DLL终止前仅清自己的路径堆；不释放ORT环境、运行库或执行提供器。
 pub fn sdk_unload_ready() -> bool {
     RUNTIME.try_lock().is_ok()
@@ -16,6 +20,7 @@ pub fn sdk_unload_ready() -> bool {
 pub unsafe fn sdk_unload_static() {
     if let Ok(mut path) = RUNTIME.try_lock() {
         path.take();
+        INITIALIZED.store(false, Ordering::Release);
     }
 }
 #[derive(Default)]
@@ -40,7 +45,7 @@ pub fn library_name() -> &'static str {
     }
 }
 pub fn initialized() -> bool {
-    RUNTIME.lock().is_ok_and(|p| p.is_some())
+    INITIALIZED.load(Ordering::Acquire)
 }
 pub fn initialize(path: &Path) -> Result<()> {
     let canonical = path
@@ -62,6 +67,7 @@ pub fn initialize(path: &Path) -> Result<()> {
         .map_err(|_| Error("vision.runtimeLoadFailed".into()))?
         .commit();
     *current = Some(canonical);
+    INITIALIZED.store(true, Ordering::Release);
     Ok(())
 }
 pub(super) fn claim_backend(backend: u32) -> Result<()> {
@@ -185,6 +191,16 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
 #[cfg(test)]
 mod backend_tests {
     use super::*;
+    #[test]
+    fn readiness_snapshot_does_not_wait_for_native_initialization_lock() {
+        let guard = RUNTIME.lock().unwrap();
+        let (send, receive) = std::sync::mpsc::channel();
+        let thread = std::thread::spawn(move || send.send(initialized()).unwrap());
+        let result = receive.recv_timeout(std::time::Duration::from_secs(1));
+        drop(guard);
+        thread.join().unwrap();
+        assert!(result.is_ok(), "查询不应等待原生初始化路径锁");
+    }
     #[test]
     fn partial_registration_keeps_domain_but_does_not_cache_failure_for_same_backend() {
         let mut state = Backends::default();

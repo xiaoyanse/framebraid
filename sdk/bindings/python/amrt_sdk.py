@@ -1313,6 +1313,8 @@ FUNCTIONS = {
     "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),
     "amc_get_decode_hardware_report": (am_status_t, [c_void_p, c_char_p, c_uint64, POINTER(c_uint64)]),
     "amc_source_set_decode_policy": (am_status_t, [POINTER(amc_source_t), c_uint32]),
+    "amv_probe_inference_hardware": (am_status_t, [POINTER(amv_context_t), c_uint32]),
+    "amv_get_inference_hardware_report": (am_status_t, [POINTER(amv_context_t), c_char_p, c_uint64, POINTER(c_uint64)]),
     "amc_get_abi_version": (c_uint32, []),
     "amv_get_abi_version": (c_uint32, []),
     "amc_get_version_info": (am_status_t, [POINTER(am_version_info_t)]),

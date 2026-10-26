@@ -52,6 +52,7 @@ pub struct ResultCharge {
     items: usize,
 }
 pub struct ControlCharge {
+    external: bool,
     ctx: Weak<Entry>,
     usage: Arc<Usage>,
     bytes: usize,
@@ -62,9 +63,11 @@ impl Drop for ControlCharge {
         self.usage
             .control_bytes
             .fetch_sub(self.bytes, Ordering::AcqRel);
-        if let Some(ctx) = self.ctx.upgrade() {
-            if let Ok(c) = ctx.data::<Context>() {
-                c.buffers.fetch_sub(1, Ordering::AcqRel);
+        if self.external {
+            if let Some(ctx) = self.ctx.upgrade() {
+                if let Ok(c) = ctx.data::<Context>() {
+                    c.buffers.fetch_sub(1, Ordering::AcqRel);
+                }
             }
         }
     }
@@ -141,6 +144,12 @@ impl State {
         self.reserve_result(bytes, 0)
     }
     pub fn control(&self, bytes: usize) -> Result<ControlCharge> {
+        self.reserve_control(bytes, true)
+    }
+    pub fn cached_control(&self, bytes: usize) -> Result<ControlCharge> {
+        self.reserve_control(bytes, false)
+    }
+    fn reserve_control(&self, bytes: usize, external: bool) -> Result<ControlCharge> {
         let ctx = self.context()?;
         let _read = ctx.readable()?;
         let c = ctx.data::<Context>()?;
@@ -169,8 +178,11 @@ impl State {
             self.usage.control_bytes.fetch_sub(bytes, Ordering::AcqRel);
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
-        c.buffers.fetch_add(1, Ordering::AcqRel);
+        if external {
+            c.buffers.fetch_add(1, Ordering::AcqRel);
+        }
         Ok(ControlCharge {
+            external,
             ctx: self.ctx.clone(),
             usage: self.usage.clone(),
             bytes,
