@@ -7,7 +7,6 @@ impl Hub {
         reader: &mut Reader,
         stamp: SessionStamp,
     ) -> std::result::Result<(), IoError> {
-        let _activity = super::native::Activity(Arc::downgrade(source));
         let old = reader.info();
         let _info_charge = source
             .state
@@ -56,126 +55,125 @@ impl Hub {
             gate.dirty = false;
         }
         drop(_initial_charge);
-        let mut decoder: Option<super::native::NativeDecoder> = None;
-        let mut reconfigure_pending = false;
-        let mut times = VecDeque::new();
-        let _times_charge = source
-            .state
-            .charge(128 * 16, false)
-            .map_err(|_| IoError::Resource)?;
-        while self.current(source, stamp) {
-            let Some(packet) = reader.read_packet()? else {
-                return Err(IoError::Network);
-            };
-            if !self.current(source, stamp) {
-                return Err(IoError::Closed);
-            }
-            let received = am_sdk_support::clock::monotonic_ms();
-            let packet_sequence = sequence(&self.packet_sequence)?;
-            let charge = source
-                .state
-                .charge(packet.data.len() as u64, false)
-                .map_err(|_| IoError::Resource)?;
-            let mut ready = true;
-            let mut random = packet.keyframe;
-            if let (Some(gate), Some(codec)) = (&mut gate, codec) {
-                let _temporary = source
+        let stream = Arc::new(pipeline::Stream {
+            info,
+            _charge: _info_charge,
+        });
+        let info = &stream.info;
+        std::thread::scope(|scope| {
+            let mut execution = pipeline::Execution::new(scope, self, source, stamp);
+            let mut pixel_config: Option<Arc<pipeline::Configuration>> = None;
+            while self.current(source, stamp) {
+                let Some(packet) = reader.read_packet()? else {
+                    return Err(IoError::Network);
+                };
+                if !self.current(source, stamp) {
+                    return Err(IoError::Closed);
+                }
+                let received = am_sdk_support::clock::monotonic_ms();
+                let packet_sequence = sequence(&self.packet_sequence)?;
+                let charge = source
                     .state
                     .charge(packet.data.len() as u64, false)
                     .map_err(|_| IoError::Resource)?;
-                ready = gate
-                    .observe(codec, &packet.data)
-                    .map_err(|_| IoError::Invalid)?;
-                random = is_random(codec, &packet.data);
-                if gate.dirty {
-                    let _copy_charge = source
+                let mut ready = true;
+                let mut random = packet.keyframe;
+                if let (Some(gate), Some(codec)) = (&mut gate, codec) {
+                    let _temporary = source
                         .state
-                        .charge(cache_bytes.saturating_add(packet.data.len() as u64), false)
+                        .charge(packet.data.len() as u64, false)
                         .map_err(|_| IoError::Resource)?;
-                    let extra = gate.extra();
-                    let new_charge = source
-                        .state
-                        .charge(extra.len() as u64, false)
-                        .map_err(|_| IoError::Resource)?;
-                    cache_charge = new_charge;
-                    cache_bytes = extra.len() as u64;
-                    source.config_generation.fetch_add(1, Ordering::AcqRel);
-                    gate.dirty = false;
-                    reconfigure_pending = decoder.is_some();
-                    if reconfigure_pending {
-                        let mut state = lock(&source.decode).map_err(|_| IoError::Resource)?;
-                        state.actual = None;
-                        state.active = false;
-                        state.phase = "waiting_keyframe";
+                    ready = gate
+                        .observe(codec, &packet.data)
+                        .map_err(|_| IoError::Invalid)?;
+                    random = is_random(codec, &packet.data);
+                    if gate.dirty {
+                        let _copy_charge = source
+                            .state
+                            .charge(cache_bytes.saturating_add(packet.data.len() as u64), false)
+                            .map_err(|_| IoError::Resource)?;
+                        let extra = gate.extra();
+                        let new_charge = source
+                            .state
+                            .charge(extra.len() as u64, false)
+                            .map_err(|_| IoError::Resource)?;
+                        cache_charge = new_charge;
+                        cache_bytes = extra.len() as u64;
+                        let _configuration =
+                            lock(&self.configuration).map_err(|_| IoError::Resource)?;
+                        source.config_generation.fetch_add(1, Ordering::AcqRel);
+                        {
+                            let mut decode = lock(&source.decode).map_err(|_| IoError::Resource)?;
+                            decode.actual = None;
+                            decode.active = false;
+                            decode.phase = "waiting_keyframe";
+                        }
+                        gate.dirty = false;
+                        self.reset_subscribers();
+                        source.event(
+                            AM_EVENT_SPATIAL_CHANGED,
+                            AM_EVENT_SCOPE_ALL_CONSUMERS,
+                            0,
+                            AM_FAULT_KEYFRAME_WAIT as u32,
+                            c"camera.codecConfigurationChanged",
+                        );
                     }
-                    times.clear();
-                    self.reset_subscribers();
-                    source.event(
-                        AM_EVENT_SPATIAL_CHANGED,
-                        AM_EVENT_SCOPE_ALL_CONSUMERS,
-                        0,
-                        AM_FAULT_KEYFRAME_WAIT as u32,
-                        c"camera.codecConfigurationChanged",
-                    );
+                    if ready {
+                        gate.started = true;
+                    }
                 }
-                if ready {
-                    gate.started = true;
+                let _ = &cache_charge;
+                if !ready {
+                    continue;
                 }
-            }
-            let _ = &cache_charge;
-            if !ready {
-                continue;
-            }
-            let generation = stamp.generation;
-            let config_generation = source.config_generation.load(Ordering::Acquire);
-            let has_sets = has_parameter_sets(info.codec, &packet.data);
-            let data = Arc::new(queue::Payload {
-                abi: am_encoded_packet_t {
-                    codec: info.codec,
-                    bitstream_format: AM_BSF_ANNEXB,
-                    flags: AM_PKT_AU_COMPLETE
-                        | if random { AM_PKT_KEYFRAME } else { 0 }
-                        | if has_sets { AM_PKT_PARAMSETS } else { 0 },
-                    config_generation,
-                    source_generation: generation,
-                    source_id: source.source_id,
-                    seq: packet_sequence,
-                    pts: packet.pts,
-                    dts: packet.dts,
-                    time_base_num: info.time_base_num,
-                    time_base_den: info.time_base_den,
-                    size: packet.data.len() as u64,
-                    ..Default::default()
-                },
-                bytes: packet.data,
-                _charge: charge,
-            });
-            let subscribers = self.list();
-            if !self.current(source, stamp) {
-                return Err(IoError::Closed);
-            }
-            for sub in &subscribers {
-                if matches!(sub.kind, Kind::Encoded { .. }) {
-                    sub.enqueue(Item::Encoded(data.clone()));
+                let generation = stamp.generation;
+                let config_generation = source.config_generation.load(Ordering::Acquire);
+                let has_sets = has_parameter_sets(info.codec, &packet.data);
+                let data = Arc::new(queue::Payload {
+                    abi: am_encoded_packet_t {
+                        codec: info.codec,
+                        bitstream_format: AM_BSF_ANNEXB,
+                        flags: AM_PKT_AU_COMPLETE
+                            | if random { AM_PKT_KEYFRAME } else { 0 }
+                            | if has_sets { AM_PKT_PARAMSETS } else { 0 },
+                        config_generation,
+                        source_generation: generation,
+                        source_id: source.source_id,
+                        seq: packet_sequence,
+                        pts: packet.pts,
+                        dts: packet.dts,
+                        time_base_num: info.time_base_num,
+                        time_base_den: info.time_base_den,
+                        size: packet.data.len() as u64,
+                        ..Default::default()
+                    },
+                    bytes: packet.data,
+                    _charge: charge,
+                });
+                let subscribers = self.list();
+                if !self.current(source, stamp) {
+                    return Err(IoError::Closed);
                 }
-            }
-            let frames = subscribers.iter().any(|s| s.wants_frames());
-            if !frames {
-                decoder.take();
-                reconfigure_pending = false;
-                times.clear();
-                if let Ok(mut state) = source.decode.lock() {
-                    state.idle();
+                for sub in &subscribers {
+                    if matches!(sub.kind, Kind::Encoded { .. }) {
+                        sub.enqueue(Item::Encoded(data.clone()));
+                    }
                 }
                 source.received(received);
-                continue;
-            }
-            if let Some(codec) = codec {
-                if reconfigure_pending {
-                    if !random {
-                        continue;
-                    }
-                    let _extra_charge = match source.state.charge(cache_bytes, false) {
+                if !subscribers.iter().any(|s| s.wants_frames()) {
+                    execution.stop();
+                    pixel_config.take();
+                    continue;
+                }
+                let generation = source.config_generation.load(Ordering::Acquire);
+                if pixel_config
+                    .as_ref()
+                    .is_none_or(|c| c.generation != generation)
+                {
+                    let charge = match source.state.charge(
+                        cache_bytes + std::mem::size_of::<pipeline::Configuration>() as u64,
+                        false,
+                    ) {
                         Ok(charge) => charge,
                         Err(_) => {
                             source.report(
@@ -186,192 +184,32 @@ impl Hub {
                             continue;
                         }
                     };
-                    if !self.reconfigure_pixels(
-                        source,
-                        &mut decoder,
-                        codec,
-                        &info,
-                        &gate.as_ref().map_or_else(Vec::new, Gate::extra),
-                        random,
-                    )? {
-                        // 故障已清空旧decoder时，下一随机访问点走既有create/CPU恢复。
-                        reconfigure_pending = decoder.is_some();
-                        continue;
-                    }
-                    reconfigure_pending = false;
+                    pixel_config = Some(Arc::new(pipeline::Configuration {
+                        stream: stream.clone(),
+                        extra: gate.as_ref().map_or_else(Vec::new, Gate::extra),
+                        generation,
+                        _charge: charge,
+                    }));
                 }
-                if decoder.is_none() {
-                    if !random {
-                        if source.fault.load(Ordering::Acquire) != AM_FAULT_RESOURCE as u32 {
-                            source.report(
-                                AM_SRC_LIVE as u32,
-                                AM_FAULT_KEYFRAME_WAIT as u32,
-                                c"camera.waitingKeyframe",
-                            );
+                if let Some(config) = pixel_config.as_ref() {
+                    if let Err(code) = execution.submit(pipeline::Job {
+                        packet: data,
+                        config: config.clone(),
+                        received,
+                        epoch: 0,
+                    }) {
+                        if let Ok(mut state) = source.decode.lock() {
+                            state.last_status = Some(code);
                         }
-                        continue;
-                    }
-                    let extra = gate.as_ref().map_or_else(Vec::new, Gate::extra);
-                    let _extra_charge = match source.state.charge(extra.len() as u64, false) {
-                        Ok(charge) => charge,
-                        Err(_) => continue,
-                    };
-                    match super::native::NativeDecoder::create(
-                        source,
-                        codec,
-                        &info,
-                        &extra,
-                        self.now(),
-                    ) {
-                        Ok(Some(value)) => decoder = Some(value),
-                        Ok(None) => continue,
-                        Err(code) => {
-                            if let Ok(mut state) = source.decode.lock() {
-                                state.last_status = Some(code);
-                                state.retry_after = Some(self.now() + Duration::from_secs(1));
-                                state.actual = None;
-                                state.active = false;
-                                state.phase = if code == AM_ERR_SDK_RESOURCE_EXHAUSTED {
-                                    "waiting_resource"
-                                } else {
-                                    "failed"
-                                };
-                            }
-                            source.report(
-                                AM_SRC_LIVE as u32,
-                                AM_FAULT_RESOURCE as u32,
-                                c"camera.pixelDecoderUnavailable",
-                            );
-                            continue;
-                        }
-                    }
-                }
-                times.push_back((packet.pts, received));
-                while times.len() > 128 {
-                    times.pop_front();
-                }
-                if let Some(native) = &mut decoder {
-                    let cpu = &mut native.raw;
-                    let decoded = (|| {
-                        let mut sent = cpu
-                            .send(&data.bytes, packet.pts, packet.dts)
-                            .map_err(|_| IoError::Invalid)?;
-                        self.emit_decoded::<true>(source, cpu, &info, &subscribers, &times, stamp)?;
-                        if !sent {
-                            sent = cpu
-                                .send(&data.bytes, packet.pts, packet.dts)
-                                .map_err(|_| IoError::Invalid)?;
-                            self.emit_decoded::<true>(
-                                source,
-                                cpu,
-                                &info,
-                                &subscribers,
-                                &times,
-                                stamp,
-                            )?;
-                        }
-                        if sent {
-                            Ok(())
-                        } else {
-                            Err(IoError::Resource)
-                        }
-                    })();
-                    match decoded {
-                        Ok(()) => {}
-                        Err(IoError::Closed) => return Err(IoError::Closed),
-                        Err(IoError::Resource) => {
-                            source.report(
-                                AM_SRC_LIVE as u32,
-                                AM_FAULT_RESOURCE as u32,
-                                c"camera.pixelOutputResourceWait",
-                            );
-                        }
-                        Err(_) => self.pixel_failure(
-                            source,
-                            &mut decoder,
-                            &mut times,
-                            am_camera_core::media::codec::DecodeError::InvalidInput,
-                        )?,
-                    }
-                }
-            } else {
-                let _encoded_charge = source
-                    .state
-                    .charge(data.bytes.len() as u64, false)
-                    .map_err(|_| IoError::Resource)?;
-                let max_pixels = (source
-                    .state
-                    .limits()
-                    .map_err(|_| IoError::Resource)?
-                    .frame_budget_bytes
-                    / 4)
-                .min(8192 * 8192);
-                let header = am_camera_core::media::sdk_io::decode_image(
-                    data.bytes.clone(),
-                    max_pixels,
-                    false,
-                )?;
-                self.observe_dimensions(source, header.width, header.height);
-                let frame_sequence = sequence(&self.frame_sequence)?;
-                if !subscribers
-                    .iter()
-                    .any(|sub| sub.needs_pixels(Instant::now()))
-                {
-                    source.received(received);
-                    continue;
-                }
-                let _raw_charge = match source
-                    .state
-                    .charge(header.width as u64 * header.height as u64 * 4, false)
-                {
-                    Ok(charge) => charge,
-                    Err(_) => {
-                        source
-                            .state
-                            .metrics
-                            .frames_dropped
-                            .fetch_add(1, Ordering::AcqRel);
                         source.report(
                             AM_SRC_LIVE as u32,
                             AM_FAULT_RESOURCE as u32,
-                            c"camera.outputFrameBudgetExceeded",
+                            c"camera.pixelOutputResourceWait",
                         );
-                        continue;
                     }
-                };
-                let image =
-                    am_camera_core::media::sdk_io::decode_image(header.encoded, max_pixels, true)?;
-                if let Some(rgba) = image.rgba {
-                    {
-                        let mut state = lock(&source.decode).map_err(|_| IoError::Resource)?;
-                        state.actual = Some("image-cpu");
-                        state.effective = AM_DHW_SOFTWARE_ONLY as u32;
-                        state.active = true;
-                        state.phase = "verified";
-                    }
-                    source.state.metrics.decoded.fetch_add(1, Ordering::AcqRel);
-                    self.observe_dimensions(source, image.width, image.height);
-                    if !self.current(source, stamp) {
-                        return Err(IoError::Closed);
-                    }
-                    pixels::fanout(
-                        source,
-                        &subscribers,
-                        rgba,
-                        image.width,
-                        image.height,
-                        packet.pts,
-                        &info,
-                        received,
-                        frame_sequence,
-                        stamp.generation,
-                        source.config_generation.load(Ordering::Acquire),
-                        self.now(),
-                    )
-                    .map_err(|_| IoError::Resource)?;
                 }
             }
-        }
-        Err(IoError::Closed)
+            Err(IoError::Closed)
+        })
     }
 }

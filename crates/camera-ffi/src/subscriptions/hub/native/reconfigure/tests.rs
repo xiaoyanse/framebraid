@@ -84,7 +84,7 @@ fn rtsp_parameter_rebuild_reuses_device_and_permit_and_preserves_owned_pixels() 
             gate.dirty = false;
             gate.started = true;
             assert!(selection.decoder.send(&first, 1, 1).unwrap());
-            let permit = source.state.decoder().unwrap();
+            let permit = Arc::new(source.state.decoder().unwrap());
             let cpu_output =
                 (!hardware).then(|| source.state.charge(256 * 144 * 4, false).unwrap());
             {

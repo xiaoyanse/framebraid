@@ -111,11 +111,11 @@ impl SharedSource {
         }
     }
     pub fn received(&self, at: i64) {
-        self.last_frame.store(at, Ordering::Release);
+        self.last_frame.fetch_max(at, Ordering::AcqRel);
         self.state
             .metrics
             .newest_received
-            .store(at, Ordering::Release);
+            .fetch_max(at, Ordering::AcqRel);
         self.report(AM_SRC_LIVE as u32, AM_FAULT_NONE as u32, c"camera.live");
     }
     pub fn event(&self, kind: i32, scope: i32, affected: usize, fault: u32, reason: &'static CStr) {

@@ -15,6 +15,11 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 - **WHEN** 消费速度低于输入且通知接收停滞
 - **THEN** 预算内拒绝/丢弃有明确原因，健康消费者持续服务并满足测前目标卡预算，压力解除后恢复
 
+#### Scenario: Native pixel work blocks
+
+- **WHEN** 一源的像素初始化、解码或回读原生调用暂时阻塞
+- **THEN** 压缩分发不在同一执行线程等待该调用；像素worker先取得现有decoder额度且不创建替代线程，队列数量/字节有界，溢出后旧在途结果不发布并等待真实关键帧恢复，关闭在原生调用返回前保持Closing
+
 ### Requirement: Generation-safe recovery and draining
 
 恢复和关闭 SHALL 保留正确源代次与请求终态，重建参考链后才交付，关闭排空后不再回调。

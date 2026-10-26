@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "72f86cdd7601464e91c24dbf89726d2ee757dab4",
+  "reviewBaseCommit": "1eb75d5c8dcffa487d6bb59e9debda22d83acac8",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "520678c38d5e071a56ca4ad99eee440809f983388141a15a70d11222ac091e1d",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "a6c5ccbedf52cc0ad0cedc95a564fdf45ef094020f5c8478f4e0c0407a8680f5",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -168,8 +168,8 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "01da874c1242bf3564dae92bf0211c20b822a2a0fe934a6b5ccfb086d1fd7baa",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "518928a2389b479fe3fd3c90111d39eacc1cae42a51df98a9554dcf91946cd20",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -186,14 +186,14 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
       "previousSha256": null,
-      "sha256": "3ab4aba4382ab04bf4bbc9426ec7b3d859badab20ecb0f64d55baf459f0d5c2b",
-      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
+      "sha256": "7b34e128202e79b93e91db0c667762c264a9f5d581cc4d2f22a9aad1ec9540fe",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
       "previousSha256": null,
-      "sha256": "fd9faeedd56eab751cc65eed27d7c17c2930ab916533a3591b4c086b552bf65d",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "41bc0fc181512a3eeac9b8ae48ce76ed8c5201d3c8d0e483a51f6606f92db3ac",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
     },
     {
       "path": "crates/camera-ffi/Cargo.toml",
@@ -252,8 +252,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/native.rs",
       "previousSha256": null,
-      "sha256": "d920ca7a86635f397afedf1124e5b047a8c8449ebc0b433685cfdaa6e6016ac2",
-      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
+      "sha256": "c1d2633b68939913aebb43a85b934cfd909fc70e295bec98f9355d5ef23c8d39",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
     },
     {
       "path": "crates/vision/src/sdk/mod.rs",
@@ -348,8 +348,26 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/native/reconfigure/tests.rs",
       "previousSha256": null,
-      "sha256": "f8a7b1bbfe3e7b3c241a0ba173b52b5ac918aa7034efa8fb07457f79828532b7",
-      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
+      "sha256": "d71ed9069559e9bfc1962ade6f09bd05a96122d2c49ae4fa2829031760be995c",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/pipeline.rs",
+      "previousSha256": null,
+      "sha256": "cdc5c0045271802750002b8f43b8cb3c93e67134d43ed97156688837a38011f4",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode.rs",
+      "previousSha256": null,
+      "sha256": "f8d19b11e2bf1e559589f2c02d510cdcd2312a63e4e21dde23cb139d7cd750d3",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/tests.rs",
+      "previousSha256": null,
+      "sha256": "e573a3f466e0f63b90c93d954b7918a7142a88d22735815fc1e6d8c63eb29d49",
+      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
     }
   ]
 }

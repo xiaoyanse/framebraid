@@ -10,6 +10,8 @@ Local directory consolidation and host source pinning are recorded in [verificat
 
 本地目录与宿主版本维护见上述记录；本轮没有替换公开版本。
 
+Local bounded pixel execution is integrated ([record](verification/sdk-r3-pixel-worker-20261026.md)): native pixel calls leave the compressed reader thread, workers consume existing decoder permits, and queued/in-flight epochs are checked before publication. Controlled barriers and local codec regressions do not establish arbitrary driver-hang or soak acceptance; 30-FPS sampling remains below target. / 本地隔离机制已接线，未升级AM-RT或发布，完整恢复/长跑与采样问题仍开放。
+
 Local RTSP parameter reconfiguration now reuses the selected device/decoder permit, with CPU/D3D11VA H.264/H.265 component and actual loopback DLL validation ([record](verification/sdk-r2-rtsp-reconfigure-20261026.md)). Live sampling delivery, read/decode isolation, accelerated inference and full recovery/soak acceptance remain open. / 参数重建设备复用接线已验；未发布、未升级AM-RT，不代表硬件整包完成。
 
 Local R1 measurement tools and CPU/synthetic baselines are complete; see [R1 verification](verification/sdk-r1-complete-20261026.md). This is not R2–R5, hardware, real-model or production acceptance and does not replace public artifacts.

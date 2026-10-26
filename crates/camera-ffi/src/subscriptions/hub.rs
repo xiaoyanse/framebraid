@@ -10,6 +10,7 @@ use am_camera_core::media::{
 use std::thread::JoinHandle;
 mod consume;
 mod native;
+mod pipeline;
 #[cfg(test)]
 mod tests;
 #[derive(Clone, Copy)]
@@ -28,12 +29,15 @@ pub struct Hub {
     packet_sequence: AtomicU64,
     frame_sequence: AtomicU64,
     dimensions: Mutex<Option<(u32, u32, u32)>>,
+    configuration: Mutex<()>,
     interrupt: Mutex<Option<Arc<AtomicBool>>>,
     wait: Mutex<()>,
     alive: AtomicBool,
     handle: Mutex<Option<JoinHandle<()>>>,
     #[cfg(test)]
     clock: Option<Arc<dyn Fn() -> Instant + Send + Sync>>,
+    #[cfg(test)]
+    pixel_block: Option<Arc<pipeline::Block>>,
 }
 impl Hub {
     fn now(&self) -> Instant {
@@ -62,12 +66,15 @@ impl Hub {
                     packet_sequence: AtomicU64::new(0),
                     frame_sequence: AtomicU64::new(0),
                     dimensions: Mutex::default(),
+                    configuration: Mutex::new(()),
                     interrupt: Mutex::default(),
                     wait: Mutex::new(()),
                     alive: AtomicBool::new(false),
                     handle: Mutex::default(),
                     #[cfg(test)]
                     clock: None,
+                    #[cfg(test)]
+                    pixel_block: None,
                 })
             })
             .clone();
@@ -352,6 +359,7 @@ impl Hub {
         }
         self.reset_subscribers();
     }
+    #[cfg(test)]
     fn emit_decoded<const EARLY_SAMPLING: bool>(
         &self,
         source: &Arc<SharedSource>,
@@ -361,14 +369,34 @@ impl Hub {
         times: &VecDeque<(i64, i64)>,
         stamp: SessionStamp,
     ) -> std::result::Result<(), IoError> {
+        self.emit_decoded_checked::<EARLY_SAMPLING>(source, cpu, info, subs, times, stamp, None)
+    }
+    #[allow(clippy::too_many_arguments)]
+    fn emit_decoded_checked<const EARLY_SAMPLING: bool>(
+        &self,
+        source: &Arc<SharedSource>,
+        cpu: &mut crate::decoder::budget::BudgetedDecoder,
+        info: &StreamInfo,
+        subs: &[Arc<Subscription>],
+        times: &VecDeque<(i64, i64)>,
+        stamp: SessionStamp,
+        mut delivery: Option<&mut pipeline::Delivery<'_>>,
+    ) -> std::result::Result<(), IoError> {
         loop {
-            if !self.current(source, stamp) {
+            if !self.current(source, stamp) || delivery.as_ref().is_some_and(|d| !d.current(source))
+            {
                 return Err(IoError::Closed);
             }
             let Some(next) = cpu.peek().map_err(|_| IoError::Invalid)? else {
                 break;
             };
             {
+                let _guard = lock(&self.configuration).map_err(|_| IoError::Resource)?;
+                if !self.current(source, stamp)
+                    || delivery.as_ref().is_some_and(|d| !d.current(source))
+                {
+                    return Err(IoError::Closed);
+                }
                 let mut hardware = lock(&source.decode).map_err(|_| IoError::Resource)?;
                 hardware.actual = Some(match cpu.hardware_backend() {
                     Some(am_camera_core::media::hardware::Backend::D3d11va) => "ffmpeg-d3d11va",
@@ -388,7 +416,16 @@ impl Hub {
                 .rev()
                 .find(|(pts, _)| *pts == next.pts)
                 .map_or_else(am_sdk_support::clock::monotonic_ms, |(_, at)| *at);
-            self.observe_dimensions(source, next.width, next.height);
+            {
+                let _guard = lock(&self.configuration).map_err(|_| IoError::Resource)?;
+                if delivery.as_ref().is_some_and(|d| !d.current(source)) {
+                    return Err(IoError::Closed);
+                }
+                self.observe_dimensions(source, next.width, next.height);
+                if let Some(d) = delivery.as_mut() {
+                    d.config = source.config_generation.load(Ordering::Acquire);
+                }
+            }
             // 序号仍随解码帧推进，不能因省略颜色转换而隐藏采样间隙。
             let seq = sequence(&self.frame_sequence)?;
             if EARLY_SAMPLING && !subs.iter().any(|sub| sub.needs_pixels(self.now())) {
@@ -433,7 +470,9 @@ impl Hub {
                     }
                     Err(_) => return Err(IoError::Invalid),
                 };
-            if !self.current(source, stamp) {
+            let _guard = lock(&self.configuration).map_err(|_| IoError::Resource)?;
+            if !self.current(source, stamp) || delivery.as_ref().is_some_and(|d| !d.current(source))
+            {
                 return Err(IoError::Closed);
             }
             pixels::fanout(

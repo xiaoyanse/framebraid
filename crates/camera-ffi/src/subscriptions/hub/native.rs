@@ -13,7 +13,7 @@ fn configuration_key(info: &StreamInfo, extra: &[u8]) -> u64 {
 
 pub(super) struct NativeDecoder {
     pub raw: BudgetedDecoder,
-    _permit: crate::frames::DecoderPermit,
+    _permit: Arc<crate::frames::DecoderPermit>,
     _cpu_output: Option<Charge>,
     hardware: bool,
     source: Weak<SharedSource>,
@@ -38,12 +38,30 @@ impl Drop for NativeDecoder {
     }
 }
 impl NativeDecoder {
+    #[cfg(test)]
     pub(super) fn create(
         source: &Arc<SharedSource>,
         codec: VideoCodec,
         info: &StreamInfo,
         extra: &[u8],
         now: Instant,
+    ) -> Result<Option<Self>> {
+        Self::create_with_permit(
+            source,
+            codec,
+            info,
+            extra,
+            now,
+            Arc::new(source.state.decoder()?),
+        )
+    }
+    pub(in crate::subscriptions::hub) fn create_with_permit(
+        source: &Arc<SharedSource>,
+        codec: VideoCodec,
+        info: &StreamInfo,
+        extra: &[u8],
+        now: Instant,
+        permit: Arc<crate::frames::DecoderPermit>,
     ) -> Result<Option<Self>> {
         let key = configuration_key(info, extra);
         let policy = {
@@ -59,7 +77,6 @@ impl NativeDecoder {
             }
             policy
         };
-        let permit = source.state.decoder()?;
         let report_charge = if lock(&source.decode)?.selection.is_none() {
             Some(source.state.control(8192, false)?)
         } else {

@@ -325,6 +325,8 @@ typedef void (*am_encoded_cb_fn)(amc_encoded_sub_t* sub, am_encoded_packet_t* pk
 
 ### 2.6 解码帧订阅与缩放档（B12 帧身份）
 
+本地R3像素隔离实现：RTSP读线程只维护压缩参考链/分发，首次实际像素需求才在既有max_decoders额度中懒创建一条worker，MJPEG像素处理同样占该槽；纯压缩不占解码槽。内部队列服从既有AM_Q_ENCODED_STREAM数量/字节及总内存，另至多一项在途；满载只清像素参考链并等待下一随机访问点。源/配置/像素epoch在发布前重验，旧在途结果不贴新代次。驱动调用不持发布短锁，关闭仍等待实际执行返回；不可杀死的调用不创建替代线程、不提前报Closed。签名/布局/回调线程合同不变，通用Media threads统计的完整覆盖仍属R3审计，不能以零值当无worker证明。
+
 ```c
 /* 订阅解码帧：维持解码参考帧依赖，按 sampling_max_fps 节拍输出已解码新鲜帧（三速率分离）；
    像素格式不在能力位集 → camera.pixelFormatUnsupported */

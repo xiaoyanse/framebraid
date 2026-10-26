@@ -228,6 +228,8 @@ Local H5 core: bounded Rust model selection and explicit CUDA device discovery a
 
 ### Local RTSP parameter reuse / 本地RTSP参数复用
 
+Local RTSP pixel initialization/decode/readback now runs in one lazy bounded worker per source, sharing the existing decoder limit; compressed-only sources create none. Overflow restarts only the pixel reference chain. Native work must actually finish before source close can report Closed; do not launch replacement sessions repeatedly when a driver call is still pending. See [bounded execution validation](../docs/verification/sdk-r3-pixel-worker-20261026.md). / 像素处理移出读流线程，队列计入现有统计；通用Media threads字段未完整覆盖，0不代表无worker。本轮不改变采样上限、不宣称30FPS不足已修复。
+
 Local RTSP parameter changes reuse the existing selected device and decoder permit at the next random-access picture; queried execution is cleared until a new frame succeeds. Retained frames remain valid. Budget pressure waits for a later random-access picture; native failure follows CPU recovery without replaying the failed RTSP packet. No new API or published asset is required by this internal change; see [validation](../docs/verification/sdk-r2-rtsp-reconfigure-20261026.md). / 本地参数重建复用不代表硬件整包或真实采样帧率问题已完成。
 
 ### Local inference device reports / 本地推理设备报告

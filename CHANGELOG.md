@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Isolate RTSP native pixel work from compressed packet reading with one lazy worker per source, admitted by the existing decoder limit. Bound and account its queue, resynchronize on overflow, validate epochs/configuration before publishing and drain actual work before close. Controlled blocking/lifecycle checks and local codec regressions are recorded separately from live sampling and soak results. / 有界像素执行隔离，保留真实采样不足，不声称整包耐压完成。
+
 - Reuse the selected device and decoder permit when RTSP codec parameters change, switch only at a new random-access picture, clear execution verification and preserve retained old frames. Local H.264/H.265 CPU/D3D11VA component and loopback DLL checks pass; sampling delivery, slow-driver isolation and full fault/soak coverage remain open. / RTSP参数重建不重复探测/创建设备，公开ABI和发布制品不变。
 
 - Write image preprocessing directly into the final aligned owned tensor, removing one full temporary f32 buffer/copy. Byte/transform reference checks, allocation/paired local timings, actual CPU Pose/NV12 and retained-camera input regressions verified locally; public API/ABI, budgets and released assets unchanged. / 前处理内部直写，640×640每次少4,915,200字节临时分配与复制，局部收益不外推系统性能。

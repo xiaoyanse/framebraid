@@ -124,6 +124,7 @@ pub(super) fn fixture() -> (
         packet_sequence: AtomicU64::new(0),
         frame_sequence: AtomicU64::new(0),
         dimensions: Mutex::default(),
+        configuration: Mutex::new(()),
         interrupt: Mutex::default(),
         wait: Mutex::new(()),
         alive: AtomicBool::new(false),
@@ -131,6 +132,7 @@ pub(super) fn fixture() -> (
         clock: Some(Arc::new(move || {
             base + Duration::from_nanos(tick.load(Ordering::Relaxed))
         })),
+        pixel_block: None,
     });
     (domain, source, hub, nanos)
 }
