@@ -1,5 +1,7 @@
 # FrameBraid 后续优化路线图 / Optimization roadmap
 
+R3 1.1q固定域句柄/Buffer索引及销毁隔离槽，隔离区8192→4096、128子项关闭快照分配1→0；启动存储和满表登记/查询代价如实记录。295项全工作区、400次并发生命周期及真实两DLL压力/回环见[记录](verification/sdk-r3-domain-registry-20261027.md)。BP10服务体/其他索引和BP12、完整矩阵/长跑继续。
+
 R3 1.1p固定Context服务索引/关闭钩子及关闭栈快照，登记5服务的索引分配2→0、钩子登记及关闭列表各1→0；每Context512字节固定索引的代价单列，C ABI不变。见[验证](verification/sdk-r3-context-services-20261027.md)。BP10域句柄/Buffer及其他索引、BP12与长跑继续开放。
 
 [文档入口 / Documentation](README.md) · [当前交付 / Release status](RELEASE_STATUS.md) · [支持范围 / Support](SUPPORT.md)

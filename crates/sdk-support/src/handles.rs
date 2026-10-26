@@ -1,7 +1,7 @@
 use crate::{abi::*, Result};
 use std::{
     any::Any,
-    collections::{HashMap, VecDeque},
+    collections::VecDeque,
     sync::{
         atomic::{AtomicI32, AtomicU32, AtomicUsize, Ordering},
         Arc, Mutex,
@@ -63,7 +63,7 @@ impl std::ops::Deref for Active {
 
 #[derive(Default)]
 struct Registry {
-    entries: HashMap<usize, Arc<Entry>>,
+    entries: crate::registry::Table<Arc<Entry>>,
     quarantine: VecDeque<Box<u64>>,
     sequence: u64,
 }
@@ -119,6 +119,13 @@ impl Domain {
                 return Err(AM_ERR_SDK_HANDLE_CLOSED);
             }
         }
+        registry.entries.prepare()?;
+        if registry.quarantine.capacity() == 0 {
+            registry
+                .quarantine
+                .try_reserve_exact(SDK_HANDLE_QUARANTINE as usize)
+                .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+        }
         registry.sequence = registry
             .sequence
             .checked_add(1)
@@ -137,7 +144,7 @@ impl Domain {
                 error: Mutex::new((0, None)),
                 finish: Mutex::new(()),
             }),
-        );
+        )?;
         Ok(key)
     }
     pub fn context_count(&self) -> Result<usize> {
@@ -185,16 +192,38 @@ impl Domain {
             entry.last_error.store(code, Ordering::Release);
         }
     }
-    fn children(&self, key: usize) -> Result<Vec<(usize, Arc<Entry>)>> {
-        Ok(self
-            .registry
-            .lock()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-            .entries
-            .iter()
-            .filter(|(_, e)| e.parent == key)
-            .map(|(k, e)| (*k, e.clone()))
-            .collect())
+    fn children(
+        &self,
+        parent: usize,
+        mut visit: impl FnMut(usize, &Arc<Entry>) -> Result<()>,
+    ) -> Result<()> {
+        let mut cursor = 0;
+        loop {
+            let mut block: [Option<(usize, Arc<Entry>)>; 32] = std::array::from_fn(|_| None);
+            {
+                let registry = self
+                    .registry
+                    .lock()
+                    .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+                for (slot, (key, entry)) in block.iter_mut().zip(
+                    registry
+                        .entries
+                        .after(cursor)
+                        .filter(|(_, entry)| entry.parent == parent),
+                ) {
+                    *slot = Some((*key, entry.clone()));
+                }
+            }
+            let mut found = false;
+            for (child, entry) in block.into_iter().flatten() {
+                found = true;
+                cursor = child;
+                visit(child, &entry)?;
+            }
+            if !found {
+                return Ok(());
+            }
+        }
     }
     pub fn request_close(&self, key: usize) -> Result<()> {
         let entry = self.get(key)?;
@@ -208,18 +237,17 @@ impl Domain {
             _ => {}
         }
         entry.body.request_close();
-        for (child, _) in self.children(key)? {
-            self.request_close(child)?;
-        }
+        self.children(key, |child, _entry| self.request_close(child))?;
         Ok(())
     }
     pub fn state(&self, key: usize) -> Result<u32> {
         let entry = self.get(key)?;
         if entry.state.load(Ordering::Acquire) == AM_LIFECYCLE_CLOSING as u32 {
             let mut done = true;
-            for (child, _) in self.children(key)? {
+            self.children(key, |child, _entry| {
                 done &= self.state(child)? == AM_LIFECYCLE_CLOSED as u32;
-            }
+                Ok(())
+            })?;
             if done && entry.active.load(Ordering::Acquire) == 0 && entry.body.drained() {
                 let _finish = entry.finish.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
                 if entry.state.load(Ordering::Acquire) != AM_LIFECYCLE_CLOSED as u32
@@ -266,14 +294,16 @@ impl Domain {
             .ok_or(AM_ERR_SDK_HANDLE_INVALID)?;
         // token可在并发只读查询退出后才移入隔离区，避免复用仍可查询的地址。
         match Arc::try_unwrap(entry) {
-            Ok(entry) => registry.quarantine.push_back(entry.token),
+            Ok(entry) => {
+                if registry.quarantine.len() == SDK_HANDLE_QUARANTINE as usize {
+                    registry.quarantine.pop_front();
+                }
+                registry.quarantine.push_back(entry.token);
+            }
             Err(entry) => {
-                registry.entries.insert(key, entry);
+                registry.entries.insert(key, entry)?;
                 return Err(AM_ERR_SDK_TRY_AGAIN);
             }
-        }
-        while registry.quarantine.len() > SDK_HANDLE_QUARANTINE as usize {
-            registry.quarantine.pop_front();
         }
         Ok(())
     }

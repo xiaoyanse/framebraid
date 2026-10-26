@@ -6,6 +6,21 @@
 
 ## ADDED Requirements
 
+### Requirement: Domain registry storage has a fixed upper bound
+SDK SHALL 在冻结的每库4096项句柄与Buffer登记上限内固定基础索引容量，首次分配失败返回资源不足且不发布句柄或引用。销毁隔离区 SHALL 保持原4096项地址隔离语义，边界淘汰不得临时扩容。级联关闭 SHALL 使用有界强引用快照，调用关闭逻辑时不持注册锁；基础存储与Context载荷额度及原生内存分列。
+
+#### Scenario: Initial index allocation fails
+- **WHEN** 句柄或Buffer索引的首次固定存储分配失败
+- **THEN** 返回资源不足、不登记该对象，既有状态不损坏，后续重试可成功
+
+#### Scenario: Handle quarantine reaches its limit
+- **WHEN** 销毁隔离区已有4096项并销毁下一对象
+- **THEN** 先淘汰最老地址再入队，不创建第4097个引用槽，仍不允许destroy后使用
+
+#### Scenario: Destroy races with a child close snapshot
+- **WHEN** 父对象关闭快照仍持有子对象的Entry且另一调用尝试销毁该子对象
+- **THEN** 返回tryAgain并保留登记，快照退出后可正常销毁，不提前释放仍在访问的Entry
+
 ### Requirement: Context service bookkeeping has fixed storage
 SDK SHALL 为内部服务索引及关闭钩子提供固定容量，登记已满时在构造或发布新服务之前拒绝；服务构造失败不得缓存不可用对象。SDK SHALL 在关闭时使用有界快照且不持登记锁调用服务钩子。固定基础开销与通道载荷预算分列，受Context总数约束，不将元数据存储说成RSS硬限。
 

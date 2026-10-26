@@ -8,6 +8,7 @@ pub mod context;
 pub mod diagnostics;
 pub mod handles;
 pub mod queues;
+mod registry;
 pub mod services;
 #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
 pub mod shared;

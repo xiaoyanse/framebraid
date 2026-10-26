@@ -1,4 +1,67 @@
 use super::*;
+#[test]
+fn quarantine_never_grows_past_limit_and_child_snapshots_are_bounded() {
+    let domain = Domain::new(false);
+    let resource = Arc::new(Resource(AtomicUsize::new(0)));
+    let mut old = VecDeque::new();
+    for n in 0..SDK_HANDLE_QUARANTINE as usize + 3 {
+        old.push_back(Box::new(n));
+        if old.len() > SDK_HANDLE_QUARANTINE as usize {
+            old.pop_front();
+        }
+        let key = domain.insert(0, resource.clone()).unwrap();
+        assert_eq!(domain.close(key, 0).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+        domain.destroy(key).unwrap();
+    }
+    let registry = domain.registry.lock().unwrap();
+    assert_eq!(registry.quarantine.len(), SDK_HANDLE_QUARANTINE as usize);
+    assert_eq!(
+        registry.quarantine.capacity(),
+        SDK_HANDLE_QUARANTINE as usize
+    );
+    assert_eq!(
+        registry.entries.capacity(),
+        SDK_MAX_REGISTERED_HANDLES as usize
+    );
+    assert!(registry.entries.is_empty());
+    println!(
+        "old_quarantine_slots={} new_quarantine_slots={} handle_index_bytes={} entry_body_bytes={}",
+        old.capacity(),
+        registry.quarantine.capacity(),
+        registry.entries.capacity() * std::mem::size_of::<(usize, Arc<Entry>)>(),
+        std::mem::size_of::<Entry>()
+    );
+}
+#[test]
+fn multi_block_close_holds_children_until_each_visit_finishes() {
+    let domain = Domain::new(false);
+    let root = domain
+        .insert(0, Arc::new(Resource(AtomicUsize::new(0))))
+        .unwrap();
+    let mut children = Vec::new();
+    for _ in 0..97 {
+        children.push(
+            domain
+                .insert(root, Arc::new(Resource(AtomicUsize::new(0))))
+                .unwrap(),
+        );
+    }
+    assert_eq!(domain.close(root, 0).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+    let mut visited = Vec::new();
+    domain
+        .children(root, |key, _entry| {
+            assert_eq!(domain.destroy(key), Err(AM_ERR_SDK_TRY_AGAIN));
+            visited.push(key);
+            Ok(())
+        })
+        .unwrap();
+    assert_eq!(visited.len(), 97);
+    for key in children {
+        domain.destroy(key).unwrap();
+    }
+    domain.destroy(root).unwrap();
+    assert!(domain.idle_for_unload());
+}
 struct Resource(AtomicUsize);
 impl Managed for Resource {
     fn as_any(&self) -> &dyn Any {

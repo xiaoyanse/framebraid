@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Fix domain handle/buffer index storage and quarantine growth; bounded child-close snapshots. / 按原4096项固定域索引，隔离区先淘汰，明确冷启动/排序登记代价；见[验证](docs/verification/sdk-r3-domain-registry-20261027.md)，C ABI不变。
+
 - Bound Context service/close-hook storage and remove temporary close lists; no public C ABI change. / 固定服务索引和关闭钩子，分配计数、固定开销与未验边界见[验证](docs/verification/sdk-r3-context-services-20261027.md)。
 
 - Add compatible ABI 1.1 Media worker-budget setters/getters and capability, per-Context admission for all eight C ABI worker kinds, and live/peak statistics with Python/C# helpers. / 统一媒体线程准入与关闭归还，不误报0、不把工作槽当CPU核数；见[验证](docs/verification/sdk-r3-media-workers-20261027.md)，本地未发布。
