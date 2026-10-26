@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "952d9f74823f693b10ed40e408ef69f933c70050",
+  "reviewBaseCommit": "3459d8548eb00cc6c93c2487d672d4bc8bc7bf4e",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -546,8 +546,8 @@
     {
       "path": "crates/camera-ffi/src/captures/continuous.rs",
       "previousSha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced",
-      "sha256": "089e6c05c96cb0134b7872c4a62ae9b51d8aa15de58c15302b0f14ab238333cd",
-      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+      "sha256": "c3b3e9e0d8a39b7a631b6d19dcb6addb92d3c3b16e3b14388c82a5f83bf650dc",
+      "reason": "R3 continuous capture fixed reference/history backing, full pre-admission and consumer registration rollback; native Digest/ownership validation, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/io.rs",
@@ -668,6 +668,12 @@
       "previousSha256": null,
       "sha256": "0b4a1593c6bbc61b907593a7646650c514586cb2dcf90d3ca81394af56a0634b",
       "reason": "R3 RTSP queue and receipt-time fixed backing capacity within existing credits, eviction before insertion; unchanged final timing window, epoch/sampling policies and C ABI, native loopback protection checks"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/continuous/storage_tests.rs",
+      "previousSha256": null,
+      "sha256": "a78930e0febf2187b5b16db59e1c10e2edea498b620e67a8fa12bb518aa96265",
+      "reason": "R3 continuous capture fixed reference/history backing, full pre-admission and consumer registration rollback; native Digest/ownership validation, C ABI unchanged"
     }
   ]
 }

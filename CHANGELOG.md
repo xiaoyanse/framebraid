@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Prepay continuous-capture reference/FPS-history storage and return consumer capacity on failed registration. / 连续抓图固定存储与失败回收，见[验证](docs/verification/sdk-r3-capture-storage-20261027.md)及[剩余预算矩阵](docs/verification/sdk-r3-budget-matrix-20261027.md)，C ABI不变。
+
 - Keep RTSP pixel-job and receipt-time container capacities within existing reserved storage; evict timing entries before insertion. / 修复36→64槽及128→256槽扩张超账，最终关联窗口不变；见[验证](docs/verification/sdk-r3-rtsp-storage-20261027.md)，无C ABI变更。
 
 - Prepay standalone decoder input slots and timing-table storage, keep idle capacity charged, and preserve old state on reset admission failure. / 独立解码元数据预算与固定容量，默认总额约束和回归见[记录](docs/verification/sdk-r3-decoder-metadata-20261027.md)，C ABI不变。

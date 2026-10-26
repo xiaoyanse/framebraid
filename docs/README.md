@@ -53,3 +53,5 @@ Local H5 core: bounded Rust model selection and explicit CUDA device discovery a
 H5.0b本地探测报告与原生/语言回归详见[验证](verification/sdk-h5-inference-report-20261026.md)；新模型C策略、加速执行与恢复仍未完成。
 
 Local R3 standalone decoder configuration/cache ownership, compatible Rust NAL visitation and validation: [record](verification/sdk-r3-decoder-retained-20261027.md). / 解码配置预算与零列表分配机制，整包审计和长跑未关闭。
+
+R3预算核查统一映射与未关闭项：[全路径矩阵](verification/sdk-r3-budget-matrix-20261027.md)。已修子项不代替请求表/执行器元数据、线程观测或持续运行验收。

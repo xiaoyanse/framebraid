@@ -25,6 +25,59 @@ struct Queue {
     failures: u32,
     skipped: u64,
 }
+fn metadata_bytes(items: usize) -> usize {
+    size_of::<Subscription>()
+        + items * size_of::<(u64, Arc<images::Image>)>()
+        + 120 * size_of::<i64>()
+}
+impl Queue {
+    fn new(maximum: usize) -> Result<Self> {
+        let mut items = VecDeque::new();
+        items
+            .try_reserve_exact(maximum)
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+        let mut received = VecDeque::new();
+        received
+            .try_reserve_exact(120)
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+        if items.capacity() > maximum || received.capacity() > 120 {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        Ok(Self {
+            items,
+            bytes: 0,
+            callback: None,
+            user: 0,
+            busy: false,
+            last_received: i64::MIN,
+            last_frame_id: 0,
+            received,
+            failures: 0,
+            skipped: 0,
+        })
+    }
+    fn remember(&mut self, last: i64) {
+        while self.received.len() >= 120 || self.received.front().is_some_and(|t| *t < last - 5000)
+        {
+            self.received.pop_front();
+        }
+        self.received.push_back(last);
+    }
+}
+fn reserve_consumer(state: &state::State, source: u64, interval: u32, max: usize) -> Result<()> {
+    state
+        .continuous
+        .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
+            (n < max).then_some(n + 1)
+        })
+        .map_err(|_| AM_ERR_CAMERA_CAPTURE_CAPACITY)?;
+    // 注册锁失败还没有Subscription拥有许可，须在此归还容量。
+    let mut consumers = lock(&state.consumers).inspect_err(|_| {
+        state.continuous.fetch_sub(1, Ordering::AcqRel);
+    })?;
+    *consumers.entry((source, interval)).or_default() += 1;
+    Ok(())
+}
 pub struct Subscription {
     source: Arc<SharedSource>,
     state: Arc<state::State>,
@@ -128,37 +181,17 @@ pub unsafe extern "C" fn amc_capture_continuous_start(
             return Err(AM_ERR_CAMERA_MODE_CONFLICT);
         }
         let state = state::State::get(&source.state)?;
-        let charge = source.state.control(
-            size_of::<Subscription>()
-                + config.queue_max_items as usize * size_of::<(u64, Arc<images::Image>)>(),
-            false,
-        )?;
+        let charge = source
+            .state
+            .control(metadata_bytes(config.queue_max_items as usize), false)?;
+        let queue = Queue::new(config.queue_max_items as usize)?;
         let max = source.state.limits()?.max_capture_continuous as usize;
-        state
-            .continuous
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
-                (n < max).then_some(n + 1)
-            })
-            .map_err(|_| AM_ERR_CAMERA_CAPTURE_CAPACITY)?;
-        *lock(&state.consumers)?
-            .entry((source.source_id, config.target_interval_ms))
-            .or_default() += 1;
+        reserve_consumer(&state, source.source_id, config.target_interval_ms, max)?;
         let sub = Arc::new(Subscription {
             source,
             state,
             config,
-            queue: Mutex::new(Queue {
-                items: VecDeque::new(),
-                bytes: 0,
-                callback: None,
-                user: 0,
-                busy: false,
-                last_received: i64::MIN,
-                last_frame_id: 0,
-                received: VecDeque::new(),
-                failures: 0,
-                skipped: 0,
-            }),
+            queue: Mutex::new(queue),
             changed: Condvar::new(),
             stop: AtomicBool::new(false),
             alive: AtomicBool::new(false),
@@ -169,10 +202,16 @@ pub unsafe extern "C" fn amc_capture_continuous_start(
             _charge: charge,
         });
         let key = domain().insert(src as usize, sub.clone())?;
-        {
+        let registered = (|| -> Result<()> {
             let mut subscriptions = lock(&sub.state.subscriptions)?;
             subscriptions.retain(|sub| sub.strong_count() != 0);
             subscriptions.push(Arc::downgrade(&sub));
+            Ok(())
+        })();
+        if let Err(code) = registered {
+            domain().close(key, 0)?;
+            domain().destroy(key)?;
+            return Err(code);
         }
         sub.key.store(key, Ordering::Release);
         sub.alive.store(true, Ordering::Release);
@@ -232,12 +271,7 @@ fn launch(sub: Arc<Subscription>) -> Result<()> {
                             q.failures = 0;
                             q.last_received = image.raw.meta.received_at_ms;
                             let last = q.last_received;
-                            q.received.push_back(last);
-                            while q.received.len() > 120
-                                || q.received.front().is_some_and(|t| *t < last - 5000)
-                            {
-                                q.received.pop_front();
-                            }
+                            q.remember(last);
                             let bytes = image.bytes();
                             while !q.items.is_empty()
                                 && (q.items.len() >= sub.config.queue_max_items as usize
@@ -480,3 +514,6 @@ pub unsafe extern "C" fn amc_capture_sub_get_stats(
         )
     })
 }
+
+#[cfg(test)]
+mod storage_tests;
