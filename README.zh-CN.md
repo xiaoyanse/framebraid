@@ -1,5 +1,7 @@
 # FrameBraid SDK
 
+本地未发布Rust辅助API调整：`H264Hub`每实例最多16个当前源，停止中的线程实际退出前保留占位；`DenyReason`穷举匹配须补`TooManySources`分支。C ABI和公开制品不变，见[验证](docs/verification/sdk-r3-rust-hub-20261027.md)。
+
 本地ABI 1.1 r10新增Media每Context工作线程额度及活槽/峰值统计，Python/C#已有封装；工作槽不等于CPU核数或驱动全部线程。须使用匹配的本地DLL和绑定，详见[验证与边界](docs/verification/sdk-r3-media-workers-20261027.md)，未替换公开v0.1.0制品。
 
 ![FrameBraid SDK — Media SDK 与 Vision SDK](assets/brand/framebraid-banner.webp)

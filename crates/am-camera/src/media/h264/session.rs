@@ -16,6 +16,8 @@ pub const AV_CODEC_ID_H264: i32 = 27;
 pub const GOP_CACHE_MAX_BYTES: usize = 4 * 1024 * 1024;
 /// 单源客户端上限（DoS 防护，对齐既有管线）。
 pub const MAX_CLIENTS_PER_SOURCE: usize = 64;
+/// 辅助Rust枢纽的源/拉流工作上限，不代替C ABI Context额度。
+pub const MAX_SOURCES_PER_HUB: usize = 16;
 /// H.264 RTP 时间基固定 90kHz（AVStream.time_base 未抄入 FFI 布局）。
 pub const TIME_BASE_DEN: u32 = 90_000;
 /// 重连退避阶梯毫秒（对齐注册表拉流线程）。
@@ -68,6 +70,8 @@ pub enum DenyReason {
     NotReady,
     /// 单源客户端超上限。
     TooManyClients,
+    /// 包含启动/停止中的源，不能用重连替代线程绕过上限。
+    TooManySources,
     /// 主码流非 H.264（终态，含探测到的编码名）。
     CodecNotSupported(String),
     /// 认证失败（终态）：防海康连续失败锁机——退避重试会激化锁定，立即终态。
@@ -124,7 +128,7 @@ impl SessionCore {
 
 /// 拉流线程主循环：解析凭据 URL → 打开（不解码）→ 编码核验 → 读包分发；
 /// 失败退避重连（每次成功打开递增代次）；stop 即退出并自清。
-fn pull_loop(hub: &Arc<H264Hub>, core: &Arc<SessionCore>, resolver: &UrlResolver) {
+fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
     let mut backoff_idx = 0usize;
     'outer: loop {
         if core.stop.load(Ordering::Acquire) {
@@ -132,6 +136,9 @@ fn pull_loop(hub: &Arc<H264Hub>, core: &Arc<SessionCore>, resolver: &UrlResolver
         }
         // 每轮重连走解析链取认证 URL（链全 None 时按引用 URL 原样拉流）
         let url = resolver(&core.url).unwrap_or_else(|| core.url.clone());
+        if core.stop.load(Ordering::Acquire) {
+            break;
+        }
         let mut input = match crate::media::rtsp::open_input(&url, std::ptr::from_ref(&core.stop)) {
             Ok(input) => input,
             Err(error) => {
@@ -145,8 +152,7 @@ fn pull_loop(hub: &Arc<H264Hub>, core: &Arc<SessionCore>, resolver: &UrlResolver
                 // 遗留），短退避反复撞锁会挤兑相机出口带宽（真机实证：突发攒批
                 // 发送）。切长退避（30s）等相机自清。
                 if error.contains("453") || error.contains("Not Enough Bandwidth") {
-                    std::thread::sleep(Duration::from_secs(30));
-                    if core.stop.load(Ordering::Acquire) || idle_expired(core) {
+                    if wait_or_stop(core, Duration::from_secs(30)) {
                         break;
                     }
                     continue 'outer;
@@ -207,12 +213,52 @@ fn pull_loop(hub: &Arc<H264Hub>, core: &Arc<SessionCore>, resolver: &UrlResolver
             }
         }
     }
-    core.thread_alive.store(false, Ordering::Release);
-    // 自清：map 条目仍指向本核（未被复活替换）且无客户端时移除
-    let mut sessions = hub.sessions.lock().unwrap_or_else(|p| p.into_inner());
-    if let Some(current) = sessions.get(&core.url) {
-        if Arc::ptr_eq(current, core) && core.lock_clients().is_empty() {
-            sessions.remove(&core.url);
+}
+
+/// guard随线程函数真实返回/展开才清理，停止意图不能提前释放工作槽。
+struct SessionWorker {
+    hub: Arc<H264Hub>,
+    core: Arc<SessionCore>,
+}
+impl Drop for SessionWorker {
+    fn drop(&mut self) {
+        self.core.stop.store(true, Ordering::Release);
+        self.core.ready.store(false, Ordering::Release);
+        {
+            let clients = self.core.lock_clients();
+            for fan in clients.values() {
+                fan.queue
+                    .close(H264Message::Closed(1001, Arc::from("media.sourceStopped")));
+            }
+        }
+        self.core
+            .gop
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .clear();
+        self.core
+            .config
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .take();
+        *self
+            .core
+            .param_sets
+            .lock()
+            .unwrap_or_else(|p| p.into_inner()) = ParameterSets::default();
+        *self
+            .core
+            .current_sps
+            .lock()
+            .unwrap_or_else(|p| p.into_inner()) = Vec::new();
+        let mut sessions = self.hub.sessions.lock().unwrap_or_else(|p| p.into_inner());
+        self.core.thread_alive.store(false, Ordering::Release);
+        if sessions
+            .get(&self.core.url)
+            .is_some_and(|current| Arc::ptr_eq(current, &self.core))
+            && self.core.lock_clients().is_empty()
+        {
+            sessions.remove(&self.core.url);
         }
     }
 }
@@ -325,19 +371,25 @@ fn mark_terminal(core: &Arc<SessionCore>, reason: DenyReason) {
 fn fail_and_backoff(core: &Arc<SessionCore>, _error: String, backoff_idx: &mut usize) -> bool {
     let wait_ms = BACKOFF_STEPS_MS[(*backoff_idx).min(BACKOFF_STEPS_MS.len() - 1)];
     *backoff_idx += 1;
-    let mut waited = 0u64;
-    while waited < wait_ms {
+    wait_or_stop(core, Duration::from_millis(wait_ms))
+}
+fn wait_or_stop(core: &SessionCore, duration: Duration) -> bool {
+    let until = std::time::Instant::now() + duration;
+    while std::time::Instant::now() < until {
         if core.stop.load(Ordering::Acquire) || idle_expired(core) {
             return true;
         }
-        std::thread::sleep(Duration::from_millis(100));
-        waited += 100;
+        std::thread::sleep(
+            until
+                .saturating_duration_since(std::time::Instant::now())
+                .min(Duration::from_millis(100)),
+        );
     }
     core.stop.load(Ordering::Acquire) || idle_expired(core)
 }
 
 /// 空转超时：无客户端持续超宽限即停流（防 NotReady 放弃后连接泄漏）。
-fn idle_expired(core: &Arc<SessionCore>) -> bool {
+fn idle_expired(core: &SessionCore) -> bool {
     // 启动期与空转期分离：真机 RTSP 建立（DESCRIBE/SETUP/PLAY+首包）秒级起步，
     // 拉起即空转 10s 会先于就绪触发停流，形成 NotReady 重连死循环（真机验证实证）。
     // 未就绪期改按会话创建时刻判上限；终态会话（ready=false）同样走此分支立即停。
@@ -382,13 +434,20 @@ impl H264Hub {
             .lock()
             .unwrap_or_else(|p| p.into_inner())
             .get(url)
-            .is_some_and(|core| core.ready.load(Ordering::Acquire))
+            .is_some_and(|core| {
+                core.ready.load(Ordering::Acquire)
+                    && !core.stop.load(Ordering::Acquire)
+                    && core.thread_alive.load(Ordering::Acquire)
+            })
     }
 
     /// 订阅：首个消息为 h264_stream_config，其后 GOP 缓存帧+活跃流。
     pub fn subscribe(self: &Arc<Self>, url: &str) -> Result<H264Subscription, DenyReason> {
-        let core = self.ensure_session(url);
+        let core = self.ensure_session(url)?;
         let mut clients = core.lock_clients();
+        if core.stop.load(Ordering::Acquire) || !core.thread_alive.load(Ordering::Acquire) {
+            return Err(DenyReason::NotReady);
+        }
         if let Some(DenyReason::CodecNotSupported(codec)) = core
             .terminal
             .lock()
@@ -424,7 +483,7 @@ impl H264Hub {
         drop(clients);
         Ok(H264Subscription {
             hub: self.clone(),
-            url: url.to_string(),
+            core: core.clone(),
             client_id,
             queue: fan.queue.clone(),
         })
@@ -448,16 +507,7 @@ impl H264Hub {
     }
 
     /// 取消订阅：末客户端离开置 stop（线程自行退出并自清，不阻塞订阅方）。
-    fn unsubscribe(&self, url: &str, client_id: u64) {
-        let Some(core) = self
-            .sessions
-            .lock()
-            .unwrap_or_else(|p| p.into_inner())
-            .get(url)
-            .cloned()
-        else {
-            return;
-        };
+    fn unsubscribe(&self, core: &Arc<SessionCore>, client_id: u64) {
         let empty = {
             let mut clients = core.lock_clients();
             clients.remove(&client_id);
@@ -466,40 +516,54 @@ impl H264Hub {
                     .clients_empty_since
                     .lock()
                     .unwrap_or_else(|p| p.into_inner()) = Some(std::time::Instant::now());
+                core.stop.store(true, Ordering::Release);
                 true
             } else {
                 false
             }
         };
-        if empty {
-            core.stop.store(true, Ordering::Release);
+        if empty && !core.thread_alive.load(Ordering::Acquire) {
+            let mut sessions = self.sessions.lock().unwrap_or_else(|p| p.into_inner());
+            if sessions
+                .get(&core.url)
+                .is_some_and(|current| Arc::ptr_eq(current, core))
+            {
+                sessions.remove(&core.url);
+            }
         }
     }
 
-    /// 建立或复用会话核心；线程已退出/停止则复活（终态随之清零，允许相机重配后重试）。
-    fn ensure_session(self: &Arc<Self>, url: &str) -> Arc<SessionCore> {
+    /// 建立或复用核心；停止中的原线程先退出，才允许新工作复活。
+    fn ensure_session(self: &Arc<Self>, url: &str) -> Result<Arc<SessionCore>, DenyReason> {
         let mut sessions = self.sessions.lock().unwrap_or_else(|p| p.into_inner());
         if let Some(core) = sessions.get(url) {
-            if core.thread_alive.load(Ordering::Acquire) && !core.stop.load(Ordering::Acquire) {
-                return core.clone();
+            if core.thread_alive.load(Ordering::Acquire) {
+                return Ok(core.clone());
             }
         }
+        if !sessions.contains_key(url) && sessions.len() >= MAX_SOURCES_PER_HUB {
+            return Err(DenyReason::TooManySources);
+        }
         let core = Arc::new(SessionCore::new(url, self.gop_max_bytes));
+        core.thread_alive.store(true, Ordering::Release);
         sessions.insert(url.to_string(), core.clone());
         drop(sessions);
-        core.thread_alive.store(true, Ordering::Release);
-        let hub = self.clone();
-        let thread_core = core.clone();
+        let worker = SessionWorker {
+            hub: self.clone(),
+            core: core.clone(),
+        };
         let resolver = self.resolver.clone();
         let spawned = std::thread::Builder::new()
             .name("h264-pull".into())
-            .spawn(move || pull_loop(&hub, &thread_core, &resolver));
+            .spawn(move || {
+                let active_worker = worker;
+                pull_loop(&active_worker.core, &resolver);
+            });
         if spawned.is_err() {
             // spawn 失败按未就绪处理：订阅方 NotReady 慢重试
-            core.thread_alive.store(false, Ordering::Release);
-            core.ready.store(false, Ordering::Release);
+            return Err(DenyReason::NotReady);
         }
-        core
+        Ok(core)
     }
 
     /// 测试锚点（批③）：登记无拉流会话并挂 N 个客户端（overlay 分发语义测试用，
@@ -534,7 +598,7 @@ impl H264Hub {
 /// 订阅句柄：Drop 自动退订（末客户端离开停流）。
 pub struct H264Subscription {
     hub: Arc<H264Hub>,
-    url: String,
+    core: Arc<SessionCore>,
     client_id: u64,
     queue: Arc<ClientQueue>,
 }
@@ -547,6 +611,9 @@ impl H264Subscription {
 
 impl Drop for H264Subscription {
     fn drop(&mut self) {
-        self.hub.unsubscribe(&self.url, self.client_id);
+        self.hub.unsubscribe(&self.core, self.client_id);
     }
 }
+
+#[cfg(test)]
+mod budget_tests;

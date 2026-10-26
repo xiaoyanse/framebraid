@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "e4d4c884dda2abc2c9e6176bceaafb409a676c2d",
+  "reviewBaseCommit": "9d157500fb5a29d2536c84af2abcc5af5a8f6922",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -782,6 +782,18 @@
       "previousSha256": null,
       "sha256": "0fd9a277da17537e139759d26aa8f42479fc1a925687dc06c128b32e17629e35",
       "reason": "R3域句柄/Buffer固定索引、隔离区及关闭快照，补分配失败/并发与机制量化"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/session.rs",
+      "previousSha256": "f2d5ad0b3a6992502c3ff8c5d35d4fd9702211a4ac171e015b2f6f97b46506dd",
+      "sha256": "3e4b7cb269e697e9c81ae0a0d4a3505baa37f24cc0d9c62bd9f69ce14295b32c",
+      "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/session/budget_tests.rs",
+      "previousSha256": null,
+      "sha256": "91d3c634da10dddbd5f25dce279982f6271a94401a1b24a798b7b4a5eba78fbc",
+      "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
     }
   ]
 }

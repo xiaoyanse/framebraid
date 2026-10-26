@@ -1,5 +1,7 @@
 # FrameBraid SDK
 
+Local unreleased Rust helper update: `H264Hub` allows up to 16 current sources per instance; stopping workers keep their slot until exit. Exhaustive `DenyReason` matches must handle `TooManySources`. This does not change the C ABI or published binaries. See [verification](docs/verification/sdk-r3-rust-hub-20261027.md).
+
 ![FrameBraid SDK — Media SDK and Vision SDK](assets/brand/framebraid-banner.webp)
 
 [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Getting started](docs/GETTING_STARTED.md) · [Roadmap](docs/ROADMAP.md)

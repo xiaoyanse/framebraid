@@ -1,5 +1,7 @@
 # Support boundaries / 支持边界
 
+Local unreleased auxiliary Rust H264Hub: 16 current sources per instance; stopping work cannot be replaced until exit. Handle `DenyReason::TooManySources` in exhaustive matches. / 与C ABI Context额度分开，不是全进程线程保证，见[记录](verification/sdk-r3-rust-hub-20261027.md)。
+
 [Documentation / 文档入口](README.md)
 
 Interface presence, tested behavior and release commitments are separate. No support SLA is promised. See [current local evidence](RELEASE_STATUS.md).

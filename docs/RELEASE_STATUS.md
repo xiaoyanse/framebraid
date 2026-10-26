@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+本地Rust源码候选R3 1.1r：H264Hub源/工作占位及原Core退订修复、6项定向和301项全工作区验证见[记录](verification/sdk-r3-rust-hub-20261027.md)。Rust穷举匹配须适配TooManySources；本阶段验证Rust源码路径，不替换既有DLL或发布制品，不关闭整包硬件/长跑。
+
 R3 1.1q本地候选固定域登记索引/隔离区，最终DLL布局/132导出、400生命周期和媒体/CPU推理压力已验；固定启动存储、排序索引局部代价及未验范围见[记录](verification/sdk-r3-domain-registry-20261027.md)。不替换发布制品。
 
 本地未发布R3 1.1p：Context服务/关闭钩子固定容量，满额/失败不发布、通知无堆快照，机制计数与固定内存代价见[记录](verification/sdk-r3-context-services-20261027.md)。C ABI及已发布制品不变；域注册、完整矩阵/长跑仍待。

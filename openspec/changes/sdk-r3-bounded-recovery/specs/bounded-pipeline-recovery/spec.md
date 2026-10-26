@@ -6,6 +6,21 @@
 
 ## ADDED Requirements
 
+### Requirement: Auxiliary Rust source workers remain bounded through restart
+公开Rust H264Hub SHALL 每实例最多保留16个源登记，包含启动、运行、停止中的核心；超过上限返回TooManySources。启动占位 SHALL 在释放会话锁前发布，stop不能替代真实退出；线程失败或异常展开须关闭队列、清理就绪并归还工作登记。该上限不是C ABI或整个进程的额度。
+
+#### Scenario: Concurrent first subscription or blocked stopping source
+- **WHEN** 多个调用并发首订同一源，或原resolver/原生调用尚未结束但已请求stop
+- **THEN** 同源只启动一次，停止中的原工作占位继续保留，新订阅返回NotReady而不创建替代线程
+
+#### Scenario: Old subscription released after same URL restarts
+- **WHEN** 同URL新会话已建立且客户端ID与旧会话重复，旧订阅被释放
+- **THEN** 只退订旧Core，不移除或停止新会话及其客户端
+
+#### Scenario: Worker unwinds or waits in resource backoff
+- **WHEN** 辅助线程异常展开或在资源退避期间收到stop
+- **THEN** 退出守卫清理就绪/缓存并关闭现有队列，退避分段检查停止；不强杀阻塞的resolver或原生调用
+
 ### Requirement: Domain registry storage has a fixed upper bound
 SDK SHALL 在冻结的每库4096项句柄与Buffer登记上限内固定基础索引容量，首次分配失败返回资源不足且不发布句柄或引用。销毁隔离区 SHALL 保持原4096项地址隔离语义，边界淘汰不得临时扩容。级联关闭 SHALL 使用有界强引用快照，调用关闭逻辑时不持注册锁；基础存储与Context载荷额度及原生内存分列。
 

@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Bound auxiliary Rust H264Hub to 16 current sources, prevent overlapping restart and stale unsubscribe, and clean up worker unwind. Exhaustive Rust `DenyReason` matches must handle `TooManySources`; C ABI unchanged. / 见[验证](docs/verification/sdk-r3-rust-hub-20261027.md)，停止不等于实际退出。
+
 - Fix domain handle/buffer index storage and quarantine growth; bounded child-close snapshots. / 按原4096项固定域索引，隔离区先淘汰，明确冷启动/排序登记代价；见[验证](docs/verification/sdk-r3-domain-registry-20261027.md)，C ABI不变。
 
 - Bound Context service/close-hook storage and remove temporary close lists; no public C ABI change. / 固定服务索引和关闭钩子，分配计数、固定开销与未验边界见[验证](docs/verification/sdk-r3-context-services-20261027.md)。
