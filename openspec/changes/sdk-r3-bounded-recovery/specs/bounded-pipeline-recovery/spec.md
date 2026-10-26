@@ -55,6 +55,11 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 - **WHEN** 通知队列留有空闲槽、反复注册或在忙回调期间停止
 - **THEN** 队列分配前预留控制存储额度、固定容量且空闲槽不提前退账；活通知项数和关闭屏障独立保留而不重复计存储字节，排空后存储和许可一并归还；预算不足的首次注册不残留工作线程
 
+#### Scenario: Decoder configuration and parameter caches consume domain bytes
+
+- **WHEN** 创建/重置独立解码器、更新参数集或生成原生重配置的extra副本
+- **THEN** 在相关SDK复制前预留域字节、缓存和临时副本持有到真正释放；空配置重置共享不可变配置，构造或准入失败不改变旧配置/代次及外持帧，NAL检查不靠额外列表暂存且保留既有接受/拒绝范围
+
 #### Scenario: Source event storage remains allocated between callbacks
 
 - **WHEN** 源事件回调停滞、队列有空闲槽，或注册失败/注销/停止

@@ -61,7 +61,7 @@ impl Inner {
             .cpu
             .software_reconfigure(
                 self.config.codec,
-                &self.gate.extra(),
+                &self.gate.extra()?,
                 (decoder.ctx.limits()?.frame_budget_bytes / 4)
                     .min(SDK_MAX_DYNAMIC_AXIS * SDK_MAX_DYNAMIC_AXIS),
             )

@@ -288,3 +288,9 @@ Unpublished ABI1.1 r8 only: use bindings and DLL from the same source revision. 
 有序选择的context尝试是加载时快照，Run只刷新模型缓存。Python/C#为关闭安全串行化同一资源操作；需边执行边查状态时选择异步推理。新查询不提供后台刷新或驱动测速。
 
 新有序加载按各候选实际配置准入，不让列表内OpenVINO的最大线程预留阻断CPU；允许回退仍须列出CPU，strict仍拒绝。Rust源码高级调用可用`Model::load_selected_admitted`提供短小准入闭包，调用方持有的许可须覆盖整个模型寿命；普通load/load_selected兼容不变，C签名/布局/能力位不变。原生Run失败不自动重放，关闭旧模型再显式加载新身份；见[资源准入验证](../docs/verification/sdk-h5-resource-admission-20261027.md)。
+
+## Standalone decoder configuration storage / 独立解码配置存储（本地R3，未发布）
+
+独立解码器的extradata复制先占Context帧字节预算，参数缓存另计，原生重配置的Annex B序列化暂存先预留并持有至调用结束。重置构造期间新旧上下文重叠占用，低预算可明确返回resourceExhausted；构造或缓存更新准入/分配失败不提交新配置/缓存。`amc_decoder_reset(dec, NULL)`共享不可变配置，不另复制其extradata；各原生上下文自己的参数缓存仍分别计费。重置失败保留旧代次与外持帧，不承诺任意原生驱动故障均可无损回滚。FFmpeg/驱动内存、allocator开销不冒充SDK字节硬限。
+
+Rust `visit_access_units` synchronously visits borrowed NAL slices without a list allocation; earlier visits may happen before an invalid tail is reported. Plan changes during visitation and commit only after success. The old Vec API and existing accepted input boundary remain; this is not full-pipeline zero-copy. See [verification](../docs/verification/sdk-r3-decoder-retained-20261027.md).

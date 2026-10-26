@@ -1203,3 +1203,7 @@ AM_API am_status_t amv_shared_pool_get_stats(const amv_shared_pool_t* pool,
 
 - [dual-dll-abi-types.md](dual-dll-abi-types.md)（附录 A）：全部公开结构的完整 C 定义（§1 公共/init/错误快照/限额/统计；§2 相机侧；§3 推理侧含五类结果与掩膜/旋转框；§4 am_limits_t/am_stats_t 权威定义；§5 调用约定细则；§6 常量与错误码数值候选表）。**正文与附录冲突时以附录为准**（B09 权威蓝本）。
 - 冻结评审通过后本文升级为「已冻结 v1.0」，后续修改走 ABI 版本演进规则（§1.4），不原地改语义。
+
+### R3 独立解码配置/参数集预算补充（兼容行为，本地未发布）
+
+§2.8的extradata复制先占Context帧字节，配置许可随不可变拥有者存活；reset(NULL)共享该配置引用。每个新原生上下文的Gate缓存另计，更新先校验并规划，预留/分配成功后原子提交；原生重配置的序列化extra副本独立计费至调用结束。新旧上下文构造期间重叠资源均计费，预算不足明确返回resourceExhausted；create/reset构造失败不改变旧配置/代次，外持旧帧继续有效。该保证不扩展为所有原生执行故障的事务回滚，原有恢复合同保留。Rust同步借用NAL访问入口不分配列表，可能在最终错误前访问部分NAL；不改C签名、结构或枚举。见[定向验证](../verification/sdk-r3-decoder-retained-20261027.md)。

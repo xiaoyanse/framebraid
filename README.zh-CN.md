@@ -132,3 +132,5 @@ Local H5 core: bounded Rust model selection and explicit CUDA device discovery a
 性能评价已统一为[MET-2指标与验收目标](docs/PERFORMANCE_ACCEPTANCE.md)，[历史结论复核](docs/verification/sdk-metrics-review-20261026.md)单独保留：区分CPU卸载、有效交付、延迟与恢复，不要求硬解必比CPU快。本次只改文档，没有新性能结果或发布，原始数据不改写。
 
 Local ordered-selection validation / 本地有序选择验证: [H5 r9](docs/verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.
+
+本地Rust兼容新增`am_camera::media::codec::visit_access_units`，同步借用Annex B输入、不分配NAL列表。末尾错误前可能已访问前面的NAL，调用方须在整体成功后再提交状态；原Vec接口保留。独立解码配置和参数缓存先准入再复制，见[预算及验证](docs/verification/sdk-r3-decoder-retained-20261027.md)。未发布，不改变C ABI或平台承诺。

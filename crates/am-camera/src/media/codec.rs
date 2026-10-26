@@ -483,63 +483,8 @@ impl Drop for CpuDecoder {
     }
 }
 
-/// 对完整Annex B包做边界检查，不把keyframe标志当真实随机访问点。
-pub fn access_units(codec: VideoCodec, data: &[u8]) -> Result<Vec<&[u8]>> {
-    if data.is_empty() || data.len() > 16 * 1024 * 1024 {
-        return Err(DecodeError::InvalidInput);
-    }
-    let start = |at: usize| -> usize {
-        if data.get(at..at + 4) == Some(&[0, 0, 0, 1]) {
-            4
-        } else if data.get(at..at + 3) == Some(&[0, 0, 1]) {
-            3
-        } else {
-            0
-        }
-    };
-    let first = start(0);
-    if first == 0 {
-        return Err(DecodeError::InvalidInput);
-    }
-    let mut units = Vec::new();
-    let mut begin = first;
-    let mut at = begin;
-    while at < data.len() {
-        let n = start(at);
-        if n != 0 {
-            if at == begin {
-                return Err(DecodeError::InvalidInput);
-            }
-            units.push(&data[begin..at]);
-            if units.len() > 4096 {
-                return Err(DecodeError::InvalidInput);
-            }
-            begin = at + n;
-            at = begin;
-        } else {
-            at += 1;
-        }
-    }
-    if begin == data.len() {
-        return Err(DecodeError::InvalidInput);
-    }
-    units.push(&data[begin..]);
-    for nal in &units {
-        match codec {
-            VideoCodec::H264 => {
-                if nal[0] & 128 != 0 || nal[0] & 31 == 0 || nal[0] & 31 > 23 {
-                    return Err(DecodeError::InvalidInput);
-                }
-            }
-            VideoCodec::H265 => {
-                if nal.len() < 2 || nal[0] & 128 != 0 || nal[1] & 7 == 0 {
-                    return Err(DecodeError::InvalidInput);
-                }
-            }
-        }
-    }
-    Ok(units)
-}
+mod nal;
+pub use nal::{access_units, visit_access_units};
 
 #[cfg(test)]
 mod tests;

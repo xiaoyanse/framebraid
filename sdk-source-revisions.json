@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "5820e73bb094e62f2fd7537e8b09c055bc410556",
+  "reviewBaseCommit": "d0c3ebfb57ea5498955a76ec56e72cae9329761f",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -72,8 +72,8 @@
     {
       "path": "crates/am-camera/src/media/codec.rs",
       "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "f95bb84ceab15732626657abe32af9126a9768a7abd33a33ddac859fdfdd2fa2",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "58aa9ada8ff6b4905e4285672c6d577916cef5bba9dae180f9da10f9bb44ba7e",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/codec/convert.rs",
@@ -114,8 +114,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "3a2180469ffc4663bb5230cb0905d97f8ebd18edf202474e46217b8ba5e3c4e0",
-      "reason": "R3独立解码提交接受与背压拒绝累计，一次边界记账，参数/状态错误排除；真实数量/字节/域预算与reset/Context隔离回归，ABI不变，仅本地"
+      "sha256": "49c7ae70718e269066fa8c6778b3dd4a89dbf3b1f2af272f18417f782a8d95ca",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
@@ -132,8 +132,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
       "previousSha256": "9d504128dd8b83e86ab16a001047e1900e88dd6a5a1e5d0241e6b8bc6aafdf57",
-      "sha256": "8a09eee9270591ad2e643e2925e70e318322fffdcd332a787cf3086ec6061e86",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "8c51c68b86de47bf8d718efee560e810cd5880ea24f2accc411194b22825a67c",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/frames.rs",
@@ -144,14 +144,14 @@
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
       "previousSha256": null,
-      "sha256": "47c44c2575aa930b0100d2b228a8f38d459b913af10c6c9f1e050bbc53b4a5f8",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "6b2330be93780215143dc20947931c9fcb80d6d6bbef52b713fb382e4ec5e0f8",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/recovery.rs",
       "previousSha256": null,
-      "sha256": "c3f30ae05aa3eb1a07c5a1cbf027700eafb5414e465a5454e1e2f2778a098d4b",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "b3bc870d214737300bac7959f01d20b667aa2af48ebb6f444ecd0ce34134c604",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/tests.rs",
@@ -632,6 +632,30 @@
       "previousSha256": null,
       "sha256": "3897be512782cbeb0c57f2af74164eb71a78c9790d3d90458742a58c7f6d2046",
       "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec/nal.rs",
+      "previousSha256": null,
+      "sha256": "b133059487aa1b6bcb6833a9814e788622d87283c9f8fda57abcf52ae359ff58",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/tests/nal_visit.rs",
+      "previousSha256": null,
+      "sha256": "912177c287a35c380f86d316548e820e93489dbd5481fe7461baca4d0ec65ecd",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/retained.rs",
+      "previousSha256": null,
+      "sha256": "0853d5f2dada5c99f4513848d787cd4a67c07dc61a9c1dd95cdc33f450251f9d",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/retained/tests.rs",
+      "previousSha256": null,
+      "sha256": "d9d69fa71f7809319f1a9db548e129c9a1f718edecb567c007b2d8f22335d843",
+      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
     }
   ]
 }

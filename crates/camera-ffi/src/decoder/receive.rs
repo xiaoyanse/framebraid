@@ -117,16 +117,15 @@ pub(super) fn receive(
             // 先复制引用范围信息，再允许Gate独立更新；输入所有权仍在有界槽内。
             let codec = inner.config.codec;
             let bytes = &packet.bytes[..packet.valid];
-            let random = access_units(codec, bytes)
-                .map_err(convert)?
-                .iter()
-                .any(|nal| {
-                    if codec == VideoCodec::H264 {
-                        nal[0] & 31 == 5
-                    } else {
-                        (16..=21).contains(&((nal[0] >> 1) & 63))
-                    }
-                });
+            let mut random = false;
+            visit_access_units(codec, bytes, |nal| {
+                random |= if codec == VideoCodec::H264 {
+                    nal[0] & 31 == 5
+                } else {
+                    (16..=21).contains(&((nal[0] >> 1) & 63))
+                }
+            })
+            .map_err(convert)?;
             // 分开借用字段，避免通过front_packet借用整个Inner跨越可变Gate操作。
             let packet = inner
                 .replay
@@ -144,7 +143,7 @@ pub(super) fn receive(
                 let config = inner.config_generation_checked(decoder)?;
                 let cpu = inner.cpu.reconfigure(
                     inner.config.codec,
-                    &inner.gate.extra(),
+                    &inner.gate.extra()?,
                     (decoder.ctx.limits()?.frame_budget_bytes / 4)
                         .min(SDK_MAX_DYNAMIC_AXIS * SDK_MAX_DYNAMIC_AXIS),
                 );
@@ -161,7 +160,7 @@ pub(super) fn receive(
                 inner.timings.clear();
                 inner.startup.take();
                 inner.recovery_charge.take();
-                inner.gate.dirty = false;
+                inner.gate.clear_dirty();
                 decoder.config_generation.store(config, Ordering::Release);
                 let mut snapshot = decoder
                     .codec_info
@@ -175,16 +174,15 @@ pub(super) fn receive(
                 .as_ref()
                 .or_else(|| inner.queue.front())
                 .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
-            let picture = access_units(inner.config.codec, &packet.bytes[..packet.valid])
-                .map_err(convert)?
-                .iter()
-                .any(|nal| {
-                    if inner.config.codec == VideoCodec::H264 {
-                        (1..=5).contains(&(nal[0] & 31))
-                    } else {
-                        (nal[0] >> 1) & 63 <= 31
-                    }
-                });
+            let mut picture = false;
+            visit_access_units(inner.config.codec, &packet.bytes[..packet.valid], |nal| {
+                picture |= if inner.config.codec == VideoCodec::H264 {
+                    (1..=5).contains(&(nal[0] & 31))
+                } else {
+                    (nal[0] >> 1) & 63 <= 31
+                }
+            })
+            .map_err(convert)?;
             if picture && inner.timings.len() >= 256 {
                 if inner.timings.front().is_some_and(|t| t.delivered) {
                     inner.timings.pop_front();
@@ -216,7 +214,7 @@ pub(super) fn receive(
                     delivered: false,
                 });
             }
-            inner.gate.started = true;
+            inner.gate.mark_started();
             let consumed = inner.pop_packet()?;
             if picture
                 && random

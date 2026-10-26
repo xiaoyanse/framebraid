@@ -51,3 +51,5 @@ Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hard
 Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; C model-selection extensions, accelerated inference and recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
 
 H5.0b本地探测报告与原生/语言回归详见[验证](verification/sdk-h5-inference-report-20261026.md)；新模型C策略、加速执行与恢复仍未完成。
+
+Local R3 standalone decoder configuration/cache ownership, compatible Rust NAL visitation and validation: [record](verification/sdk-r3-decoder-retained-20261027.md). / 解码配置预算与零列表分配机制，整包审计和长跑未关闭。

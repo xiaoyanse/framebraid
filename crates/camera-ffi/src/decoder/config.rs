@@ -1,6 +1,6 @@
 use super::*;
 use am_camera_core::media::{
-    codec::access_units,
+    codec::visit_access_units,
     ffmpeg_lib::{probe_dirs, FfmpegApi, FfmpegLoadError},
 };
 use std::path::PathBuf;
@@ -39,7 +39,10 @@ pub struct Config {
 }
 unsafe impl Send for Config {}
 impl Config {
-    pub unsafe fn read(pointer: *const am_decoder_config_t) -> Result<Self> {
+    pub unsafe fn read(
+        pointer: *const am_decoder_config_t,
+        mut reserve: impl FnMut(usize) -> Result<()>,
+    ) -> Result<Self> {
         let mut abi = unsafe { args::read(pointer, size_of::<am_decoder_config_t>()) }?;
         let codec = match abi.codec {
             AM_CODEC_H264 => VideoCodec::H264,
@@ -73,14 +76,18 @@ impl Config {
         if abi.extradata_size > 0 && abi.extradata.is_null() {
             return Err(AM_ERR_SDK_NULL_ARGUMENT);
         }
-        let extra = if abi.extradata_size == 0 {
-            Vec::new()
-        } else {
-            unsafe { std::slice::from_raw_parts(abi.extradata, abi.extradata_size as usize) }
-                .to_vec()
-        };
+        reserve(abi.extradata_size as usize)?;
+        let mut extra = Vec::new();
+        extra
+            .try_reserve_exact(abi.extradata_size as usize)
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+        if abi.extradata_size > 0 {
+            extra.extend_from_slice(unsafe {
+                std::slice::from_raw_parts(abi.extradata, abi.extradata_size as usize)
+            });
+        }
         if !extra.is_empty() {
-            access_units(codec, &extra).map_err(convert)?;
+            visit_access_units(codec, &extra, |_| {}).map_err(convert)?;
         }
         if abi.output_pixel_format == AM_PF_ANY {
             abi.output_pixel_format = AM_PF_RGBA8 as u32;
@@ -174,10 +181,20 @@ impl Gate {
         Ok(g)
     }
     pub fn observe(&mut self, codec: VideoCodec, bytes: &[u8]) -> Result<bool> {
-        let units = access_units(codec, bytes).map_err(convert)?;
+        self.observe_reserved(codec, bytes, |_| Ok(()))
+    }
+    pub(super) fn observe_reserved(
+        &mut self,
+        codec: VideoCodec,
+        bytes: &[u8],
+        mut reserve: impl FnMut(usize) -> Result<()>,
+    ) -> Result<bool> {
+        let mut replacements = [None; 3];
+        let mut saw_change = false;
+        let mut oversized = false;
         let mut random = false;
         let mut rasl = false;
-        for nal in units {
+        visit_access_units(codec, bytes, |nal| {
             let kind = if codec == VideoCodec::H264 {
                 nal[0] & 31
             } else {
@@ -192,29 +209,72 @@ impl Gate {
                 _ => None,
             };
             if let Some(i) = index {
-                if self.sets[i].as_deref() != Some(nal) {
-                    if nal.len() > SDK_GOP_CACHE_BYTES as usize {
-                        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
-                    }
-                    let total: usize = self
-                        .sets
+                let previous = replacements[i].or(self.sets[i].as_deref());
+                if previous != Some(nal) {
+                    saw_change = true;
+                    let other: usize = replacements
                         .iter()
                         .enumerate()
                         .filter(|(j, _)| *j != i)
-                        .filter_map(|(_, p)| p.as_ref())
-                        .map(Vec::len)
+                        .map(|(j, next)| {
+                            next.map_or_else(
+                                || self.sets[j].as_ref().map_or(0, Vec::len),
+                                <[u8]>::len,
+                            )
+                        })
                         .sum();
-                    if total + nal.len() + 12 > SDK_GOP_CACHE_BYTES as usize {
-                        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
-                    }
-                    self.sets[i] = Some(nal.to_vec());
-                    self.dirty = true;
-                    self.started = false;
+                    oversized |= other.saturating_add(nal.len()).saturating_add(12)
+                        > SDK_GOP_CACHE_BYTES as usize;
                 }
+                replacements[i] = Some(nal);
             }
             random |= codec == VideoCodec::H264 && kind == 5
                 || codec == VideoCodec::H265 && (16..=21).contains(&kind);
             rasl |= codec == VideoCodec::H265 && (kind == 8 || kind == 9);
+        })
+        .map_err(convert)?;
+        if oversized {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        let changed = replacements
+            .iter()
+            .enumerate()
+            .any(|(i, next)| next.is_some_and(|value| self.sets[i].as_deref() != Some(value)));
+        if changed {
+            let total: usize = replacements
+                .iter()
+                .enumerate()
+                .map(|(i, next)| {
+                    next.map_or_else(|| self.sets[i].as_ref().map_or(0, Vec::len), <[u8]>::len)
+                })
+                .sum();
+            if total.saturating_add(12) > SDK_GOP_CACHE_BYTES as usize {
+                return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+            }
+            reserve(total)?;
+            let mut owned: [Option<Vec<u8>>; 3] = std::array::from_fn(|_| None);
+            for (i, next) in replacements.iter().enumerate() {
+                if let Some(next) = next.filter(|next| self.sets[i].as_deref() != Some(*next)) {
+                    let mut value = Vec::new();
+                    value
+                        .try_reserve_exact(next.len())
+                        .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+                    if value.capacity() > next.len() {
+                        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+                    }
+                    value.extend_from_slice(next);
+                    owned[i] = Some(value);
+                }
+            }
+            for (i, next) in owned.into_iter().enumerate() {
+                if let Some(next) = next {
+                    self.sets[i] = Some(next);
+                }
+            }
+        }
+        if saw_change {
+            self.dirty = true;
+            self.started = false;
         }
         if codec == VideoCodec::H265 && random {
             self.rasl = true;
@@ -228,12 +288,26 @@ impl Gate {
         Ok(complete && (self.started || random))
     }
     pub fn extra(&self) -> Vec<u8> {
+        let mut result = Vec::with_capacity(self.extra_bytes());
+        self.append_extra(&mut result);
+        result
+    }
+    pub(super) fn try_extra(&self) -> Result<Vec<u8>> {
         let mut result = Vec::new();
+        result
+            .try_reserve_exact(self.extra_bytes())
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+        self.append_extra(&mut result);
+        Ok(result)
+    }
+    fn append_extra(&self, result: &mut Vec<u8>) {
         for nal in self.sets.iter().flatten() {
             result.extend_from_slice(&[0, 0, 0, 1]);
             result.extend_from_slice(nal);
         }
-        result
+    }
+    pub(super) fn extra_bytes(&self) -> usize {
+        self.sets.iter().flatten().map(|v| v.len() + 4).sum()
     }
 }
 pub fn convert(e: DecodeError) -> i32 {

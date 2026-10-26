@@ -132,3 +132,5 @@ Local H5 core: bounded Rust model selection and explicit CUDA device discovery a
 Performance acceptance is now documented in [MET-2](docs/PERFORMANCE_ACCEPTANCE.md), with [historical verdict review](docs/verification/sdk-metrics-review-20261026.md). CPU offload, useful delivery, latency and recovery have separate goals. This is documentation only: existing raw measurements and release assets are unchanged, and no new performance result is claimed.
 
 Local ordered-selection validation / 本地有序选择验证: [H5 r9](docs/verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.
+
+Local Rust callers can inspect Annex B NAL units with `am_camera::media::codec::visit_access_units` without allocating a NAL list. Visits are synchronous and borrow the input; a malformed tail may fail after earlier visits, so commit caller state only after overall success. The existing Vec-returning API remains. [Decoder budget and validation](docs/verification/sdk-r3-decoder-retained-20261027.md). This unpublished change does not alter C ABI or platform support.

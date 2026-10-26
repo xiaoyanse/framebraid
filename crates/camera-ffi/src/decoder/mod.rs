@@ -1,7 +1,7 @@
 use super::frames::{camera_state, CameraState, Charge, DecoderPermit, Frame};
 use super::*;
 use am_camera_core::media::codec::selection::{HardwarePolicy, SelectionReport};
-use am_camera_core::media::codec::{access_units, CpuDecoder, DecodeError, VideoCodec};
+use am_camera_core::media::codec::{visit_access_units, CpuDecoder, DecodeError, VideoCodec};
 use am_sdk_support::{args, clock, context::Context, handles::Managed, Result};
 use std::{
     any::Any,
@@ -18,8 +18,10 @@ pub(crate) mod config;
 mod diagnostics;
 mod receive;
 mod recovery;
+mod retained;
 use config::{convert, runtime, Config, Gate};
 use receive::receive;
+use retained::{BudgetedGate, OwnedConfig};
 #[cfg(test)]
 mod tests;
 
@@ -39,8 +41,8 @@ struct Inner {
     startup: Option<Packet>,
     replay: Option<Packet>,
     recovery_charge: Option<Charge>,
-    config: Config,
-    gate: Gate,
+    config: Arc<OwnedConfig>,
+    gate: BudgetedGate,
     queue: VecDeque<Packet>,
     queue_bytes: u64,
     flushed: bool,
@@ -139,12 +141,13 @@ fn info(c: &Config, generation: u32, hardware_pending: bool) -> am_decoder_info_
         ..Default::default()
     }
 }
-fn make_inner(ctx: &CameraState, cfg: Config) -> Result<Inner> {
+fn make_inner(ctx: &Arc<CameraState>, cfg: Arc<OwnedConfig>) -> Result<Inner> {
     let l = ctx.limits()?;
     let pixels = (l.frame_budget_bytes / 4).min(SDK_MAX_DYNAMIC_AXIS * SDK_MAX_DYNAMIC_AXIS);
     if pixels == 0 {
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
+    let gate = BudgetedGate::new(ctx, &cfg)?;
     let selected = CpuDecoder::create_with_policy(
         runtime(ctx)?,
         cfg.codec,
@@ -158,7 +161,6 @@ fn make_inner(ctx: &CameraState, cfg: Config) -> Result<Inner> {
         Duration::from_millis(1500),
     )
     .map_err(convert)?;
-    let gate = Gate::new(&cfg)?;
     Ok(Inner {
         metrics: ctx.metrics.clone(),
         cpu: selected.decoder.into(),
@@ -192,7 +194,7 @@ pub unsafe extern "C" fn amc_decoder_create(
         let _active = domain().active(ctx as usize)?;
         let state = camera_state(ctx as usize)?;
         let permit = state.decoder()?;
-        let config = unsafe { Config::read(cfg) }?;
+        let config = unsafe { OwnedConfig::read(&state, cfg) }?;
         let inner = make_inner(&state, config)?;
         let codec_info = Mutex::new(HardwareInfo::new(&inner, 1));
         let object = Arc::new(Decoder {
@@ -270,7 +272,7 @@ unsafe fn submit(decoder: &Decoder, pkt: *const am_decoder_input_t) -> Result<()
         return Err(AM_ERR_SDK_QUEUE_FULL);
     }
     let data = unsafe { std::slice::from_raw_parts(packet.data, packet.size as usize) };
-    access_units(inner.config.codec, data).map_err(convert)?;
+    visit_access_units(inner.config.codec, data, |_| {}).map_err(convert)?;
     let charge = decoder.ctx.charge(packet.size + 64, false)?;
     let mut bytes = Vec::new();
     bytes
@@ -405,7 +407,7 @@ pub unsafe extern "C" fn amc_decoder_reset(
         let config = if cfg.is_null() {
             old.config.clone()
         } else {
-            unsafe { Config::read(cfg) }?
+            unsafe { OwnedConfig::read(&d.ctx, cfg) }?
         };
         let generation = d
             .generation
