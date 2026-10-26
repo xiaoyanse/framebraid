@@ -5,8 +5,9 @@ revision and statically links the core; it does not keep another editable copy o
 load these SDK DLLs. Native DLLs remain a separate delivery option for external callers.
 
 FrameBraid 是 Media/Vision SDK 唯一维护源；AM-RT 消费固定 Git 源码版本并静态编译，
-不保留另一份核心，也不加载这套 SDK DLL。当前宿主锁定已发布 v0.1.0 的完整提交
-`5ee707153796cf1d8f9dd7118c664bacf757f97b`；本仓未发布修改不会自动进入宿主。
+不保留另一份核心，也不加载这套 SDK DLL。2026-10-27宿主显式锁定优化中间源码提交
+`9ecd93307fc46947cf1aa70be165077e1cd1f072`，已获授权推送GitHub main供团队获取，
+未打标签或新建Release。旧v0.1.0保留；其他main变更不会自动进入宿主。
 
 ## Owned local artifacts / 仓内产物
 

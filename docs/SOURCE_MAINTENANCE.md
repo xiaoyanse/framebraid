@@ -1,9 +1,10 @@
 # Source maintenance boundary / 后续源码维护边界
 
 FrameBraid is the sole maintenance source for Media/Vision SDK code. AM-RT's
-original decoupling is merged, and its authorized 2026-10-26 integration now
-consumes the published v0.1.0 source commit
-`5ee707153796cf1d8f9dd7118c664bacf757f97b` through Cargo Git dependencies.
+original decoupling is merged. Its authorized 2026-10-27 intermediate integration
+consumes source commit `9ecd93307fc46947cf1aa70be165077e1cd1f072` through
+Cargo Git dependencies. The source commit is available on GitHub main; it is
+not a new tag or Release. Published v0.1.0 remains unchanged.
 The host no longer carries seven editable core crates. The host statically links
 SDK code; external DLL delivery is a separate option, not a second host runtime.
 
