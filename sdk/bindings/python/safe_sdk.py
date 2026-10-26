@@ -289,6 +289,8 @@ class Result(Resource):
 
 
 class Model(Resource):
+    NOTIFICATION_CAPACITY = 256
+
     def get_selection_report(self):
         with self._lock:
             return _selection_report(self, self.library.amv_get_model_selection_report, self._require())
@@ -296,8 +298,30 @@ class Model(Resource):
     def __init__(self, *args):
         super().__init__(*args)
         self._notify = None
-        self.notifications = queue.SimpleQueue()
+        self.notifications = queue.Queue(maxsize=self.NOTIFICATION_CAPACITY)
+        self.notifications_dropped = 0
+        self._notification_lock = threading.Lock()
         self.notification_error = None
+
+    def _enqueue_notification(self, rid, state):
+        # 仅统计语言缓冲丢弃；不把原生通知统计重复计入。
+        with self._notification_lock:
+            try:
+                try:
+                    self.notifications.put_nowait((rid, state))
+                except queue.Full:
+                    try:
+                        self.notifications.get_nowait()
+                        self.notifications_dropped += 1
+                    except queue.Empty:
+                        pass
+                    try:
+                        self.notifications.put_nowait((rid, state))
+                    except queue.Full:
+                        self.notifications_dropped += 1
+            except BaseException as error:
+                self.notifications_dropped += 1
+                self.notification_error = error
 
     def enable_notifications(self, enabled=True):
         with self._lock:
@@ -305,8 +329,9 @@ class Model(Resource):
             # 只排队 ID，不在原生回调线程执行调用方代码或跨语言异常。
             def enqueue(_model, rid, state, _user):
                 try:
-                    self.notifications.put((rid, state))
+                    self._enqueue_notification(rid, state)
                 except BaseException as error:
+                    self.notifications_dropped += 1
                     self.notification_error = error
             callback = a.am_result_notify_fn(enqueue) if enabled else a.am_result_notify_fn()
             key = c.cast(self.handle, c.c_void_p).value
