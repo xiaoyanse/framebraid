@@ -35,6 +35,7 @@ The host owns device configuration, credential storage, business rules, persiste
 - Standalone H.264/H.265 decoding from **complete Annex B access units**. Arbitrary network fragments are not complete-frame inputs.
 - ISAPI HTTP Digest snapshots and bounded continuous acquisition. Actual rate depends on the camera and network.
 - Pull/callback interfaces, bounded queues, metadata, scaling, pixel conversion and reconnect controls.
+- Advanced Rust RTSP callers can use `Reader::open_with_budget` and `read_packet_with_budget` to reserve SDK configuration/framing workspace before allocation. Existing methods remain caller-managed; C adapters apply the context budget automatically. Native FFmpeg memory is separate.
 - Explicit runtime directories and caller-injected credentials; no credential persistence.
 - Stream probing from explicit endpoints. Rust `CameraEndpoint` generates credential-free ISAPI/main/sub addresses; this helper is not a separate C ABI device-management API.
 

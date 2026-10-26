@@ -4,7 +4,7 @@ impl Hub {
     pub(super) fn consume(
         &self,
         source: &Arc<SharedSource>,
-        reader: &mut Reader,
+        reader: &mut BudgetedReader,
         stamp: SessionStamp,
     ) -> std::result::Result<(), IoError> {
         let old = reader.info();
@@ -64,18 +64,16 @@ impl Hub {
             let mut execution = pipeline::Execution::new(scope, self, source, stamp);
             let mut pixel_config: Option<Arc<pipeline::Configuration>> = None;
             while self.current(source, stamp) {
-                let Some(packet) = reader.read_packet()? else {
+                let Some(owned) = reader.read_packet()? else {
                     return Err(IoError::Network);
                 };
+                // 局部变量逆序析构，早退也先释放包缓冲再退额度。
+                let (charge, packet) = (owned.1, owned.0);
                 if !self.current(source, stamp) {
                     return Err(IoError::Closed);
                 }
                 let received = am_sdk_support::clock::monotonic_ms();
                 let packet_sequence = sequence(&self.packet_sequence)?;
-                let charge = source
-                    .state
-                    .charge(packet.data.len() as u64, false)
-                    .map_err(|_| IoError::Resource)?;
                 let mut ready = true;
                 let mut random = packet.keyframe;
                 if let (Some(gate), Some(codec)) = (&mut gate, codec) {

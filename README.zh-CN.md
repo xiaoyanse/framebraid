@@ -12,6 +12,8 @@
 
 FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入，一个仓库管理两个组件：
 
+Rust高级RTSP入口新增`Reader::open_with_budget`与`read_packet_with_budget`，在SDK配置/包转换分配前预留工作区；原方法仍由调用方管理预算，C适配自动计入Context额度。该预算不包含原生FFmpeg内部内存，见[接入说明](sdk/INTEGRATION.md)。
+
 | 组件 | 用途 |
 | --- | --- |
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |

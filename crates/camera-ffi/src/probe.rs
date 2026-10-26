@@ -1,8 +1,9 @@
 use super::*;
 use crate::frames::{camera_state, CameraState, ControlCharge};
+use crate::reader::BudgetedReader;
 use am_camera_core::{
     credentials::Secret,
-    media::sdk_io::{self, IoError, Reader},
+    media::sdk_io::{self, IoError},
 };
 use am_sdk_support::{args, buffers::Buffer, clock, context::Context, Result};
 use std::{
@@ -188,42 +189,54 @@ impl Buffer for ProbeResult {
     }
 }
 
-fn probe(state: &CameraState, url: &str, secret: &Secret, timeout: Duration) -> Observation {
+fn probe(state: &Arc<CameraState>, url: &str, secret: &Secret, timeout: Duration) -> Observation {
     let result = if url.starts_with("http://") || url.starts_with("https://") {
-        sdk_io::capture(
-            url,
-            secret,
-            timeout,
-            4 * 1024 * 1024,
-            16 * 1024 * 1024,
-            false,
-        )
-        .map(|image| {
-            let codec = if image.encoded.starts_with(&[0x89, b'P', b'N', b'G']) {
-                c"png"
-            } else {
-                c"mjpeg"
-            };
-            Observation::success(codec, image.width, image.height, -1.0)
+        let charge = state
+            .charge(4 * 1024 * 1024, false)
+            .map_err(|_| IoError::Resource);
+        charge.and_then(|_charge| {
+            sdk_io::capture(
+                url,
+                secret,
+                timeout,
+                4 * 1024 * 1024,
+                16 * 1024 * 1024,
+                false,
+            )
+            .map(|image| {
+                let codec = if image.encoded.starts_with(&[0x89, b'P', b'N', b'G']) {
+                    c"png"
+                } else {
+                    c"mjpeg"
+                };
+                Observation::success(codec, image.width, image.height, -1.0)
+            })
         })
     } else if url.starts_with("rtsp://") || url.starts_with("rtsps://") {
         match crate::decoder::config::runtime(state) {
-            Ok(api) => Reader::open(api, url, secret, Arc::new(AtomicBool::new(false)), timeout)
-                .and_then(|reader| {
-                    let info = reader.info();
-                    let codec = match info.codec {
-                        AM_CODEC_H264 => c"h264",
-                        AM_CODEC_H265 => c"h265",
-                        AM_CODEC_MJPEG => c"mjpeg",
-                        _ => return Err(IoError::Unsupported),
-                    };
-                    Ok(Observation::success(
-                        codec,
-                        info.width,
-                        info.height,
-                        info.fps,
-                    ))
-                }),
+            Ok(api) => BudgetedReader::open(
+                state.clone(),
+                api,
+                url,
+                secret,
+                Arc::new(AtomicBool::new(false)),
+                timeout,
+            )
+            .and_then(|reader| {
+                let info = reader.info();
+                let codec = match info.codec {
+                    AM_CODEC_H264 => c"h264",
+                    AM_CODEC_H265 => c"h265",
+                    AM_CODEC_MJPEG => c"mjpeg",
+                    _ => return Err(IoError::Unsupported),
+                };
+                Ok(Observation::success(
+                    codec,
+                    info.width,
+                    info.height,
+                    info.fps,
+                ))
+            }),
             Err(_) => Err(IoError::Unsupported),
         }
     } else {

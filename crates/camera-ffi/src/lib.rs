@@ -6,6 +6,7 @@ mod decoder;
 mod frames;
 mod hardware;
 mod probe;
+mod reader;
 mod shared;
 mod sources;
 mod subscriptions;

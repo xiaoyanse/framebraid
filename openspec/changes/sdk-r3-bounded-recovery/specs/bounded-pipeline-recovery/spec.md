@@ -40,6 +40,16 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 - **WHEN** 订阅对象、最大引用队列或缩放预设容量超出Context控制预算
 - **THEN** 构造明确拒绝且不留下占用；被接受的对象持有控制额度至最后引用释放，载荷额度独立，不因关闭或清队列提前归还仍常驻的元数据
 
+#### Scenario: RTSP framing requires new SDK buffers
+
+- **WHEN** RTSP配置或包转换需要新的参数集、临时缓冲和输出载荷，或探测打开同类流
+- **THEN** 在分配这些SDK缓冲前先申请可核对的工作区额度，成功后保留实际配置/载荷额度并归还余量；错误关闭Reader后才释放仍覆盖其缓冲的额度，不扩大原生库内存承诺
+
+#### Scenario: Inference notification has less than one entry of control bytes
+
+- **WHEN** 控制剩余额度不足一个包含其拥有权许可的完整通知条目
+- **THEN** 不接受该通知，丢弃计数明确；已接受通知持有实际条目额度直到消费/注销/停止释放，不将通知丢弃改成推理失败
+
 #### Scenario: Rust H264Hub subscriber stalls or closes
 
 - **WHEN** Rust辅助分发的客户端停滞、视频和叠层共同占用队列，或关闭与等待/投递重叠

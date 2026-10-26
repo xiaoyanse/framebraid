@@ -247,6 +247,14 @@ Python SDK 异常有 `code/message/source/retryable/fault_class`；C# 有 `Statu
 
 ## 8. 从源码构建与材料
 
+### RTSP配置与转换预算（本地R3，未发布）
+
+C入口在配置复制/包framing分配前预留工作区；成功后载荷容量和Reader保留配置继续计费，临时余量归还。原生错误时先销毁Reader缓冲再归还许可，拉取/外持的包不因Reader关闭失效。HTTP探测先预留既有4 MiB抓图包络，RTSP探测采用相同Reader；候选资源不足仍报Pending，可在释放占用或新建预算合适的Context后显式重试。公共set_limits不能通过恢复旧值提高已下调的限额。
+
+Rust高级调用新增`Reader::open_with_budget`、`read_packet_with_budget`与`retained_buffer_bytes`；预算闭包在SDK相关分配前调用，调用方必须保留许可覆盖Reader配置、错误后缓冲及返回包实际容量。成功后可按实际保留容量拆分额度；不能在闭包返回时自动退账。原`open/read_packet`兼容保留调用方自行管理的行为。FFmpeg/网络库内部内存、allocator开销不在此回调硬限内；未消除既有包转换复制。
+
+推理通知按完整拥有条目大小计控制字节，含许可本身；条目在回调期间仍持有，通知丢弃不改变结果查询或请求终态。C头、布局、能力位、Python/C#签名未变，无需换ABI冻结代次。
+
 源码 manifest 声明 Rust 最低 1.90；本轮已验证范围见 [当前验证状态](../docs/RELEASE_STATUS.md)，未来运行包工具链以其 build-record.json 为准，不代表逐个复验所有工具链版本。源码开发者需要兼容 Rust 与 Windows x64 MSVC 工具，在仓库根目录执行：
 
 ```powershell

@@ -1,6 +1,34 @@
 use super::*;
 
 #[test]
+fn internal_workspace_splits_without_recharge_and_shrinks_after_real_release() {
+    let (domain, state) = isolated_test_state();
+    let key = state.ctx_key;
+    let mut workspace = state.charge(4096, false).unwrap();
+    let retained = workspace.split_internal(128).unwrap();
+    let packet = workspace.split_internal(1024).unwrap();
+    assert_eq!(state.usage_snapshot().unwrap(), (4096, 0, 0));
+    assert!(matches!(
+        workspace.split_internal(4096),
+        Err(AM_ERR_SDK_INVALID_ARGUMENT)
+    ));
+    assert_eq!(workspace.bytes(), 2944);
+    workspace.shrink_to(0).unwrap();
+    assert_eq!(state.usage_snapshot().unwrap(), (1152, 0, 0));
+    drop(packet);
+    assert_eq!(state.usage_snapshot().unwrap(), (128, 0, 0));
+    drop((retained, workspace));
+    assert_eq!(state.usage_snapshot().unwrap(), (0, 0, 0));
+    let mut external = state.charge(64, true).unwrap();
+    assert!(external.split_internal(1).is_err());
+    assert!(external.shrink_to(0).is_err());
+    drop(external);
+    drop(state);
+    assert_eq!(domain.close(key, 100).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+    domain.destroy(key).unwrap();
+}
+
+#[test]
 fn recovery_reservation_transfer_enforces_external_count_and_releases_total_once() {
     let params = amc_init_params_t {
         abi_version: AM_ABI_VERSION,

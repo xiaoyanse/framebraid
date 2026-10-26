@@ -1027,6 +1027,7 @@ AM_API am_status_t amv_shared_pool_get_stats(const amv_shared_pool_t* pool,
 
 - 所有默认值仅可在冻结包络内**调低**（set_limits / queue_policy），不可调高；用量、拒绝、丢弃计数经 stats 可观测。
 - 硬解失败转软解、批量接受、连续抓图共享等新增分配路径均先过本表预算准入，超限返回 `sdk.resourceExhausted`（B13/B10）。
+- RTSP的SDK配置/包转换暂存在分配前预留保守工作区，成功后配置与输出按Vec容量持续占用、归还多余预留；失败分支持额度直到Reader缓冲销毁。RTSP探测复用该准入，HTTP探测先占既有4 MiB抓图包络；候选资源不足保留既有Pending状态，不伪称网络不可达。推理通知按含ControlCharge的完整条目大小计费（本机48字节，不固化成跨平台常量），回调结束/清理才归还；通知丢弃不改写请求终态。以上覆盖SDK相关载荷，不代表FFmpeg/网络库/驱动RSS硬限。
 - 附加负载验收（dual-dll-sdk §9 末段）以此为对照账：慢消费者/断流重连/持有到顶/持续取消重建后，内存线程句柄回到冻结预算与恢复容差内。
 
 ## 7. 错误码总表（稳定前缀+重试属性；数值候选见附录 §6）

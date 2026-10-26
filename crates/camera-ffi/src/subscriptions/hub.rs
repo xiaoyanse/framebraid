@@ -1,11 +1,12 @@
 use super::*;
 use crate::{
     decoder::config::{self, Config, Gate},
+    reader::BudgetedReader,
     sources::SharedSource,
 };
 use am_camera_core::media::{
     codec::{CpuDecoder, VideoCodec},
-    sdk_io::{IoError, Reader, StreamInfo},
+    sdk_io::{IoError, StreamInfo},
 };
 use std::thread::JoinHandle;
 mod consume;
@@ -237,7 +238,8 @@ impl Hub {
                 AM_FAULT_NONE as u32,
                 c"camera.connecting",
             );
-            let opened = Reader::open(
+            let opened = BudgetedReader::open(
+                source.state.clone(),
                 api,
                 &source.url,
                 &secret,

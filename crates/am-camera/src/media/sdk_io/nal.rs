@@ -6,6 +6,53 @@ pub(super) struct Framing {
     pub parameters: Vec<u8>,
 }
 impl Framing {
+    pub fn workspace_bytes(
+        &self,
+        data: &[u8],
+        codec: u32,
+        info_capacity: usize,
+    ) -> Result<usize, IoError> {
+        if data.len() > MAX_PACKET {
+            return Err(IoError::Resource);
+        }
+        if codec == 4 {
+            return data
+                .len()
+                .checked_add(self.parameters.capacity())
+                .and_then(|n| n.checked_add(info_capacity))
+                .ok_or(IoError::Resource);
+        }
+        let normalized = if annex_b(data) || self.length_bytes == 0 {
+            data.len()
+        } else {
+            let (mut pos, mut total) = (0usize, 0usize);
+            while pos < data.len() {
+                let length = number(data, &mut pos, self.length_bytes)?;
+                pos = pos
+                    .checked_add(length)
+                    .filter(|end| length > 0 && *end <= data.len())
+                    .ok_or(IoError::Invalid)?;
+                total = total
+                    .checked_add(length)
+                    .and_then(|n| n.checked_add(4))
+                    .filter(|n| *n <= MAX_PACKET)
+                    .ok_or(IoError::Resource)?;
+            }
+            total
+        };
+        // 转换/参数组合/输出/信息副本可并存；另覆盖两份最多256项的参数视图。
+        normalized
+            .checked_mul(8)
+            .and_then(|n| {
+                self.parameters
+                    .capacity()
+                    .checked_add(info_capacity)
+                    .and_then(|old| old.checked_mul(8))
+                    .and_then(|old| n.checked_add(old))
+            })
+            .and_then(|n| n.checked_add(16 * 1024))
+            .ok_or(IoError::Resource)
+    }
     pub fn new(codec: u32, extra: &[u8]) -> Result<Self, IoError> {
         if extra.len() > MAX_PACKET {
             return Err(IoError::Resource);
@@ -205,6 +252,28 @@ fn append_config(data: &[u8], pos: &mut usize, output: &mut Vec<u8>) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn workspace_preflight_handles_short_lengths_and_rejects_without_mutation() {
+        let avcc = [1, 66, 0, 30, 252, 225, 0, 2, 103, 1, 1, 0, 2, 104, 2];
+        let mut framing = Framing::new(1, &avcc).unwrap();
+        let old = framing.parameters.clone();
+        let data = [1, 101].repeat(200);
+        let required = framing.workspace_bytes(&data, 1, old.len()).unwrap();
+        let output = framing.packet(&data, true, 1).unwrap();
+        assert!(required >= output.capacity() + framing.parameters.capacity() + old.len());
+        assert_eq!(output.len(), old.len() + 200 * 5);
+        assert_eq!(
+            framing.workspace_bytes(&[0], 1, 0).err(),
+            Some(IoError::Invalid)
+        );
+        assert_eq!(framing.parameters, old);
+        assert_eq!(
+            framing.workspace_bytes(&data, 1, usize::MAX).err(),
+            Some(IoError::Resource)
+        );
+        let jpeg = Framing::new(4, &[]).unwrap();
+        assert_eq!(jpeg.workspace_bytes(&[1, 2, 3], 4, 0).unwrap(), 3);
+    }
     #[test]
     fn avcc_and_hvcc_are_bounded_annex_b() {
         let avcc = [1, 66, 0, 30, 255, 225, 0, 2, 103, 1, 1, 0, 2, 104, 2];

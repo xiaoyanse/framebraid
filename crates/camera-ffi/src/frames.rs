@@ -215,6 +215,30 @@ pub struct Charge {
     external: bool,
 }
 impl Charge {
+    pub(crate) fn shrink_to(&mut self, bytes: u64) -> Result<()> {
+        if self.external || bytes > self.bytes {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let mut usage = self
+            .state
+            .usage
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        usage.bytes -= self.bytes - bytes;
+        self.bytes = bytes;
+        Ok(())
+    }
+    pub(crate) fn split_internal(&mut self, bytes: u64) -> Result<Self> {
+        if self.external || bytes > self.bytes {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        self.bytes -= bytes;
+        Ok(Self {
+            state: self.state.clone(),
+            bytes,
+            external: false,
+        })
+    }
     /// 将既有暂存额度转交外部帧，原子核持帧限制，不重复占总字节。
     pub(crate) fn take_external(&mut self, bytes: u64) -> Result<Self> {
         if self.external || bytes == 0 || bytes > self.bytes {

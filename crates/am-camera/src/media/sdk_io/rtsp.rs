@@ -85,6 +85,18 @@ impl Reader {
         stop: Arc<AtomicBool>,
         timeout: Duration,
     ) -> Result<Self, IoError> {
+        Self::open_with_budget(api, url, secret, stop, timeout, |_| Ok(()))
+    }
+    /// 在复制配置前预留SDK工作区；调用方须持有额度到Reader销毁，包括错误分支。
+    /// 原生FFmpeg/网络库分配不计入此回调；旧open保持调用方管理预算的行为。
+    pub fn open_with_budget(
+        api: Arc<FfmpegApi>,
+        url: &str,
+        secret: &Secret,
+        stop: Arc<AtomicBool>,
+        timeout: Duration,
+        mut reserve: impl FnMut(usize) -> Result<(), IoError>,
+    ) -> Result<Self, IoError> {
         validate_url(url, false)?;
         if timeout.is_zero()
             || secret.username.len() + secret.password.len() > 8192
@@ -211,6 +223,7 @@ impl Reader {
             } else {
                 &[]
             };
+            reserve(extra.len().checked_mul(8).ok_or(IoError::Resource)?)?;
             reader.framing = Framing::new(codec, extra)?;
             let timebase = (*stream.cast::<StreamPrefix>()).time_base;
             if timebase.num <= 0 || timebase.den <= 0 {
@@ -242,7 +255,22 @@ impl Reader {
     pub fn info(&self) -> &StreamInfo {
         &self.info
     }
+    /// 当前SDK配置Vec的保留容量；不含原生库、allocator和协议对象开销。
+    pub fn retained_buffer_bytes(&self) -> usize {
+        self.info
+            .extradata
+            .capacity()
+            .saturating_add(self.framing.parameters.capacity())
+    }
     pub fn read_packet(&mut self) -> Result<Option<Packet>, IoError> {
+        self.read_packet_with_budget(|_| Ok(()))
+    }
+    /// 每个视频包在framing分配前预留；成功后仍须覆盖输出容量和Reader保留配置。
+    /// 失败也可能保留更新后的配置，额度不能先于Reader释放。
+    pub fn read_packet_with_budget(
+        &mut self,
+        mut reserve: impl FnMut(usize) -> Result<(), IoError>,
+    ) -> Result<Option<Packet>, IoError> {
         self.interrupt.deadline.set(
             Instant::now()
                 .checked_add(self.timeout)
@@ -282,7 +310,11 @@ impl Reader {
                 } else {
                     let bytes = std::slice::from_raw_parts(packet.data, packet.size as usize);
                     let keyframe = packet.flags & AV_PKT_FLAG_KEY != 0;
-                    let converted = self.framing.packet(bytes, keyframe, self.info.codec);
+                    let converted = self
+                        .framing
+                        .workspace_bytes(bytes, self.info.codec, self.info.extradata.capacity())
+                        .and_then(&mut reserve)
+                        .and_then(|()| self.framing.packet(bytes, keyframe, self.info.codec));
                     if self.info.extradata != self.framing.parameters {
                         self.info.extradata.clone_from(&self.framing.parameters);
                     }

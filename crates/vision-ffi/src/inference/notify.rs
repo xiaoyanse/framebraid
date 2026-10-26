@@ -1,8 +1,13 @@
 #![allow(clippy::missing_safety_doc)]
-use super::{lock, models::ModelHandle};
+use super::{
+    lock,
+    models::ModelHandle,
+    state::{ControlCharge, State},
+};
 use am_sdk_support::{abi::*, context::Context, handles::Entry, status};
 use std::{
     collections::VecDeque,
+    mem::size_of,
     sync::{
         atomic::{AtomicBool, Ordering},
         Arc, Condvar, Mutex, Weak,
@@ -10,11 +15,17 @@ use std::{
     thread::{JoinHandle, ThreadId},
 };
 
+type Notification = (u64, u32, ControlCharge);
+
+fn reserve_notification(state: &State) -> am_sdk_support::Result<ControlCharge> {
+    state.control(size_of::<Notification>())
+}
+
 #[derive(Default)]
 struct Data {
     callback: am_result_notify_fn,
     user: usize,
-    queue: VecDeque<(u64, u32, super::state::ControlCharge)>,
+    queue: VecDeque<Notification>,
     busy: bool,
     stop: bool,
     thread_id: Option<ThreadId>,
@@ -67,7 +78,7 @@ impl Notify {
                 let queue = c.queues.lock().ok()?[AM_Q_CONTROL as usize];
                 Some(
                     (limits.control_max_items.min(queue.max_items) as usize)
-                        .min(queue.max_bytes as usize / 16),
+                        .min(queue.max_bytes as usize / size_of::<Notification>()),
                 )
             })
             .unwrap_or(0);
@@ -75,7 +86,7 @@ impl Notify {
             model.state.metrics.dropped.fetch_add(1, Ordering::AcqRel);
             return;
         }
-        let charge = match model.state.control(32) {
+        let charge = match reserve_notification(&model.state) {
             Ok(charge) => charge,
             Err(_) => {
                 model.state.metrics.dropped.fetch_add(1, Ordering::AcqRel);
@@ -190,4 +201,53 @@ pub unsafe extern "C" fn amv_result_notify_callback_set(
         data.user = user as usize;
         Ok(())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn notification_reserves_actual_owned_entry_until_return() {
+        let domain = am_sdk_support::handles::Domain::new(false);
+        let params = amv_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            ..Default::default()
+        };
+        let key = unsafe { am_sdk_support::context::initialize_vision(&domain, &params) }.unwrap();
+        let entry = domain.get(key).unwrap();
+        // 独立域不污染其他并行测试的进程级线程配置。
+        let state = State {
+            ctx: Arc::downgrade(&entry),
+            prefix: 0,
+            next: 1.into(),
+            records: Mutex::default(),
+            changed: Condvar::new(),
+            usage: Arc::default(),
+            models: 0.into(),
+            running: 0.into(),
+            metrics: Default::default(),
+            backends: Mutex::default(),
+        };
+        let ctx = entry.data::<Context>().unwrap();
+        let bytes = size_of::<Notification>();
+        ctx.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = bytes as u64 - 1;
+        assert!(matches!(
+            reserve_notification(&state),
+            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+        ));
+        assert_eq!(state.usage.control_bytes.load(Ordering::Acquire), 0);
+        ctx.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = bytes as u64;
+        let charge = reserve_notification(&state).unwrap();
+        assert_eq!(state.usage.control_bytes.load(Ordering::Acquire), bytes);
+        assert_eq!(state.usage.snapshots.load(Ordering::Acquire), 1);
+        assert_eq!(ctx.buffers.load(Ordering::Acquire), 1);
+        assert!(reserve_notification(&state).is_err());
+        drop(charge);
+        assert_eq!(state.usage.control_bytes.load(Ordering::Acquire), 0);
+        assert_eq!(ctx.buffers.load(Ordering::Acquire), 0);
+        println!("notification-reservation {{\"actual_entry_bytes\":{bytes},\"drained_bytes\":0}}");
+        drop((entry, state));
+        assert_eq!(domain.close(key, 100).unwrap(), AM_LIFECYCLE_CLOSED as u32);
+        domain.destroy(key).unwrap();
+    }
 }

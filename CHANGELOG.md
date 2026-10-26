@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Reserve RTSP configuration/framing workspace before SDK buffer allocation and retain credits through Reader errors and packet ownership. Charge complete inference notification entries; apply probe budgets to HTTP and RTSP. / 补配置与转换前准入、错误/载荷持续计费、探测预算及通知实际条目计费；兼容新增Rust预算入口，C ABI不变，见[验证](docs/verification/sdk-r3-reader-reservations-20261027.md)。
+
 - Account standalone decoder input acceptance/backpressure, and reserve Media subscription metadata against the control budget until object disposal. / 补齐真实过载计数和订阅引用槽/预设计费，见[验证](docs/verification/sdk-r3-budget-audit-20261027.md)，无C ABI变化，完整预算审计继续。
 
 - Reclaim ISAPI recent-image caches when the last subscriber at a sampling interval drains. Prevent late cache submission from reviving retired intervals or replacing newer frames. / 修复历史频率缓存挤占域预算，32 MiB同预算切换6→20/20、遗留缓存8→1，见[验证](docs/verification/sdk-r3-capture-cache-20261027.md)，不改变ABI或外部图片寿命。

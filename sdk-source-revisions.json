@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "6acfc6ce29d3b7349f67854efdc9f232212f895f",
+  "reviewBaseCommit": "3cdee3c240ed6d872e27658356844d671a2cac01",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "d69be5e4c7ee96556df03542d9695ed82cfecbe26e20d4107be8969d543ccd68",
-      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+      "sha256": "95b79e9a4c73c9a261ff0a3c9ad0553f37c633a272d6c5898056eb1785404bce",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "47356c0157424009e90666ffc0e42e06b13836b0e7ec2c94ff1a28e837601015",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "66ea8e1e40f594e7c39cb277014e66f322f4bccf90ba3ef727ee14209485d2bf",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -162,8 +162,8 @@
     {
       "path": "crates/camera-ffi/src/frames/budget_tests.rs",
       "previousSha256": null,
-      "sha256": "ff0a3aa8fb697922dfa38bfa66f63f01b76255fc01e57d6b1d2ee82c9ee222af",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "58f8de186dee80231f56f6bdf4beb40cffa5f2cfb45a4d106cc0fc712b7ef3b4",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
     },
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
@@ -186,8 +186,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
       "previousSha256": null,
-      "sha256": "7b34e128202e79b93e91db0c667762c264a9f5d581cc4d2f22a9aad1ec9540fe",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "1cd98036b9481adc2c1d18c4238d8cc69284ceff4524499e5654305c225d9dc5",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
@@ -204,8 +204,8 @@
     {
       "path": "crates/camera-ffi/src/lib.rs",
       "previousSha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82",
-      "sha256": "dac596e4ffae1ce0b6fb269a99dde09db37dc347b7a7dca23ce65d82de136075",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "0e2fe5c99b7251cf17ff279d47db4840f52da8d3e2c52e2ddcfea628366daee8",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
     },
     {
       "path": "crates/sdk-abi/src/constants.rs",
@@ -566,6 +566,42 @@
       "previousSha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c",
       "sha256": "b621f27690c0fa9bacec19247329793a68ccd7c73c7966fe0b8f7b3f98e8709c",
       "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/nal.rs",
+      "previousSha256": "a5363ffc037e76ebb56bb5fceec8afbd8993176fc4c5e8d1fcfa25eef02bca04",
+      "sha256": "0f454d2da4b10d4f5b16dcd0e23589447a11489928af5a881f47b43e3efc99fe",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
+      "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
+      "sha256": "b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+    },
+    {
+      "path": "crates/camera-ffi/src/probe.rs",
+      "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
+      "sha256": "a15c13afed266d8db024f21925cade815a66cf4205315a9b427a7eb78bb7782f",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/notify.rs",
+      "previousSha256": "9d8ae3ede7d71496b040f9bc53068cf7da8b06b06c1f72d7cf3a5a4b8c4f6a05",
+      "sha256": "deaccf2cf458f6117a175f7aed08fbc8deee6aab04cf614d587bb7d445e43b09",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+    },
+    {
+      "path": "crates/camera-ffi/src/reader.rs",
+      "previousSha256": null,
+      "sha256": "8ab8930af39a23ad82089f7f4b64a273d094cf7df6deb335b3baef7c570bfe12",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+    },
+    {
+      "path": "crates/camera-ffi/src/reader/tests.rs",
+      "previousSha256": null,
+      "sha256": "5eddf8307e7133343d152e4cfc2161e620381ee80da3b7642d9093bcbbb432ca",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
     }
   ]
 }
