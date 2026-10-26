@@ -6,6 +6,8 @@ These figures visualize existing records. **No new device, inference or performa
 
 图表来自已有实测记录，本轮只整理数据、绘图，**没有重新执行设备、推理或性能测试**。源码提取验证和提取前的 SDK Release 测试分开。
 
+Current interpretation: [MET-2 goals](PERFORMANCE_ACCEPTANCE.md) and [historical review](verification/sdk-metrics-review-20261026.md). Charts and original figures remain unchanged; they do not become resource-offload or production-throughput evidence by changing acceptance wording. / 图表及原数值保留，历史性能判断须结合新口径，未执行新测试。
+
 ## A. FrameBraid extraction / 独立提取验证
 
 | Item / 项目 | Recorded result / 已记录结果 |

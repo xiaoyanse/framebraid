@@ -12,9 +12,10 @@
 | Runnable examples / 可运行示例 | [Examples / 示例](../sdk/examples/README.md) |
 | Platform/feature limits / 平台与能力限制 | [Support / 支持边界](SUPPORT.md) |
 | Implementation goals and tasks / 实施目标与任务 | [SDK OpenSpec](../openspec/README.md) |
-| Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、参考索引与量化验收；尚未实施 |
+| Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、阶段成果与MET-2验收；整包未完成 |
 | Current validation / 当前验证 | [Local Release status / 本地 Release 状态](RELEASE_STATUS.md) |
 | Charts and numeric observations / 图表及数值观察 | [Test observations / 测试资料](BENCHMARKS.md) |
+| Goals and acceptance / 指标与验收目标 | [MET-2](PERFORMANCE_ACCEPTANCE.md) · [历史评价复核](verification/sdk-metrics-review-20261026.md) — resource offload, useful delivery and scenario goals / 主目标与保护指标分开 |
 | Reproducible SDK performance tools / 可复现基准工具 | [Performance measurement / 性能测量](PERFORMANCE.md) — local tools, boundaries and current limitations / 本地工具、计时边界与未验项 |
 | Visual identity / 视觉标识 | [Selected logo and banner / 已选 Logo 与横幅](../assets/brand/README.md) |
 | Future publication / 后续发布 | [Release checklist / 发布清单](RELEASE_CHECKLIST.md) |

@@ -112,3 +112,17 @@ SDK SHALL 在CPU回读目标帧分配前核对其对齐与填充后的保守字�
 - **WHEN** 调用方长期持帧或异步推理未结束
 - **THEN** 原始内容不变且资源不无限增长，归还后可恢复
 
+
+### Requirement: Decode offload and mechanism specific goals
+
+硬解评价 MUST 以MET-2的CPU卸载或固定宿主预算合格路数为主目标，颜色转换/缓冲/张量优化 SHALL 明确机制及资源目标；各自保护帧龄、有效交付、精度/所有权和预算，不要求跨后端单帧必定更快。
+
+#### Scenario: Hardware to CPU pixel transfer is slower
+
+- **WHEN** 同输出要求的硬解RGBA耗时高于CPU而CPU时间尚未测量
+- **THEN** 保留耗时事实并标资源取舍待量化，不判硬解缺陷、不宣称CPU卸载收益，也不将硬件帧回读标作GPU零拷贝
+
+#### Scenario: Fewer conversions with the same sampled outputs
+
+- **WHEN** 虚拟时钟下采样前移减少转换且采样输出保持
+- **THEN** 可确认限定机制与局部耗时结果，真实网络有效FPS、CPU占用及多路承载分别验证，不把转换次数比例外推成整机收益

@@ -15,6 +15,12 @@ measurements, not browser playback or end-to-end FPS. See [R2 budget/cache valid
 
 硬件路径需明确请求，并以真实输出核后端；报告GPU回读与颜色转换分段，不把偏好或短测等同完整硬件支持。构建源码摘要包含拆出的转换/回读模块，比较前核输入、实际后端、设备和输出校验一致。
 
+## Acceptance policy / 验收口径
+
+Current decisions use [MET-2](PERFORMANCE_ACCEPTANCE.md): separate resource offload, useful delivery, latency, correctness and recovery. A hardware path is not required to beat CPU latency. Existing commands, JSON fields and 5% alerts remain historical tooling; this documentation update does not implement CPU/GPU collectors, A/A calibration or new thresholds. Do not treat comparator output as MET-2 acceptance.
+
+当前先暂停代码/基准工作。旧工具/数据不改写，后续按目标卡补缺失测量；历史评价见[复核记录](verification/sdk-metrics-review-20261026.md)。
+
 ## Reproduce / 复现
 
 Local sampling ablation uses the Release `native_sampling` test with explicit `AM_RT_FFMPEG_DIR` and `AM_SDK_H264_SAMPLE`. It runs real decode and production fanout under a virtual 30 FPS clock, observes native sws_scale calls, excludes full-plane hash/pull work from timing and retains 5% alerts. See [sampling measurements](verification/sdk-r2-sampling-20261026.md); this is not RTSP network throughput or a historical-binary A/B.
@@ -63,8 +69,7 @@ JSON `schema=framebraid.performance.v1`：
 分位数为 nearest-rank：排序后取 ceil(p×N)，不插值。N<1000 时 P99 仍输出观察值，
 但 `p99_representative=false`，不能当可靠尾延迟结论。1000 也不自动证明统计收敛。
 比较器要求 identity 完全相同，允许源码/制品变更，拒绝 Debug/Release 混比；
-像素/张量摘要变化先做正确性审查，少交付不能伪装提速。初始固定警戒线是 P95 或有效吞吐
-恶化超过 5%，触线需调查而非事后放宽；比较器不自动授予验收通过。
+像素/张量摘要变化先做正确性审查，少交付不能伪装提速。历史比较器固定警戒是P95或有效吞吐恶化超过5%，仅保留为调查标签；不构成统一验收线。MET-2按测前目标卡及A/A/绝对影响判断，不能事后为候选放宽硬预算；当前比较器不自动授予验收通过。
 
 ## Boundaries and limitations / 边界与限制
 

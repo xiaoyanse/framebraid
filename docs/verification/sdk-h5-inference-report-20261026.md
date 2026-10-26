@@ -1,5 +1,8 @@
 # H5.0b 推理设备DLL报告阶段验证
 
+> **当前评价依据：MET-2。** 下文保留当时原文、数值与判断；新口径见文末补充及[统一复核](sdk-metrics-review-20261026.md)。本次未重新运行测试，不能把口径修订当新增验收通过。
+
+
 2026-10-26；评审基线`5449e79`，SDK main串行阶段保存，无AM-RT修改/升级、无发布。继[核心阶段](sdk-h5-selection-core-20261026.md)，新增两项兼容C导出及Python/C#便捷调用，不表示H5整包完成。
 
 ## 实施与审查
@@ -36,3 +39,9 @@ H5.1～H5.4：模型C允许列表/优先级、目标模型诊断与排空重建�
 `.local/tests/h5-hardware-report/result.json`、`.local/tests/h5-report-languages/`保留最小C/C#调用源、编译件和结果；`.local/evidence/h5-report-backend-regression-20261026/`为隔离小故障DLL场景；最终源码/工具/DLL/冻结指纹见`h5-report-manifest-20261026.json`。本轮无网络相机或后台服务，不安装/改用户运行环境。旧测试日志保留，不把测试脚本错误说成运行库故障。
 
 新能力同步ABI正文、冻结说明/Schema、INTEGRATION示例、中英文入口/支持/路线/未发布记录和OpenSpec。serde/serde_json为锁内已有依赖版本，本阶段只是显式链接到vision-ffi，未引入新第三方包或改旧发布材料。生成物经生成器更新，历史提取清单不改写。外部`.gitignore`未提交，保留原团队成果。
+
+## MET-2 评价复核补充（2026-10-26）
+
+C/C#/Python设备发现/只读查询和关闭/预算证据保留；约0.014ms为三次C调用加Python解析的局部P95观察，不是单次原生推理或GPU收益。枚举RTX设备不证明CUDA模型可执行；本次不把208普通测试及400生命周期循环扩大为加速/长跑验收。
+
+统一定义、目标卡及后续测量条件见[量化与验收目标](../PERFORMANCE_ACCEPTANCE.md)。原始数据、旧告警、未验项及历史合同不改写。

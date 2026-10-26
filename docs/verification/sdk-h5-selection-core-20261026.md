@@ -1,5 +1,8 @@
 # H5.0a 推理选择核心阶段验证
 
+> **当前评价依据：MET-2。** 下文保留当时原文、数值与判断；新口径见文末补充及[统一复核](sdk-metrics-review-20261026.md)。本次未重新运行测试，不能把口径修订当新增验收通过。
+
+
 2026-10-26，评审基线 `83fcaebcb350eae750ea9ba045ba4eb06efe9459`。SDK main本地阶段保存，不修改AM-RT，不发布，不表示H5整包完成。
 
 ## 已接线与验证边界
@@ -53,3 +56,9 @@ H5.1～H5.4继续开放：C策略/显式probe/缓存报告及匹配语言封装�
 私有证据：`.local/evidence/h5-{before,after}-inference-20261026/`、`h5-inference-comparison-20261026.json`、`h5-before-dll-identity-20261026.json`、`h5-selection-real-cpu-20261026.log`、`h5-native-failure-20261026.log`、`h5-devices-native-20261026.log`、`h5-selection-release-nonzero-quant-20261026.log`。最终门禁与制品指纹另记同目录H5清单。旧证据不覆盖。
 
 新增Rust公开能力同步[inference-selection](../design/inference-selection.md)、中英文README、INTEGRATION、SUPPORT、RELEASE_STATUS、ROADMAP、CHANGELOG与OpenSpec；C头/绑定/示例本阶段接口不变，只做生成/冻结回归，无需伪造新增C示例。来源修订覆盖本阶段核心文件，历史提取和冻结原字节保留。外部`.gitignore`保留、不纳入提交。
+
+## MET-2 评价复核补充（2026-10-26）
+
+允许列表/strict/CPU回退、Session与真实Run分层及不重放失败请求是功能/安全证据。H5-CORE-PERF-01的+5.89%保留为微型异步submit→fetch待复核事件，不等于ORT或GPU推理性能变差，未标定前也不判通过。MatMul同候选两入口对照不是历史二进制优化收益，真实加速与恢复矩阵仍未验。
+
+统一定义、目标卡及后续测量条件见[量化与验收目标](../PERFORMANCE_ACCEPTANCE.md)。原始数据、旧告警、未验项及历史合同不改写。

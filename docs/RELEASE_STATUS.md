@@ -122,3 +122,5 @@ Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hard
 Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; C model-selection extensions, accelerated inference and recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
 
 H5.0b本地探测报告与原生/语言回归详见[验证](verification/sdk-h5-inference-report-20261026.md)；新模型C策略、加速执行与恢复仍未完成。
+
+2026-10-26 MET-2文档收口：[统一指标](PERFORMANCE_ACCEPTANCE.md)、[历史评价复核](verification/sdk-metrics-review-20261026.md)。旧R1 CPU/合成基线及阶段功能证据保留，新增量化前置尚未实施；不把改评价口径当新测试通过或解除全部性能警戒。当前不继续代码开发，公开制品与支持范围不变。

@@ -79,3 +79,17 @@ C调用方 SHALL 可显式触发有软预算的设备发现，并查询有界缓
 
 - **WHEN** 显式新探测没有足够控制额度
 - **THEN** 撤销旧成功缓存并明确resourceExhausted，不扩大默认控制预算，不把旧结果伪装为新成功
+
+### Requirement: Selection and scheduling have distinct success criteria
+
+后端自动选择 MUST 按允许策略、依赖及真实模型执行判断功能可用，调度优化 SHALL 选择准入/排队/过期/公平性或离线有效吞吐作为主目标，保护逐帧截止、资源及唯一终态；GPU更快不作为自动选择的通用验收条件。
+
+#### Scenario: Batch throughput increases but per frame deadlines fail
+
+- **WHEN** 组批均摊耗时下降而逐帧等待超过目标卡预算
+- **THEN** 不判实时调度收益通过，保留离线吞吐与等待取舍，不用批次耗时除batch当作逐帧响应
+
+#### Scenario: Model fallback is correct without faster execution
+
+- **WHEN** 优选EP不可用而允许列表中的CPU执行成功
+- **THEN** 可记录策略/故障功能通过，CPU/GPU收益与资源竞争另按代表模型验证，不以此宣称推理提速

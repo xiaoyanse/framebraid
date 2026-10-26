@@ -24,3 +24,21 @@
 - **WHEN** 观测停滞或输入超出预算
 - **THEN** 处理通道不依赖观测在线，丢弃/拒绝有计数，内存与线程不随采样数无界增长
 
+
+### Requirement: Goal specific measurement and acceptance cards
+
+每次性能结论 MUST 声明主目标、保护指标、计时边界、有效交付分母和源码/制品身份；同路径改前/后与跨后端资源取舍 MUST 分开。历史合成预算及5%调查标签不得冒充全SDK SLA或统一验收线。
+
+#### Scenario: Different backends exchange latency for CPU offload
+
+- **WHEN** 硬解回读使单帧耗时增加，但目标是CPU卸载或并发承载
+- **THEN** 对照同等有效交付/输出要求下CPU时间、GPU资源、帧龄和预算内合格路数；缺资源测量标证据不足，不仅凭耗时判优劣
+
+### Requirement: Repeatability before performance verdict
+
+收益/回归判定 SHALL 使用测前目标卡、同实现A/A波动及绝对/相对实际影响；旧raw和告警保留，不能为候选事后放宽硬预算或重写旧结果。
+
+#### Scenario: Short benchmark exceeds historical five percent label
+
+- **WHEN** 微基准触发旧5%警戒而波动和实际影响尚未标定
+- **THEN** 保存待复核事件，不自动判失败或通过；功能安全、机制变化和性能收益分别记录，后续补适用目标卡与证据
