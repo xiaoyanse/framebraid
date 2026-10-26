@@ -101,23 +101,23 @@ pub unsafe fn initialize_camera(
     if p.reserved.iter().any(|v| *v != 0) {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
-    let dirs = unsafe { args::runtime_dirs(p.runtime_dirs_utf8, p.runtime_dir_count) }?;
-    domain.insert(
-        0,
-        Arc::new(Context {
-            limits: Mutex::new(default_limits(false)),
-            queues: Mutex::new(crate::queues::defaults()),
-            flags: p.feature_flags,
-            runtime_dirs: dirs,
-            buffers: AtomicUsize::new(0),
-            thread_budget: None,
-            services: Mutex::default(),
-            #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
-            shared: Mutex::default(),
-            #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
-            shared_waiters: Arc::new(AtomicUsize::new(0)),
-        }),
-    )
+    let directories =
+        unsafe { args::runtime_directories(p.runtime_dirs_utf8, p.runtime_dir_count) }?;
+    let admission = domain.admit_context()?;
+    let dirs = directories.copy_owned()?;
+    admission.commit(Arc::new(Context {
+        limits: Mutex::new(default_limits(false)),
+        queues: Mutex::new(crate::queues::defaults()),
+        flags: p.feature_flags,
+        runtime_dirs: dirs,
+        buffers: AtomicUsize::new(0),
+        thread_budget: None,
+        services: Mutex::default(),
+        #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
+        shared: Mutex::default(),
+        #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
+        shared_waiters: Arc::new(AtomicUsize::new(0)),
+    }))
 }
 
 /// # Safety
@@ -136,7 +136,10 @@ pub unsafe fn initialize_vision(
     if p.reserved.iter().any(|v| *v != 0) {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
-    let dirs = unsafe { args::runtime_dirs(p.runtime_dirs_utf8, p.runtime_dir_count) }?;
+    let directories =
+        unsafe { args::runtime_directories(p.runtime_dirs_utf8, p.runtime_dir_count) }?;
+    let admission = domain.admit_context()?;
+    let dirs = directories.copy_owned()?;
     let mut existing = domain
         .thread_config
         .lock()
@@ -178,22 +181,19 @@ pub unsafe fn initialize_vision(
     }
     let mut limits = default_limits(true);
     limits.infer_parallelism = parallel;
-    let key = domain.insert(
-        0,
-        Arc::new(Context {
-            limits: Mutex::new(limits),
-            queues: Mutex::new(crate::queues::defaults()),
-            flags: p.feature_flags,
-            runtime_dirs: dirs,
-            buffers: AtomicUsize::new(0),
-            thread_budget: Some(budget),
-            services: Mutex::default(),
-            #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
-            shared: Mutex::default(),
-            #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
-            shared_waiters: Arc::new(AtomicUsize::new(0)),
-        }),
-    )?;
+    let key = admission.commit(Arc::new(Context {
+        limits: Mutex::new(limits),
+        queues: Mutex::new(crate::queues::defaults()),
+        flags: p.feature_flags,
+        runtime_dirs: dirs,
+        buffers: AtomicUsize::new(0),
+        thread_budget: Some(budget),
+        services: Mutex::default(),
+        #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
+        shared: Mutex::default(),
+        #[cfg(all(windows, target_arch = "x86_64", feature = "shared-frames"))]
+        shared_waiters: Arc::new(AtomicUsize::new(0)),
+    }))?;
     *existing = Some(budget);
     Ok(key)
 }
@@ -269,5 +269,68 @@ mod tests {
         domain.destroy(second).unwrap();
         domain.close(key, 0).unwrap();
         domain.destroy(key).unwrap();
+    }
+}
+
+#[cfg(test)]
+mod admission_tests {
+    use super::*;
+    #[test]
+    fn invalid_directories_are_checked_before_a_pending_slot_is_taken() {
+        let domain = Domain::new(false);
+        let admissions: Vec<_> = (0..SDK_MAX_CONTEXTS)
+            .map(|_| domain.admit_context().unwrap())
+            .collect();
+        let pointer = c"relative".as_ptr();
+        let params = amc_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            runtime_dirs_utf8: &pointer,
+            runtime_dir_count: 1,
+            ..Default::default()
+        };
+        assert_eq!(
+            unsafe { initialize_camera(&domain, &params) },
+            Err(AM_ERR_SDK_INVALID_ARGUMENT)
+        );
+        drop(admissions);
+        assert!(domain.idle_for_unload());
+        println!(
+            "runtime_directory_plan_inline_bytes={} context_admission_inline_bytes={}",
+            std::mem::size_of::<args::RuntimeDirectories<'static>>(),
+            std::mem::size_of::<crate::handles::ContextAdmission<'static>>()
+        );
+    }
+    #[test]
+    fn invalid_vision_budget_returns_admission_and_does_not_commit_configuration() {
+        let domain = Domain::new(true);
+        let params = amv_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            total_thread_budget: u32::MAX,
+            ..Default::default()
+        };
+        assert_eq!(
+            unsafe { initialize_vision(&domain, &params) },
+            Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE)
+        );
+        assert_eq!(*domain.thread_config.lock().unwrap(), None);
+        assert!(domain.idle_for_unload());
+        let params = amv_init_params_t {
+            total_thread_budget: 1,
+            infer_threads: 1,
+            domain_infer_slots: 1,
+            ..params
+        };
+        let key = unsafe { initialize_vision(&domain, &params) }.unwrap();
+        assert_eq!(
+            *domain.thread_config.lock().unwrap(),
+            Some(ThreadBudget {
+                parallel: 1,
+                total: 1,
+                slots: 1
+            })
+        );
+        domain.close(key, 0).unwrap();
+        domain.destroy(key).unwrap();
+        assert!(domain.idle_for_unload());
     }
 }
