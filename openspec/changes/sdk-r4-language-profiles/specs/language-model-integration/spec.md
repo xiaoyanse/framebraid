@@ -33,3 +33,12 @@
 
 - **WHEN** 语言封装改用持有拥有者的只读视图
 - **THEN** 核对实际复制图及生命周期，只有确实减少的复制可记收益；必要的解码回读/布局转换单列，输入提前归还不能导致悬空
+
+### Requirement: Pixel operations retain their language owner
+
+高层像素操作 SHALL 在同步调用及默认复制异步提交返回前保护拥有者，先锁owner再锁model；显式关闭后拒绝，不导出额外裸指针，独立复制接口写清成本。既有低层调用义务和C ABI不变。
+
+#### Scenario: A shared borrow is returned after two model submissions
+
+- **WHEN** 同一共享像素先提交给两个模型，默认复制提交返回后归还并触发GC
+- **THEN** 两请求独立读取已接受内容、归还只一次；关闭后的门面明确拒绝，异常解锁；不将低层逃逸或外部数组写入称安全

@@ -1,5 +1,7 @@
 # FrameBraid SDK
 
+For owned pixel inputs, prefer Python `owner.pixels().infer(model, asynchronous=True)` or C# `owner.Pixels().Submit(model)`. The owner stays alive and locked through submission; accepted async inputs use the default copy policy. Plane-copy helpers make an explicit extra copy. [Ownership validation](docs/verification/sdk-r4-owned-pixels-20261027.md).
+
 Local intermediate candidate: Python/C# model notification buffers retain up to 256 hints and drop oldest on overflow. Drop counters cover language-side loss only; retain request IDs to query/fetch results. [Validation](docs/verification/r4-language-ownership-20261027.md). This does not change the published release or complete the remaining optimization roadmap.
 
 Local unreleased Rust helper update: `H264Hub` allows up to 16 current sources per instance; stopping workers keep their slot until exit. Exhaustive `DenyReason` matches must handle `TooManySources`. This does not change the C ABI or published binaries. See [verification](docs/verification/sdk-r3-rust-hub-20261027.md).

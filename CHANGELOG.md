@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Add owner-locked Python/C# pixel operations for frames, shared borrows and RGB inputs; explicit copy helpers preserve legacy low-level interfaces. / [验证](docs/verification/sdk-r4-owned-pixels-20261027.md)，C ABI不变，异步默认复制而非全链零拷贝。
+
 - Account probe cache backing storage and complete result ownership before copying; preflight native model IO counts before SDK metadata duplication. / [验证](docs/verification/sdk-r3-probe-storage-20261027.md)，保持结果优先、默认预算和C ABI。
 
 - Bound Python/C# model notifications to 256 hints with language-side drop counters; record successful native inference even when delivery is rejected. / [语言缓冲](docs/verification/r4-language-ownership-20261027.md)与[执行观察](docs/verification/sdk-h5-native-observation-20261027.md)，C ABI不变。

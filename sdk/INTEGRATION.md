@@ -1,5 +1,7 @@
 # FrameBraid 双 SDK 接入说明
 
+安全像素输入：优先使用Python `owner.pixels().infer(model, asynchronous=True)` 或C# `owner.Pixels().Submit(model)`；门面在调用期间锁定拥有者并保持GC根。异步默认复制，提交返回后可归还共享借用，结果仍须wait/fetch/ack。`copy_planes/CopyPlanes`是额外复制；Python RgbBuffer复制构造，C#原构造仍pin用户数组，`RgbBuffer.Copy`才隔离原数组写入。旧裸视图需调用方保护。见[验证](../docs/verification/sdk-r4-owned-pixels-20261027.md)。
+
 Python Model.notifications/C# TryTakeNotification每模型最多保留256条提示，满时丢旧。notifications_dropped/NotificationsDropped只计语言缓冲丢失；通知不保证完整，请保留提交ID并查询/fetch/ack结果。注销保留已入队提示，原生屏障完成前固定回调拥有者。
 
 Rust辅助`am_camera::media::h264::session::H264Hub`未发布调整：每实例16个当前源，超过返回`DenyReason::TooManySources`；穷举match需补分支。停止但未退出时继续NotReady且不新开线程，旧订阅Drop绑定原Core。此辅助公开Rust API与C ABI额度分开，不自动合并多个Hub或强杀用户resolver，见[验证](../docs/verification/sdk-r3-rust-hub-20261027.md)。

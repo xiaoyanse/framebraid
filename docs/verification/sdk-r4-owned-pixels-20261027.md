@@ -52,3 +52,13 @@ git diff --check
 自审：无新增队列/全局登记、无 DLL 卸载或 ABI 漂移；返回异常后锁正常释放；双模型提交各自原生复制，源关闭不影响已接受请求。Python safe_sdk 现约 660 行，后续继续增量时宜按拥有者职责拆模块，本包未为压行改写现有代码。
 
 本结论是**代理工作包验证**，待主代理 merge 后重跑相应门并补公开文档才能作为主线阶段成果。未测真实 RTSP CameraFrame、五类 YOLO 精度、GPU、干净交付包、结果 raw view 的拥有者门面与长跑；不关闭 R4 1.1/1.2 父任务或整个 R4。
+
+## 主线集成验收
+
+主代理已真实merge47752f6，逐项审查拥有者锁→模型锁、默认异步复制、委托强引用、显式关闭拒绝、C#旧构造引用数组不变及显式Copy差异，无阻断项。main使用R3探测存储后的匹配DLL重新执行test-owned-pixels，Python所有机制项及两语言双模型同步/异步共享帧、归还/GC/关闭保护通过；语言回归10项、37结构259字段及旧示例通过。
+
+本次main实际DLL：Media `47d0ccd17e8916200c8fedc8b81b3a9652930a7dbbb2ab88f374e624ee2749c2`，Vision `554581c967368c8ada93d82f293ac384b5aee8e32c9f3579c1462f2157d80ad2`；与上方代理旧DLL证据分开，结果在`.local/evidence/r4-owned-pixels-integrated-20261027`。同期工作区309项通过、21项默认忽略；IO边界CPU另显式通过，不代替其余忽略项。
+
+本包没有实际相机帧硬件接线验证、结果raw view安全门面或五类模型精度；不得将父1.2勾完。安全门面是兼容新增语言API，C ABI和冻结工件不变。用户AM-RT仍锁9ecd，本次不升级/不发布。
+
+两隔离分支均已真实merge、无未提交/在用工作及reparse point后回收；代理私有证据归档于主仓`.local/evidence/r4-owned-pixels-integrated-20261027/agent-materials`。源码分支与提交保留，不将可重建pycache或测试工作树留在外部目录。

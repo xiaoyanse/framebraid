@@ -1,5 +1,7 @@
 # FrameBraid SDK
 
+像素输入优先用Python `owner.pixels().infer(model, asynchronous=True)` 或C# `owner.Pixels().Submit(model)`：提交期间保护拥有者，接受的异步输入默认复制；平面复制接口会额外复制。旧裸视图仍须自行保护。[拥有者验证](docs/verification/sdk-r4-owned-pixels-20261027.md)。
+
 本地中间候选：Python/C#每模型通知缓冲最多256条，满时丢最旧提示；丢弃计数仅为语言侧，调用方保留请求ID查询/提取结果。见[验证](docs/verification/r4-language-ownership-20261027.md)。不改变公开版本，不代表完整优化路线完成。
 
 本地未发布Rust辅助API调整：`H264Hub`每实例最多16个当前源，停止中的线程实际退出前保留占位；`DenyReason`穷举匹配须补`TooManySources`分支。C ABI和公开制品不变，见[验证](docs/verification/sdk-r3-rust-hub-20261027.md)。

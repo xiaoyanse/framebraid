@@ -991,6 +991,12 @@ AM_API am_status_t amv_shared_pool_get_stats(const amv_shared_pool_t* pool,
 - 全部字符串 UTF-8（§1.3）；Windows x64 统一调用约定，`AM_API` 导出名不修饰；布尔语义 uint32_t（0/1）；枚举值稳定；不用位域。详细规则与对齐要求见附录 §5。
 - 模式/标志常量（数值冻结候选见附录 §6）：`AM_SUB_PUSH/AM_SUB_PULL`、`AM_INPUT_BORROW_RETAINED`、`AM_IMG_JPEG/AM_IMG_PNG/AM_IMG_PIXEL_VIEW`、`AM_LOAD_PROFILE/AM_LOAD_RAW`（B05）、`AM_BATCH_NATIVE/AM_BATCH_SPLIT/AM_BATCH_AUTO`（P6 三值）、`AM_CAP_ENCODED_JPEG/AM_CAP_CPU_FRAME`、`AM_CLK_PTS/AM_CLK_RECEIVED/AM_CLK_CAPTURED`、`AM_PKT_KEYFRAME/AM_PKT_PARAMSETS/AM_PKT_AU_COMPLETE`、`AM_REUSE_ALLOWED`、`AM_ASSOC_HAS_*`（关联字段可用位）、`AM_PF_ANY` 与 `AM_DHW_*`（P7 解码器）、`AM_CM_*/AM_CR_*`（P5 色彩）、`AM_CQ_*`（P5 时钟质量）。
 
+### 5.9 语言层安全像素操作（R4兼容新增，不增加C ABI）
+
+Python `Frame/BorrowedFrame/RgbBuffer.pixels()` 和 C# `CameraFrame/SharedBorrow/RgbBuffer.Pixels()` 返回只读操作门面 `OwnedPixels`，不提供原生指针。同步推理、默认复制异步提交、共享发布和平面复制期间强持拥有者且先锁拥有者再进入模型/发布器；close/Dispose同锁，提前显式关闭后操作拒绝，异常不越过锁。异步保护至提交返回，不等完成，也不启用BORROW_RETAINED或承诺全链零拷贝。
+
+`copy_planes/CopyPlanes`复制声明平面（含padding）为独立字节；Python新RgbBuffer复制构造，C#旧RgbBuffer仍pin调用方数组，新增Copy工厂才隔离外部写入。只读门面不保证底层ctypes/IntPtr逃逸或外部原数组并发改写安全。旧裸pixel_view/BorrowPixel和模型低层入口兼容保留，由调用者承担完整有效期；结果裸view另按原合同，不由本门面保护。
+
 ## 6. 资源预算（B10：资源域归属 + 项数/字节双限全表；数值为候选，§9-O1）
 
 **预算归属（B10/P4 三轮）**：相机侧预算归属单位=**Context 资源域**（amc_context_t 各自独立账本），同进程多 Context 时同源 Rust 代码不隐含共享全局变量账本，一域满载不侵占另一域。**消费方式单选（P4 三轮定约、四轮检测口径降级，§1.2）**：同一核心在进程内只允许一种消费形态（宿主静态链接或 DLL 二选一）——**单选为部署约束，由部署方/宿主保证**；SDK 尽力检测，`am?_init` 命中另一形态已存在即返回 `sdk.domainConflict`，不承诺自动互检（跨模块无共同登记点）；违反约束并存的超限按各自预算拒绝，不视为 SDK 缺陷。在该单选约束下，**推理执行器进程内单例即真实满足共享语义**——同进程只有唯一消费入口，执行器实例与在途账本（domain_infer_slots）天然唯一（与 6.2a executor 下移对齐），满足 native spec「宿主和核心在冻结的共享预算下执行」；不存在「宿主与 DLL 各配一份执行器」的装配缺口。执行器域预算由首个创建执行器的 amv_init 定值；总线程预算（执行器+ORT intra/inter-op+预处理线程）经 `total_thread_budget` 可配置、`stats.threads_active/threads_peak` 观测。SDK 可管理的字节硬限（下表）与 FFmpeg/ORT/驱动等原生库内部内存**分开声明与观测**（stats 分列，§2.11/§3.8）：后者为参考值，不承诺任意原生库总 RSS 严格受控。

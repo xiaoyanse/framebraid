@@ -1,5 +1,7 @@
 # Support boundaries / 支持边界
 
+OwnedPixels protects frame/shared/RGB owners through synchronous calls and default-copy async submission; it is a language convenience layer, not a new native retain mode. Legacy raw views, external array writes, result raw views, real camera-frame hardware paths and five-family accuracy retain their separate caller obligations/validation. / 新门面不消除全部低层误用或替代硬件验收。
+
 Local Python/C# notification buffers are bounded to 256 hints per model; overflow drops oldest and increments language-only loss counters. / 通知不是可靠事件账本，裸像素视图拥有者、五类模型/硬件及持续运行验收仍按R4/H2/H5待办处理。
 
 Local unreleased auxiliary Rust H264Hub: 16 current sources per instance; stopping work cannot be replaced until exit. Handle `DenyReason::TooManySources` in exhaustive matches. / 与C ABI Context额度分开，不是全进程线程保证，见[记录](verification/sdk-r3-rust-hub-20261027.md)。

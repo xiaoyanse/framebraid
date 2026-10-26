@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+本地R4像素拥有者安全入口已真实双语言/双模型同步异步及GC/提前归还验证；完整工作区309通过/21忽略，详见[记录](verification/sdk-r4-owned-pixels-20261027.md)。AM-RT继续固定9ecd，新的SDK阶段成果仅本地，不推送/发布；R4父项、真实相机帧、五类模型/硬件/长跑仍待。
+
 后续本地R3探测存储/结果准入及模型IO数量前置已验，见[记录](verification/sdk-r3-probe-storage-20261027.md)；这是AM-RT固定9ecd之后的未发布SDK改动，不自动改变宿主。完整基础容量/硬件/长跑继续。
 
 本地中间候选：R4通知缓冲256条、语言侧丢弃及真实CPU通知/共享租约通过；H5原生成功与交付成功分层记账通过；主线全工作区302项通过、20项显式忽略。见[语言记录](verification/r4-language-ownership-20261027.md)与[推理观察](verification/sdk-h5-native-observation-20261027.md)。未关闭整个R4、H2/H5硬件矩阵或4h/24h。
