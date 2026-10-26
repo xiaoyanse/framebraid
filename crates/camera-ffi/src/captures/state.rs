@@ -32,7 +32,7 @@ pub struct State {
     pub recent: Mutex<HashMap<(u64, u32), Arc<io::Raw>>>,
     pub running: AtomicUsize,
     pub continuous: AtomicUsize,
-    pub consumers: Mutex<HashMap<u64, usize>>,
+    pub consumers: Mutex<HashMap<(u64, u32), usize>>,
     pub subscriptions: Mutex<Vec<Weak<super::continuous::Subscription>>>,
     pub closed: AtomicBool,
     pub changed: Condvar,
@@ -59,6 +59,19 @@ impl Managed for State {
     }
 }
 impl State {
+    pub fn remove_consumer(&self, key: (u64, u32)) {
+        if let Ok(mut consumers) = self.consumers.lock() {
+            if let Some(count) = consumers.get_mut(&key) {
+                *count = count.saturating_sub(1);
+                if *count == 0 {
+                    consumers.remove(&key);
+                    if let Ok(mut recent) = self.recent.lock() {
+                        recent.remove(&key);
+                    }
+                }
+            }
+        }
+    }
     pub fn get(camera: &Arc<CameraState>) -> Result<Arc<Self>> {
         let context = camera.ctx.data::<Context>()?;
         let mut services = lock(&context.services)?;

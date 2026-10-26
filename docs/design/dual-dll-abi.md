@@ -401,6 +401,8 @@ typedef void (*am_capture_cb_fn)(amc_capture_sub_t* sub, am_captured_image_t* im
 - **实际频率可查**：stats 含 actual_fps / last_received_at_ms / consecutive_failures / newest_age_ms；相机达不到配置频率时报告实际值；**过期图片不刷新时间戳冒充新图**。
 - 原 JPEG 字节可直接输出；需要像素时再解码，缩放按需进行。
 
+内部缓存回收约束（R3，兼容修复）：最近图片只归属于仍活跃的源×采样频率；最后一个同频率订阅排空时释放该频率缓存，不要求其他频率的消费者退出。停止期间尚在完成的HTTP请求不能重新留下无主缓存；缓存更新不允许旧帧覆盖更新的帧。不改变共享采集器、输出时间戳或外部图片release语义；共享Raw仍保守按既有HTTP预留额度计费，不承诺该额度等于RSS。
+
 ### 2.8 独立解码器（N01/SDK-DEC-02；与网络视频源解耦）
 
 已在外部取得标准 H.264/H.265 压缩数据的调用方 MUST NOT 被要求为解码而重新连接相机；解码器父对象为 ctx，不依赖任何 amc_source_t。最小调用顺序：**create → submit → receive（零/一/多帧）→ drain/reset → close（屏障）→ 释放**。

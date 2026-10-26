@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "b8f22c91a6ee3b371d4daadca5fb1b4279b8a429",
+  "reviewBaseCommit": "b09fd8270f51e5f9795fdf7dfac476167f79bd8a",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -536,6 +536,30 @@
       "previousSha256": "d8268827e64df362ad31d296425d7e644a8a5c8f8c2f23f41c1d84e3f1fa8ad4",
       "sha256": "1eb0270083a9e2fd716327ddf24dc608087654b1bad50262a9b15001a43f978a",
       "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/state.rs",
+      "previousSha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5",
+      "sha256": "603663238a513a0b38e7fca1faa574ed4853ffaf0e01c101819da9952b4d0805",
+      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/continuous.rs",
+      "previousSha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced",
+      "sha256": "089e6c05c96cb0134b7872c4a62ae9b51d8aa15de58c15302b0f14ab238333cd",
+      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/io.rs",
+      "previousSha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18",
+      "sha256": "632a181dcdf202e2d09f838f318c42b5173c57ae807f24406f074a92b0f35880",
+      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/io/tests.rs",
+      "previousSha256": null,
+      "sha256": "76ebc163ad0dc075846606f86b21f7f076cac3524e20bfd596648866f9d42b58",
+      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
     }
   ]
 }

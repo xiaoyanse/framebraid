@@ -25,6 +25,11 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 - **WHEN** 一个 Context 的实时输入尚未归还，另一类或另一 Context 在自身字节预算内提交
 - **THEN** 分别核分类暂存、本 Context 合计及执行器总额，不将其他分类或 Context 用量套入当前类较小上限；超额拒绝不留账、不产生请求 ID，归还屏障完成后才释放原占用
 
+#### Scenario: ISAPI sampling subscriptions change repeatedly
+
+- **WHEN** 一个慢频率消费者持续运行，其他频率订阅反复开始、取图并排空，或停止与HTTP结果提交重叠
+- **THEN** 最近图片缓存只保留活跃源×频率，最后同频订阅排空即释放其缓存；晚提交不能复活退役键、旧帧不能覆盖新帧，健康抓图不因历史频率缓存耗尽预算，实际读取中的外部引用仍保持到release
+
 #### Scenario: Rust H264Hub subscriber stalls or closes
 
 - **WHEN** Rust辅助分发的客户端停滞、视频和叠层共同占用队列，或关闭与等待/投递重叠

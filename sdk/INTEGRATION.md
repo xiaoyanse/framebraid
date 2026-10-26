@@ -1,5 +1,9 @@
 # FrameBraid 双 SDK 接入说明
 
+## ISAPI interval-cache reclamation / 频率缓存回收
+
+未发布内部修复：最后一个同源同频率连续取图订阅排空时回收该频率缓存，其他频率仍运行，已交给调用方的图片继续按`amc_image_release`释放。验证见[记录](../docs/verification/sdk-r3-capture-cache-20261027.md)，复现工具`test-camera-capture-cache.py`只使用本地Digest HTTP合成图。This fixes stale interval-cache pressure without changing ABI, endpoint rules or conservative HTTP reservations.
+
 ## Local pressure verification / 本地压力验证
 
 新增开发工具`test-camera-pressure.py`和`test-inference-pressure.py`分别验证同源慢消费者和CPU结果/通知/共享帧隔离，命令及目标卡见[记录](../docs/verification/sdk-r3-pressure-isolation-20261027.md)。结果总配额在Context内共享；若需隔离未取结果的消费者，应使用各自Context并遵守全域预算。活共享槽不能被超时强抢，满池明确拒绝；另一池仍独立受总映射预算约束。These developer checks do not promise unlimited isolation, hardware capacity or soak acceptance.

@@ -6,6 +6,8 @@ use std::sync::{
     Condvar,
 };
 static FRAME_IDS: AtomicU64 = AtomicU64::new(1);
+#[cfg(test)]
+mod tests;
 pub struct Raw {
     pub encoded: Vec<u8>,
     pub width: u32,
@@ -23,38 +25,46 @@ pub fn continuous(
     timeout: Duration,
     interval: u32,
 ) -> Result<Arc<Raw>> {
-    let key = {
+    {
         let recent = lock(&state.recent)?;
         let candidate = recent
             .iter()
-            .filter(|((id, cadence), _)| *id == source.source_id && *cadence <= interval)
+            .filter(|((id, cadence), image)| {
+                *id == source.source_id
+                    && *cadence <= interval
+                    && monotonic_ms().saturating_sub(image.meta.received_at_ms) < interval as i64
+                    && image.meta.source_generation == source.generation.load(Ordering::Acquire)
+                    && image.meta.config_generation
+                        == source.config_generation.load(Ordering::Acquire)
+            })
             .min_by_key(|((_, cadence), _)| *cadence);
-        if let Some((key, image)) = candidate {
-            if monotonic_ms().saturating_sub(image.meta.received_at_ms) < interval as i64
-                && image.meta.source_generation == source.generation.load(Ordering::Acquire)
-                && image.meta.config_generation == source.config_generation.load(Ordering::Acquire)
-            {
-                return Ok(image.clone());
-            }
-            *key
-        } else {
-            (source.source_id, interval)
+        if let Some((_, image)) = candidate {
+            return Ok(image.clone());
         }
-    };
+    }
+    let key = (source.source_id, interval);
     let image = acquire_for(state, source, timeout, Some((key, interval)))?;
     if state.closed.load(Ordering::Acquire) || source.stop.load(Ordering::Acquire) {
         return Err(AM_ERR_SDK_HANDLE_CLOSED);
     }
-    let mut recent = lock(&state.recent)?;
-    if state.closed.load(Ordering::Acquire) || source.stop.load(Ordering::Acquire) {
-        return Err(AM_ERR_SDK_HANDLE_CLOSED);
-    }
-    if !recent.contains_key(&key) && recent.len() >= 4 * source.state.limits()?.max_sources as usize
-    {
-        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
-    }
-    recent.insert(key, image.clone());
+    cache_recent(state, key, &image)?;
     Ok(image)
+}
+
+fn cache_recent(state: &state::State, key: (u64, u32), image: &Arc<Raw>) -> Result<()> {
+    // 与最后订阅回收同序；在途请求可返回给读者，但不能重建无主缓存。
+    let consumers = lock(&state.consumers)?;
+    if state.closed.load(Ordering::Acquire) || consumers.get(&key).copied().unwrap_or(0) == 0 {
+        return Ok(());
+    }
+    let mut recent = lock(&state.recent)?;
+    if recent
+        .get(&key)
+        .is_none_or(|old| old.meta.frame_id < image.meta.frame_id)
+    {
+        recent.insert(key, image.clone());
+    }
+    Ok(())
 }
 pub fn error(error: IoError) -> i32 {
     match error {
@@ -114,9 +124,8 @@ fn acquire_for(
     if leader {
         let result = capture(source, timeout);
         if let (Some((key, _)), Ok(image)) = (freshness, result.as_ref()) {
-            let mut recent = lock(&state.recent)?;
-            if !state.closed.load(Ordering::Acquire) && !source.stop.load(Ordering::Acquire) {
-                recent.insert(key, image.clone());
+            if !source.stop.load(Ordering::Acquire) {
+                cache_recent(state, key, image)?;
             }
         }
         *lock(&flight.result)? = Some(result.clone());

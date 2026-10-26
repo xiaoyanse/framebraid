@@ -72,17 +72,8 @@ impl Subscription {
     fn release_capacity(&self) {
         if self.reserved.swap(false, Ordering::AcqRel) {
             self.state.continuous.fetch_sub(1, Ordering::AcqRel);
-            if let Ok(mut consumers) = self.state.consumers.lock() {
-                if let Some(count) = consumers.get_mut(&self.source.source_id) {
-                    *count = count.saturating_sub(1);
-                    if *count == 0 {
-                        consumers.remove(&self.source.source_id);
-                        if let Ok(mut recent) = self.state.recent.lock() {
-                            recent.retain(|(source, _), _| *source != self.source.source_id);
-                        }
-                    }
-                }
-            }
+            self.state
+                .remove_consumer((self.source.source_id, self.config.target_interval_ms));
         }
     }
 }
@@ -149,7 +140,9 @@ pub unsafe extern "C" fn amc_capture_continuous_start(
                 (n < max).then_some(n + 1)
             })
             .map_err(|_| AM_ERR_CAMERA_CAPTURE_CAPACITY)?;
-        *lock(&state.consumers)?.entry(source.source_id).or_default() += 1;
+        *lock(&state.consumers)?
+            .entry((source.source_id, config.target_interval_ms))
+            .or_default() += 1;
         let sub = Arc::new(Subscription {
             source,
             state,
@@ -465,9 +458,10 @@ pub unsafe extern "C" fn amc_capture_sub_get_stats(
             .capture_fps_bits
             .store(fps.to_bits(), Ordering::Release);
         let consumers = lock(&sub.state.consumers)?
-            .get(&sub.source.source_id)
-            .copied()
-            .unwrap_or(0) as u64;
+            .iter()
+            .filter(|((source, _), _)| *source == sub.source.source_id)
+            .map(|(_, count)| *count as u64)
+            .sum();
         args::write(
             out,
             am_capture_stats_t {
