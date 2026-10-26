@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "c7c9df827d10f32d511399cf05bb11e70559b758",
+  "reviewBaseCommit": "3741178bbd60fcda40520b998145b0afbb5d23fb",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -24,8 +24,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler.rs",
       "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-      "sha256": "4c8db9db505abe873839ff7f9cc50b51cabbc5ada6602747e1cea98cfbaa9df4",
-      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
+      "sha256": "5d5aacc44d0d87b36cc1348f55dcc60e5dd88eeb77a3cd0e7b37bb22528d4a93",
+      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "8687035b27743343e213e9f77f160593860a99f33a337b4e2565fc1fe1488cf6",
-      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+      "sha256": "e9ed15f4f026183e3b1d3bd222fb30255d040e9d3ecda988954b454395755f6e",
+      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -282,8 +282,8 @@
     {
       "path": "crates/vision/src/sdk/selection.rs",
       "previousSha256": null,
-      "sha256": "011d3ff66b882100ac5fbfbf16c95dd73043f800891693e08108e00ab33aafb2",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+      "sha256": "2f2d5c43e0ac4760ef80d15baed5694cdeda168cfe1692dc84bfb1f8ef2db9fe",
+      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
     },
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
@@ -462,8 +462,8 @@
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "072ad7f4d0f7dc669744235beaf26031c6de9c8e80cb86009e54533f9e09f2e2",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "9134c2d499949f3e57771869636185bf3b2437d9400353b75b3253d23b7ee62d",
+      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
     },
     {
       "path": "crates/vision-ffi/src/inference/results.rs",
@@ -506,6 +506,12 @@
       "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
       "sha256": "f3b581fe29ed15a977782bdb16ec80240a05098f703d46cb3371c8cc81f885a4",
       "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
+      "previousSha256": "515897059c2a19e3105e027fb9699f5be7e03277a4f0b308c13e9acb61e20e8b",
+      "sha256": "3ca070b815af351ee476f49e2e1f71ae61ae4829e93e59e750bcbfddd90c1760",
+      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
     }
   ]
 }

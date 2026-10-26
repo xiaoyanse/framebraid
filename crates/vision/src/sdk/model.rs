@@ -191,7 +191,7 @@ impl Model {
             allow_fallback: !strict,
             budget_ms: 1500,
         };
-        Self::load_selected_inner(source, profile, &policy, threads, true)
+        Self::load_selected_inner(source, profile, &policy, threads, true, |_| Ok(()))
             .map_err(|failure| failure.error)
     }
     pub fn load_selected(
@@ -200,7 +200,18 @@ impl Model {
         policy: &super::selection::BackendSelectionPolicy,
         threads: usize,
     ) -> super::selection::SelectionResult<Self> {
-        Self::load_selected_inner(source, profile, policy, threads, false)
+        Self::load_selected_inner(source, profile, policy, threads, false, |_| Ok(()))
+    }
+    /// 每候选原生构造前准入；函数必须短小，不得迁移仍在执行的旧会话。
+    /// 调用方持有的预留须覆盖返回模型的整个寿命；准入函数本身不拥有许可。
+    pub fn load_selected_admitted(
+        source: ModelSource<'_>,
+        profile: Option<&str>,
+        policy: &super::selection::BackendSelectionPolicy,
+        threads: usize,
+        admit: impl FnMut(super::selection::BackendTarget) -> Result<()>,
+    ) -> super::selection::SelectionResult<Self> {
+        Self::load_selected_inner(source, profile, policy, threads, false, admit)
     }
     pub fn selection_report(&self) -> &super::selection::BackendSelectionReport {
         &self.selection
@@ -211,6 +222,7 @@ impl Model {
         policy: &super::selection::BackendSelectionPolicy,
         threads: usize,
         legacy: bool,
+        mut admit: impl FnMut(super::selection::BackendTarget) -> Result<()>,
     ) -> super::selection::SelectionResult<Self> {
         use super::selection::{self, BackendSelectionError, BackendSelectionReport};
         policy.validate().map_err(|error| BackendSelectionError {
@@ -249,6 +261,11 @@ impl Model {
                 },
             )?;
             let session = selection::choose(policy, legacy, &mut selection, |target| {
+                admit(target).map_err(|error| selection::AttemptError {
+                    error,
+                    stage: "resource_admission",
+                    native_code: None,
+                })?;
                 super::session::create(source, &bytes, target, threads)
             })?;
             let actual_backend = selection.selected.map_or(0, |target| target.backend);

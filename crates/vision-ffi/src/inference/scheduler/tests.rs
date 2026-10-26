@@ -9,8 +9,15 @@ fn last_model_joins_workers_and_concurrent_generations_do_not_overlap() {
     };
     assert!(reserve_model(budget, 3).is_err());
     assert!(ENGINE.lock().unwrap().is_none());
-    let first = reserve_model(budget, 1).unwrap();
+    let mut first = reserve_model(budget, 1).unwrap();
     let engine = first.engine.clone();
+    assert!(first.set_extra(3).is_err());
+    assert!(first.set_extra(usize::MAX).is_err());
+    assert_eq!(engine.data.lock().unwrap().extra_threads, 1);
+    first.set_extra(2).unwrap();
+    assert_eq!(engine.data.lock().unwrap().extra_threads, 2);
+    assert!(reserve_model(budget, 1).is_err());
+    first.set_extra(1).unwrap();
     let second = reserve_model(budget, 1).unwrap();
     assert!(Arc::ptr_eq(&first.engine, &second.engine));
     assert!(reserve_model(budget, 1).is_err());

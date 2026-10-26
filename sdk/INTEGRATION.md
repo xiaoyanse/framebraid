@@ -254,3 +254,5 @@ Unpublished ABI1.1 r8 only: use bindings and DLL from the same source revision. 
 设备报告可在无ORT的纯共享帧context查询，显卡被枚举不等于ORT/CUDA可用。常规查询不刷新驱动；缺失/失败读device_probe.stopped，不要当作零设备。observations为SDK域累计观察，非当前模型健康/全GPU节点证明；模型选择仍按原C接口或新增Rust策略，本阶段不扩旧运行库替换合同。默认64KiB控制预算内缓存16KiB、查询48KiB，两者各一项；其他控制对象或并发查询可能明确resourceExhausted，应归还控制对象/减少并发，不能无限重试。关闭态仅返回空快照。
 
 有序选择的context尝试是加载时快照，Run只刷新模型缓存。Python/C#为关闭安全串行化同一资源操作；需边执行边查状态时选择异步推理。新查询不提供后台刷新或驱动测速。
+
+新有序加载按各候选实际配置准入，不让列表内OpenVINO的最大线程预留阻断CPU；允许回退仍须列出CPU，strict仍拒绝。Rust源码高级调用可用`Model::load_selected_admitted`提供短小准入闭包，调用方持有的许可须覆盖整个模型寿命；普通load/load_selected兼容不变，C签名/布局/能力位不变。原生Run失败不自动重放，关闭旧模型再显式加载新身份；见[资源准入验证](../docs/verification/sdk-h5-resource-admission-20261027.md)。

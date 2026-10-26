@@ -129,9 +129,13 @@ pub(super) fn choose<T>(
                 return Ok(value);
             }
             Err(failure) => {
+                let resource = !legacy
+                    && failure.stage == "resource_admission"
+                    && failure.error.0 == "sdk.resourceExhausted";
                 let stop = !policy.allow_fallback
                     || failure.error.0 != "vision.backendStrictUnavailable"
-                        && !(failure.error.0 == "vision.backendConflict" && !legacy);
+                        && !(failure.error.0 == "vision.backendConflict" && !legacy)
+                        && !resource;
                 report.attempts.push(BackendAttempt {
                     target: *target,
                     stage: failure.stage,
@@ -215,6 +219,44 @@ mod tests {
         )))
         .is_err());
         assert!(r.attempts.iter().all(|a| a.target.backend != 0));
+    }
+    #[test]
+    fn only_candidate_admission_exhaustion_can_fall_through_resource_errors() {
+        let mut p = policy();
+        let mut r = report(&p, false);
+        assert_eq!(
+            choose(&p, false, &mut r, |target| {
+                if target.backend == 0 {
+                    Ok(42)
+                } else {
+                    Err(AttemptError::key(
+                        "sdk.resourceExhausted",
+                        "resource_admission",
+                    ))
+                }
+            })
+            .unwrap(),
+            42
+        );
+        assert_eq!(r.attempts.len(), 2);
+        for (legacy, stage) in [(true, "resource_admission"), (false, "model_session")] {
+            let mut r = report(&p, legacy);
+            assert!(choose::<()>(&p, legacy, &mut r, |_| {
+                Err(AttemptError::key("sdk.resourceExhausted", stage))
+            })
+            .is_err());
+            assert_eq!(r.attempts.len(), 1);
+        }
+        p.allow_fallback = false;
+        let mut r = report(&p, false);
+        assert!(choose::<()>(&p, false, &mut r, |_| {
+            Err(AttemptError::key(
+                "sdk.resourceExhausted",
+                "resource_admission",
+            ))
+        })
+        .is_err());
+        assert_eq!(r.attempts.len(), 1);
     }
     #[test]
     fn invalid_and_duplicate_targets_fail_before_native_work() {

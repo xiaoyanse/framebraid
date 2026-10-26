@@ -555,6 +555,8 @@ AM_API am_status_t amv_model_get_info(const amv_model_t* model, am_model_info_t*
 
 选择快照schema=`framebraid.inference-selection/1`，包含state、attempt_id、outcome_status、observed_at_ms、selection（Rust有序候选/尝试阶段/原生代码/实际target/Run计数/placement_verified）。context仅缓存最近开始的一次尝试，旧尝试完成不覆盖更新ID；覆盖或未知ID返回sdk.resultExpired，调用方用自身load返回ID防止并发串读。成功模型拥有独立缓存，即使context缓存被覆盖也可查；旧模型入口的selection为null（legacy_model），继续用旧get_info，不能虚构旧模型有新诊断。Session成功与真实Run分开，Run之后才刷新计数；计数反映core输出，不等于SDK结果被业务消费。GPU节点放置未知不报已全GPU。
 
+2026-10-27逐候选资源准入：有序加载只为当前候选调整线程预留；`resource_admission`阶段的`sdk.resourceExhausted`可在allow_fallback允许时继续下一明确候选，不能以此放宽control/模型/全局总额，不能暗加CPU。strict和legacy加载行为保持，原生构造返回前不调整下一候选；后续Run失败只结束当前请求，显式关闭/重建才产生新模型身份。
+
 新选择每个context尝试缓存8KiB，每个新策略模型缓存8KiB，查询临时16KiB，均按既有control项数/字节准入；超额resourceExhausted，不增加预算或线程。初始化/模型失败也保存已准入尝试的稳定错误及阶段，无路径/原生消息。关闭释放模型缓存、停止后查询不分配工作服务；context缓存不作为外部持有阻塞关闭。运行期失败只结束当前请求，不自动重放；恢复由显式排空/关闭旧模型再加载新身份，完整故障/真实加速矩阵仍按H5后续验收。
 
 **raw 模式语义（B05）**：

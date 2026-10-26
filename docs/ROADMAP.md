@@ -323,3 +323,5 @@ HEAD 仅标记定位快照，其他团队的未提交工作不被本路线归档
 本地H5.0b显式推理探测/缓存报告已进入C ABI1.1 r8并配套Python/C#，见[验证](verification/sdk-h5-inference-report-20261026.md)。支持无ORT使用，设备发现不冒充加速Session/Run；旧矩阵缓存迁移、模型C选择策略和恢复保持开放。
 
 本地H5.2有序模型选择C导出、Python/C#、实际CPU Run与缺EP strict/回退已验证，见[记录](verification/sdk-h5-ordered-selection-20261026.md)。不关闭H5.1/3/4、旧矩阵迁移、组批和压力长跑；ABI1.1 r9未发布。
+
+H5.2有序策略及候选线程准入已接通并按CPU/负向EP验证；总线程3的场景由3/3拒绝变为3/3允许CPU执行，strict/无CPU/第二模型超额仍拒绝，实际资源上限不变。见[验证](verification/sdk-h5-resource-admission-20261027.md)。H5.1/3/4真实加速、硬件资源故障及长跑继续开放。

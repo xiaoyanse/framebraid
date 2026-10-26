@@ -262,23 +262,12 @@ unsafe fn load_inner(
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
     let extra = threads as usize - 1
-        + if policy.requested == AM_BACKEND_OPENVINO as u32
-            || selected.is_some_and(|(p, _)| {
-                p.priority
-                    .iter()
-                    .take(if p.allow_fallback {
-                        p.priority.len()
-                    } else {
-                        1
-                    })
-                    .any(|v| v.backend == AM_BACKEND_OPENVINO as u32)
-            })
-        {
+        + if selected.is_none() && policy.requested == AM_BACKEND_OPENVINO as u32 {
             threads as usize
         } else {
             0
         };
-    let permit = match scheduler::reserve_model(budget, extra) {
+    let mut permit = match scheduler::reserve_model(budget, extra) {
         Ok(p) => p,
         Err(e) => {
             state.models.fetch_sub(1, Ordering::AcqRel);
@@ -286,11 +275,26 @@ unsafe fn load_inner(
         }
     };
     let model = if let Some((selected_policy, attempt)) = selected {
-        match Model::load_selected(
+        match Model::load_selected_admitted(
             source,
             profile.as_deref(),
             selected_policy,
             threads as usize,
+            |target| {
+                let extra = threads as usize - 1
+                    + if target.backend == AM_BACKEND_OPENVINO as u32 {
+                        threads as usize
+                    } else {
+                        0
+                    };
+                permit.set_extra(extra).map_err(|code| {
+                    am_vision_core::Error(if code == AM_ERR_SDK_RESOURCE_EXHAUSTED {
+                        "sdk.resourceExhausted".into()
+                    } else {
+                        "sdk.internalError".into()
+                    })
+                })
+            },
         ) {
             Ok(model) => attempt.record(model.selection_report()).map(|()| model),
             Err(failure) => attempt

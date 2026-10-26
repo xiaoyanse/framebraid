@@ -132,3 +132,5 @@ H5.0b本地探测报告与原生/语言回归详见[验证](verification/sdk-h5-
 2026-10-26 MET-2文档收口：[统一指标](PERFORMANCE_ACCEPTANCE.md)、[历史评价复核](verification/sdk-metrics-review-20261026.md)。旧R1 CPU/合成基线及阶段功能证据保留，新增量化前置尚未实施；不把改评价口径当新测试通过或解除全部性能警戒。当前不继续代码开发，公开制品与支持范围不变。
 
 Local unpublished ABI1.1 r9 adds ordered C model selection, bounded reports and Python/C# helpers. CPU/negative-EP controls and retained-result ownership are checked in [verification](verification/sdk-h5-ordered-selection-20261026.md); accelerated execution, full fault recovery and soak remain open. Existing release assets are unchanged. / 本地阶段功能验证与性能/生产验收分开。
+
+Local H5 resource admission fixes explicitly allowed CPU fallback under tight thread budgets, with native-failure/no-replay and explicit-rebuild checks. [Verification](verification/sdk-h5-resource-admission-20261027.md). C ABI and published artifacts remain unchanged; accelerated/fault/soak acceptance is separate.

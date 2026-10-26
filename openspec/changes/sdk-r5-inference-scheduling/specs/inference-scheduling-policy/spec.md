@@ -19,6 +19,11 @@ SDK MUST 区分硬件可见、依赖存在、provider 可加载、目标模型�
 
 探测 SHALL 显式且有界、查询只读、瞬态失败可刷新；后端故障不自动重放完成或状态不确定请求，不释放仍被原生调用读取的输入。
 
+#### Scenario: Preferred backend exceeds candidate thread allowance
+
+- **WHEN** OpenVINO候选无法在全局线程硬限内准入而调用方允许的后续CPU候选可以
+- **THEN** 原生构造前逐候选计费，记录resource_admission失败并仅按允许列表回退；strict或未列CPU仍拒绝，归还失败预留，关闭后允许显式重试，不增预算、不重放请求
+
 #### Scenario: Transient provider failure followed by retry
 
 - **WHEN** 暂时设备忙或内存不足后调用方显式重试

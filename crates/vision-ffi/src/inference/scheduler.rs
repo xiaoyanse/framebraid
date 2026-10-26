@@ -48,6 +48,24 @@ pub struct ModelPermit {
     extra: usize,
 }
 impl ModelPermit {
+    // 一个加载许可内调整候选额度，不创建第二执行器、不丢弃上一候选仍在读取的资源。
+    pub fn set_extra(&mut self, extra: usize) -> Result<()> {
+        let mut data = lock(&self.engine.data)?;
+        let next = data.extra_threads - self.extra;
+        let next = next
+            .checked_add(extra)
+            .ok_or(AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+        let total = next
+            .checked_add(self.engine.budget.parallel as usize)
+            .ok_or(AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+        if total > self.engine.budget.total as usize {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        data.extra_threads = next;
+        self.extra = extra;
+        THREADS_PEAK.fetch_max(total, Ordering::AcqRel);
+        Ok(())
+    }
     pub fn add_callback_thread(&mut self) -> Result<()> {
         let mut data = lock(&self.engine.data)?;
         if data.extra_threads + 1 + self.engine.budget.parallel as usize
