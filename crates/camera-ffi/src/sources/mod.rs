@@ -23,6 +23,7 @@ mod api;
 mod credentials;
 mod events;
 pub(crate) mod hardware;
+mod snapshot;
 #[cfg(test)]
 mod tests;
 use credentials::{Credentials, Provider};
@@ -119,18 +120,8 @@ impl SharedSource {
         self.report(AM_SRC_LIVE as u32, AM_FAULT_NONE as u32, c"camera.live");
     }
     pub fn event(&self, kind: i32, scope: i32, affected: usize, fault: u32, reason: &'static CStr) {
-        let sources = self
-            .sources
-            .lock()
-            .map(|mut sources| {
-                sources.retain(|_, s| s.strong_count() > 0);
-                sources
-                    .values()
-                    .filter_map(Weak::upgrade)
-                    .collect::<Vec<_>>()
-            })
-            .unwrap_or_default();
-        for source in sources {
+        let sources = self.source_snapshot();
+        for source in sources.iter() {
             if !source.closing.load(Ordering::Acquire) {
                 source.events.push(
                     kind,
@@ -142,6 +133,16 @@ impl SharedSource {
                 );
             }
         }
+    }
+    fn source_snapshot(&self) -> snapshot::Snapshot<Source> {
+        let mut snapshot = snapshot::Snapshot::default();
+        if let Ok(mut sources) = self.sources.lock() {
+            sources.retain(|_, source| source.strong_count() > 0);
+            for source in sources.values().filter_map(Weak::upgrade) {
+                snapshot.push(source);
+            }
+        }
+        snapshot
     }
     pub fn credentials_ready(&self) {
         if self.stop.load(Ordering::Acquire) || self.secret().is_err() {
@@ -304,31 +305,39 @@ fn registry() -> &'static Mutex<Registry> {
     REGISTRY.get_or_init(Mutex::default)
 }
 pub fn queue_usage(ctx_key: usize) -> (u64, u64) {
-    let shared = registry()
+    let mut shared = registry()
         .lock()
-        .map(|registry| {
-            let mut sources = std::collections::HashMap::new();
-            for source in registry.sources.iter().filter_map(Weak::upgrade) {
-                if source.shared.state.ctx_key == ctx_key {
-                    sources
-                        .entry(source.shared.source_id)
-                        .or_insert_with(|| source.shared.clone());
-                }
-            }
-            sources.into_values().collect::<Vec<_>>()
-        })
+        .map(|registry| registry.shared_snapshot(ctx_key))
         .unwrap_or_default();
-    // registry 与 Hub 的锁分开，避免统计和连接状态回调形成反向锁序。
-    shared.into_iter().fold((0, 0), |(items, bytes), source| {
-        let usage = source
-            .stream
-            .lock()
-            .ok()
-            .and_then(|hub| hub.as_ref().map(|hub| hub.queue_usage()))
-            .unwrap_or_default();
-        (items + usage.0, bytes + usage.1)
-    })
+    // registry 与 Hub 的锁分开；完整快照后排序去重，不改变当次成员。
+    let mut total = (0, 0);
+    shared.for_each_unique(
+        |source| source.source_id,
+        |source| {
+            let usage = source
+                .stream
+                .lock()
+                .ok()
+                .and_then(|hub| hub.as_ref().map(|hub| hub.queue_usage()))
+                .unwrap_or_default();
+            total.0 += usage.0;
+            total.1 += usage.1;
+        },
+    );
+    total
 }
+impl Registry {
+    fn shared_snapshot(&self, ctx_key: usize) -> snapshot::Snapshot<SharedSource> {
+        let mut snapshot = snapshot::Snapshot::default();
+        for source in self.sources.iter().filter_map(Weak::upgrade) {
+            if source.shared.state.ctx_key == ctx_key {
+                snapshot.push(source.shared.clone());
+            }
+        }
+        snapshot
+    }
+}
+
 pub fn get(key: usize) -> Result<Arc<Entry>> {
     let entry = domain().get(key)?;
     entry.data::<Source>()?;
