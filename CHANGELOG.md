@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Prepay standalone decoder input slots and timing-table storage, keep idle capacity charged, and preserve old state on reset admission failure. / 独立解码元数据预算与固定容量，默认总额约束和回归见[记录](docs/verification/sdk-r3-decoder-metadata-20261027.md)，C ABI不变。
+
 - Reserve standalone decoder configuration, parameter caches and serialized reconfiguration storage before copying; share immutable configuration on NULL reset. Add compatible allocation-free Rust NAL visitation. / 修复低预算配置绕过和失败更新，保留C ABI及旧帧，见[验证](docs/verification/sdk-r3-decoder-retained-20261027.md)。
 
 - Prepay fixed Media source-event storage and reclaim it after callback drain, preserving bounded drop-old hints without overwriting active callbacks. / 补媒体事件空闲容量与停止回收，详见[验证](docs/verification/sdk-r3-media-event-storage-20261027.md)，C ABI不变。

@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "d0c3ebfb57ea5498955a76ec56e72cae9329761f",
+  "reviewBaseCommit": "3597a96e0eaca8dc7273e493f0deabf54437b2c1",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -114,8 +114,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "49c7ae70718e269066fa8c6778b3dd4a89dbf3b1f2af272f18417f782a8d95ca",
-      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+      "sha256": "d9c4c1ced7679ec09065d00819f78b84058f48d1b7e78b5319eb2cadbf1d5c97",
+      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
@@ -144,20 +144,20 @@
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
       "previousSha256": null,
-      "sha256": "6b2330be93780215143dc20947931c9fcb80d6d6bbef52b713fb382e4ec5e0f8",
-      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+      "sha256": "ac37e764d5fdb9cb6fc639199fd5e01dec1ba3de1ed962315be85850ca0032f6",
+      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/recovery.rs",
       "previousSha256": null,
-      "sha256": "b3bc870d214737300bac7959f01d20b667aa2af48ebb6f444ecd0ce34134c604",
-      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+      "sha256": "6314540da6311a5e6d124b7b1212dc0b71937789da6f04b8e98e5a1ff244d56d",
+      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/tests.rs",
       "previousSha256": null,
-      "sha256": "c4c3f96557503404ef76601ee867712bb2a007d178381eb66e673f9f7951456f",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "d59ca22201e05243e73b130353c81dc06b7838ef38b9d7a0658dc8fe0b8db8b5",
+      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/frames/budget_tests.rs",
@@ -656,6 +656,12 @@
       "previousSha256": null,
       "sha256": "d9d69fa71f7809319f1a9db548e129c9a1f718edecb567c007b2d8f22335d843",
       "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/buffers.rs",
+      "previousSha256": null,
+      "sha256": "5ffd55419110a3851f4b9ac95a24033ac617e068db63a34b9033d4678386630e",
+      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
     }
   ]
 }

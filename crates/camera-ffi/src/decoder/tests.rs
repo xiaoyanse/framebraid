@@ -190,7 +190,15 @@ fn native_auto_fallback_reserves_budget_replays_only_unpublished_startup_and_kee
                 );
                 assert!(output.is_null());
                 assert_eq!(
-                    decoder.inner.lock().unwrap().as_ref().unwrap().queue.len(),
+                    decoder
+                        .inner
+                        .lock()
+                        .unwrap()
+                        .as_ref()
+                        .unwrap()
+                        .buffers
+                        .queue
+                        .len(),
                     0
                 );
                 // 已发布后不能历史重放，即使刚失败的是IDR；新RAP才能恢复。

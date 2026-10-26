@@ -14,6 +14,7 @@ use std::{
     time::{Duration, Instant},
 };
 pub(crate) mod budget;
+mod buffers;
 pub(crate) mod config;
 mod diagnostics;
 mod receive;
@@ -43,10 +44,9 @@ struct Inner {
     recovery_charge: Option<Charge>,
     config: Arc<OwnedConfig>,
     gate: BudgetedGate,
-    queue: VecDeque<Packet>,
+    buffers: buffers::Buffers,
     queue_bytes: u64,
     flushed: bool,
-    timings: VecDeque<Timing>,
 }
 struct Timing {
     tag: i64,
@@ -147,6 +147,7 @@ fn make_inner(ctx: &Arc<CameraState>, cfg: Arc<OwnedConfig>) -> Result<Inner> {
     if pixels == 0 {
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
+    let buffers = buffers::Buffers::new(ctx, cfg.abi.queue_max_items as usize)?;
     let gate = BudgetedGate::new(ctx, &cfg)?;
     let selected = CpuDecoder::create_with_policy(
         runtime(ctx)?,
@@ -171,10 +172,9 @@ fn make_inner(ctx: &Arc<CameraState>, cfg: Arc<OwnedConfig>) -> Result<Inner> {
         recovery_charge: None,
         config: cfg,
         gate,
-        queue: VecDeque::new(),
+        buffers,
         queue_bytes: 0,
         flushed: false,
-        timings: VecDeque::new(),
     })
 }
 #[no_mangle]
@@ -261,7 +261,7 @@ unsafe fn submit(decoder: &Decoder, pkt: *const am_decoder_input_t) -> Result<()
     if packet.pts != i64::MIN && inner.config.abi.time_base_den == 0 {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
-    if inner.queue.len() >= inner.config.abi.queue_max_items as usize
+    if inner.buffers.queue.len() >= inner.config.abi.queue_max_items as usize
         || packet.size + 64
             > inner
                 .config
@@ -280,7 +280,7 @@ unsafe fn submit(decoder: &Decoder, pkt: *const am_decoder_input_t) -> Result<()
         .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
     bytes.extend_from_slice(data);
     bytes.resize(data.len() + 64, 0);
-    inner.queue.push_back(Packet {
+    inner.buffers.queue.push_back(Packet {
         bytes,
         valid: data.len(),
         pts: packet.pts,
@@ -301,13 +301,17 @@ unsafe fn submit(decoder: &Decoder, pkt: *const am_decoder_input_t) -> Result<()
 }
 impl Inner {
     fn front_packet(&self) -> Option<&Packet> {
-        self.replay.as_ref().or_else(|| self.queue.front())
+        self.replay.as_ref().or_else(|| self.buffers.queue.front())
     }
     fn pop_packet(&mut self) -> Result<Packet> {
         if let Some(packet) = self.replay.take() {
             return Ok(packet);
         }
-        let removed = self.queue.pop_front().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
+        let removed = self
+            .buffers
+            .queue
+            .pop_front()
+            .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
         self.queue_bytes -= removed.bytes.len() as u64;
         self.metrics
             .decoder_queue_items
@@ -329,7 +333,7 @@ impl Drop for Inner {
         // reset/close直接丢弃输入队列，也必须从域聚合出账。
         self.metrics
             .decoder_queue_items
-            .fetch_sub(self.queue.len() as u64, Ordering::AcqRel);
+            .fetch_sub(self.buffers.queue.len() as u64, Ordering::AcqRel);
         self.metrics
             .decoder_queue_bytes
             .fetch_sub(self.queue_bytes, Ordering::AcqRel);
@@ -477,7 +481,7 @@ pub unsafe extern "C" fn amc_decoder_get_status(
             state: state as _,
             decoder_generation: d.generation.load(Ordering::Acquire),
             config_generation: d.config_generation.load(Ordering::Acquire),
-            queue_items: guard.as_ref().map_or(0, |i| i.queue.len() as u32),
+            queue_items: guard.as_ref().map_or(0, |i| i.buffers.queue.len() as u32),
             queue_bytes: guard.as_ref().map_or(0, |i| i.queue_bytes),
             ..Default::default()
         };

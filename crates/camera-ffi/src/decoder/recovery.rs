@@ -71,9 +71,10 @@ impl Inner {
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         let replayable = decoder.sequence.load(Ordering::Acquire) == 0
-            && self.timings.len() == 1
+            && self.buffers.timings.len() == 1
             && self.startup.as_ref().is_some_and(|packet| {
-                self.timings
+                self.buffers
+                    .timings
                     .front()
                     .is_some_and(|timing| timing.tag == packet.tag && !timing.delivered)
             });
@@ -86,7 +87,7 @@ impl Inner {
         self.cpu = replacement.into();
         self.recovery_charge = Some(reservation);
         self.hardware_failed = true;
-        self.timings.clear();
+        self.buffers.timings.clear();
         self.gate.restart();
         self.flushed = false;
         decoder.generation.store(generation, Ordering::Release);

@@ -10,6 +10,7 @@ pub(super) fn receive(
             Ok(Some(f)) => {
                 // 帧内保存内部唯一包号，再恢复原PTS；重复/未知PTS不能串到别帧。
                 let timing = inner
+                    .buffers
                     .timings
                     .iter()
                     .find(|t| t.tag == f.pts)
@@ -89,7 +90,12 @@ pub(super) fn receive(
                     ..Default::default()
                 };
                 let frame = Frame::with_format(data, f.width, f.height, format, meta, charge)?;
-                if let Some(timing) = inner.timings.iter_mut().find(|timing| timing.tag == f.pts) {
+                if let Some(timing) = inner
+                    .buffers
+                    .timings
+                    .iter_mut()
+                    .find(|timing| timing.tag == f.pts)
+                {
                     timing.delivered = true;
                 }
                 inner.startup.take();
@@ -130,7 +136,7 @@ pub(super) fn receive(
             let packet = inner
                 .replay
                 .as_ref()
-                .or_else(|| inner.queue.front())
+                .or_else(|| inner.buffers.queue.front())
                 .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
             let allowed = inner
                 .gate
@@ -157,7 +163,7 @@ pub(super) fn receive(
                     Err(error) => return Err(convert(error)),
                 };
                 inner.cpu = cpu.into();
-                inner.timings.clear();
+                inner.buffers.timings.clear();
                 inner.startup.take();
                 inner.recovery_charge.take();
                 inner.gate.clear_dirty();
@@ -172,7 +178,7 @@ pub(super) fn receive(
             let packet = inner
                 .replay
                 .as_ref()
-                .or_else(|| inner.queue.front())
+                .or_else(|| inner.buffers.queue.front())
                 .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
             let mut picture = false;
             visit_access_units(inner.config.codec, &packet.bytes[..packet.valid], |nal| {
@@ -183,9 +189,9 @@ pub(super) fn receive(
                 }
             })
             .map_err(convert)?;
-            if picture && inner.timings.len() >= 256 {
-                if inner.timings.front().is_some_and(|t| t.delivered) {
-                    inner.timings.pop_front();
+            if picture && inner.buffers.timings.len() >= buffers::TIMING_ITEMS {
+                if inner.buffers.timings.front().is_some_and(|t| t.delivered) {
+                    inner.buffers.timings.pop_front();
                 } else {
                     return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
                 }
@@ -206,7 +212,7 @@ pub(super) fn receive(
                 return Err(AM_ERR_SDK_TRY_AGAIN);
             }
             if picture {
-                inner.timings.push_back(Timing {
+                inner.buffers.timings.push_back(Timing {
                     tag: packet.tag,
                     pts: packet.pts,
                     received: packet.received,
@@ -220,7 +226,7 @@ pub(super) fn receive(
                 && random
                 && inner.hardware_active()
                 && decoder.sequence.load(Ordering::Acquire) == 0
-                && inner.timings.len() == 1
+                && inner.buffers.timings.len() == 1
             {
                 inner.startup = Some(consumed);
             } else if picture {
