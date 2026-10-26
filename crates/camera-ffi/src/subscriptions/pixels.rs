@@ -15,6 +15,7 @@ pub fn fanout(
     seq: u64,
     source_generation: u32,
     config_generation: u32,
+    now: Instant,
 ) -> Result<()> {
     if source.stop.load(Ordering::Acquire)
         || source.generation.load(Ordering::Acquire) != source_generation
@@ -22,7 +23,6 @@ pub fn fanout(
         return Ok(());
     }
     let frame_id = crate::frames::next_frame_id()?;
-    let now = Instant::now();
     let due: Vec<_> = subscribers.iter().filter(|s| s.due(now)).collect();
     source.received(received);
     if due.is_empty() {

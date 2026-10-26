@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "ed9c5c16bf2f7b9a9710aa2e3cbbfc5d400eb565",
+  "reviewBaseCommit": "35985a8bad28d7f1936b3f36a9f9b37cf204fa83",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "7754cac7425dbf2e863e26f97d5bd3de9b40d29789162744f8d86e43798e13fd",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "3b9028757eaa6589f7aa819b5a28fea1cd5b5eee0b99ea6a80a1da5b281f9143",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "23c393dee8d5db552e80046be9dc46453e1ef959a66a236b7e79dc772605a4dc",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "82232f1164e1173d9d15751ec7c910794629633b4b0862b419a86b0c7b87706b",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -164,6 +164,36 @@
       "previousSha256": null,
       "sha256": "ff0a3aa8fb697922dfa38bfa66f63f01b76255fc01e57d6b1d2ee82c9ee222af",
       "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/mod.rs",
+      "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
+      "sha256": "76e29bebc7fb52efe36f645cd3eaac82ed972bc619d7c5dc4c343a240243e0be",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
+      "previousSha256": "df1471666e1cabb774f93d3cdba8689c0ff97bb017473951c5d4d88b8576b111",
+      "sha256": "bac96caa9941d5282fd10f478852ed6a8357f1755e387d8e6bc5a8470b560bb6",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/queue.rs",
+      "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
+      "sha256": "6e79eb6c60b17730f3b211c8a7a4d0397864ffb57d561e630e03a5928fdef20c",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
+      "previousSha256": null,
+      "sha256": "e9ac6205c16b49b2b392f3b5f98d41b19642fcf522ce18bbb5a8685d9a2dd844",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
+      "previousSha256": null,
+      "sha256": "de305ac99d578a914f8f0bfff4772024fee09728dd3c0c59c1af379932817d99",
+      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
     }
   ]
 }

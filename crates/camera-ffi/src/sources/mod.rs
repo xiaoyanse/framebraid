@@ -345,3 +345,7 @@ fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<
         myself: myself.clone(),
     }))
 }
+#[cfg(test)]
+pub(crate) fn isolated_test_source(state: Arc<CameraState>) -> Arc<SharedSource> {
+    make_shared(state, String::new(), false).unwrap()
+}

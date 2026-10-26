@@ -211,19 +211,27 @@ impl Subscription {
         }
         self.wake.notify_all();
     }
-    pub fn due(&self, now: Instant) -> bool {
+    fn eligible(&self, data: &Data, now: Instant) -> bool {
         let Kind::Frames { fps, .. } = self.kind else {
             return false;
         };
+        !data.stopped
+            && !data.changing
+            && (self.mode != AM_SUB_PUSH || data.callback.is_some())
+            && (fps == 0
+                || data.last_frame.is_none_or(|at| {
+                    now.saturating_duration_since(at).as_secs_f64() >= 1. / fps as f64
+                }))
+    }
+    /// 转换前只查询需求，不提前占掉失败或未发布帧的采样机会。
+    pub fn needs_pixels(&self, now: Instant) -> bool {
+        lock(&self.data).is_ok_and(|data| self.eligible(&data, now))
+    }
+    pub fn due(&self, now: Instant) -> bool {
         let Ok(mut d) = self.data.lock() else {
             return false;
         };
-        if d.stopped
-            || self.mode == AM_SUB_PUSH && d.callback.is_none()
-            || fps != 0
-                && d.last_frame
-                    .is_some_and(|at| now.duration_since(at).as_secs_f64() < 1. / fps as f64)
-        {
+        if !self.eligible(&d, now) {
             return false;
         }
         d.last_frame = Some(now);

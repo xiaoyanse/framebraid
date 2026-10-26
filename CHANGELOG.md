@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Check pixel demand before stream readback/conversion while continuing compressed reference decoding; retain dimension and health handling and defer sampling-time advancement until fanout. Real H.264/virtual-clock measurements reduce native conversions without changing observed output fingerprints. Live RTSP/other codec acceptance remains open. / 像素需求前移，压缩参考链保留，未扩大公开验收范围。
+
 - Execute the existing direct-decoder PREFER_HW policy using the shared native selector; report unknown until real output, reserve CPU recovery bytes, preserve source generations and retained frames, and permit only one unpublished startup picture replay. Explicit reset retries hardware. Validate actual codecs, readback faults and CPU compatibility locally; RTSP and rich device diagnostics remain pending. / 直接DLL自动硬解与有预算恢复，旧公开制品未变。
 
 - Add Rust decoder reconfiguration that retains the selected native device, resets execution verification and preserves the original context on failure; explicit CPU reconstruction supports caller-controlled recovery. Native synthetic validation and construction-only timings are recorded locally; DLL automatic recovery remains pending. / 参数重建复用设备引用，失败不破坏原上下文，不扩大公开硬解支持承诺。

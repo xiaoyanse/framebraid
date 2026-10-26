@@ -1,6 +1,22 @@
 use super::*;
 #[cfg(test)]
 mod budget_tests;
+#[cfg(test)]
+pub(crate) fn isolated_test_state() -> (am_sdk_support::handles::Domain, Arc<CameraState>) {
+    let domain = am_sdk_support::handles::Domain::new(false);
+    let params = amc_init_params_t {
+        abi_version: AM_ABI_VERSION,
+        ..Default::default()
+    };
+    let key = unsafe { am_sdk_support::context::initialize_camera(&domain, &params) }.unwrap();
+    let state = Arc::new(CameraState {
+        ctx_key: key,
+        ctx: domain.get(key).unwrap(),
+        metrics: Arc::default(),
+        usage: Arc::default(),
+    });
+    (domain, state)
+}
 use am_sdk_support::{args, buffers::Buffer, context::Context, handles::Entry, Result};
 use std::{
     any::Any,

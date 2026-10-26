@@ -17,6 +17,8 @@ measurements, not browser playback or end-to-end FPS. See [R2 budget/cache valid
 
 ## Reproduce / 复现
 
+Local sampling ablation uses the Release `native_sampling` test with explicit `AM_RT_FFMPEG_DIR` and `AM_SDK_H264_SAMPLE`. It runs real decode and production fanout under a virtual 30 FPS clock, observes native sws_scale calls, excludes full-plane hash/pull work from timing and retains 5% alerts. See [sampling measurements](verification/sdk-r2-sampling-20261026.md); this is not RTSP network throughput or a historical-binary A/B.
+
 Direct DLL native-policy smoke: `python scripts/sdk/test-decoder-hardware.py --dll-dir <release> --runtime-dir <matched-ffmpeg> --samples-dir <synthetic-inputs>`, adding `--software` for a same-build CPU control. Records actual backend, generations, pixel hashes, create/first-receive times; requires the documented four synthetic fixtures and real hardware for native mode. See [direct decoder verification](verification/sdk-r2-direct-auto-20261026.md). Cold-start costs are not sustained-stream FPS or a historical-binary A/B.
 
 在仓库根执行，先准备匹配 FFmpeg/ORT 运行库；下列目录是本地候选示例，
