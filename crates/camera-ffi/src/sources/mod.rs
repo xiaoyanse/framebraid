@@ -285,6 +285,21 @@ pub unsafe fn unload_static() {
         })
     };
 }
+// 全域基础登记独立于Context载荷额度；发布句柄前一次预留原域硬上限。
+fn reserve_registry<T>(rows: &mut Vec<Weak<T>>) -> Result<()> {
+    let maximum = SDK_MAX_REGISTERED_HANDLES as usize;
+    if rows.len() >= maximum {
+        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    }
+    if rows.capacity() == 0 {
+        rows.try_reserve_exact(maximum)
+            .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+    }
+    if rows.capacity() != maximum {
+        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    }
+    Ok(())
+}
 fn registry() -> &'static Mutex<Registry> {
     REGISTRY.get_or_init(Mutex::default)
 }

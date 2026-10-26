@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Bound pending Context initialization, source indices and shared-frame bookkeeping; use fixed CameraState/Hub registries and allocation-free subscription snapshots. / [整合验证](docs/verification/sdk-r3-foundation-integration-20261027.md)，C ABI不变。
+
 - Admit shared-source alias backing and growth overlap before handle publication; retain idle capacity accounting and roll back shared ownership on refusal. / [定向及真实DLL验证](docs/verification/sdk-r3-alias-storage-20261027.md)，C ABI不变。
 
 - Add owner-locked Python/C# pixel operations for frames, shared borrows and RGB inputs; explicit copy helpers preserve legacy low-level interfaces. / [验证](docs/verification/sdk-r4-owned-pixels-20261027.md)，C ABI不变，异步默认复制而非全链零拷贝。

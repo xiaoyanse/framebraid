@@ -48,3 +48,7 @@ CameraState登记8槽与Hub登记64槽属于固定基础结构，不强塞64KiB�
 测试辅助fixture仅扩大cfg(test)可见性，未扩大生产公开面。未改AM-RT、sources目录、SDK公共支撑层、原始来源清单或.gitignore；最终核心修订清单与OpenSpec由主代理集成同步。没有`.Codex/memory/patterns`目录，无额外项目Pattern可加载。
 
 后续待验：ABI门禁、主线合并后测试、最终DLL、实际同候选压力及4h/24h；固定小容器改造不能替代这些验收。
+
+## 主线整合补充
+
+上述隔离待验状态已由主线整合复核更新，最终双DLL、329项工作区及跨进程/真实CPU推理见[整合记录](sdk-r3-foundation-integration-20261027.md)。原隔离日志与失败轮不覆盖。

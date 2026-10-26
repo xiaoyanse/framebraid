@@ -55,6 +55,7 @@ pub unsafe extern "C" fn amc_source_open(
         if count >= state.limits()?.max_sources as usize {
             return Err(AM_ERR_CAMERA_SOURCE_LIMIT_REACHED);
         }
+        reserve_registry(&mut registry.sources)?;
         let reused = if desc.reuse == 1 {
             registry.shared.iter().filter_map(Weak::upgrade).find(|s| {
                 !s.stop.load(Ordering::Acquire)
@@ -72,6 +73,10 @@ pub unsafe extern "C" fn amc_source_open(
             Some(shared) => shared,
             None => make_shared(state, url, isapi)?,
         };
+        if fresh && desc.reuse == 1 {
+            // 尚未构造Source时无Drop回滚；fresh共享所有权随Arc一起销毁。
+            reserve_registry(&mut registry.shared)?;
+        }
         let source = Arc::new(Source {
             shared: shared.clone(),
             key: AtomicUsize::new(0),

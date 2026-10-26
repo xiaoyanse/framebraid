@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+R3基础容量阶段已整合：初始化pending、固定状态/Hub快照和共享三表、全域源索引；329项工作区及最终双DLL/跨进程/真实CPU回归见[整合记录](verification/sdk-r3-foundation-integration-20261027.md)。基础容量父项仍核剩余快照/模型元数据，不升级AM-RT。
+
 本地R3共享源别名表实际容量及增长重叠已计费，8定向/65包测试和真实Release DLL 257次别名通过；16/48/32字节临界与取舍见[记录](verification/sdk-r3-alias-storage-20261027.md)。基础全域表、完整预算/硬件/长跑继续，AM-RT保持固定版本。
 
 本地R4像素拥有者安全入口已真实双语言/双模型同步异步及GC/提前归还验证；完整工作区309通过/21忽略，详见[记录](verification/sdk-r4-owned-pixels-20261027.md)。AM-RT继续固定9ecd，新的SDK阶段成果仅本地，不推送/发布；R4父项、真实相机帧、五类模型/硬件/长跑仍待。

@@ -214,3 +214,17 @@ Media SDK SHALL 在共享源别名表增长前预留实际引用槽及新旧重�
 
 - **WHEN** 已有共享源可复用，但新增别名所需新旧容量超过控制字节
 - **THEN** 返回resourceExhausted且输出NULL，旧源/别名/所有权保持，后续可在足够预算的Context内正常登记和关闭
+
+### Requirement: Initialization and fixed foundation registries remain bounded
+
+SDK SHALL 在复制运行库目录前预留域绑定Context初始化槽，在册与pending合计不超过8，失败释放、成功同锁移交；pending期间不得视作可卸载。Media SHALL 在句柄发布前准备全域源表的4096槽精确存储，保留可观测资源拒绝。CameraState和Hub SHALL 固定8/64槽并在锁外消费有界强引用快照。共享基础索引 SHALL 沿用4映射/32初始借用/8进程验证边界，不以无法打开进程证明退出。
+
+#### Scenario: Pending initialization fails before registration
+
+- **WHEN** 目录分配、配置校验或最终登记失败
+- **THEN** SDK归还pending且不污染后续初始化；目录副本不超过已准入槽包络，不占控制消息64KiB
+
+#### Scenario: Shared process identities rotate at the boundary
+
+- **WHEN** 8个旧消费者token已离开共享记录并被8个新token替换
+- **THEN** 先清失效本地验证缓存，再登记新身份，不临时超8或丢失未知进程的责任；初始borrow的buffer登记失败不留lease

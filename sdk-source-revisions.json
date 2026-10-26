@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "c27fc59fd7fa9a110be21d64c4aedd9645bdb72e40fab4218484869a959a5003",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "9496e04b680b414fa03dc76c168d166fca6bb5d6f6f8cfa616be02746a248f9d",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "98eb66e2372fc510c9789e638779397d2d8bf87da83f77ffe587aa3f783f032b",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "c10c17b86fe66087ff792032f0b13eb97461fa8e7e3244759d85b53411c44e99",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -168,32 +168,32 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "1177f6ab2888ad1c16a5aaef6a7f75c34443fb69db159b7b6902c281ff0d9f83",
-      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
+      "sha256": "48ca8567660e2c28fb2d9e83e111be6c75960a89a7c8aad2cc450fddfbfaa7d9",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
       "previousSha256": "df1471666e1cabb774f93d3cdba8689c0ff97bb017473951c5d4d88b8576b111",
-      "sha256": "bac96caa9941d5282fd10f478852ed6a8357f1755e387d8e6bc5a8470b560bb6",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "09f802b354d49bac3a143d4d1edc65c2bce8b0bf1d8df95667dccb567d431606",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/queue.rs",
       "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-      "sha256": "a1244a8b6f01936d5b03ae86fbbd993d961767ad07211f37b2fe1cd5fef11ebe",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "571d7949c089aee5d46ef3c1e144c5265b225ca01c1d647d733a406d888a8a7f",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
       "previousSha256": null,
-      "sha256": "1cd98036b9481adc2c1d18c4238d8cc69284ceff4524499e5654305c225d9dc5",
-      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+      "sha256": "c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
       "previousSha256": null,
-      "sha256": "7bc0f870e3df3577e3c8bbb04c6ce49db0f1d2c554ff23a17970cdcbc07f0690",
-      "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
+      "sha256": "738e7bce1b863e01c4bd6b98ea60eac7d2e45d4820a0deeb674b5f433daf8a20",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/Cargo.toml",
@@ -216,8 +216,8 @@
     {
       "path": "crates/sdk-support/src/context.rs",
       "previousSha256": "5bbc555780e27a91f722499d4012582970535cd96ac8da7dc5a34a2a9c88a170",
-      "sha256": "a7d2eb210fdf715d50158613e67445d29d281a19142315f08d8b7162c9c09cc1",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "5b09abe1d5f30969645285c7e2787618dc6992403169a754c9a3d7624f50a68b",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/hardware.rs",
@@ -228,14 +228,14 @@
     {
       "path": "crates/camera-ffi/src/sources/tests.rs",
       "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-      "sha256": "885f5745b66655e21b88aa272a3195fd831b47710c01924b6ce5095b8771126c",
-      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
+      "sha256": "a0bebb609cd61c4fd4dd9ded0d5f6926538b6bbdd78367e88e0418bab0f412fd",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/mod.rs",
       "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
-      "sha256": "ceed8feae93658f15a3074ed96973eabca3631ef84023bbebc3f7e65f91d37dd",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "25d8719984d33f7c311c1ea07d95dcb7a1525e79311673ca0b42743af3662397",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/sdk-abi/src/base.rs",
@@ -252,8 +252,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/native.rs",
       "previousSha256": null,
-      "sha256": "c1d2633b68939913aebb43a85b934cfd909fc70e295bec98f9355d5ef23c8d39",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "d3d08633e4fcf3f81c51b347f7172eec4054d523fa198e88f7dc5356fe12c2a4",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/vision/src/sdk/mod.rs",
@@ -348,8 +348,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/native/reconfigure/tests.rs",
       "previousSha256": null,
-      "sha256": "d71ed9069559e9bfc1962ade6f09bd05a96122d2c49ae4fa2829031760be995c",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "186eb1dcd913ef151e77094b4b04ea4428f043339250e847041c887840be3411",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline.rs",
@@ -360,20 +360,20 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode.rs",
       "previousSha256": null,
-      "sha256": "f566839de90ba9d93423de012f915fbebda3b1af6f6a8b72bc12c8e5b664b192",
-      "reason": "R3 RTSP queue and receipt-time fixed backing capacity within existing credits, eviction before insertion; unchanged final timing window, epoch/sampling policies and C ABI, native loopback protection checks"
+      "sha256": "85b4806fad045d3d716447f86f3b1c0d9377b21e35c8b0a0929f72c0d2a2d55f",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/tests.rs",
       "previousSha256": null,
-      "sha256": "f6c31d92ddcf63a4d8f85ef5ec116a1824d5fe5b1748ed5cf6f94538529be30b",
-      "reason": "R3 RTSP queue and receipt-time fixed backing capacity within existing credits, eviction before insertion; unchanged final timing window, epoch/sampling policies and C ABI, native loopback protection checks"
+      "sha256": "e91ada22b09db0c2dfeb98bd1fae302d582a42ffb77a6affba8dfbae1334d7bd",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/sampling.rs",
       "previousSha256": null,
-      "sha256": "cac020ac50bd9b9e48bb525c0d48f08d0ada80b223c7063c74d3898773f8cbd7",
-      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+      "sha256": "7d9bc97db3d8c2ae1e7a83e5ec6943be6f667038f914f2d0fde229cc5083e0ea",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/timing_tests.rs",
@@ -384,8 +384,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/live_sampling_tests.rs",
       "previousSha256": null,
-      "sha256": "4a73b54664d9a3c8598e6edefb1aaba7867784da74347bdad305ca3a7a1d8128",
-      "reason": "R2 actual worker three-codec sampling/spatial coverage; exact pre/post-change intervals and generation/ownership checks; cfg(test) only, production ABI unchanged"
+      "sha256": "1dff2ea71bff7af14dfc8afae40a919045891824e2f447dd9160473426217a8b",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/sdk-abi/src/fields_4.rs",
@@ -564,8 +564,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
       "previousSha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c",
-      "sha256": "b621f27690c0fa9bacec19247329793a68ccd7c73c7966fe0b8f7b3f98e8709c",
-      "reason": "R3订阅对象/固定引用队列/缩放预设元数据控制额度，原引用寿命持续计费；拒绝/回收与既有慢消费回归，仅本地未发布"
+      "sha256": "cb0881cdf074e727987bc0afc25f8c6e02125f72c7df6d84849e218ba9cfaf7c",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/am-camera/src/media/sdk_io/nal.rs",
@@ -703,7 +703,7 @@
       "path": "crates/camera-ffi/src/captures/mod.rs",
       "previousSha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981",
       "sha256": "68b432386081fabbe8bd3e3541ab480fe9e21e165cfb7b845d6e9ec79521e970",
-      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/captures/requests.rs",
@@ -756,8 +756,8 @@
     {
       "path": "crates/sdk-support/tests/services.rs",
       "previousSha256": null,
-      "sha256": "3b5823254bc4e514d3676d5e9c0f4ff9f872d26c1eb8fc14df18ec44254e75fe",
-      "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证；R3域索引/隔离/关闭存储收口"
+      "sha256": "23bf98844107dd94482c3a62802168f53f1c65bf190a29f14f55259ed266351a",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/sdk-support/src/buffers.rs",
@@ -768,14 +768,14 @@
     {
       "path": "crates/sdk-support/src/handles.rs",
       "previousSha256": "0e9b82f34a166ba7ee92d1bcf3d16e53caea3d7e0471b271cd31719c72ee827b",
-      "sha256": "20263b2935d0b7c98acc4d9bf79679ea64a9399b912c35a1a8ad6f94e1db3ec9",
-      "reason": "R3域句柄/Buffer固定索引、隔离区及关闭快照，补分配失败/并发与机制量化"
+      "sha256": "f42d9960ef51025b3cfa46e9952858f665ecd85259b83d682c1546f2a0c5cab8",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/sdk-support/src/handles/tests.rs",
       "previousSha256": "d9174f360fb463e692eb546b2d4d7c0b3226662194c2f7aa4e625e8b2a6ae8af",
-      "sha256": "72792dbcec16afac87e317b91884a98ab06b82f2e27313770513d03c58c7fb81",
-      "reason": "R3域句柄/Buffer固定索引、隔离区及关闭快照，补分配失败/并发与机制量化"
+      "sha256": "22c9dbaad50a190dc84ce34a6ee3334f8c5f7438c46bc8f2a7b217451ab4d44a",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/sdk-support/src/registry.rs",
@@ -798,8 +798,8 @@
     {
       "path": "crates/camera-ffi/src/sources/api.rs",
       "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
-      "sha256": "dfffaf35d3866a43b8f03c22c119568053d522f8d1aae91cd292a035691ec29f",
-      "reason": "R3 shared-source alias backing capacity and growth overlap admitted before handle publication; rejection preserves ownership and old source, targeted and real Release DLL verification; C ABI unchanged"
+      "sha256": "f431319cf1a95462a01d73721a061d2f57730cc58f9bfcf26579667481c0165b",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     },
     {
       "path": "crates/camera-ffi/src/probe/planning.rs",
@@ -818,6 +818,60 @@
       "previousSha256": null,
       "sha256": "b74d373dfb8f4386bacda369316facf701b0c50802b49e09208417a2e2d9626a",
       "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/frames/registry_tests.rs",
+      "previousSha256": null,
+      "sha256": "09951ed2a69f88c3bac9f16558ca2b9a68201151660406abfcb7d4d146d7c15a",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/registry.rs",
+      "previousSha256": null,
+      "sha256": "af5fe425c9fc8b47e3c480d0d87172ff7001744f4c833294dd16662929216cac",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/registry/tests.rs",
+      "previousSha256": null,
+      "sha256": "969aba453abca53bfd465a1ec10200c1abba53deb5245830f0ba6c1b2375a463",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/sdk-support/src/args.rs",
+      "previousSha256": "a1a193ca7c4703aa6b96063f76612bb95a09b29b8811f7aede5cbae28331faca",
+      "sha256": "e7c391a3d1dc21e30f1bf2c5231f100bbfa05a8c26aaa47b6fb7f6e5c6bcc112",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/api.rs",
+      "previousSha256": "4d6d9ad84de2d0544123107ef0b860d2d3017914025d20aa3fac0af9946cacb2",
+      "sha256": "83b39732c7fcadc7376e9a93bfe8acb1b421a961b08b1423aacf7d50dec4ef06",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/foundation_tests.rs",
+      "previousSha256": null,
+      "sha256": "701f0342614d74c02ec8f73de9d914f6d97c023f22f13e584b3573ec4ce67eb4",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/pool.rs",
+      "previousSha256": "807731180140ce9a01d3870ea224c0057a5ef1ea42f867ca7ae2e6724cd99e91",
+      "sha256": "e6bbfe0487a47722a1e04a28109a07061ce0792f62bdd93e133f0d77cf742f02",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/table.rs",
+      "previousSha256": null,
+      "sha256": "4465c71ca63bd034df4b4b40ea42fe746d4e990643b9524effe8d0784b944222",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/wire.rs",
+      "previousSha256": "f094c593ebda7526975f63a6edfb716eb3960da9e2cf9afea4ce3efd82e90bf2",
+      "sha256": "02ac99429adcbe453433e2e5569be97ee0725778058261c807095582273804e9",
+      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
     }
   ]
 }

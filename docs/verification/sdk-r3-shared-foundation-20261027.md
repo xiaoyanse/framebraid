@@ -31,3 +31,7 @@
 主代理复测 `shared::` 为 **10 通过、0 失败**，最终日志为主树 `.local/evidence/r3-alias-storage-20261027/shared-worker-tests-final.log`。首轮全 target、全 feature 的受影响包 clippy 通过；首轮后仅修测试 fixture，生产实现未变。main 整合、最终双 DLL、跨进程共享帧回归、受控来源清单及 OpenSpec 同步仍由主代理集成记录。未验硬件及 4h/24h 持续运行不因本包关闭。
 
 首轮主代理定向测试为 8 通过、2 失败：新增借用 fixture 未填写必需关联有效位及无时钟的 `i64::MIN`，正确被 `validate_desc` 拒绝为 `INVALID_ARGUMENT(3)`。已仅修合成输入，未改实现或放松断言；原轮日志保留在主树 `.local/evidence/r3-alias-storage-20261027/shared-worker-tests.log`。实测 Windows x64 内联表字节：Ledger **160 B**、initial **768 B**、verified **320 B**；这些是索引本体，不含锁/Arc/映射/进程句柄指向的系统资源。
+
+## 主线整合补充
+
+上述隔离待验状态已由主线整合复核更新，最终双DLL、329项工作区及跨进程/真实CPU推理见[整合记录](sdk-r3-foundation-integration-20261027.md)。原隔离日志与失败轮不覆盖。

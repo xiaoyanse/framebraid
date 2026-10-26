@@ -26,3 +26,7 @@
 - 主代理执行受影响包 `cargo clippy -p am-sdk-support --all-targets --all-features -- -D warnings` 通过；本包指定文件 rustfmt 和 `git diff --check` 通过。ABI/边界与 main 集成回归、最终 DLL 验证仍待主代理统一运行。
 - 精简原始日志保存在主仓 `.local/evidence/r3-alias-storage-20261027/init-worker-tests.log`（SHA-256 `acd0d68b1290b5477e298c18565a7cc58a295e71fb7e0e9639c01b24559fc8fa`）及 `init-worker-clippy.log`（`f1a5e770ec2d78b85501cdf58e0bb3fdd366c4139250630a876dd11378d0c8b0`）。本记录只引用，不搬入公开材料。
 - 未运行真实运行库、实机硬件、4h/24h 持续运行；本包不关闭这些验收项。
+
+## 主线整合补充
+
+上述隔离待验状态已由主线整合复核更新，最终双DLL、329项工作区及跨进程/真实CPU推理见[整合记录](sdk-r3-foundation-integration-20261027.md)。原隔离日志与失败轮不覆盖。

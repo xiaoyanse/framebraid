@@ -1,5 +1,7 @@
 # Design
 
+基础索引整合：Context在复制目录前取得域绑定pending许可，与在册合计≤8；失败RAII释放、成功原子移交，卸载检查包含pending。全域源两表各4096槽fallible首次预留、句柄发布前准备。CameraState8槽、Hub64槽与安全栈快照固定；共享Ledger4/initial32/verified8槽内联，旧token清理先于新缓存登记，未知进程不释放责任；borrow先预留initial槽再交buffer，之后无分配失败点。基础体与载荷/原生内存分列，字节与权衡见整合记录。
+
 共享源别名引用槽复用内部有序Table，以实际capacity×(key,Weak)尺寸计control metadata，增长旧+新重叠先准入，失败在发布域句柄前归还claim。死亡引用清理不退空闲容量，Closed句柄仍保留；最终共享对象销毁才释放。全域注册表及事件/统计快照另核，不把本项当父预算闭环。
 
 探测缓存按实际引用槽持有metadata许可，条目URL另占control；过期/清条目不退空闲槽，结果不足时真正丢存储后重试，缓存失败只跳过。Context先验，固定栈借用UTF8规划结果本体/Arc头/ABI Box/两Vec/含NUL字符串及临时secret，准入后复制，临时拥有者销毁再缩额。模型session IO先核非空/各不超过32，再复制受限name/shape。固定服务体和全域索引按[基础清单](../../../docs/verification/sdk-r3-foundation-inventory-20261027.md)继续，不能借此关闭1.1。

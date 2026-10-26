@@ -461,3 +461,31 @@ fn alias_storage_is_charged_and_failed_growth_keeps_owner_and_registry() {
         2 * unit
     );
 }
+
+#[test]
+fn domain_source_registry_has_fixed_retained_capacity_and_refuses_before_publication() {
+    let maximum = SDK_MAX_REGISTERED_HANDLES as usize;
+    let owner = Arc::new(42usize);
+    let mut rows = Vec::new();
+    reserve_registry(&mut rows).unwrap();
+    let capacity = rows.capacity();
+    for _ in 0..maximum {
+        reserve_registry(&mut rows).unwrap();
+        rows.push(Arc::downgrade(&owner));
+    }
+    assert_eq!(
+        reserve_registry(&mut rows),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    );
+    assert_eq!(rows.len(), maximum);
+    assert_eq!(rows.capacity(), capacity);
+    drop(owner);
+    rows.retain(|source| source.strong_count() > 0);
+    assert_eq!(rows.len(), 0);
+    reserve_registry(&mut rows).unwrap();
+    assert_eq!(rows.capacity(), maximum);
+    eprintln!(
+        "source_global_index_slots={maximum}; source_global_index_bytes={}",
+        capacity * size_of::<Weak<usize>>()
+    );
+}
