@@ -71,11 +71,21 @@ impl Pipeline {
             std::mem::size_of::<Self>() + maximum * std::mem::size_of::<Job>(),
             false,
         )?;
+        let mut queue = VecDeque::new();
+        queue
+            .try_reserve_exact(maximum)
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+        if queue.capacity() > maximum {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
         Ok(Arc::new(Self {
             state,
             maximum,
             max_bytes,
-            data: Mutex::default(),
+            data: Mutex::new(Data {
+                queue,
+                ..Default::default()
+            }),
             wake: Condvar::new(),
             stopping: AtomicBool::new(false),
             epoch: AtomicU64::new(1),

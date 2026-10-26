@@ -1209,3 +1209,5 @@ AM_API am_status_t amv_shared_pool_get_stats(const amv_shared_pool_t* pool,
 §2.8的extradata复制先占Context帧字节，配置许可随不可变拥有者存活；reset(NULL)共享该配置引用。每个新原生上下文的Gate缓存另计，更新先校验并规划，预留/分配成功后原子提交；原生重配置的序列化extra副本独立计费至调用结束。新旧上下文构造期间重叠资源均计费，预算不足明确返回resourceExhausted；create/reset构造失败不改变旧配置/代次，外持旧帧继续有效。该保证不扩展为所有原生执行故障的事务回滚，原有恢复合同保留。Rust同步借用NAL访问入口不分配列表，可能在最终错误前访问部分NAL；不改C签名、结构或枚举。见[定向验证](../verification/sdk-r3-decoder-retained-20261027.md)。
 
 R3独立解码控制存储：输入引用槽按有效queue_max_items、时间关联表按原256项边界固定预留，分配前占Context控制字节，空闲槽不提前出账；新旧reset构造重叠计费，失败保留原状态/帧。默认控制总额64 KiB不提高，max_decoders及其他数量硬限不保证可同时耗满；调用方减少输入槽可降低基础存储，过载有明确resourceExhausted。此项不把原生库/allocator内存并入SDK字节上限，也不改C布局。
+
+R3 RTSP容量补充：像素队列在已预留控制额度内固定实际引用槽；128项接收时间表预留实际容量，先淘汰再插入，防止短暂129项使容量翻倍。既有最大队列、时间关联窗口、采样/像素代次、数据及控制额度均不提高，未改变公开ABI。

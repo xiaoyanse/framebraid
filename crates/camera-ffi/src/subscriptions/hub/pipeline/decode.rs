@@ -18,7 +18,16 @@ impl<'a> Worker<'a> {
         stamp: SessionStamp,
         permit: Arc<DecoderPermit>,
     ) -> Result<Self> {
-        let times_charge = source.state.charge(128 * 16, false)?;
+        let times_charge = source
+            .state
+            .charge((128 * std::mem::size_of::<(i64, i64)>()) as u64, false)?;
+        let mut times = VecDeque::new();
+        times
+            .try_reserve_exact(128)
+            .map_err(|_| AM_ERR_SDK_OUT_OF_MEMORY)?;
+        if times.capacity() > 128 {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
         Ok(Self {
             hub,
             source,
@@ -26,9 +35,16 @@ impl<'a> Worker<'a> {
             permit,
             decoder: None,
             previous: None,
-            times: VecDeque::new(),
+            times,
             _times_charge: times_charge,
         })
+    }
+    fn remember(times: &mut VecDeque<(i64, i64)>, pts: i64, received: i64) {
+        // 先淘汰再插入，避免逻辑只留128项却触发第129项的容量翻倍。
+        while times.len() >= 128 {
+            times.pop_front();
+        }
+        times.push_back((pts, received));
     }
     pub fn run(mut self, pipe: &Pipeline) {
         let _activity = super::super::native::Activity(Arc::downgrade(self.source));
@@ -173,10 +189,7 @@ impl<'a> Worker<'a> {
             return Err(IoError::Closed);
         }
         let native = self.decoder.as_mut().ok_or(IoError::Invalid)?;
-        self.times.push_back((job.packet.abi.pts, job.received));
-        while self.times.len() > 128 {
-            self.times.pop_front();
-        }
+        Self::remember(&mut self.times, job.packet.abi.pts, job.received);
         let cpu = &mut native.raw;
         let mut sent = cpu
             .send(&job.packet.bytes, job.packet.abi.pts, job.packet.abi.dts)
@@ -294,3 +307,6 @@ impl<'a> Worker<'a> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod storage_tests;

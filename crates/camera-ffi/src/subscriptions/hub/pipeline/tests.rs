@@ -39,6 +39,33 @@ pub(super) fn config(source: &SharedSource) -> Arc<Configuration> {
         _charge: source.state.charge(0, false).unwrap(),
     })
 }
+
+#[test]
+fn fixed_pipeline_storage_never_grows_beyond_reserved_job_slots() {
+    let (_domain, source, _, _) = super::super::tests::fixture();
+    let before = source.state.control_usage_snapshot().unwrap();
+    let configuration = config(&source);
+    let pipeline = Pipeline::new(source.state.clone()).unwrap();
+    for index in 0..pipeline.maximum {
+        pipeline
+            .submit(job(&source, &configuration, index as u64, true))
+            .unwrap();
+    }
+    let data = pipeline.data.lock().unwrap();
+    println!(
+        "rtsp-queue len={} capacity={} reserved_slots={} job_bytes={}",
+        data.queue.len(),
+        data.queue.capacity(),
+        pipeline.maximum,
+        std::mem::size_of::<Job>()
+    );
+    assert_eq!(data.queue.len(), pipeline.maximum);
+    assert!(data.queue.capacity() <= pipeline.maximum);
+    drop(data);
+    pipeline.stop();
+    drop(pipeline);
+    assert_eq!(source.state.control_usage_snapshot().unwrap(), before);
+}
 #[test]
 fn bounded_slow_pixel_work_does_not_block_compressed_and_invalidates_inflight_epoch() {
     let (domain, source, hub, _) = super::super::tests::fixture();
