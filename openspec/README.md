@@ -1,6 +1,6 @@
 # SDK 优化持续目标与 OpenSpec 入口
 
-> 当前用户指令：仅完成[MET-2指标与验收](../docs/PERFORMANCE_ACCEPTANCE.md)文档收口，不继续代码开发、不重跑基准；恢复实现等后续指示。原始数据/历史记录及未验项保留。
+> 当前用户已授权恢复实现：先按[MET-2指标与验收](../docs/PERFORMANCE_ACCEPTANCE.md)补R1量化前置，再继续H2/H5及原路线；SDK main串行、阶段测试与本地提交，不改AM-RT、不发布。原始数据/历史记录及未验项保留。
 
 持续目标：在 FrameBraid main 串行完成已授权 R1～R5，阶段任务、验收、性能前后对比及本地提交统一由本仓 OpenSpec 管理。当前无发布授权，不影响 AM-RT。
 

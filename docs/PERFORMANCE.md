@@ -17,11 +17,26 @@ measurements, not browser playback or end-to-end FPS. See [R2 budget/cache valid
 
 ## Acceptance policy / 验收口径
 
-Current decisions use [MET-2](PERFORMANCE_ACCEPTANCE.md): separate resource offload, useful delivery, latency, correctness and recovery. A hardware path is not required to beat CPU latency. Existing commands, JSON fields and 5% alerts remain historical tooling; this documentation update does not implement CPU/GPU collectors, A/A calibration or new thresholds. Do not treat comparator output as MET-2 acceptance.
+Current decisions use [MET-2](PERFORMANCE_ACCEPTANCE.md): separate resource offload, useful delivery, latency, correctness and recovery. A hardware path is not required to beat CPU latency. Legacy commands, JSON fields and 5% alerts remain unchanged. The separate MET-2 stream tool below now measures process CPU time, per-PID GPU counters and A/A variation; it does not automatically grant performance acceptance.
 
-当前先暂停代码/基准工作。旧工具/数据不改写，后续按目标卡补缺失测量；历史评价见[复核记录](verification/sdk-metrics-review-20261026.md)。
+用户已授权恢复开发。S1新增工具与基线见[本轮记录](verification/sdk-met2-s1-20261026.md)，旧工具/数据不改写；历史评价见[复核记录](verification/sdk-metrics-review-20261026.md)。
 
 ## Reproduce / 复现
+
+### MET-2 paced GOP / 固定节拍连续GOP
+
+`benchmark-decode-stream.py` calls the real Media DLL, preloads a bounded H.264 MP4 fixture with repeated parameter sets, and paces complete Annex-B access units by DTS. CPU time includes Python/SDK/native libraries and observation; it is not SDK-exclusive cost. Warm-up, steady-state delivery and trailing B-frame drain are separate. GPU counters use Windows PDH English names, retain per-process/device/engine identities, and report missing observations as unknown. GPU engines are never summed into one percentage.
+
+先按[测前目标卡](verification/sdk-met2-s1-target-20261026.md)固定场景。工具只接受新的仓内证据目录，保存DLL实际构建信息/摘要、输入/运行库/工具指纹、每轮raw及工具源码副本；未知不填0。`review.json`仅汇总各策略A/A最大最小值与跨度，不自动判定收益/回归。原`performance.v1`比较器不改。
+
+```powershell
+python -B -m unittest discover -s scripts/sdk -p 'test_perf_*.py' -v
+python -B scripts/sdk/benchmark-decode-stream.py --dll-dir .local/build/current/release --runtime-dir .local/runtimes/ffmpeg-h2-20261026/runtime --input .local/tests/met2-s1/source.mp4 --target-card docs/verification/sdk-met2-s1-target-20261026.md --output .local/evidence/met2-s1-new --observation-controls
+```
+
+样本由本机FFmpeg备料：`testsrc2` 1920×1080/30 FPS、10秒，libx264/yuv420p，`bframes=2:keyint=30:scenecut=0:repeat-headers=1`、4字节MP4 NAL长度。备料/ffprobe不参与解码窗口。默认每策略三轮、2秒预热/6秒窗口，另各一轮关闭采样；GPU采样250ms/最多4096条，源码与输入在测前准备，不在处理热路径落盘。
+
+这是S1单路调用与资源基线；不包含网络、显示、全图跨语言复制、模型精度、混合消费者、多路或耐压。公开SDK/ABI、默认选择策略、支持范围均不因工具变化扩大。新鲜度200ms等数值仅属目标卡实验线，不是产品SLA。
 
 Local sampling ablation uses the Release `native_sampling` test with explicit `AM_RT_FFMPEG_DIR` and `AM_SDK_H264_SAMPLE`. It runs real decode and production fanout under a virtual 30 FPS clock, observes native sws_scale calls, excludes full-plane hash/pull work from timing and retains 5% alerts. See [sampling measurements](verification/sdk-r2-sampling-20261026.md); this is not RTSP network throughput or a historical-binary A/B.
 

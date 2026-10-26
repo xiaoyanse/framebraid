@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Add a separate MET-2 paced-GOP decoder measurement tool: process CPU time, bounded per-PID/LUID GPU-engine sampling, in-flight accounting and A/A summaries. Local single-stream H.264 CPU/native controls only; no SDK/ABI change or proven offload gain. / 新增量化工具及真实GOP资源对照，保留旧数据，不改变SDK和公开制品。
+
 - Revise performance acceptance (MET-2): distinguish CPU offload, same-path regression, mechanism cost, useful delivery and recovery; retain raw data/historical alerts and annotate prior verdicts. Documentation/OpenSpec only, no code, thresholds, benchmark runs or public assets changed. / 重整量化目标及历史评价，未新增性能实测。
 
 - Add ABI1.1 r8 explicit inference-device probes and bounded cached JSON reports, with Python/C# helpers. Preserve all existing layouts, initialization and model-selection contracts; no ORT needed for device-only use. Local native C/C#/Python and shutdown/budget checks only; not accelerated inference or release acceptance.
