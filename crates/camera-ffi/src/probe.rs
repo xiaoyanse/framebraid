@@ -8,7 +8,7 @@ use am_camera_core::{
 use am_sdk_support::{args, buffers::Buffer, clock, context::Context, Result};
 use std::{
     any::{Any, TypeId},
-    collections::{hash_map::RandomState, VecDeque},
+    collections::hash_map::RandomState,
     ffi::CString,
     hash::{BuildHasher, Hash, Hasher},
     sync::{
@@ -65,102 +65,17 @@ impl Observation {
         }
     }
 }
-struct Cached {
-    url: String,
-    credential: [u64; 2],
-    value: Observation,
-    _charge: ControlCharge,
-}
-struct Cache {
-    seeds: [RandomState; 2],
-    entries: Mutex<VecDeque<Cached>>,
-    generation: AtomicU64,
-}
-impl Cache {
-    fn new() -> Self {
-        Self {
-            seeds: [RandomState::new(), RandomState::new()],
-            entries: Mutex::default(),
-            generation: AtomicU64::new(0),
-        }
-    }
-    fn identity(&self, secret: &Secret) -> [u64; 2] {
-        self.seeds.each_ref().map(|seed| {
-            let mut h = seed.build_hasher();
-            secret.username.hash(&mut h);
-            secret.password.hash(&mut h);
-            h.finish()
-        })
-    }
-    fn get(&self, url: &str, credential: [u64; 2]) -> Result<Option<Observation>> {
-        let mut entries = self.entries.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        entries.retain(|entry| Instant::now() < entry.value.expires);
-        Ok(entries
-            .iter()
-            .find(|entry| entry.url == url && entry.credential == credential)
-            .map(|entry| entry.value.clone()))
-    }
-    fn put(
-        &self,
-        state: &Arc<CameraState>,
-        generation: u64,
-        url: String,
-        credential: [u64; 2],
-        value: Observation,
-    ) -> Result<()> {
-        let limit = state.limits()?.control_max_items as usize;
-        let queue_limit = state
-            .ctx
-            .data::<Context>()?
-            .queues
-            .lock()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?[5]
-            .max_items as usize;
-        let cache_limit = CACHE_ITEMS.min(limit.min(queue_limit) / 2);
-        let mut entries = self.entries.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        if self.generation.load(Ordering::Acquire) != generation {
-            return Ok(());
-        }
-        entries.retain(|entry| {
-            Instant::now() < entry.value.expires
-                && !(entry.url == url && entry.credential == credential)
-        });
-        let cost = url.len() + size_of::<Cached>();
-        while !entries.is_empty()
-            && (entries.len() >= cache_limit
-                || entries
-                    .iter()
-                    .map(|entry| entry.url.len() + size_of::<Cached>())
-                    .sum::<usize>()
-                    + cost
-                    > CACHE_BYTES)
-        {
-            entries.pop_front();
-        }
-        if cache_limit > 0 && cost <= CACHE_BYTES {
-            // 缓存让位给调用结果；预算不足只跳过缓存，不丢失本次探测结果。
-            if let Ok(charge) = state.control(cost, false) {
-                entries.push_back(Cached {
-                    url,
-                    credential,
-                    value,
-                    _charge: charge,
-                });
-            }
-        }
-        Ok(())
-    }
-}
+mod planning;
+mod storage;
+#[cfg(test)]
+mod tests;
+use storage::Cache;
+
 pub(crate) fn invalidate(ctx: usize) -> Result<()> {
     let state = camera_state(ctx)?;
     let cache = cache(&state)?;
     cache.generation.fetch_add(1, Ordering::AcqRel);
-    cache
-        .entries
-        .lock()
-        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-        .clear();
-    Ok(())
+    cache.clear(false)
 }
 fn cache(state: &CameraState) -> Result<Arc<Cache>> {
     let ctx = state.ctx.data::<Context>()?;
@@ -260,66 +175,20 @@ pub unsafe extern "C" fn amc_probe_streams(
         am_sdk_support::callbacks::reject_reentry()?;
         args::pointer(out)?;
         out.write(std::ptr::null_mut());
-        let req: am_probe_request_t = args::read(req, size_of::<am_probe_request_t>())?;
-        if req.candidate_count == 0 || req.candidate_count as usize > MAX_CANDIDATES {
-            return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
-        }
-        if req.force_refresh > 1 || req.timeout_ms > 60_000 {
-            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
-        }
-        args::pointer(req.references_utf8)?;
-        let secret = if req.creds.is_null() {
-            Secret {
-                username: String::new(),
-                password: String::new(),
-            }
-        } else {
-            let creds: am_credential_data_t =
-                args::read(req.creds, size_of::<am_credential_data_t>())?;
-            Secret {
-                username: args::string(creds.username_utf8)?,
-                password: args::string(creds.password_utf8)?,
-            }
-        };
-        let mut references = Vec::with_capacity(req.candidate_count as usize);
-        for i in 0..req.candidate_count as usize {
-            let url = args::string(req.references_utf8.add(i).read())?;
-            // 拒绝内嵌凭据，避免输出引用或原生错误意外暴露密码。
-            let scheme = url.split_once("://").map(|(s, _)| s);
-            if matches!(scheme, Some("http" | "https")) {
-                sdk_io::validate_url(&url, true).map_err(|_| AM_ERR_CAMERA_URL_INVALID)?;
-            } else if matches!(scheme, Some("rtsp" | "rtsps")) {
-                sdk_io::validate_url(&url, false).map_err(|_| AM_ERR_CAMERA_URL_INVALID)?;
-            } else if url.contains('@') || url.len() > 16 * 1024 {
-                return Err(AM_ERR_CAMERA_URL_INVALID);
-            }
-            references.push(CString::new(url).map_err(|_| AM_ERR_CAMERA_URL_INVALID)?);
-        }
         let _active = domain().active(ctx as usize)?;
         let state = camera_state(ctx as usize)?;
-        let bytes = size_of::<ProbeResult>()
-            + references
-                .iter()
-                .map(|s| s.as_bytes_with_nul().len())
-                .sum::<usize>()
-            + references.len() * size_of::<am_probe_candidate_t>();
+        let plan = planning::Plan::read(req)?;
+        let req = plan.request;
         let cache = cache(&state)?;
         let generation = cache.generation.load(Ordering::Acquire);
-        let charge = match state.control(bytes, true) {
-            Ok(charge) => charge,
-            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
-                cache
-                    .entries
-                    .lock()
-                    .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-                    .clear();
-                state.control(bytes, true)?
-            }
-            Err(error) => return Err(error),
-        };
+        let mut charge = planning::reserve(&state, &cache, plan.reservation())?;
+        let secret = plan.secret()?;
+        let references = plan.references()?;
+        let mut rows = planning::exact_vec::<am_probe_candidate_t>(references.len())?;
         let identity = cache.identity(&secret);
-        let mut values = Vec::with_capacity(references.len());
-        let mut misses = Vec::new();
+        let mut values: [Option<Observation>; MAX_CANDIDATES] = std::array::from_fn(|_| None);
+        let mut misses = [0usize; MAX_CANDIDATES];
+        let mut miss_count = 0;
         for (i, reference) in references.iter().enumerate() {
             let url = reference.to_str().map_err(|_| AM_ERR_SDK_UTF8_INVALID)?;
             let hit = if req.force_refresh == 0 {
@@ -328,9 +197,10 @@ pub unsafe extern "C" fn amc_probe_streams(
                 None
             };
             if hit.is_none() {
-                misses.push(i);
+                misses[miss_count] = i;
+                miss_count += 1;
             }
-            values.push(hit);
+            values[i] = hit;
         }
         // 全进程至多四个探测工作线程；并发调用排队，不随候选或调用量膨胀线程。
         static RUN: OnceLock<Mutex<()>> = OnceLock::new();
@@ -344,13 +214,14 @@ pub unsafe extern "C" fn amc_probe_streams(
             req.timeout_ms
         }));
         let width = state.metrics.threads.limit()?.min(4) as usize;
-        if width == 0 && !misses.is_empty() {
+        if width == 0 && miss_count != 0 {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
-        for group in misses.chunks(width.max(1)) {
+        for group in misses[..miss_count].chunks(width.max(1)) {
             let results = std::thread::scope(|scope| {
-                let mut threads = Vec::with_capacity(group.len());
-                for &index in group {
+                let mut threads: [Option<(usize, std::thread::ScopedJoinHandle<'_, Observation>)>;
+                    4] = std::array::from_fn(|_| None);
+                for (slot, &index) in group.iter().enumerate() {
                     let url = references[index]
                         .to_str()
                         .map_err(|_| AM_ERR_SDK_UTF8_INVALID)?;
@@ -363,26 +234,28 @@ pub unsafe extern "C" fn amc_probe_streams(
                             probe(state, url, secret, timeout)
                         })
                         .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
-                    threads.push((index, handle));
+                    threads[slot] = Some((index, handle));
                 }
-                let mut result = Vec::with_capacity(threads.len());
-                for (index, handle) in threads {
-                    result.push((index, handle.join().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?));
+                let mut result: [Option<(usize, Observation)>; 4] = std::array::from_fn(|_| None);
+                for (slot, (index, handle)) in threads.into_iter().flatten().enumerate() {
+                    result[slot] =
+                        Some((index, handle.join().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?));
                 }
                 Ok::<_, i32>(result)
             })?;
-            for (index, value) in results {
+            for (index, value) in results.into_iter().flatten() {
                 cache.put(
                     &state,
                     generation,
-                    references[index].to_string_lossy().into_owned(),
+                    references[index]
+                        .to_str()
+                        .map_err(|_| AM_ERR_SDK_UTF8_INVALID)?,
                     identity,
                     value.clone(),
                 )?;
                 values[index] = Some(value);
             }
         }
-        let mut rows = Vec::with_capacity(values.len());
         for (reference, value) in references.iter().zip(values) {
             let value = value.ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
             rows.push(am_probe_candidate_t {
@@ -397,6 +270,8 @@ pub unsafe extern "C" fn amc_probe_streams(
                 valid_until_ms: value.valid_until,
             });
         }
+        drop(secret);
+        charge.shrink_to(plan.result_bytes())?;
         let body = Arc::new(ProbeResult {
             abi: Box::new(am_probe_result_t {
                 struct_size: size_of::<am_probe_result_t>() as u32,
