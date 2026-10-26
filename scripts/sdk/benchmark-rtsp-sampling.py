@@ -21,6 +21,19 @@ sys.path.insert(0,str(ROOT/"sdk/bindings/python"))
 import amrt_sdk as a
 
 
+def input_description(args):
+    if any(size < 1 or size > 8192 for size in args.expected_size):
+        raise ValueError("expected dimensions outside SDK limit")
+    probe=json.loads(subprocess.check_output(["ffprobe","-v","error","-select_streams","v:0",
+        "-show_entries","stream=codec_name,profile,width,height,pix_fmt,avg_frame_rate","-of","json",
+        str(args.input.resolve())],text=True,timeout=10))["streams"]
+    if len(probe)!=1: raise ValueError("expected exactly one selected video stream")
+    video=probe[0]
+    if video["codec_name"]!=args.codec or [video["width"],video["height"]]!=args.expected_size:
+        raise ValueError("input codec/dimensions do not match the target card")
+    return video
+
+
 def sized(kind):
     value=kind(); value.struct_size=c.sizeof(value)
     return value
@@ -107,7 +120,8 @@ def run_case(lib,args,url,rates):
         checked(lib.amc_source_open(ctx,c.byref(desc),c.byref(source)))
         checked(lib.amc_source_set_decode_policy(source,a.AM_DHW_SOFTWARE_ONLY))
         encoded_desc=sized(a.am_encoded_sub_desc_t)
-        encoded_desc.codec_mask=a.AM_CODEC_H264; encoded_desc.mode=a.AM_SUB_PULL
+        encoded_desc.codec_mask={"h264":a.AM_CODEC_H264,"hevc":a.AM_CODEC_H265,"mjpeg":a.AM_CODEC_MJPEG}[args.codec]
+        encoded_desc.mode=a.AM_SUB_PULL
         encoded_desc.queue_max_items=36; encoded_desc.queue_max_bytes=8*1024*1024
         subscribe(lib,lib.amc_subscribe_encoded,source,encoded_desc,encoded)
         for rate in rates:
@@ -151,7 +165,7 @@ def run_case(lib,args,url,rates):
                 try:
                     meta,view=sized(a.am_frame_meta_t),sized(a.am_frame_view_t)
                     checked(lib.amc_frame_get_meta(frame,c.byref(meta))); checked(lib.amc_frame_get_view(frame,c.byref(view)))
-                    if (view.width,view.height,view.format)!=(1920,1080,a.AM_PF_RGBA8): raise RuntimeError("wrong frame format")
+                    if (view.width,view.height,view.format)!=(*args.expected_size,a.AM_PF_RGBA8): raise RuntimeError("wrong frame format")
                     if source_identity is not None and (meta.source_id,meta.source_generation)!=source_identity: raise RuntimeError("frame source mismatch")
                     if meta.frame_id in all_ids[index] or (last_pts[index] is not None and meta.pts<=last_pts[index]): raise RuntimeError("duplicate/reordered decoded frame")
                     all_ids[index].add(meta.frame_id); last_pts[index]=meta.pts
@@ -193,6 +207,7 @@ def run_case(lib,args,url,rates):
 
 
 def main(args):
+    video=input_description(args)
     output=local_path(str(args.output.resolve()),"evidence",fresh=True); output.mkdir(parents=True)
     work=local_path(str(args.work_dir.resolve()),"tests",fresh=True); work.mkdir(parents=True)
     if not .5<=args.warmup_s<=3 or not 2<=args.window_s<=8 or not 1<=args.rounds<=3: raise ValueError("experiment budget exceeded")
@@ -222,7 +237,7 @@ def main(args):
             identity=dict(schema="framebraid.performance.met2-rtsp/1",build=dll_build_identity(dll,version.package_version_utf8.decode(),
                 version.build_target_utf8.decode(),version.runtime_notes_utf8.decode(),subprocess.check_output(["git","rev-parse","HEAD"],cwd=ROOT,text=True).strip(),
                 "dirty" if subprocess.check_output(["git","status","--porcelain"],cwd=ROOT) else "clean"),
-                input_sha256=file_sha256(args.input),target_card_sha256=file_sha256(args.target_card),
+                input_sha256=file_sha256(args.input),input_video=video,target_card_sha256=file_sha256(args.target_card),
                 runtime_files={p.name:file_sha256(p) for p in sorted(args.runtime_dir.glob("*.dll"))},
                 observer_files={name:file_sha256(Path(__file__).with_name(name)) for name in names},
                 protocol=dict(warmup_s=args.warmup_s,window_s=args.window_s,rounds=args.rounds,cases=args.cases,
@@ -254,5 +269,7 @@ if __name__=="__main__":
     for name in ("dll-dir","runtime-dir","input","mediamtx","output","work-dir","target-card"): parser.add_argument("--"+name,type=Path,required=True)
     parser.add_argument("--warmup-s",type=float,default=2); parser.add_argument("--window-s",type=float,default=4)
     parser.add_argument("--rounds",type=int,default=3)
+    parser.add_argument("--codec",choices=("h264","hevc","mjpeg"),default="h264")
+    parser.add_argument("--expected-size",type=int,nargs=2,default=[1920,1080])
     parser.add_argument("--cases",nargs="+",choices=("encoded","5","10","30","5,10,30"),default=["encoded","5","10","30","5,10,30"])
     main(parser.parse_args())

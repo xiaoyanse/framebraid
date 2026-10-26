@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "ec3358c17ef1750156c2e94c4261c9030ae8fe4c",
+  "reviewBaseCommit": "2d44efa8c3a9560c3e0e15210db11f255693a6bb",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -384,8 +384,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/live_sampling_tests.rs",
       "previousSha256": null,
-      "sha256": "74045a9d8be9d2850f669094d33d8959b43877fdc7b5c7d4d53d723deac2b1ba",
-      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+      "sha256": "4a73b54664d9a3c8598e6edefb1aaba7867784da74347bdad305ca3a7a1d8128",
+      "reason": "R2 actual worker three-codec sampling/spatial coverage; exact pre/post-change intervals and generation/ownership checks; cfg(test) only, production ABI unchanged"
     }
   ]
 }

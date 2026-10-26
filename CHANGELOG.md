@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Extend capped sampling verification to HEVC/MJPEG and three-codec spatial changes; validate observer codec/dimensions before opening sources. No production ABI change or new release support claim. / 补齐采样编码与尺寸覆盖，见[记录](docs/verification/sdk-r2-codec-sampling-20261026.md)。
+
 - Restore capped RTSP pixel delivery using strict integer deadlines, bounded worker-local waiting and sampled-only stale-picture coalescing. Three paired local H.264 runs improve a 30-FPS consumer from roughly 16 to 29.5 FPS, with higher but bounded measured receipt age; full codec/hardware/soak acceptance remains open. / 修复实际采样节拍，保留延迟代价与完整矩阵未验项，见[验证](docs/verification/sdk-r2-cadence-20261026.md)。
 
 - Isolate RTSP native pixel work from compressed packet reading with one lazy worker per source, admitted by the existing decoder limit. Bound and account its queue, resynchronize on overflow, validate epochs/configuration before publishing and drain actual work before close. Controlled blocking/lifecycle checks and local codec regressions are recorded separately from live sampling and soak results. / 有界像素执行隔离，保留真实采样不足，不声称整包耐压完成。

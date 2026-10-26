@@ -114,7 +114,7 @@ that planned capabilities are implemented or production-accepted.
 | 顺序/ID | 原问题、阶段成果与剩余范围 | 参考 | 必测的机制指标与正确性 |
 | --- | --- | --- | --- |
 | R2-1 | [copy_pixels](../crates/am-camera/src/media/codec.rs)原来逐次创建转换上下文；SwsContext及单回读缓存复用已保存，后续按热点评估输出分配/复用 | REF-A1 | 上下文创建/释放次数、输出分配次数与字节/帧、转换耗时；稳定格式下创建不再随帧数线性增加，格式变化只在需要时重建 |
-| R2-2 | [emit_decoded](../crates/camera-ffi/src/subscriptions/hub.rs)像素需求已前移，保留[fanout](../crates/camera-ffi/src/subscriptions/pixels.rs)推进采样机会；H.264实际节拍已三组对照修复，延迟仍受250ms保护；完整编码/尺寸矩阵和长跑仍待 | REF-W1 | 实际解码帧数、像素转换次数、交付次数、有效采样率；无到期像素消费者时避免无用转换，预览与控制通知不被误停 |
+| R2-2 | [emit_decoded](../crates/camera-ffi/src/subscriptions/hub.rs)像素需求已前移，保留[fanout](../crates/camera-ffi/src/subscriptions/pixels.rs)推进采样机会；H.264实际节拍已三组对照修复，延迟仍受250ms保护；[HEVC/MJPEG及三编码尺寸/间隔覆盖](verification/sdk-r2-codec-sampling-20261026.md)已补；硬件完整矩阵与长跑仍待 | REF-W1 | 实际解码帧数、像素转换次数、交付次数、有效采样率；无到期像素消费者时避免无用转换，预览与控制通知不被误停 |
 | R2-3 | [prepare](../crates/vision/src/sdk/prepare.rs) 生成浮点数组，[TensorData::new](../crates/vision/src/sdk/model.rs) 再分配并复制；先减少中间复制，再评估安全工作区与 SIMD | REF-A2/REF-P1 | 张量分配次数/字节、复制字节/帧、前处理耗时；目标路径取消可避免的临时数组到最终张量复制，保持对齐、并发安全和输出坐标合同 |
 | R2-4（条件项） | 减少共享帧发布、缩放输出和 C#/Python 搬运；必要颜色/布局转换单独列账 | REF-A1/REF-P3 | 先列当前复制图；只有仍属实测热点且前三项收益可复现时纳入，否则转后续候选，不阻塞 R2 收口 |
 
