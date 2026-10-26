@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
     sync::Mutex,
 };
+pub mod devices;
 mod windows;
 
 static RUNTIME: Mutex<Option<PathBuf>> = Mutex::new(None);
@@ -63,22 +64,31 @@ pub fn initialize(path: &Path) -> Result<()> {
     *current = Some(canonical);
     Ok(())
 }
-pub(super) fn with_backend<T>(backend: u32, create: impl FnOnce() -> Result<T>) -> Result<T> {
-    if backend > 2 {
-        return Err(Error("sdk.invalidArgument".into()));
-    }
+pub(super) fn claim_backend(backend: u32) -> Result<()> {
     let mut state = BACKENDS
         .lock()
         .map_err(|_| Error("sdk.internalError".into()))?;
-    if backend != 0 && state.chosen.is_some_and(|b| b != backend) {
-        return Err(Error("vision.backendConflict".into()));
+    state.claim(backend)
+}
+impl Backends {
+    fn claim(&mut self, backend: u32) -> Result<()> {
+        if backend > 2 {
+            return Err(Error("sdk.invalidArgument".into()));
+        }
+        if backend != 0 {
+            if self.chosen.is_some_and(|b| b != backend) {
+                return Err(Error("vision.backendConflict".into()));
+            }
+            // 注册失败仍可能留下已加载的provider；只允许同后端重试或CPU。
+            self.chosen = Some(backend);
+        }
+        Ok(())
     }
-    let value = create()?;
-    if backend != 0 {
-        state.chosen = Some(backend);
+}
+pub(super) fn loaded(backend: u32) {
+    if let Ok(mut state) = BACKENDS.lock() {
+        state.loaded |= 1 << backend;
     }
-    state.loaded |= 1 << backend;
-    Ok(value)
 }
 pub(super) fn executed(backend: u32) {
     if let Ok(mut state) = BACKENDS.lock() {
@@ -93,11 +103,26 @@ pub struct BackendStatus {
     pub executed: bool,
     pub note: &'static std::ffi::CStr,
 }
-pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
-    let cuda = windows::cuda_hardware();
+#[derive(Clone, Copy, Debug, serde::Serialize)]
+pub struct BackendObservations {
+    pub accelerator_domain: Option<u32>,
+    pub loaded_mask: u32,
+    pub executed_mask: u32,
+}
+/// 只复制进程历史观察，不探测驱动/文件，不代表当前模型健康状态。
+pub fn observations() -> Result<BackendObservations> {
     let state = BACKENDS
         .lock()
         .map_err(|_| Error("sdk.internalError".into()))?;
+    Ok(BackendObservations {
+        accelerator_domain: state.chosen,
+        loaded_mask: state.loaded,
+        executed_mask: state.executed,
+    })
+}
+pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
+    let cuda = windows::cuda_hardware();
+    let state = observations()?;
     let ready = initialized();
     Ok((0..3)
         .map(|backend| {
@@ -128,8 +153,9 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
                         .is_file(),
                 }
             });
-            let conflict = backend != 0 && state.chosen.is_some_and(|b| b != backend);
-            let loaded = !conflict && ready && dependencies && state.loaded & (1 << backend) != 0;
+            let conflict = backend != 0 && state.accelerator_domain.is_some_and(|b| b != backend);
+            let loaded =
+                !conflict && ready && dependencies && state.loaded_mask & (1 << backend) != 0;
             BackendStatus {
                 backend,
                 dependencies,
@@ -139,14 +165,14 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
                     _ => cuda,
                 },
                 loaded,
-                executed: loaded && state.executed & (1 << backend) != 0,
+                executed: loaded && state.executed_mask & (1 << backend) != 0,
                 note: if conflict {
                     c"vision.backendConflict"
                 } else if !dependencies {
                     c"vision.runtimeMissing"
                 } else if !loaded {
                     c"provider-not-yet-observed; model-load-is-authoritative"
-                } else if state.executed & (1 << backend) == 0 {
+                } else if state.executed_mask & (1 << backend) == 0 {
                     c"provider-loaded; real-inference-not-yet-observed"
                 } else {
                     c"real-inference-observed-in-this-process; package-matrix-separate"
@@ -154,4 +180,20 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
             }
         })
         .collect())
+}
+
+#[cfg(test)]
+mod backend_tests {
+    use super::*;
+    #[test]
+    fn partial_registration_keeps_domain_but_does_not_cache_failure_for_same_backend() {
+        let mut state = Backends::default();
+        state.claim(2).unwrap();
+        assert_eq!(state.loaded, 0);
+        assert_eq!(state.executed, 0);
+        assert_eq!(state.claim(1).unwrap_err().0, "vision.backendConflict");
+        state.claim(0).unwrap();
+        state.claim(2).unwrap();
+        assert_eq!(state.chosen, Some(2));
+    }
 }

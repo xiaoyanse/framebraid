@@ -15,6 +15,8 @@ R2本地Rust兼容新增的设备探测/显式硬解合同见[native hardware](n
 
 本地H2.3a已将既有PREFER_HW策略接入直接C解码器，新增实现语义与恢复约束见上述硬件合同及[验证](../verification/sdk-r2-direct-auto-20261026.md)。布局、枚举和1.0冻结未变；get_info的NULL未定/实际后端语义沿用附录，RTSP基本接线r7已完成，完整设备/耐压诊断仍未完成，不扩张旧公开制品承诺。
 
+H5本地Rust核心选择/状态合同见[inference selection](inference-selection.md)；本阶段无新增C导出或结构，旧C模型入口沿用原策略。C策略、显式推理探测与缓存报告后续先扩合同再实施，不能用Rust核心完成替代跨语言交付。
+
 ## 0. 范围与读法
 
 - 两个 DLL：`am_camera.dll`（视频 SDK）、`am_vision.dll`（推理 SDK），同一进程内加载，各自独立初始化；本文给出 C 头文件级设计：句柄体系、全部导出函数签名、公共合同、错误码、资源预算与规格对照矩阵。

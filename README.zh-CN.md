@@ -124,3 +124,5 @@ FFmpeg、ONNX Runtime 在运行时动态加载，初始化显式传入兼容运�
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse)。
 
 自有代码采用 [Apache-2.0](LICENSE)，按其条款允许商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可，见 [NOTICE](NOTICE) 和[第三方材料](sdk/third-party/README.md)。
+
+Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. New C selection/report exports, accelerated inference and recovery acceptance remain open. See [core verification](docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。

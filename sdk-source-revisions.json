@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "b065bf10181c74ace5c8850672a5d75fc82e2869",
+  "reviewBaseCommit": "83fcaebcb350eae750ea9ba045ba4eb06efe9459",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -254,6 +254,48 @@
       "previousSha256": null,
       "sha256": "f64bce5df8dc9e1ce2cf6fe6efa173fd5bb5dfbbd5c4aede219c58edff3c92c1",
       "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+    },
+    {
+      "path": "crates/vision/src/sdk/mod.rs",
+      "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
+      "sha256": "e90a3e53f96b3228773b7960096c3f29ce54e04282d30cf70653a689fc23b39c",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/model.rs",
+      "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
+      "sha256": "6fbf4104457a7c2a15a801f3348e56be4a2cf62d13eef323fdbf8fc1dc7cf07d",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/runtime.rs",
+      "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
+      "sha256": "d412102a094159c6511e5e527b6c90a430c9ea4a1f8b5b0b2b859c49c3fe3150",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/runtime/devices.rs",
+      "previousSha256": null,
+      "sha256": "ca0288eeb12658fe73a202b2f3a6dc4264405d7fbf9ffcc39d718546b7fd7983",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/selection.rs",
+      "previousSha256": null,
+      "sha256": "011d3ff66b882100ac5fbfbf16c95dd73043f800891693e08108e00ab33aafb2",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/selection_tests.rs",
+      "previousSha256": null,
+      "sha256": "cabb82b29474238d5dbb62e0ba2ae71f6882387850dbd6d7586054f481ab15fc",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+    },
+    {
+      "path": "crates/vision/src/sdk/session.rs",
+      "previousSha256": null,
+      "sha256": "c5d637f90fdcb7912d25dddc62071d9211289621d5c83d3dfc9326effee072b0",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
     }
   ]
 }

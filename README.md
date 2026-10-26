@@ -125,3 +125,5 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Do not post credentials, private stream
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse).
 
 Original SDK code uses [Apache-2.0](LICENSE), allowing commercial and closed-source use subject to its terms. FFmpeg, ONNX Runtime, models and other dependencies retain their licenses. See [NOTICE](NOTICE) and [third-party materials](sdk/third-party/README.md).
+
+Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. New C selection/report exports, accelerated inference and recovery acceptance remain open. See [core verification](docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。

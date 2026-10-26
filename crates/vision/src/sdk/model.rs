@@ -141,6 +141,7 @@ fn info(name: &str, value: &ValueType) -> Result<TensorInfo> {
         shape: shape.to_vec(),
     })
 }
+#[derive(Clone, Copy)]
 pub enum ModelSource<'a> {
     Path(&'a Path),
     Memory(&'a [u8]),
@@ -153,6 +154,7 @@ pub struct Model {
     pub actual_backend: u32,
     pub fallback: bool,
     pub(super) batch: u32,
+    selection: super::selection::BackendSelectionReport,
 }
 impl Model {
     pub fn load(
@@ -162,135 +164,132 @@ impl Model {
         strict: bool,
         threads: usize,
     ) -> Result<Self> {
-        if backend > 2 || threads == 0 {
-            return Err(Error("sdk.invalidArgument".into()));
+        use super::selection::{BackendSelectionPolicy, BackendTarget};
+        let mut priority = vec![BackendTarget {
+            backend,
+            device_id: 0,
+        }];
+        if backend != 0 && !strict {
+            priority.push(BackendTarget {
+                backend: 0,
+                device_id: 0,
+            });
         }
-        let p = profile.map(profiles::find).transpose()?;
-        let length = match source {
-            ModelSource::Path(path) => std::fs::metadata(path)
-                .map_err(|_| Error("vision.modelLoadFailed".into()))?
-                .len(),
-            ModelSource::Memory(b) => b.len() as u64,
+        let policy = BackendSelectionPolicy {
+            priority,
+            allow_fallback: !strict,
+            budget_ms: 1500,
         };
-        if length > 256 * 1024 * 1024 {
-            return Err(Error("vision.modelTooLarge".into()));
-        }
-        let bytes = match source {
-            ModelSource::Path(path) => {
-                std::fs::read(path).map_err(|_| Error("vision.modelLoadFailed".into()))?
+        Self::load_selected_inner(source, profile, &policy, threads, true)
+            .map_err(|failure| failure.error)
+    }
+    pub fn load_selected(
+        source: ModelSource<'_>,
+        profile: Option<&str>,
+        policy: &super::selection::BackendSelectionPolicy,
+        threads: usize,
+    ) -> super::selection::SelectionResult<Self> {
+        Self::load_selected_inner(source, profile, policy, threads, false)
+    }
+    pub fn selection_report(&self) -> &super::selection::BackendSelectionReport {
+        &self.selection
+    }
+    fn load_selected_inner(
+        source: ModelSource<'_>,
+        profile: Option<&str>,
+        policy: &super::selection::BackendSelectionPolicy,
+        threads: usize,
+        legacy: bool,
+    ) -> super::selection::SelectionResult<Self> {
+        use super::selection::{self, BackendSelectionError, BackendSelectionReport};
+        policy.validate().map_err(|error| BackendSelectionError {
+            error,
+            report: Box::new(BackendSelectionReport::default()),
+        })?;
+        let mut selection = selection::report(policy, legacy);
+        let result = (|| -> Result<Self> {
+            if threads == 0 {
+                return Err(Error("sdk.invalidArgument".into()));
             }
-            ModelSource::Memory(b) => b.to_vec(),
-        };
-        if bytes.len() > 256 * 1024 * 1024 {
-            return Err(Error("vision.modelTooLarge".into()));
-        }
-        super::onnx::validate_external(
-            &bytes,
-            match source {
-                ModelSource::Path(path) => Some(path),
-                _ => None,
-            },
-        )?;
-        let build = |selected| -> Result<Session> {
-            let mut builder = Session::builder()
-                .and_then(|b| Ok(b.with_intra_threads(threads)?))
-                .and_then(|b| Ok(b.with_inter_threads(1)?))
-                .and_then(|b| Ok(b.with_parallel_execution(false)?))
-                .map_err(|_| Error("vision.modelLoadFailed".into()))?;
-            let provider = match selected {
-                0 => None,
-                1 => Some(
-                    ort::ep::OpenVINO::default()
-                        .with_device_type("CPU")
-                        .with_num_threads(threads)
-                        .build()
-                        .error_on_failure(),
-                ),
-                2 => Some(ort::ep::CUDA::default().build().error_on_failure()),
-                _ => return Err(Error("sdk.invalidArgument".into())),
+            let p = profile.map(profiles::find).transpose()?;
+            let length = match source {
+                ModelSource::Path(path) => std::fs::metadata(path)
+                    .map_err(|_| Error("vision.modelLoadFailed".into()))?
+                    .len(),
+                ModelSource::Memory(b) => b.len() as u64,
             };
-            if let Some(ep) = provider {
-                builder = builder
-                    .with_execution_providers([ep])
-                    .map_err(|_| Error("vision.backendStrictUnavailable".into()))?;
+            if length > 256 * 1024 * 1024 {
+                return Err(Error("vision.modelTooLarge".into()));
             }
-            match source {
-                ModelSource::Path(path) => builder.commit_from_file(path),
-                ModelSource::Memory(_) => builder.commit_from_memory(&bytes),
+            let bytes = match source {
+                ModelSource::Path(path) => {
+                    std::fs::read(path).map_err(|_| Error("vision.modelLoadFailed".into()))?
+                }
+                ModelSource::Memory(b) => b.to_vec(),
+            };
+            if bytes.len() > 256 * 1024 * 1024 {
+                return Err(Error("vision.modelTooLarge".into()));
             }
-            .map_err(|e| {
-                Error(
-                    if selected == 0
-                        || matches!(
-                            e.code(),
-                            ort::error::ErrorCode::InvalidArgument
-                                | ort::error::ErrorCode::NoSuchFile
-                                | ort::error::ErrorCode::NoModel
-                                | ort::error::ErrorCode::InvalidProtobuf
-                                | ort::error::ErrorCode::InvalidGraph
-                        )
-                    {
-                        "vision.modelLoadFailed"
-                    } else {
-                        "vision.backendStrictUnavailable"
-                    }
-                    .into(),
-                )
-            })
-        };
-        let (session, actual_backend) = match super::runtime::with_backend(backend, || {
-            build(backend)
-        }) {
-            Ok(s) => (s, backend),
-            Err(e) if e.0 == "vision.backendConflict" || e.0 == "vision.modelLoadFailed" => {
-                return Err(e)
+            super::onnx::validate_external(
+                &bytes,
+                match source {
+                    ModelSource::Path(path) => Some(path),
+                    _ => None,
+                },
+            )?;
+            let session = selection::choose(policy, legacy, &mut selection, |target| {
+                super::session::create(source, &bytes, target, threads)
+            })?;
+            let actual_backend = selection.selected.map_or(0, |target| target.backend);
+            let inputs = session
+                .inputs()
+                .iter()
+                .map(|v| info(v.name(), v.dtype()))
+                .collect::<Result<Vec<_>>>()?;
+            let outputs = session
+                .outputs()
+                .iter()
+                .map(|v| info(v.name(), v.dtype()))
+                .collect::<Result<Vec<_>>>()?;
+            if inputs.is_empty() || outputs.is_empty() || inputs.len() > 32 || outputs.len() > 32 {
+                return Err(Error("vision.ioUnsupported".into()));
             }
-            Err(_) if backend != 0 && !strict => (super::runtime::with_backend(0, || build(0))?, 0),
-            Err(_) if backend != 0 => return Err(Error("vision.backendStrictUnavailable".into())),
-            Err(e) => return Err(e),
-        };
-        let inputs = session
-            .inputs()
-            .iter()
-            .map(|v| info(v.name(), v.dtype()))
-            .collect::<Result<Vec<_>>>()?;
-        let outputs = session
-            .outputs()
-            .iter()
-            .map(|v| info(v.name(), v.dtype()))
-            .collect::<Result<Vec<_>>>()?;
-        if inputs.is_empty() || outputs.is_empty() || inputs.len() > 32 || outputs.len() > 32 {
-            return Err(Error("vision.ioUnsupported".into()));
-        }
-        if let Some(profile) = p {
-            let matches = |actual: &[TensorInfo], expected: &[profiles::TensorSpec]| {
-                actual.len() == expected.len()
-                    && expected.iter().all(|e| {
-                        actual.iter().any(|a| {
-                            a.name == e.name
-                                && a.dtype == 0
-                                && a.shape
-                                    .iter()
-                                    .copied()
-                                    .eq(e.shape.iter().map(|d| *d as i64))
+            if let Some(profile) = p {
+                let matches = |actual: &[TensorInfo], expected: &[profiles::TensorSpec]| {
+                    actual.len() == expected.len()
+                        && expected.iter().all(|e| {
+                            actual.iter().any(|a| {
+                                a.name == e.name
+                                    && a.dtype == 0
+                                    && a.shape
+                                        .iter()
+                                        .copied()
+                                        .eq(e.shape.iter().map(|d| *d as i64))
+                            })
                         })
-                    })
-            };
-            if !matches(&inputs, std::slice::from_ref(&profile.input))
-                || !matches(&outputs, &profile.outputs)
-            {
-                return Err(Error("vision.formatIncompatible".into()));
+                };
+                if !matches(&inputs, std::slice::from_ref(&profile.input))
+                    || !matches(&outputs, &profile.outputs)
+                {
+                    return Err(Error("vision.formatIncompatible".into()));
+                }
             }
-        }
-        let batch = super::batch::from_session(&session, &inputs, &outputs)?;
-        Ok(Self {
-            session,
-            inputs,
-            outputs,
-            profile: p,
-            actual_backend,
-            fallback: backend != actual_backend,
-            batch,
+            let batch = super::batch::from_session(&session, &inputs, &outputs)?;
+            selection.model_accepted = true;
+            Ok(Self {
+                session,
+                inputs,
+                outputs,
+                profile: p,
+                actual_backend,
+                fallback: selection.attempts.len() > 1,
+                batch,
+                selection: selection.clone(),
+            })
+        })();
+        result.map_err(|error| BackendSelectionError {
+            error,
+            report: Box::new(selection),
         })
     }
     pub fn validate_inputs(&self, inputs: &[TensorData]) -> Result<()> {
@@ -321,10 +320,20 @@ impl Model {
                 Ok((v.info.name.as_str(), tensor.into_dyn()))
             })
             .collect::<Result<Vec<_>>>()?;
-        let result = self
-            .session
-            .run(values)
-            .map_err(|_| Error("vision.inferenceFailed".into()))?;
+        let result = match self.session.run(values) {
+            Ok(result) => {
+                self.selection.native_runs = self.selection.native_runs.saturating_add(1);
+                self.selection.last_native_run_succeeded = Some(true);
+                result
+            }
+            Err(error) => {
+                self.selection.native_failures = self.selection.native_failures.saturating_add(1);
+                self.selection.last_native_run_succeeded = Some(false);
+                let code: ort::sys::OrtErrorCode = error.code().into();
+                self.selection.last_native_error_code = Some(code as i32);
+                return Err(Error("vision.inferenceFailed".into()));
+            }
+        };
         let mut remaining = output_budget;
         let mut output = Vec::new();
         for (name, value) in result.iter() {
@@ -352,7 +361,8 @@ impl Model {
         {
             return Err(Error("vision.batchUnsupported".into()));
         }
-        super::runtime::executed(self.actual_backend);
+        self.selection.delivered_runs = self.selection.delivered_runs.saturating_add(1);
+        super::runtime::executed(self.selection.selected.map_or(0, |target| target.backend));
         Ok(output)
     }
 }

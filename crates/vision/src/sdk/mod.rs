@@ -6,11 +6,15 @@ mod onnx;
 pub mod pixels;
 mod prepare;
 pub mod runtime;
+pub mod selection;
+mod session;
 pub use batch::validate_count as validate_batch_count;
 pub use model::{byte_count, validate_input_infos, Model, ModelSource, TensorData, TensorInfo};
 pub use prepare::{prepare, ImageTransform, Preprocess};
 #[cfg(test)]
 mod batch_tests;
+#[cfg(test)]
+mod selection_tests;
 #[cfg(test)]
 mod tests;
 
