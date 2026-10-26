@@ -1,6 +1,6 @@
-use super::{layout::*, windows::*};
+use super::{layout::*, pool::table::Table, windows::*};
 use crate::{abi::*, Result};
-use std::{collections::HashMap, sync::Mutex};
+use std::sync::Mutex;
 
 pub struct Pair {
     pub control: Mapping,
@@ -9,7 +9,7 @@ pub struct Pair {
     pub owner: Process,
     pub attach: am_shared_pool_attach_desc_t,
     pub config: am_shared_pool_config_t,
-    verified: Mutex<HashMap<u64, Process>>,
+    verified: Mutex<Table<u64, Process, 8>>,
 }
 // attach/config只包含定宽值；共享写入一律持命名锁，归还意向单独原子化。
 unsafe impl Send for Pair {}
@@ -45,7 +45,7 @@ impl Pair {
             owner,
             attach,
             config,
-            verified: Mutex::new(HashMap::new()),
+            verified: Mutex::new(Table::default()),
         };
         {
             let s = pair.lock(0)?;
@@ -153,7 +153,7 @@ impl Pair {
             owner,
             attach,
             config,
-            verified: Mutex::new(HashMap::new()),
+            verified: Mutex::new(Table::default()),
         })
     }
     pub fn lock(&self, wait: u32) -> Result<State<'_>> {
@@ -207,16 +207,21 @@ impl State<'_> {
             .verified
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        // 先回收已正常detach的缓存，避免8个旧身份加8个新身份的瞬时扩容。
+        verified.retain(|token, _| {
+            (0..self.pair.config.max_consumers as usize)
+                .any(|c| self.r64(CONSUMER_BASE + c * CONSUMER_BYTES) == *token)
+        });
         for c in 0..self.pair.config.max_consumers as usize {
             let at = CONSUMER_BASE + c * CONSUMER_BYTES;
             let token = self.r64(at);
             if token == 0 {
                 continue;
             }
-            if let std::collections::hash_map::Entry::Vacant(e) = verified.entry(token) {
+            if verified.get(&token).is_none() {
                 // 访问失败不是退出证明；保留该记录和所占槽。
                 if let Ok(p) = Process::open(self.r64(at + 8), Some(self.r64(at + 16))) {
-                    e.insert(p);
+                    verified.insert(token, p)?;
                 }
             }
             let released = self.pair.control.release_read(at + 24) == token
@@ -291,5 +296,66 @@ impl State<'_> {
             s.outstanding_borrows += (self.r64(LEASE_BASE + i * LEASE_BYTES) != 0) as u32;
         }
         s
+    }
+}
+
+#[cfg(test)]
+mod foundation_tests {
+    use super::*;
+
+    fn pair() -> Pair {
+        Pair::create(am_shared_pool_config_t {
+            slot_count: 1,
+            max_frame_bytes: 64,
+            total_bytes: 64,
+            max_consumers: 8,
+            max_outstanding_borrows: 32,
+            ..Default::default()
+        })
+        .unwrap()
+    }
+    #[test]
+    fn eight_old_to_eight_new_process_cache_stays_within_eight_slots() {
+        let pair = pair();
+        let own = Process::current().unwrap();
+        let state = pair.lock(0).unwrap();
+        for base in [10u64, 100u64] {
+            for index in 0..8 {
+                let at = CONSUMER_BASE + index * CONSUMER_BYTES;
+                state.u64(at, base + index as u64);
+                state.u64(at + 8, own.pid);
+                state.u64(at + 16, own.started);
+            }
+            state.reap().unwrap();
+            let verified = pair.verified.lock().unwrap();
+            assert_eq!(verified.len(), 8);
+            assert!((0..8).all(|index| verified.get(&(base + index)).is_some()));
+            if base == 100 {
+                assert!((10..18).all(|old| verified.get(&old).is_none()));
+            }
+        }
+    }
+    #[test]
+    fn unknown_process_is_not_reaped_or_used_to_release_its_lease() {
+        let pair = pair();
+        let state = pair.lock(0).unwrap();
+        state.u64(CONSUMER_BASE, 77);
+        state.u64(CONSUMER_BASE + 8, u64::MAX);
+        state.u64(CONSUMER_BASE + 16, 1);
+        state.u64(LEASE_BASE, 55);
+        state.u64(LEASE_BASE + 8, 77);
+        state.u32(LEASE_BASE + 16, 0);
+        state.u32(SLOT_BASE + 12, 1);
+        for _ in 0..16 {
+            state.reap().unwrap();
+        }
+        assert_eq!(state.r64(CONSUMER_BASE), 77);
+        assert_eq!(state.r64(LEASE_BASE), 55);
+        assert_eq!(state.r32(SLOT_BASE + 12), 1);
+        assert_eq!(pair.verified.lock().unwrap().len(), 0);
+        pair.control.release_signal(LEASE_BASE + RELEASE_OFFSET, 55);
+        state.reap().unwrap();
+        assert_eq!(state.r64(LEASE_BASE), 0);
+        assert_eq!(state.r64(CONSUMER_BASE), 77);
     }
 }

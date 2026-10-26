@@ -6,7 +6,6 @@ use super::{
 use crate::{abi::*, buffers::Buffer, handles::Managed, Result};
 use std::{
     any::Any,
-    collections::HashMap,
     sync::{
         atomic::{AtomicBool, AtomicUsize, Ordering},
         Arc, Mutex, Weak,
@@ -14,9 +13,16 @@ use std::{
     time::{Duration, Instant},
 };
 
+#[path = "table.rs"]
+pub(super) mod table;
+use table::Table;
+#[cfg(test)]
+#[path = "foundation_tests.rs"]
+mod foundation_tests;
+
 #[derive(Default)]
 pub struct Ledger {
-    maps: HashMap<[u8; 32], Weak<Pair>>,
+    maps: Table<[u8; 32], Weak<Pair>, 4>,
 }
 impl Ledger {
     pub fn summary(&self) -> Result<(u64, u64, u32, u32)> {
@@ -39,7 +45,7 @@ impl Ledger {
             .filter_map(Weak::upgrade)
             .map(|p| p.config.total_bytes)
             .sum();
-        if self.maps.len() >= l.shared_pool_max_pools as usize
+        if self.maps.len() >= l.shared_pool_max_pools.min(4) as usize
             || bytes + additional > l.shared_pool_max_total_bytes
             || (self.maps.len() as u64 + 1) * CONTROL_BYTES as u64 > l.shared_pool_metadata_bytes
         {
@@ -54,7 +60,7 @@ impl Ledger {
     pub fn admit(&mut self, pair: Arc<Pair>, l: &am_limits_t) -> Result<Arc<Pair>> {
         self.check(pair.config.total_bytes, l)?;
         self.maps
-            .insert(pair.attach.identity_tag, Arc::downgrade(&pair));
+            .insert(pair.attach.identity_tag, Arc::downgrade(&pair))?;
         Ok(pair)
     }
 }
@@ -64,7 +70,7 @@ pub struct Pool {
     pub consumer: u64,
     consumer_at: usize,
     consumer_done: AtomicBool,
-    pub initial: Mutex<HashMap<u64, usize>>,
+    pub initial: Mutex<Table<u64, usize, 32>>,
     pub local_leases: Arc<AtomicUsize>,
     pub stopping: AtomicBool,
     waiters: Arc<AtomicUsize>,
@@ -109,7 +115,7 @@ impl Pool {
             consumer,
             consumer_at,
             consumer_done: AtomicBool::new(false),
-            initial: Mutex::new(HashMap::new()),
+            initial: Mutex::new(Table::default()),
             local_leases: Arc::new(AtomicUsize::new(0)),
             stopping: AtomicBool::new(false),
             waiters,
