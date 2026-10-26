@@ -144,6 +144,10 @@ impl CameraState {
         let usage = self.usage.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         Ok((usage.bytes, usage.external_bytes, usage.external_frames))
     }
+    pub(crate) fn control_usage_snapshot(&self) -> Result<(usize, usize)> {
+        let usage = self.usage.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        Ok((usage.controls, usage.control_bytes))
+    }
     pub fn control(self: &Arc<Self>, bytes: usize, external: bool) -> Result<ControlCharge> {
         let l = self.limits()?;
         let ctx = self.ctx.data::<Context>()?;

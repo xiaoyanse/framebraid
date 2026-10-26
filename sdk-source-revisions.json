@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "a56ef42a656614b498e3a50d673083feec2741da",
+  "reviewBaseCommit": "5820e73bb094e62f2fd7537e8b09c055bc410556",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "66ea8e1e40f594e7c39cb277014e66f322f4bccf90ba3ef727ee14209485d2bf",
-      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+      "sha256": "624577130930582108e8341ad94daeab273bfedb94bf9a600482e4a4f3b9cda4",
+      "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -614,6 +614,24 @@
       "previousSha256": null,
       "sha256": "5c84e2f899a86461a70c60728ac19e18b531091cc63430a7ef43e41295d3111b",
       "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/events.rs",
+      "previousSha256": "b286bced772ab175d578db3cd9efc1c85ad5054c9d7bb9757f9f9b2ab71a5c71",
+      "sha256": "7247ffa627052f74e02fc10ce1d0f33554a0c8d8b68facab098fdf6fbf86f972",
+      "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/events/queue.rs",
+      "previousSha256": null,
+      "sha256": "77e1e79bbb9e66a609eb4d06c3ee91bd44053417bd4c3f2bf9c413b6330765ed",
+      "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/events/tests.rs",
+      "previousSha256": null,
+      "sha256": "3897be512782cbeb0c57f2af74164eb71a78c9790d3d90458742a58c7f6d2046",
+      "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
     }
   ]
 }

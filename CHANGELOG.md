@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Prepay fixed Media source-event storage and reclaim it after callback drain, preserving bounded drop-old hints without overwriting active callbacks. / 补媒体事件空闲容量与停止回收，详见[验证](docs/verification/sdk-r3-media-event-storage-20261027.md)，C ABI不变。
+
 - Prepay fixed inference notification queue storage, retain idle-slot credits, and release backing buffers after callback drain. Reject undersized registration before starting a notifier. / 推理通知改固定存储预付、活项独立计数和注销/停止回收，不改变C ABI；详见[验证](docs/verification/sdk-r3-notification-storage-20261027.md)。
 
 - Reserve RTSP configuration/framing workspace before SDK buffer allocation and retain credits through Reader errors and packet ownership. Charge complete inference notification entries; apply probe budgets to HTTP and RTSP. / 补配置与转换前准入、错误/载荷持续计费、探测预算及通知实际条目计费；兼容新增Rust预算入口，C ABI不变，见[验证](docs/verification/sdk-r3-reader-reservations-20261027.md)。

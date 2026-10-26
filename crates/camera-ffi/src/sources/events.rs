@@ -18,7 +18,9 @@ struct State {
     stop: bool,
     started: bool,
     queue: VecDeque<Event>,
+    queue_storage: Option<crate::frames::ControlCharge>,
 }
+mod queue;
 pub(super) struct Events {
     budget: Arc<CameraState>,
     state: Mutex<State>,
@@ -57,12 +59,22 @@ impl Events {
                 .wait(state)
                 .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         }
+        state.release_storage_if_idle();
         if state.stop {
             return Err(AM_ERR_SDK_HANDLE_CLOSED);
         }
-        state.callback = cb;
-        state.user = user;
+        if cb.is_some() {
+            state.prepare(&self.budget)?;
+        }
         if cb.is_some() && !state.started {
+            // 在线程启动前核句柄锁，失败时不能留下无人join的线程。
+            let mut slot = match self.worker.lock() {
+                Ok(slot) => slot,
+                Err(_) => {
+                    state.release_storage_if_idle();
+                    return Err(AM_ERR_SDK_INTERNAL_ERROR);
+                }
+            };
             self.alive.store(true, Ordering::Release);
             let pump = self.clone();
             let worker = std::thread::Builder::new()
@@ -70,16 +82,18 @@ impl Events {
                 .spawn(move || pump.run(source));
             match worker {
                 Ok(worker) => {
-                    *self.worker.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? = Some(worker);
+                    *slot = Some(worker);
                     state.started = true;
                 }
                 Err(_) => {
                     self.alive.store(false, Ordering::Release);
-                    state.callback = None;
+                    state.release_storage_if_idle();
                     return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
                 }
             }
         }
+        state.callback = cb;
+        state.user = user;
         self.changed.notify_all();
         Ok(())
     }
@@ -130,6 +144,9 @@ impl Events {
                 }
                 if let Ok(mut state) = self.state.lock() {
                     state.busy = false;
+                    if state.stop {
+                        state.release_storage_if_idle();
+                    }
                 }
                 self.changed.notify_all();
             }
@@ -151,19 +168,25 @@ impl Events {
                 return;
             }
             // 事件通知是有界提示；状态查询始终提供最新事实，不让慢回调阻塞取流。
-            if state.queue.len() >= 64 {
-                state.queue.pop_front();
+            if state.queue_storage.is_none() {
+                self.budget.metrics.dropped.fetch_add(1, Ordering::AcqRel);
+                return;
+            }
+            if state.queue.len() + usize::from(state.busy) >= state.queue.capacity() {
+                if state.queue.pop_front().is_none() {
+                    self.budget.metrics.dropped.fetch_add(1, Ordering::AcqRel);
+                    return;
+                }
                 self.budget.metrics.dropped.fetch_add(1, Ordering::AcqRel);
             }
-            let charge = self.budget.control(std::mem::size_of::<Event>(), false);
+            let charge = self.budget.control(0, false);
             let charge = match charge {
                 Ok(charge) => charge,
                 Err(_) => {
                     if state.queue.pop_front().is_some() {
                         self.budget.metrics.dropped.fetch_add(1, Ordering::AcqRel);
                     }
-                    let Ok(charge) = self.budget.control(std::mem::size_of::<Event>(), false)
-                    else {
+                    let Ok(charge) = self.budget.control(0, false) else {
                         self.budget.metrics.dropped.fetch_add(1, Ordering::AcqRel);
                         return;
                     };
@@ -187,6 +210,7 @@ impl Events {
             state.stop = true;
             state.callback = None;
             state.queue.clear();
+            state.release_storage_if_idle();
         }
         self.changed.notify_all();
     }
@@ -201,3 +225,6 @@ impl Events {
         }
     }
 }
+
+#[cfg(test)]
+mod tests;
