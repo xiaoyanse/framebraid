@@ -1,5 +1,7 @@
 # Support boundaries / 支持边界
 
+> 2026-10-27用户裁决：完整硬件矩阵及固定4h/24h长跑已移出强制验收，不再作为R1～R5收口阻塞，也不改记为通过。保留已有原始证据；功能、失败回退、资源上限、所有权/取消/关闭定向回归及适用量化继续必验。硬件按实际设备和已声明范围记录实测/未测，不要求穷尽全部设备组合。历史“矩阵/长跑仍待”仅描述旧范围，不恢复已撤销门槛。
+
 OwnedPixels protects frame/shared/RGB owners through synchronous calls and default-copy async submission; it is a language convenience layer, not a new native retain mode. Legacy raw views, external array writes, result raw views, real camera-frame hardware paths and five-family accuracy retain their separate caller obligations/validation. / 新门面不消除全部低层误用或替代硬件验收。
 
 Local Python/C# notification buffers are bounded to 256 hints per model; overflow drops oldest and increments language-only loss counters. / 通知不是可靠事件账本，裸像素视图拥有者、五类模型/硬件及持续运行验收仍按R4/H2/H5待办处理。

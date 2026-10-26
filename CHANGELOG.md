@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Remove exhaustive hardware-matrix and mandatory 4h/24h soak gates from current optimization acceptance; retain scoped functional, recovery, resource and lifetime checks. / [用户裁决](docs/verification/sdk-acceptance-scope-20261027.md)，不是将未执行测试记为通过。
+
 - Bound pending Context initialization, source indices and shared-frame bookkeeping; use fixed CameraState/Hub registries and allocation-free subscription snapshots. / [整合验证](docs/verification/sdk-r3-foundation-integration-20261027.md)，C ABI不变。
 
 - Admit shared-source alias backing and growth overlap before handle publication; retain idle capacity accounting and roll back shared ownership on refusal. / [定向及真实DLL验证](docs/verification/sdk-r3-alias-storage-20261027.md)，C ABI不变。

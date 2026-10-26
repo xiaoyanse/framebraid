@@ -136,3 +136,12 @@ SDK SHALL 在CPU回读目标帧分配前核对其对齐与填充后的保守字�
 
 - **WHEN** 虚拟时钟下采样前移减少转换且采样输出保持
 - **THEN** 可确认限定机制与局部耗时结果，真实网络有效FPS、CPU占用及多路承载分别验证，不把转换次数比例外推成整机收益
+
+### Requirement: Scenario-scoped acceptance without exhaustive duration gates
+
+当前优化验收 SHALL 按实际声明范围验证功能、失败诊断/回退、资源边界、所有权与关闭安全；SHALL NOT 把完整硬件矩阵或固定4h/24h长跑作为强制完成条件。移除门槛不等于相应未运行测试通过，不扩大支持范围。
+
+#### Scenario: Required targeted checks pass without an exhaustive hardware run
+
+- **WHEN** 本包相关功能/故障/资源/接口定向验证已按范围完成，但没有全硬件组合或固定时长长跑结果
+- **THEN** 不得仅因缺这两项阻塞本包收口；仍如实列实际设备/模型和测试范围，其他未完成实现或必验项照常保持开放
