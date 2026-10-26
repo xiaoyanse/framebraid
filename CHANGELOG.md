@@ -86,6 +86,8 @@
 
 - Add ABI1.1 r8 explicit inference-device probes and bounded cached JSON reports, with Python/C# helpers. Preserve all existing layouts, initialization and model-selection contracts; no ORT needed for device-only use. Local native C/C#/Python and shutdown/budget checks only; not accelerated inference or release acceptance.
 
+
+R2 硬件自动选择保留编译、适配器和设备初始化失败原因；现有 JSON 的原因分类更精确，调用方须兼容未知分类。详见 [验证](docs/verification/sdk-r2-hardware-reasons-20261027.md)。
 - Add bounded Rust inference backend policies, explicit Windows CUDA driver inventory and owned session/Run diagnostics. Preserve legacy C selection behavior, shorten backend-state locks and isolate session EP/thread configuration. CPU native fallback/error and DLL regression verified locally; new C exports, accelerated runs and runtime recovery remain pending. / H5 Rust核心阶段，保留短测性能告警，未发布。
 
 - Connect RTSP pixel subscriptions to the shared bounded hardware selector; add source-owned policy and read-only reports. Isolate pixel recovery from compressed queue/epoch resets, with next-random-access CPU recovery and bounded negative caching. H.264/H.265 hardware and software/MJPEG controls verified locally; synchronous reader isolation, device reuse on stream reconfiguration and pressure/soak acceptance remain open. Hardware RGBA readback is slower than CPU in the recorded workload; no blanket speed claim. / RTSP硬件接线与如实诊断，本地候选未发布。

@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "b50e3e9740e8e94637c43ae401d0bf4f2463ac2a",
+  "reviewBaseCommit": "c78bf2733f6859d3667dc3fdc79a902a4968f01e",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -60,14 +60,14 @@
     {
       "path": "crates/am-camera/src/media/hardware.rs",
       "previousSha256": null,
-      "sha256": "6204095d5b0ca765d9298fa0945a9f0787dd24013775cdb02d6bf7462dc228db",
-      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+      "sha256": "cbfea8ebc96a821b0061ed865942336bbe39b3459094d724ac8455eaf5d04173",
+      "reason": "保留硬件自动选择的编译与设备初始化失败分类，定向验证，不改C ABI"
     },
     {
       "path": "crates/am-camera/src/media/codec/selection.rs",
       "previousSha256": null,
-      "sha256": "9a2d90948c88039ac9e64f49562ce4f75d11d3134f66bcc7d66ddc96236fda17",
-      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+      "sha256": "8d5af8cfa7e8507fb114f378f1e623c89c43d5e3bf9e030309f634d586c264a0",
+      "reason": "保留硬件自动选择的编译与设备初始化失败分类，定向验证，不改C ABI"
     },
     {
       "path": "crates/am-camera/src/media/codec.rs",
@@ -906,8 +906,8 @@
     {
       "path": "crates/camera-ffi/src/hardware/tests.rs",
       "previousSha256": null,
-      "sha256": "10fbc67c60d3ed91aa000385fb2daedb5dc80f83d090f5debf633df4afc5b201",
-      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+      "sha256": "ae6d454b6379031028373aaee7f4bccffa60a14f157855a957648a73234f6e1a",
+      "reason": "保留硬件自动选择的编译与设备初始化失败分类，定向验证，不改C ABI"
     },
     {
       "path": "crates/vision/src/sdk/model/source.rs",

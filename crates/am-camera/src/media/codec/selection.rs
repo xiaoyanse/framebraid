@@ -1,5 +1,5 @@
 //! 两种像素解码入口共用初始化策略；不重放视频包，不把初始化当实际执行。
-use super::{hardware::Binding, CpuDecoder, DecodeError, Result, VideoCodec};
+use super::{hardware::Binding, CpuDecoder, DecodeError, HardwareInput, Result, VideoCodec};
 use crate::media::{
     ffmpeg_lib::FfmpegApi,
     hardware::{self, Adapter, Backend, ProbeError},
@@ -110,6 +110,7 @@ impl CpuDecoder {
         };
         let codec_ptr = unsafe { (api.avcodec_find_decoder_by_name)(codec.name().as_ptr()) };
         for backend in [Backend::D3d11va, Backend::Dxva2] {
+            let compiled = hardware::compiled(&api, backend);
             let configured = unsafe { Binding::format(&api, codec_ptr, backend) }.is_some();
             for adapter in adapters.iter().filter(|a| !a.software) {
                 if start.elapsed() >= budget {
@@ -120,14 +121,16 @@ impl CpuDecoder {
                         start,
                     ));
                 }
-                let failure = if !configured {
+                let failure = if !compiled {
+                    Some(SelectionFailure::Inventory(ProbeError::NotCompiled))
+                } else if !configured {
                     Some(SelectionFailure::DecoderConfigurationUnavailable)
                 } else if backend == Backend::Dxva2 && adapter.dxva2_index.is_none() {
                     Some(SelectionFailure::Inventory(
                         ProbeError::AdapterMappingUnavailable,
                     ))
                 } else {
-                    match Self::create_on_device(
+                    match create_selected_device(
                         api.clone(),
                         codec,
                         extra,
@@ -144,7 +147,7 @@ impl CpuDecoder {
                             report.elapsed_ms = start.elapsed().as_millis();
                             return Ok(Selection { decoder, report });
                         }
-                        Err(error) => Some(SelectionFailure::Decoder(error)),
+                        Err(error) => Some(error),
                     }
                 };
                 report.attempts.push(attempt(backend, adapter, failure));
@@ -157,6 +160,27 @@ impl CpuDecoder {
             start,
         ))
     }
+}
+
+fn create_selected_device(
+    api: Arc<FfmpegApi>,
+    codec: VideoCodec,
+    extra: &[u8],
+    max_pixels: u64,
+    backend: Backend,
+    adapter: &Adapter,
+) -> std::result::Result<CpuDecoder, SelectionFailure> {
+    // 保留设备初始化与身份校验原因；上下文获取独立引用后设备守卫才释放。
+    let device = hardware::Device::create(api.clone(), backend, adapter)
+        .map_err(SelectionFailure::Inventory)?;
+    CpuDecoder::create_inner(
+        api,
+        codec,
+        extra,
+        max_pixels,
+        Some(HardwareInput::Existing(backend, device.pointer)),
+    )
+    .map_err(SelectionFailure::Decoder)
 }
 
 fn attempt(
@@ -180,4 +204,46 @@ fn fallback(
     report.fallback = Some(reason);
     report.elapsed_ms = start.elapsed().as_millis();
     Selection { decoder, report }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "需要显式FFmpeg运行库与本机D3D11适配器；只使用合成数据"]
+    fn adapter_identity_failure_retains_the_inventory_reason() {
+        let path = std::env::var_os("AM_SDK_FFMPEG_DIR").unwrap();
+        let api = Arc::new(FfmpegApi::load_from(std::path::Path::new(&path)).unwrap());
+        let mut adapter = hardware::adapters()
+            .unwrap()
+            .into_iter()
+            .find(|adapter| !adapter.software)
+            .expect("需要可用的真实适配器");
+        let valid = create_selected_device(
+            api.clone(),
+            VideoCodec::H264,
+            &[],
+            1920 * 1080,
+            Backend::D3d11va,
+            &adapter,
+        );
+        assert!(valid.is_ok());
+        drop(valid);
+        adapter.luid ^= 1;
+        let mismatched = create_selected_device(
+            api,
+            VideoCodec::H264,
+            &[],
+            1920 * 1080,
+            Backend::D3d11va,
+            &adapter,
+        );
+        assert!(matches!(
+            mismatched,
+            Err(SelectionFailure::Inventory(
+                ProbeError::AdapterIdentityMismatch
+            ))
+        ));
+    }
 }

@@ -73,6 +73,36 @@ fn worst_native_selection_fits_and_avoids_json_tree_allocations() {
     );
     println!("r3_decode_report old_allocations={old_count} new_allocations={new_count} json_bytes={} backing_bytes={REPORT_BYTES} cache_overhead_bytes={}",new.len(),std::mem::size_of::<Cached>()+16);
 }
+
+#[test]
+fn report_keeps_hardware_failure_categories_and_native_code() {
+    let report = SelectionReport {
+        policy: HardwarePolicy::PreferHardware,
+        selected: None,
+        attempts: [
+            ProbeError::NotCompiled,
+            ProbeError::AdapterIdentityMismatch,
+            ProbeError::DeviceInit(-12),
+        ]
+        .into_iter()
+        .map(|error| SelectionAttempt {
+            backend: Backend::D3d11va,
+            adapter_index: 0,
+            adapter_luid: 7,
+            error: Some(SelectionFailure::Inventory(error)),
+        })
+        .collect(),
+        fallback: Some(SelectionFailure::NoCompatibleHardware),
+        elapsed_ms: 1,
+    };
+    let json: serde_json::Value = serde_json::from_slice(&serialize(&report).unwrap()).unwrap();
+    assert_eq!(json["attempts"][0]["error"]["Inventory"], "NotCompiled");
+    assert_eq!(
+        json["attempts"][1]["error"]["Inventory"],
+        "AdapterIdentityMismatch"
+    );
+    assert_eq!(json["attempts"][2]["error"]["Inventory"]["DeviceInit"], -12);
+}
 #[test]
 fn blocking_probe_rejects_callback_before_touching_handles_or_drivers() {
     let _callback = am_sdk_support::callbacks::Scope::enter();

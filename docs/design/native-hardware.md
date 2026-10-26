@@ -30,6 +30,8 @@ D3D11创建后从真实设备查询IDXGIAdapter LUID，与请求快照核对；�
 
 ### RTSP共享源策略与恢复（H2.3b 实施合同）
 
+自动选择现保留 Inventory 的 NotCompiled、AdapterIdentityMismatch 和 DeviceInit 原始分类；低层 create_on_device 仍沿用 DecodeError。无适配器时选择报告没有逐后端编译清单，H2.1 未关闭。详见 [验证](../verification/sdk-r2-hardware-reasons-20261027.md)。
+
 ABI 1.1本地下一快照新增`amc_source_set_decode_policy`，策略属于共享连接，默认PREFER_HW；只允许单一拥有者在首次像素订阅前改变，同值设置幂等。共享/已冻结时更改返回modeConflict，调用方用reuse=0建立独占源，不隐式影响其他拥有者。首次像素订阅发布与策略冻结同锁，失败的订阅不冻结策略；ISAPI源拒绝设置。
 
 像素分支懒创建共用有界选择器，压缩直传不启动解码器。故障仅撤销像素decoder，清像素队列并递增只读报告中的decode_generation诊断代次，保持源连接、源代次、压缩配置代次和压缩字节序列，不以解码错误冒充网络断流。RTSP不重放旧包，下一真实随机访问点经CPU输出预算准入后恢复；受控资源不足继续压缩分发并报资源等待，不重新枚举显卡。码流配置变化沿既有配置事件处理。

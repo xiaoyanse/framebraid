@@ -154,7 +154,7 @@ impl Drop for Device {
     }
 }
 
-fn compiled(api: &FfmpegApi, backend: Backend) -> bool {
+pub(crate) fn compiled(api: &FfmpegApi, backend: Backend) -> bool {
     let mut previous = AV_HWDEVICE_TYPE_NONE;
     for _ in 0..64 {
         previous = unsafe { (api.av_hwdevice_iterate_types)(previous) };

@@ -32,6 +32,8 @@ R3 1.1m推理请求表容量/增长重叠已纳入控制字节，真实低预算
 
 H2.0b的共用Rust初始化选择与回退见[本地记录](verification/sdk-r2-hardware-selection-20261026.md)；后续H2.3a/b已接直接DLL与RTSP，仍不作为整组完成。
 
+R2 自动选择已保留设备初始化的精确失败分类；无设备时完整编译清单仍待处理。详见 [阶段验证](verification/sdk-r2-hardware-reasons-20261027.md)。
+
 H2.0c/R2 1.1已完成回读预算适配与转换上下文复用，见[阶段记录](verification/sdk-r2-readback-cache-20261026.md)。上下文次数220→1，三组CPU/GPU交替比较无警戒，但跨时段波动及未验矩阵仍保留。
 
 H2.0d已验证参数上下文重建复用设备引用，见[记录](verification/sdk-r2-device-reuse-20261026.md)；只量化构造开销，不替代DLL/RTSP自动回退与整链性能验收。

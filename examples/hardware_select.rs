@@ -43,6 +43,9 @@ unsafe extern "C" fn fail_create(
 unsafe extern "C" fn no_config(_: *const c_void, _: i32) -> *const AVCodecHWConfig {
     std::ptr::null()
 }
+unsafe extern "C" fn no_device_types(_: i32) -> i32 {
+    0
+}
 fn pixels(mut decoder: CpuDecoder, packet: &[u8]) -> Result<(u64, bool), String> {
     if decoder.hardware_backend().is_some() {
         return Err("hardware claimed before output".into());
@@ -117,6 +120,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if failure.report.selected.is_some() || failure.report.fallback.is_none() {
         return Err("initialization failure did not fall back".into());
     }
+    if !failure.report.attempts.iter().any(|attempt| {
+        matches!(
+            attempt.error,
+            Some(SelectionFailure::Inventory(ProbeError::DeviceInit(-12)))
+        )
+    }) {
+        return Err("device initialization reason was lost".into());
+    }
     let failure_report = serde_json::to_value(&failure.report)?;
     if pixels(failure.decoder, &packet)? != (reference, false) {
         return Err("failure fallback changed CPU output".into());
@@ -167,6 +178,26 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
     if is_hw || hash != reference || CREATES.load(Ordering::Relaxed) != before {
         return Err("missing codec config initialized a device".into());
+    }
+    let mut uncompiled = FfmpegApi::load_from(runtime)?;
+    uncompiled.av_hwdevice_iterate_types = no_device_types;
+    uncompiled.av_hwdevice_ctx_create = fail_create;
+    let before = CREATES.load(Ordering::Relaxed);
+    let (uncompiled, is_hw, hash) = selected(
+        Arc::new(uncompiled),
+        &packet,
+        HardwarePolicy::PreferHardware,
+        budget,
+    )?;
+    if is_hw || hash != reference || CREATES.load(Ordering::Relaxed) != before {
+        return Err("uncompiled backend initialized a device".into());
+    }
+    if !uncompiled["attempts"].as_array().is_some_and(|items| {
+        items
+            .iter()
+            .any(|item| item["error"]["Inventory"] == "NotCompiled")
+    }) {
+        return Err("uncompiled backend reason was lost".into());
     }
     {
         let mut gate = GATE.0.lock().map_err(|_| "gate poisoned")?;
@@ -220,7 +251,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!(
         "{}",
         serde_json::to_string_pretty(
-            &serde_json::json!({"cpu":cpu,"initialization_failure":failure_report,"codec_config_missing":missing,"budget_exhausted":tiny_report,"probe_busy":busy,"native_retry":native,"native_stream_verified":native_hw,"cpu_checksum":format!("{reference:016x}")})
+            &serde_json::json!({"cpu":cpu,"initialization_failure":failure_report,"codec_config_missing":missing,"backend_not_compiled":uncompiled,"budget_exhausted":tiny_report,"probe_busy":busy,"native_retry":native,"native_stream_verified":native_hw,"cpu_checksum":format!("{reference:016x}")})
         )?
     );
     Ok(())

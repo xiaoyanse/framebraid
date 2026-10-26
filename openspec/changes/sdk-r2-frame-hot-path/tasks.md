@@ -11,6 +11,7 @@
 - [ ] H2.1 审核现有硬解策略与查询合同，明确编译支持/设备发现/依赖/初始化/实际码流解码五层状态、适配器身份与失败原因；新增字段或策略先修合同和生成器，不覆盖旧冻结。
   - ABI 1.1首组已交付显式probe、context/独立decoder报告及跨语言验证，见`docs/verification/sdk-r2-abi11-hardware-20261026.md`；r7已装配RTSP源策略/快照；全硬件矩阵非强制；具体策略/诊断/预算定向要求仍按H2.1～H2.4核验。
 - [x] H2.0b 实现共用Rust SoftwareOnly/PreferHardware选择工厂，复用有界探测准入并返回拥有的选择/失败报告；真实帧验证、初始化失败、探测忙和无硬件回退定向测试后保存，不冒充DLL/RTSP与运行期恢复完成。证据见`docs/verification/sdk-r2-hardware-selection-20261026.md`。
+- [x] H2.1a 保留自动选择的设备初始化和编译支持失败分类，并核对本机 DLL 和 RTSP；无设备时逐后端完整清单仍待 H2.1。见 `docs/verification/sdk-r2-hardware-reasons-20261027.md`。
 - [ ] H2.2 实现 Windows H.264/H.265 原生硬解探测与自动选择：优先 D3D11VA，构建支持时尝试 DXVA2；枚举实际适配器并受初始化/探测并发预算限制，不只凭显卡名称或编译能力判可用。CUDA/QSV 专用视频后端后续，不与推理 CUDA 混同。
 - [x] H2.0c 在CPU回读分配前报告/校验保守字节预算，避免未计费的transfer pool残留；作用域释放或保留许可的单缓冲复用，验证预算不足、失败保帧、重试及关闭归还，两个复制入口共用全局Charge适配器。证据见`docs/verification/sdk-r2-readback-cache-20261026.md`；不等于自动硬解整链完成。
 - [x] H2.0d 参数重建引用已选设备，不重新探测/创建；独立上下文生命周期、失败保旧帧和实际验证状态清空；同进程交替量化设备重建与复用耗时。见`docs/verification/sdk-r2-device-reuse-20261026.md`，DLL/RTSP自动接线仍按H2.3推进。

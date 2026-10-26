@@ -49,6 +49,10 @@ Python方法`load_model_memory_selected`与C# `LoadModelMemorySelected`复制接
 
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
+硬解自动选择的 JSON 原因可能由通用解码错误细化为 Inventory 分类；调用方应允许未知原因及缺失项。无设备时选择报告不提供完整编译清单。
+
+Hardware selection can report more specific Inventory reasons; clients must tolerate unknown reasons and absent fields. No-device selection is not a complete backend build inventory.
+
 Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥有的原因报告，仍须在送包/收帧后核实实际后端。直接DLL在创建/reset时选择硬件，初始化选中但未出帧时get_info后端NULL；真实出帧后返回ffmpeg-d3d11va/dxva2/cpu。硬件运行失败先过CPU预算，递增代次并等待关键帧；仅首次输出前单启动画面允许保留原输入重试一次，显式reset才重试硬件。见[直接入口验证](../docs/verification/sdk-r2-direct-auto-20261026.md)。初始化1.5秒为原生调用间软预算，不强杀驱动；不保证GPU启动或每帧比CPU更快。
 
 底层Rust回读可选择作用域预算复制或单缓冲复用，复用时许可须持有到清缓存/销毁；输出Vec独立。C ABI像素复制入口由SDK自动管理暂存Charge，调用方无需自行管理；CPU恢复预留可转交外部帧且仍核持帧上限。见[回读与转换缓存记录](../docs/verification/sdk-r2-readback-cache-20261026.md)。
