@@ -7,7 +7,7 @@ context: |
   FrameBraid 是独立 Media/Vision Rust 源码 SDK；Windows DLL 为交付形式之一。
   自有代码 Apache-2.0；业务规则、设备台账、凭据持久化、数据库和 UI 属于宿主。
   当前用户授权 SDK R1～R5 优化、量化测试及 main 本地阶段提交；先 R1 与 R5 可独立项，其他任务按依赖推进。
-  仅修改本 SDK，不修改 AM-RT，不派子代理，不推送、打标签、发布或调用现场设备。
+  仅修改本 SDK，不修改 AM-RT；2026-10-27 用户授权原生子代理并行，写任务用本仓 .local/worktrees 隔离，主代理统一编译验证与真实 merge 到 main。不推送、打标签、发布或调用现场设备。
   openspec/README.md 为持续目标与恢复入口；具体状态只在各 change/tasks.md 维护，实测写 docs/verification。
   固定源码/DLL/运行库/输入模型身份，分开报告机制计数、局部耗时和端到端收益；不预造提速比例。
   原始提取指纹和 ABI 冻结不覆盖；核心修订更新来源覆盖清单，公开接口变化先修合同和生成器。
