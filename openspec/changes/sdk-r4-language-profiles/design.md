@@ -1,5 +1,7 @@
 # Design
 
+每模型语言通知固定256条，生产者不等消费者腾空间；满载丢最旧提示并累计语言侧丢弃。Python保留get/get_nowait/empty/qsize消费面，C#保留TryTakeNotification；不承诺保留所有提示，原请求查询/fetch/ack不变。
+
 ## Context
 
 核对基线 `db0cb1014be04334869bdea914347cd5f060ce71`，范围见 proposal。用户授权 main 串行、阶段测试量化及本地提交，使用 OpenSpec 恢复推进。

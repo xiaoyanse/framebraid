@@ -1,5 +1,7 @@
 # FrameBraid 双 SDK 接入说明
 
+Python Model.notifications/C# TryTakeNotification每模型最多保留256条提示，满时丢旧。notifications_dropped/NotificationsDropped只计语言缓冲丢失；通知不保证完整，请保留提交ID并查询/fetch/ack结果。注销保留已入队提示，原生屏障完成前固定回调拥有者。
+
 Rust辅助`am_camera::media::h264::session::H264Hub`未发布调整：每实例16个当前源，超过返回`DenyReason::TooManySources`；穷举match需补分支。停止但未退出时继续NotReady且不新开线程，旧订阅Drop绑定原Core。此辅助公开Rust API与C ABI额度分开，不自动合并多个Hub或强杀用户resolver，见[验证](../docs/verification/sdk-r3-rust-hub-20261027.md)。
 
 本地未发布域索引：每库4096句柄/4096 Buffer上限不变，首次登记按固定容量预留；Windows x64索引与隔离区引用槽共229376字节，另计Entry/token/服务体和原生内存，空闲容量到域卸载才回收。首次内存不足资源拒绝，不发布对象；此基础存储与Context载荷预算分列，不是RSS上限。C ABI/绑定不变，见[记录](../docs/verification/sdk-r3-domain-registry-20261027.md)。

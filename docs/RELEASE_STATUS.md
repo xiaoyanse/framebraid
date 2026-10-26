@@ -1,5 +1,7 @@
 # Release status / 交付状态
 
+本地中间候选：R4通知缓冲256条、语言侧丢弃及真实CPU通知/共享租约通过；H5原生成功与交付成功分层记账通过；主线全工作区302项通过、20项显式忽略。见[语言记录](verification/r4-language-ownership-20261027.md)与[推理观察](verification/sdk-h5-native-observation-20261027.md)。未关闭整个R4、H2/H5硬件矩阵或4h/24h。
+
 R3本地源码修复共享源无事件时的别名登记增长，256次循环峰值257→2，7项定向测试及clippy通过，见[记录](verification/sdk-r3-source-aliases-20261027.md)。不替代Release DLL、完整预算矩阵或长跑验收。
 
 本地Rust源码候选R3 1.1r：H264Hub源/工作占位及原Core退订修复、6项定向和301项全工作区验证见[记录](verification/sdk-r3-rust-hub-20261027.md)。Rust穷举匹配须适配TooManySources；本阶段验证Rust源码路径，不替换既有DLL或发布制品，不关闭整包硬件/长跑。

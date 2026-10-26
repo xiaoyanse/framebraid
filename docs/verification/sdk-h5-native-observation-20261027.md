@@ -1,6 +1,6 @@
 # H5 原生执行观察与结果交付分离
 
-状态：**实现保存检查点，待主代理统一编译与真实 CPU 验证**。本记录不是通过验收或性能收益结论。
+状态：**已真实merge到main并由主代理完成源码编译、真实CPU定向验证及全工作区回归**。这是状态正确性修复，不是性能收益或完整硬件验收。
 
 评审基线：`ca537222f040c122fe6549d01607be9446340ced`。本窄包静态复核仅涉及原生成功分支的记账位置与定向测试；rustfmt 和 git diff --check 已执行，编译、clippy及实测尚未执行。没有新线程、额外输入复制、模型重建或新的原生调用；观察仍取私有 selection.selected，不采信可修改的兼容字段。
 
@@ -34,3 +34,11 @@ cargo clippy -p am-vision --all-features --all-targets -- -D warnings
 ```
 
 主代理需补实际命令结果、候选源码身份和输入/运行库摘要，再据结果登记通过或失败。公共路线、OpenSpec、来源修订与交付引用由主代理集成时统一同步；本保存检查点不关闭H5完整硬件矩阵。
+
+## 集成复核结果
+
+主代理在集成源码上实测：新增Identity回归通过，输出预算0时明确拒绝交付，但native_runs=1、delivered_runs=0、executed_mask=CPU；显式第二次Run才得到正确48字节及2/1计数。原生Gather失败回归也通过：native_failures=1、native_runs=0、无自动重放。am-vision全特性/全目标clippy通过。
+
+同次工作区全特性回归302项通过、20项明确忽略；两个本节显式ignored回归各独立执行通过，不将其余ignored项计为通过。日志在主仓`.local/evidence/h5-native-observation-20261027`，不重新构建或替换旧Release DLL。源输入与CPU ORT摘要另存identity.json。
+
+审查基线为修复分支的ca53722，已读真实差异与native结果处理上下文；致命0、阻断0。只将native Ok观察前移，Run失败和交付累计语义保留。旧同步query_backends驱动行为、加速实际Run及长期故障仍待；不以本小包关闭H5.1/3/4。

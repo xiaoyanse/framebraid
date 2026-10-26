@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Bound Python/C# model notifications to 256 hints with language-side drop counters; record successful native inference even when delivery is rejected. / [语言缓冲](docs/verification/r4-language-ownership-20261027.md)与[执行观察](docs/verification/sdk-h5-native-observation-20261027.md)，C ABI不变。
+
 - Reclaim dead shared-source alias registrations even when no events occur; 256 reopen cycles retain at most two weak entries instead of 257. / 无事件共享源别名回收，见[定向验证](docs/verification/sdk-r3-source-aliases-20261027.md)，C ABI不变。
 
 - Bound auxiliary Rust H264Hub to 16 current sources, prevent overlapping restart and stale unsubscribe, and clean up worker unwind. Exhaustive Rust `DenyReason` matches must handle `TooManySources`; C ABI unchanged. / 见[验证](docs/verification/sdk-r3-rust-hub-20261027.md)，停止不等于实际退出。

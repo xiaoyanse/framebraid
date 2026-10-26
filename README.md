@@ -1,5 +1,7 @@
 # FrameBraid SDK
 
+Local intermediate candidate: Python/C# model notification buffers retain up to 256 hints and drop oldest on overflow. Drop counters cover language-side loss only; retain request IDs to query/fetch results. [Validation](docs/verification/r4-language-ownership-20261027.md). This does not change the published release or complete the remaining optimization roadmap.
+
 Local unreleased Rust helper update: `H264Hub` allows up to 16 current sources per instance; stopping workers keep their slot until exit. Exhaustive `DenyReason` matches must handle `TooManySources`. This does not change the C ABI or published binaries. See [verification](docs/verification/sdk-r3-rust-hub-20261027.md).
 
 ![FrameBraid SDK — Media SDK and Vision SDK](assets/brand/framebraid-banner.webp)

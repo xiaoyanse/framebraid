@@ -1,5 +1,7 @@
 # Design
 
+原生Run返回Ok即记录真实后端执行观察；结果预算/格式/复制失败不抹去已执行事实。delivered_runs仅在输出完成交付时增加，查询不重放请求；原生Err只计失败。
+
 ## Context
 
 核对基线 `db0cb1014be04334869bdea914347cd5f060ce71`，范围见 proposal。用户授权 main 串行、阶段测试量化及本地提交，使用 OpenSpec 恢复推进。

@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "ca537222f040c122fe6549d01607be9446340ced",
+  "reviewBaseCommit": "066409e5ca8fc9cc2f92ebc1abf2f80bbdc40f59",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "e9ed15f4f026183e3b1d3bd222fb30255d040e9d3ecda988954b454395755f6e",
-      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
+      "sha256": "3736801c660777bffe8ce90947d5c50f6e18d8927046188fe19335b955e668fa",
+      "reason": "H5 native successful Run observation independent of output delivery; CPU output-budget failure and native-error non-replay regression; C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -288,8 +288,8 @@
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
       "previousSha256": null,
-      "sha256": "cabb82b29474238d5dbb62e0ba2ae71f6882387850dbd6d7586054f481ab15fc",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+      "sha256": "e90dd9203f771b232a7390418c4ac47a35ceac785f15c40e07778973cdce9862",
+      "reason": "H5 native successful Run observation independent of output delivery; CPU output-budget failure and native-error non-replay regression; C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/session.rs",
