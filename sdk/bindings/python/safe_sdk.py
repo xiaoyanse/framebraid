@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import queue
 import threading
+import sys
 import time
 import weakref
 
@@ -288,6 +289,89 @@ class Result(Resource):
         return self._require().contents
 
 
+class OwnedPixels:
+    """只读操作门面；强持拥有者，调用期间禁止 close，不导出裸指针。
+
+    拥有者显式关闭后本门面失效。异步输入由 SDK 默认复制，仅持有到提交返回；
+    不承诺全链路零拷贝。底层 ctypes 入口仍由调用者自行保护。
+    """
+    def __init__(self, owner, lock, getter):
+        self._owner, self._lock, self._getter = owner, lock, getter
+
+    def infer(self, model, asynchronous=False, confidence=0.25, preprocess=None):
+        with self._lock:
+            return model.infer_pixel(self._getter(), asynchronous, confidence, preprocess)
+
+    def publish(self, publisher):
+        with self._lock:
+            return publisher.publish(self._getter())
+
+    def copy_planes(self):
+        with self._lock:
+            pixel = self._getter()
+            if not pixel.view:
+                raise ValueError("Pixel view is null")
+            view = pixel.view.contents
+            if view.width == 0 or view.height == 0 or not 1 <= view.plane_count <= 4:
+                raise ValueError("Invalid plane dimensions/count")
+            expected = 2 if view.format == a.AM_PF_NV12 else 1
+            if view.format not in (a.AM_PF_RGBA8, a.AM_PF_RGB8, a.AM_PF_BGR8, a.AM_PF_NV12) or view.plane_count != expected:
+                raise ValueError("Invalid pixel format/plane count")
+            for i in range(view.plane_count):
+                rows, row_bytes = view.height, view.width
+                if view.format == a.AM_PF_NV12 and i == 1:
+                    rows, row_bytes = (view.height + 1) // 2, ((view.width + 1) // 2) * 2
+                elif view.format != a.AM_PF_NV12:
+                    row_bytes *= 4 if view.format == a.AM_PF_RGBA8 else 3
+                size, stride = view.plane_size_bytes[i], view.strides[i]
+                if not view.planes[i] or stride < row_bytes or not stride * (rows - 1) + row_bytes <= size <= sys.maxsize:
+                    raise ValueError("Invalid plane pointer/size/stride")
+            return tuple(c.string_at(view.planes[i], view.plane_size_bytes[i])
+                         for i in range(view.plane_count))
+
+
+class RgbBuffer:
+    """复制构造 RGB8 输入；调用方修改原 bytearray 不会改写待用像素。"""
+    def __init__(self, width, height, data, association=None):
+        if width <= 0 or height <= 0 or len(data) != width * height * 3:
+            raise ValueError("RGB8 byte count must equal width * height * 3")
+        self._lock, self.handle = threading.RLock(), True
+        self._data = (c.c_ubyte * len(data)).from_buffer_copy(data)
+        self._frame = sized(a.am_frame_view_t)
+        self._frame.width, self._frame.height = width, height
+        self._frame.format, self._frame.plane_count = a.AM_PF_RGB8, 1
+        self._frame.planes[0] = c.cast(self._data, c.POINTER(c.c_ubyte))
+        self._frame.strides[0], self._frame.plane_size_bytes[0] = width * 3, len(data)
+        self._association = (a.am_frame_assoc_t.from_buffer_copy(association)
+                             if association is not None else None)
+
+    def pixel_view(self):
+        """低层借用，调用方须保证拥有者和缓冲在原生读取结束前有效且不修改。"""
+        with self._lock:
+            if not self.handle:
+                raise RuntimeError("RGB buffer is closed")
+            pixel = sized(a.am_pixel_view_t)
+            pixel.magic, pixel.view = 1095585880, c.pointer(self._frame)
+            pixel.assoc = c.pointer(self._association) if self._association is not None else None
+            return pixel
+
+    def pixels(self):
+        return OwnedPixels(self, self._lock, self.pixel_view)
+
+    def close(self):
+        with self._lock:
+            self.handle = False
+            self._data = self._frame = self._association = None
+
+    def __enter__(self):
+        with self._lock:
+            self.pixel_view()
+            return self
+
+    def __exit__(self, *_):
+        self.close()
+
+
 class Model(Resource):
     NOTIFICATION_CAPACITY = 256
 
@@ -358,6 +442,7 @@ class Model(Resource):
         return self._infer(image, asynchronous, confidence, preprocess)
 
     def infer_pixel(self, pixel, asynchronous=False, confidence=0.25, preprocess=None):
+        """低层入口：调用方须持有像素拥有者直到本调用返回；优先用 owner.pixels().infer。"""
         image = sized(a.am_image_input_t)
         image.kind, image.view = a.AM_IMG_PIXEL_VIEW, c.pointer(pixel)
         # 默认复制接受的异步输入，调用返回后即可归还共享借用。
@@ -503,7 +588,11 @@ class FrameSubscription(Resource):
 
 
 class Frame(Resource):
+    def pixels(self):
+        return OwnedPixels(self, self._lock, self.pixel_view)
+
     def pixel_view(self):
+        """低层借用；本帧 close 后失效。安全推理使用 pixels().infer。"""
         with self._lock:
             pixel = sized(a.am_pixel_view_t)
             self._check(self.library.amc_frame_as_pixel_view(self._require(), c.byref(pixel)), "frame view")
@@ -539,12 +628,17 @@ class BorrowedFrame:
         self.pool, self.view, self.handle = pool, view, True
         pool._children.add(self)
 
+    def pixels(self):
+        return OwnedPixels(self, self.pool._lock, self.pixel_view)
+
     def pixel_view(self):
-        if not self.handle:
-            raise RuntimeError("Borrow already returned")
-        pixel = sized(a.am_pixel_view_t)
-        self.pool._check(self.pool.library.amv_shared_frame_as_pixel_view(self.pool._require(), c.byref(self.view), c.byref(pixel)), "shared pixel view")
-        return pixel
+        """低层借用；归还后失效。安全推理使用 pixels().infer。"""
+        with self.pool._lock:
+            if not self.handle:
+                raise RuntimeError("Borrow already returned")
+            pixel = sized(a.am_pixel_view_t)
+            self.pool._check(self.pool.library.amv_shared_frame_as_pixel_view(self.pool._require(), c.byref(self.view), c.byref(pixel)), "shared pixel view")
+            return pixel
 
     def close(self):
         with self.pool._lock:

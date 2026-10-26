@@ -136,12 +136,14 @@ namespace AmrtSdk {
                 return Submit(arena, image, preprocessing);
             }
         }
+        // 低层借用入口；调用方必须保护拥有者直到返回，优先用 owner.Pixels().Infer。
         public InferenceResult InferPixel(am_pixel_view_t pixel, out ulong request, am_raw_preprocess_t? preprocessing) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>(); image.kind = 2; image.view = arena.Struct(pixel);
                 return Infer(arena, image, preprocessing, out request);
             }
         }
+        // 默认复制接受的异步输入；提交返回前仍需保护拥有者，优先用 Pixels().Submit。
         public ulong SubmitPixel(am_pixel_view_t pixel, am_raw_preprocess_t? preprocessing) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>(); image.kind = 2; image.view = arena.Struct(pixel);

@@ -116,7 +116,9 @@ namespace AmrtSdk {
         }
     }
     public sealed class CameraFrame : OwnedResource {
+        public OwnedPixels Pixels() { return new OwnedPixels(this, Gate, BorrowPixel); }
         internal CameraFrame(CameraContext owner, IntPtr raw) : base(raw, owner, null, null, Native.amc_frame_release) { }
+        // 低层借用，关闭后失效；安全调用优先用 Pixels()，低层逃逸由调用方负责。
         public am_pixel_view_t BorrowPixel() {
             lock (Gate) using (Arena arena = new Arena()) {
                 IntPtr pixel = arena.Struct(Arena.Sized<am_pixel_view_t>());
@@ -158,9 +160,11 @@ namespace AmrtSdk {
         }
     }
     public sealed class SharedBorrow : OwnedResource {
+        public OwnedPixels Pixels() { return new OwnedPixels(this, Gate, BorrowPixel); }
         private readonly IntPtr pool;
         internal SharedBorrow(SharedConsumer owner, IntPtr poolHandle, IntPtr view) : base(view, owner, null, null,
             delegate(IntPtr p) { int status = Native.amv_shared_pool_return(poolHandle, p); if (status == 0) Marshal.FreeHGlobal(p); return status; }) { pool = poolHandle; }
+        // 低层借用，关闭后失效；安全调用优先用 Pixels()，低层逃逸由调用方负责。
         public am_pixel_view_t BorrowPixel() {
             lock (Gate) using (Arena arena = new Arena()) {
                 IntPtr pixel = arena.Struct(Arena.Sized<am_pixel_view_t>());
