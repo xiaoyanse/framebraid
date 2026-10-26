@@ -11,6 +11,8 @@ impl Inner {
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
         let actual = self.cpu.hardware_backend();
+        value.executed = true;
+        value.failed = false;
         value.hw_accelerated = u32::from(actual.is_some());
         value.backend_name_utf8 = match actual {
             Some(Backend::D3d11va) => c"ffmpeg-d3d11va".as_ptr(),
@@ -23,9 +25,18 @@ impl Inner {
         &mut self,
         decoder: &Decoder,
         dimensions: Option<(u32, u32)>,
+        cause: DecodeError,
     ) -> Result<()> {
         if !self.hardware_active() {
             return Err(AM_ERR_CAMERA_CODEC_UNSUPPORTED);
+        }
+        {
+            let mut snapshot = decoder
+                .codec_info
+                .lock()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+            snapshot.last_failure = Some(cause);
+            snapshot.failed = true;
         }
         let generation = decoder
             .generation
@@ -82,7 +93,10 @@ impl Inner {
         decoder
             .config_generation
             .store(config_generation, Ordering::Release);
-        *value = info(&self.config, config_generation, false);
+        value.abi = info(&self.config, config_generation, false);
+        value.recovered = true;
+        value.executed = false;
+        value.failed = false;
         self.metrics.resyncs.fetch_add(1, Ordering::AcqRel);
         Ok(())
     }

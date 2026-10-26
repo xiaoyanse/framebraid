@@ -1,8 +1,8 @@
 {
   "abiMajor": 1,
-  "abiMinor": 0,
+  "abiMinor": 1,
   "constants": {
-    "AM_ABI_VERSION": 65536,
+    "AM_ABI_VERSION": 65537,
     "AM_OK": 0,
     "AM_CODEC_H264": 1,
     "AM_CODEC_H265": 2,

@@ -48,7 +48,11 @@ pub(super) fn receive(
                         if inner.hardware_active() && error == AM_ERR_CAMERA_CODEC_UNSUPPORTED =>
                     {
                         drop((charge, scratch));
-                        inner.recover(decoder, Some((f.width, f.height)))?;
+                        let cause = inner
+                            .cpu
+                            .take_last_error()
+                            .unwrap_or(DecodeError::InvalidInput);
+                        inner.recover(decoder, Some((f.width, f.height)), cause)?;
                         recovery::record_fallback(key);
                         continue;
                     }
@@ -101,7 +105,7 @@ pub(super) fn receive(
                 if inner.hardware_active()
                     && matches!(e, DecodeError::Runtime(_) | DecodeError::InvalidInput)
                 {
-                    inner.recover(decoder, None)?;
+                    inner.recover(decoder, None, e)?;
                     recovery::record_fallback(key);
                     continue;
                 }
@@ -146,8 +150,8 @@ pub(super) fn receive(
                 );
                 let cpu = match cpu {
                     Ok(cpu) => cpu,
-                    Err(_error) if inner.hardware_active() => {
-                        inner.recover(decoder, None)?;
+                    Err(error) if inner.hardware_active() => {
+                        inner.recover(decoder, None, error)?;
                         recovery::record_fallback(key);
                         continue;
                     }
@@ -159,11 +163,12 @@ pub(super) fn receive(
                 inner.recovery_charge.take();
                 inner.gate.dirty = false;
                 decoder.config_generation.store(config, Ordering::Release);
-                *decoder
+                let mut snapshot = decoder
                     .codec_info
                     .lock()
-                    .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? =
-                    info(&inner.config, config, inner.hardware_active());
+                    .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+                snapshot.abi = info(&inner.config, config, inner.hardware_active());
+                snapshot.executed = false;
             }
             let packet = inner
                 .replay
@@ -192,8 +197,8 @@ pub(super) fn receive(
                 .send_padded(&packet.bytes, packet.valid, packet.tag, packet.tag);
             let sent = match sent {
                 Ok(sent) => sent,
-                Err(_error) if inner.hardware_active() => {
-                    inner.recover(decoder, None)?;
+                Err(error) if inner.hardware_active() => {
+                    inner.recover(decoder, None, error)?;
                     recovery::record_fallback(key);
                     continue;
                 }
@@ -229,8 +234,8 @@ pub(super) fn receive(
             match inner.cpu.drain() {
                 Ok(true) => inner.flushed = true,
                 Ok(false) => {}
-                Err(_error) if inner.hardware_active() => {
-                    inner.recover(decoder, None)?;
+                Err(error) if inner.hardware_active() => {
+                    inner.recover(decoder, None, error)?;
                     recovery::record_fallback(key);
                 }
                 Err(error) => return Err(convert(error)),

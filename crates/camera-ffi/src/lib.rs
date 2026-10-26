@@ -4,6 +4,7 @@ use am_sdk_support::{abi::*, common, context, status};
 mod captures;
 mod decoder;
 mod frames;
+mod hardware;
 mod probe;
 mod shared;
 mod sources;

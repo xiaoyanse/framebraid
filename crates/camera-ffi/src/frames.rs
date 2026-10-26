@@ -459,6 +459,17 @@ pub struct ControlCharge {
     bytes: usize,
     external: bool,
 }
+impl ControlCharge {
+    pub(crate) fn shrink_to(&mut self, bytes: usize) -> Result<()> {
+        if bytes > self.bytes {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let mut usage = self.usage.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        usage.control_bytes -= self.bytes - bytes;
+        self.bytes = bytes;
+        Ok(())
+    }
+}
 impl Drop for ControlCharge {
     fn drop(&mut self) {
         if let Ok(mut usage) = self.usage.lock() {

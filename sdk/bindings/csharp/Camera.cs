@@ -11,6 +11,14 @@ namespace AmrtSdk {
         }
     }
     public sealed class CameraContext : OwnedResource {
+        public string ProbeDecodeHardware(uint codec, uint budgetMs = 1500) {
+            lock (Gate) {
+                HardwareReports.RequireApi();
+                Diagnostics.Check(Native.amc_probe_decode_hardware(Raw, codec, budgetMs), "probe decode hardware", Raw, false);
+                return HardwareReports.Read(Raw);
+            }
+        }
+        public string GetDecodeHardwareReport() { lock (Gate) { return HardwareReports.Read(Raw); } }
         public CameraContext(string[] runtimeDirectories, bool sharedFrames) : base(Create(runtimeDirectories, sharedFrames), null,
             Native.amc_shutdown, Native.amc_object_destroy, null) { }
         private static IntPtr Create(string[] directories, bool shared) {

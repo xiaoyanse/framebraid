@@ -1,6 +1,5 @@
 import { execFileSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -25,7 +24,13 @@ function format(text) {
 async function measure(model) {
   if (process.platform !== 'win32' || process.arch !== 'x64')
     throw new Error('布局基线仅允许Windows x64编译器生成');
-  const directory = await fs.mkdtemp(path.join(os.tmpdir(), 'am-sdk-layout-'));
+  const scratch = path.join(root, '.local/tests/abi-layout');
+  for (const relative of ['.local', '.local/tests', '.local/tests/abi-layout']) {
+    const stat = await fs.lstat(path.join(root, relative)).catch((e) => { if (e.code === 'ENOENT') return null; throw e; });
+    if (stat?.isSymbolicLink()) throw new Error('ABI探针目录不允许目录链接');
+  }
+  await fs.mkdir(scratch, { recursive: true });
+  const directory = await fs.mkdtemp(path.join(scratch, 'probe-'));
   const source = path.join(directory, 'probe.c');
   const executable = path.join(directory, 'probe.exe');
   try {

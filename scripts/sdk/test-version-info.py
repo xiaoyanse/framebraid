@@ -118,7 +118,7 @@ class VersionTests(unittest.TestCase):
             self.assertEqual(function(None), a.AM_ERR_SDK_NULL_ARGUMENT)
             self.assertEqual(result.package_version_utf8.decode(), expected)
             self.assertEqual(result.build_target_utf8.decode(), target)
-            self.assertEqual((result.abi_major, result.abi_minor), (1, 0))
+            self.assertEqual((result.abi_major, result.abi_minor), (a.AM_ABI_VERSION >> 16, a.AM_ABI_VERSION & 0xffff))
             notes = dict(item.split("=", 1) for item in result.runtime_notes_utf8.decode().split(";"))
             self.assertEqual(notes["source_commit"], git(ROOT, "rev-parse", "HEAD"))
             self.assertEqual(notes["profile"], DLL_DIR.name)

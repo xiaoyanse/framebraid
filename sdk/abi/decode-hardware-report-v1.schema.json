@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "FrameBraid decode hardware report v1",
+  "type": "object",
+  "required": ["schema", "kind", "state", "selection", "actual_backend", "last_failure", "stream_verified"],
+  "properties": {
+    "schema": {"const": "framebraid.decode-hardware/1"},
+    "kind": {"enum": ["probe", "decoder"]},
+    "state": {"enum": ["not_probed", "probe_complete", "initialized", "verified", "recovered_cpu", "failed", "closed"]},
+    "actual_backend": {"enum": [null, "ffmpeg-cpu", "ffmpeg-d3d11va", "ffmpeg-dxva2"]},
+    "stream_verified": {"type": "boolean"},
+    "completed_at_ms": {"type": "integer"},
+    "source_generation": {"type": "integer", "minimum": 1},
+    "config_generation": {"type": "integer", "minimum": 1},
+    "last_failure": {
+      "oneOf": [
+        {"type": "null"},
+        {"enum": ["InvalidInput", "AllocationFailed", "FrameTooLarge", "Drained"]},
+        {"type": "object", "required": ["Runtime"], "properties": {"Runtime": {"type": "integer"}}, "additionalProperties": false}
+      ]
+    },
+    "selection": {
+      "oneOf": [
+        {"type": "null"},
+        {
+          "type": "object",
+          "required": ["policy", "selected", "attempts", "fallback", "elapsed_ms"],
+          "properties": {
+            "policy": {"enum": ["SoftwareOnly", "PreferHardware"]},
+            "elapsed_ms": {"type": "integer", "minimum": 0},
+            "selected": {"type": ["object", "null"]},
+            "attempts": {"type": "array", "maxItems": 16},
+            "fallback": {"type": ["object", "string", "null"]}
+          }
+        }
+      ]
+    }
+  },
+  "additionalProperties": true
+}

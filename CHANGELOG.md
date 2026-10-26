@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Develop C ABI 1.1 explicit decode-hardware probes and caller-owned JSON reports, preserving ABI 1.0 initialization compatibility and all existing layouts. Keep old freeze artifacts, freeze the minimum JSON contract, and add Python/C# convenience methods. Published v0.1.0 assets remain unchanged; RTSP policy and inference auto-selection remain open. / 本地1.1兼容探测扩展，非公开发布。
+
 - Check pixel demand before stream readback/conversion while continuing compressed reference decoding; retain dimension and health handling and defer sampling-time advancement until fanout. Real H.264/virtual-clock measurements reduce native conversions without changing observed output fingerprints. Live RTSP/other codec acceptance remains open. / 像素需求前移，压缩参考链保留，未扩大公开验收范围。
 
 - Execute the existing direct-decoder PREFER_HW policy using the shared native selector; report unknown until real output, reserve CPU recovery bytes, preserve source generations and retained frames, and permit only one unpublished startup picture replay. Explicit reset retries hardware. Validate actual codecs, readback faults and CPU compatibility locally; RTSP and rich device diagnostics remain pending. / 直接DLL自动硬解与有预算恢复，旧公开制品未变。

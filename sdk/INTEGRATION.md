@@ -12,6 +12,12 @@ Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥�
 
 ## 1. 先分清两种包
 
+本地ABI 1.1新增`amc_probe_decode_hardware(ctx, codec, budget_ms)`及`amc_get_decode_hardware_report(object, buffer, capacity, required)`。先查ABI再用新增符号；新DLL接受1.0初始化，旧DLL不接受1.1。新Python高层绑定须配新DLL；C#保留核心1.0初始化，新硬件方法检查1.1。旧公开v0.1.0包取对应tag绑定，不把当前main绑定拷进旧包。
+
+Python `CameraContext.probe_decode_hardware()`返回dict，`get_decode_hardware_report()`仅复制缓存；C#对应`ProbeDecodeHardware`/`GetDecodeHardwareReport`返回UTF8 JSON字符串。探测报告selected仅表示初始化，actual_backend为空且stream_verified=false；独立decoder真实输出后再据快照确认。快照支持context和独立decoder、关闭后保留最后结果，当前不接受RTSP source句柄。JSON最低字段约束、预算、线程与所有权见[ABI 1.1合同](../docs/design/dual-dll-abi.md)，实测见[验证](../docs/verification/sdk-r2-abi11-hardware-20261026.md)。
+
+探测是同步耗时操作，宿主应放普通工作线程，不在UI线程或SDK回调内执行；SDK回调内直接拒绝探测重入。预算只在原生调用间检查，不能强杀驱动。纯快照查询不做驱动/会话工作。
+
 | 内容 | 当前独立源码仓库 | 拟交付 Windows x64 运行包 |
 | --- | --- | --- |
 | 根目录 | `Cargo.toml`、`Cargo.lock`、`crates/` | `bin/`、`lib/`、`runtime/`、`licenses/` |

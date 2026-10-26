@@ -10,7 +10,13 @@ fn version_matches_cargo_and_strings_outlive_the_call() {
     unsafe { version(&mut first).unwrap() };
     let package = unsafe { CStr::from_ptr(first.package_version_utf8) };
     assert_eq!(package.to_str().unwrap(), env!("CARGO_PKG_VERSION"));
-    assert_eq!((first.abi_major, first.abi_minor), (1, 0));
+    assert_eq!(
+        (first.abi_major, first.abi_minor),
+        (
+            am_sdk_support::abi::AM_ABI_VERSION >> 16,
+            am_sdk_support::abi::AM_ABI_VERSION & 0xffff
+        )
+    );
     let target = unsafe { CStr::from_ptr(first.build_target_utf8) }
         .to_str()
         .unwrap();

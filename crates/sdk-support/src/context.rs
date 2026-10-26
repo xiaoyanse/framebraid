@@ -90,7 +90,7 @@ fn flags_valid(domain: &Domain, flags: u64) -> Result<()> {
     Ok(())
 }
 fn version_valid(version: u32) -> Result<()> {
-    if version != AM_ABI_VERSION {
+    if version >> 16 != AM_ABI_VERSION >> 16 || version > AM_ABI_VERSION {
         Err(AM_ERR_SDK_ABI_UNSUPPORTED)
     } else {
         Ok(())
@@ -213,6 +213,17 @@ pub unsafe fn initialize_vision(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn abi_minor_accepts_old_clients_but_rejects_future_or_other_major() {
+        assert_eq!(version_valid(0x0001_0000), Ok(()));
+        assert_eq!(version_valid(AM_ABI_VERSION), Ok(()));
+        assert_eq!(
+            version_valid(AM_ABI_VERSION + 1),
+            Err(AM_ERR_SDK_ABI_UNSUPPORTED)
+        );
+        assert_eq!(version_valid(0x0002_0000), Err(AM_ERR_SDK_ABI_UNSUPPORTED));
+        assert_eq!(version_valid(0), Err(AM_ERR_SDK_ABI_UNSUPPORTED));
+    }
     #[test]
     fn old_or_partial_feature_field_is_ignored_and_contexts_are_bounded() {
         let domain = Domain::new(false);

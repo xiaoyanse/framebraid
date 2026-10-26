@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 import subprocess
 import sys
+from local_paths import local_path
 sys.dont_write_bytecode = True
 ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk" if (ROOT / "sdk").is_dir() else ROOT
@@ -38,9 +39,7 @@ def main():
         parser.error("--run requires --dll-dir, --runtime-dir, --model")
     if args.vcvars64 and not args.dll_dir:
         parser.error("--vcvars64 requires --dll-dir for native import libraries")
-    output = args.output.resolve()
-    if output == ROOT or ROOT in output.parents:
-        parser.error("Use a dedicated test output directory outside the source checkout")
+    output = local_path(args.output, "tests")
     output.mkdir(parents=True, exist_ok=True)
     python_files = [SDK / "bindings/python/safe_sdk.py", SDK / "bindings/python/load_diagnostics.py",
                     SDK / "examples/inference.py", SDK / "examples/camera.py"]

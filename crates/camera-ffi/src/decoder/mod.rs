@@ -34,7 +34,7 @@ struct Packet {
 struct Inner {
     metrics: Arc<super::frames::CameraMetrics>,
     cpu: budget::BudgetedDecoder,
-    selection: SelectionReport,
+    selection: Arc<SelectionReport>,
     hardware_failed: bool,
     startup: Option<Packet>,
     replay: Option<Packet>,
@@ -62,7 +62,38 @@ struct Decoder {
     sequence: AtomicU64,
     ctx: Arc<CameraState>,
     permit: Mutex<Option<DecoderPermit>>,
-    codec_info: Mutex<am_decoder_info_t>,
+    codec_info: Mutex<HardwareInfo>,
+}
+struct HardwareInfo {
+    abi: am_decoder_info_t,
+    selection: Arc<SelectionReport>,
+    last_failure: Option<DecodeError>,
+    executed: bool,
+    recovered: bool,
+    failed: bool,
+}
+impl HardwareInfo {
+    fn new(inner: &Inner, generation: u32) -> Self {
+        Self {
+            abi: info(&inner.config, generation, inner.hardware_active()),
+            selection: inner.selection.clone(),
+            last_failure: None,
+            executed: false,
+            recovered: false,
+            failed: false,
+        }
+    }
+}
+impl std::ops::Deref for HardwareInfo {
+    type Target = am_decoder_info_t;
+    fn deref(&self) -> &Self::Target {
+        &self.abi
+    }
+}
+impl std::ops::DerefMut for HardwareInfo {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.abi
+    }
 }
 // info中的backend_name为静态字符串，配置指针已清除，原生上下文只在inner锁内访问。
 unsafe impl Send for Decoder {}
@@ -131,7 +162,7 @@ fn make_inner(ctx: &CameraState, cfg: Config) -> Result<Inner> {
     Ok(Inner {
         metrics: ctx.metrics.clone(),
         cpu: selected.decoder.into(),
-        selection: selected.report,
+        selection: Arc::new(selected.report),
         hardware_failed: false,
         startup: None,
         replay: None,
@@ -163,7 +194,7 @@ pub unsafe extern "C" fn amc_decoder_create(
         let permit = state.decoder()?;
         let config = unsafe { Config::read(cfg) }?;
         let inner = make_inner(&state, config)?;
-        let codec_info = Mutex::new(info(&inner.config, 1, inner.selection.selected.is_some()));
+        let codec_info = Mutex::new(HardwareInfo::new(&inner, 1));
         let object = Arc::new(Decoder {
             inner: Mutex::new(Some(inner)),
             state: AtomicU32::new(AM_DEC_READY as u32),
@@ -377,11 +408,8 @@ pub unsafe extern "C" fn amc_decoder_reset(
         let rebuilt = make_inner(&d.ctx, config);
         match rebuilt {
             Ok(inner) => {
-                *d.codec_info.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? = info(
-                    &inner.config,
-                    config_generation,
-                    inner.selection.selected.is_some(),
-                );
+                let mut snapshot = d.codec_info.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+                *snapshot = HardwareInfo::new(&inner, config_generation);
                 *guard = Some(inner);
                 d.generation.store(generation, Ordering::Release);
                 d.sequence.store(0, Ordering::Release);
@@ -449,7 +477,49 @@ pub unsafe extern "C" fn amc_decoder_get_info(
     status(domain(), dec as usize, || {
         let e = domain().get(dec as usize)?;
         let d = e.data::<Decoder>()?;
-        let info = *d.codec_info.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        let info = d
+            .codec_info
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+            .abi;
         unsafe { args::write(out, info) }
     })
+}
+pub(crate) fn hardware_report(key: usize) -> Result<serde_json::Value> {
+    let entry = domain().get(key)?;
+    let decoder = entry.data::<Decoder>()?;
+    let info = decoder
+        .codec_info
+        .lock()
+        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+    let backend = if info.backend_name_utf8.is_null() {
+        None
+    } else {
+        Some(
+            unsafe { std::ffi::CStr::from_ptr(info.backend_name_utf8) }
+                .to_str()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?,
+        )
+    };
+    let state = if decoder.state.load(Ordering::Acquire) == AM_DEC_CLOSED as u32 {
+        "closed"
+    } else if info.recovered {
+        "recovered_cpu"
+    } else if info.failed {
+        "failed"
+    } else if info.executed {
+        "verified"
+    } else {
+        "initialized"
+    };
+    Ok(
+        serde_json::json!({"schema":"framebraid.decode-hardware/1", "kind":"decoder", "state":state,
+        "selection":&*info.selection, "actual_backend":backend, "last_failure":info.last_failure,
+        "stream_verified":info.executed, "source_generation":decoder.generation.load(Ordering::Acquire),
+        "config_generation":info.config_generation}),
+    )
+}
+pub(crate) fn hardware_report_owner(key: usize) -> Result<Arc<CameraState>> {
+    let entry = domain().get(key)?;
+    Ok(entry.data::<Decoder>()?.ctx.clone())
 }

@@ -48,8 +48,8 @@ pub fn init_error(code: i32) {
 /// out须指向已初始化size的公开版本结构。
 pub unsafe fn version(out: *mut am_version_info_t) -> Result<()> {
     let value = am_version_info_t {
-        abi_major: 1,
-        abi_minor: 0,
+        abi_major: AM_ABI_VERSION >> 16,
+        abi_minor: AM_ABI_VERSION & 0xffff,
         package_version_utf8: build_info::PACKAGE_VERSION.as_ptr(),
         build_target_utf8: build_info::BUILD_TARGET.as_ptr(),
         runtime_notes_utf8: build_info::BUILD_NOTES.as_ptr(),

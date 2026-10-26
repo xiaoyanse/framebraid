@@ -32,6 +32,7 @@ version = "0.1.0"
 dependencies = [
  "am-camera",
  "am-sdk-support",
+ "serde_json",
 ]
 
 [[package]]

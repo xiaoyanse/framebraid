@@ -28,6 +28,8 @@ R2 H2.0c/1.1 readback reservations and conversion caches are locally verified ([
 
 ## Public version / 公开版本
 
+Local C ABI 1.1 probe/report extension is verified through C/Python/C# and ABI 1.0 initialization ([record](verification/sdk-r2-abi11-hardware-20261026.md)). Published v0.1.0 remains ABI 1.0; match DLLs and bindings by tag/build. / 本地扩展未发布，不以初始化探测替代真实码流验收，RTSP策略和H5仍开放。
+
 Local sampling-before-conversion is measured on real H.264 decode/production fanout with a virtual 30 FPS clock ([record](verification/sdk-r2-sampling-20261026.md)). Live RTSP timing, HEVC/MJPEG and dimension-change validation remain open; no public artifacts were replaced. / 采样前移已有局部量化证据，不作为完整1.2或RTSP硬解验收。
 
 Local H2.3a direct C decoder automatic hardware selection and CPU recovery are verified on synthetic H.264/HEVC Main/Main10 plus unsupported HEVC Rext and injected readback failures ([record](verification/sdk-r2-direct-auto-20261026.md)). RTSP, complete device diagnostics and long-run matrices remain open. / 本地直接入口验证通过，未替换公开制品，不宣称整包H2完成。

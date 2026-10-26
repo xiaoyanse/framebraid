@@ -1,0 +1,49 @@
+{
+  "id": "am-sdk-cabi-1.0-20261026-r5",
+  "previousFreezeSha256": "51ffbc15d2577ed0f6f075278ce8d83b32b8ae508f1a140120d68c00cbf37042",
+  "abiVersion": 65536,
+  "designFrozen": true,
+  "runtimeAcceptance": "pending",
+  "files": [
+    {
+      "path": "sdk/include/am_camera.h",
+      "sha256": "37e2ae17922bc7f49279796862a3c76d52d26666d9f4dad4cafba432739bf439",
+      "bytes": 7795
+    },
+    {
+      "path": "sdk/include/am_vision.h",
+      "sha256": "77db1958648669b6fed0d0ba62865246fe2f4624211f5066b8386b444e2b0336",
+      "bytes": 5522
+    },
+    {
+      "path": "sdk/include/am_sdk_types.h",
+      "sha256": "153215983593445a5033531f8a4e507122a43dd2445295bf183bc4a577a29612",
+      "bytes": 64831
+    },
+    {
+      "path": "sdk/abi/constants.json",
+      "sha256": "facd7b74ec96e98b6f4efc4555c95545dc70bf9509a13632a2f1ac573c65f4de",
+      "bytes": 2268
+    },
+    {
+      "path": "sdk/abi/defaults.json",
+      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010",
+      "bytes": 1923
+    },
+    {
+      "path": "sdk/abi/layout-win-x64.json",
+      "sha256": "58a41d32cd4e639d1e0927a8225832c318add75867b0464f46d37b89aead0f92",
+      "bytes": 5245
+    },
+    {
+      "path": "crates/vision/resources/profiles.json",
+      "sha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
+      "bytes": 3526
+    },
+    {
+      "path": "docs/design/dual-sdk-abi-freeze-v1.md",
+      "sha256": "2c994a5c27bc48fd0a4ef7d1e82bd1c7afdf5883ad98c84e85a5b480870c5787",
+      "bytes": 10527
+    }
+  ]
+}

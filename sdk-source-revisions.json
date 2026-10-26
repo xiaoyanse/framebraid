@@ -1,13 +1,13 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "35985a8bad28d7f1936b3f36a9f9b37cf204fa83",
+  "reviewBaseCommit": "c4777a07ca519f5a417de38e81898614087c8fb9",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
       "previousSha256": "f7b20e9c0ec6b67a5622de4dacd32a2c3002d214834a7aabc2c2dd09da2175bc",
-      "sha256": "9218513d586f729c28dbeff6d3cc7fcadfd0a960dc46749fdc84926cfb8e87d7",
-      "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
+      "sha256": "0f65e152462db68aecd57c88408bfeec4998f3626bbce5a843c59dc0de159d5e",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/sdk-support/build.rs",
@@ -18,8 +18,8 @@
     {
       "path": "crates/sdk-support/tests/version.rs",
       "previousSha256": null,
-      "sha256": "ec69c7a3f6a12c58ec335973b7f8400018a4e9ba8db1405ee31ef129af47a1e0",
-      "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
+      "sha256": "6d6fff6e9a79f1d497f06ea9e12eb3eaf0edc347ba36728ad90099673e41cceb",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler.rs",
@@ -114,14 +114,14 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "5e6380a4bbb4635bbd7588dbcfa24a3a537aeaea64b2a778f4cec1b36685ac1e",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "4655fe3006d826899e53bb145560c07f11c87d834ffe746ff5ed15e8374bebd1",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
       "previousSha256": null,
-      "sha256": "f4f4cc110818a5c633b5d61e2993b292995e8f9bca7c82ba9cfa0f2299c957d4",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "e28bf5c0f27d65011dab9c9b9e1db9c572c8a87b031bb7243163a0c70d1e65b5",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
@@ -138,26 +138,26 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "82232f1164e1173d9d15751ec7c910794629633b4b0862b419a86b0c7b87706b",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "47356c0157424009e90666ffc0e42e06b13836b0e7ec2c94ff1a28e837601015",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
       "previousSha256": null,
-      "sha256": "b3f0040b29468cc52da1cd4bc03fc10a0d83e9d56a0d09cf82fa4fe2a73097f9",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "47c44c2575aa930b0100d2b228a8f38d459b913af10c6c9f1e050bbc53b4a5f8",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/camera-ffi/src/decoder/recovery.rs",
       "previousSha256": null,
-      "sha256": "369058dda5ced9ccbf047247118ccc399353f16da67a2a7643997c30d085796b",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "c3f30ae05aa3eb1a07c5a1cbf027700eafb5414e465a5454e1e2f2778a098d4b",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/camera-ffi/src/decoder/tests.rs",
       "previousSha256": null,
-      "sha256": "08e14e981eeb6d597407e1f193c5bea273766f29ebb20c5148daf3de13a92005",
-      "reason": "H2.3a direct native-policy decode, charged CPU recovery, generation/RAP replay bounds and native fault tests; unchanged frozen C ABI"
+      "sha256": "c4c3f96557503404ef76601ee867712bb2a007d178381eb66e673f9f7951456f",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     },
     {
       "path": "crates/camera-ffi/src/frames/budget_tests.rs",
@@ -194,6 +194,36 @@
       "previousSha256": null,
       "sha256": "de305ac99d578a914f8f0bfff4772024fee09728dd3c0c59c1af379932817d99",
       "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+    },
+    {
+      "path": "crates/camera-ffi/Cargo.toml",
+      "previousSha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b",
+      "sha256": "380af189c9aeaff494304a9975903381ad48fef969c42e2d381a49def91f5f41",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+    },
+    {
+      "path": "crates/camera-ffi/src/lib.rs",
+      "previousSha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82",
+      "sha256": "dac596e4ffae1ce0b6fb269a99dde09db37dc347b7a7dca23ce65d82de136075",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+    },
+    {
+      "path": "crates/sdk-abi/src/constants.rs",
+      "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
+      "sha256": "96ffb33253cb890bf20c1c45024d22d88511cdecb51b11a8c05344921922cb44",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+    },
+    {
+      "path": "crates/sdk-support/src/context.rs",
+      "previousSha256": "5bbc555780e27a91f722499d4012582970535cd96ac8da7dc5a34a2a9c88a170",
+      "sha256": "97b25f1623f767530f674183e43fc5ea30855eec891e782af211a1f5e2290ee9",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+    },
+    {
+      "path": "crates/camera-ffi/src/hardware.rs",
+      "previousSha256": null,
+      "sha256": "bf3247131197f22891604794a944d2feedcc109281b4d2b4e880650b52dc7fc1",
+      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
     }
   ]
 }

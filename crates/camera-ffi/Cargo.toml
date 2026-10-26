@@ -12,5 +12,6 @@ crate-type = ["cdylib"]
 default = []
 shared-frames = ["am-sdk-support/shared-frames"]
 [dependencies]
+serde_json.workspace = true
 am-sdk-support = { path = "../sdk-support" }
 am-camera-core = { package = "am-camera", path = "../am-camera", default-features = false }

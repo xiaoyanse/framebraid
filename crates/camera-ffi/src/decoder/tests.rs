@@ -123,7 +123,7 @@ fn native_auto_fallback_reserves_budget_replays_only_unpublished_startup_and_kee
                 let mut lock = decoder.inner.lock().unwrap();
                 let inner = lock.as_mut().unwrap();
                 inner.cpu = selected.decoder.into();
-                inner.selection = selected.report;
+                inner.selection = Arc::new(selected.report);
             }
             if fail_first {
                 let required = crate::frames::scale::bytes(1920, 1080, format as u32).unwrap()
@@ -143,10 +143,11 @@ fn native_auto_fallback_reserves_budget_replays_only_unpublished_startup_and_kee
                     let mut lock = decoder.inner.lock().unwrap();
                     let inner = lock.as_mut().unwrap();
                     assert_eq!(
-                        inner.recover(decoder, Some((1920, 1080))),
+                        inner.recover(decoder, Some((1920, 1080)), DecodeError::Runtime(-5)),
                         Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
                     );
                     assert!(inner.hardware_active());
+                    assert_eq!(hardware_report(dec as usize).unwrap()["state"], "failed");
                     assert_eq!(decoder.generation.load(Ordering::Acquire), 1);
                 }
                 drop(blocker);
@@ -200,6 +201,10 @@ fn native_auto_fallback_reserves_budget_replays_only_unpublished_startup_and_kee
             assert_eq!(recovered.1.pts, if fail_first { 200 } else { 300 });
             assert!(!FAIL.load(Ordering::Acquire));
             assert_eq!(decoder.codec_info.lock().unwrap().hw_accelerated, 0);
+            let report = hardware_report(dec as usize).unwrap();
+            assert_eq!(report["state"], "recovered_cpu");
+            assert_eq!(report["last_failure"]["Runtime"], -5);
+            assert_eq!(report["stream_verified"], true);
             assert_eq!(
                 unsafe {
                     std::ffi::CStr::from_ptr(decoder.codec_info.lock().unwrap().backend_name_utf8)
@@ -229,6 +234,7 @@ fn native_auto_fallback_reserves_budget_replays_only_unpublished_startup_and_kee
             unsafe { submit(dec, &sample, 400) };
             let fresh = unsafe { frame(dec) };
             assert_eq!(fresh.1.source_generation, 3);
+            assert!(hardware_report(dec as usize).unwrap()["last_failure"].is_null());
             assert_eq!(decoder.codec_info.lock().unwrap().hw_accelerated, 1);
             let mut view = am_frame_view_t::default();
             assert_eq!(

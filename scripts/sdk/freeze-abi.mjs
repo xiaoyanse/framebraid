@@ -10,8 +10,9 @@ const artifacts = [
   'sdk/abi/constants.json',
   'sdk/abi/defaults.json',
   'sdk/abi/layout-win-x64.json',
+  'sdk/abi/decode-hardware-report-v1.schema.json',
   'crates/vision/resources/profiles.json',
-  'docs/design/dual-sdk-abi-freeze-v1.md',
+  'docs/design/dual-sdk-abi-freeze-v1.1.md',
 ];
 export async function freezeAbi({ check = false } = {}) {
   const files = [];
@@ -26,11 +27,11 @@ export async function freezeAbi({ check = false } = {}) {
   const content =
     JSON.stringify(
       {
-        id: 'am-sdk-cabi-1.0-20261026-r5',
+        id: 'am-sdk-cabi-1.1-20261026-r6',
         previousFreezeSha256: createHash('sha256')
-          .update(await fs.readFile(path.join(root, 'sdk/abi/history/freeze-v1-r4.json')))
+          .update(await fs.readFile(path.join(root, 'sdk/abi/history/freeze-v1-r5.json')))
           .digest('hex'),
-        abiVersion: 65536,
+        abiVersion: 65537,
         designFrozen: true,
         runtimeAcceptance: 'pending',
         files,

@@ -8,6 +8,8 @@
 
 本地R2已接入Rust硬件探测和直接C解码入口的自动选择/恢复（见[合同](docs/design/native-hardware.md)、[实测](docs/verification/sdk-r2-direct-auto-20261026.md)）；公开制品仍按CPU验收范围，RTSP自动硬解和完整设备诊断尚未完成。
 
+本地main新增ABI 1.1探测/快照扩展（见[验证](docs/verification/sdk-r2-abi11-hardware-20261026.md)），绑定须配套源码构建的DLL；旧v0.1.0二进制仍为ABI 1.0，应取对应tag中的绑定。本轮未发布。
+
 FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入，一个仓库管理两个组件：
 
 | 组件 | 用途 |

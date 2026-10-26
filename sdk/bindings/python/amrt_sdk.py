@@ -1161,7 +1161,7 @@ am_pixel_view_t._fields_ = [
     ("assoc", POINTER(am_frame_assoc_t)),
 ]
 
-AM_ABI_VERSION = 65536
+AM_ABI_VERSION = 65537
 AM_OK = 0
 AM_CODEC_H264 = 1
 AM_CODEC_H265 = 2
@@ -1310,6 +1310,8 @@ AMV_CAP_PUSH_NOTIFY = 128
 AMV_CAP_SHARED_FRAME_POOL = 256
 
 FUNCTIONS = {
+    "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),
+    "amc_get_decode_hardware_report": (am_status_t, [c_void_p, c_char_p, c_uint64, POINTER(c_uint64)]),
     "amc_get_abi_version": (c_uint32, []),
     "amv_get_abi_version": (c_uint32, []),
     "amc_get_version_info": (am_status_t, [POINTER(am_version_info_t)]),

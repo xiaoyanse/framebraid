@@ -6,6 +6,7 @@ pub(crate) struct BudgetedDecoder {
     raw: CpuDecoder,
     reservation: Option<Charge>,
     bytes: usize,
+    last_error: Option<DecodeError>,
 }
 impl From<CpuDecoder> for BudgetedDecoder {
     fn from(raw: CpuDecoder) -> Self {
@@ -13,6 +14,7 @@ impl From<CpuDecoder> for BudgetedDecoder {
             raw,
             reservation: None,
             bytes: 0,
+            last_error: None,
         }
     }
 }
@@ -28,6 +30,9 @@ impl std::ops::DerefMut for BudgetedDecoder {
     }
 }
 impl BudgetedDecoder {
+    pub(super) fn take_last_error(&mut self) -> Option<DecodeError> {
+        self.last_error.take()
+    }
     pub(super) fn clear_cache(&mut self) {
         self.raw.release_readback_cache();
         self.reservation.take();
@@ -49,6 +54,7 @@ pub(crate) fn copy_pixels(
     let bytes = match decoder.hardware_readback_bytes() {
         Ok(bytes) => bytes,
         Err(error) => {
+            decoder.last_error = Some(error);
             decoder.clear_cache();
             return Err(convert(error));
         }
@@ -60,9 +66,9 @@ pub(crate) fn copy_pixels(
         }
         decoder.bytes = bytes;
     }
-    let result = decoder
-        .copy_pixels_reusing_readback(output_bytes, format, bytes)
-        .map_err(convert);
+    let result = decoder.copy_pixels_reusing_readback(output_bytes, format, bytes);
+    decoder.last_error = result.as_ref().err().copied();
+    let result = result.map_err(convert);
     if result.is_err() {
         decoder.clear_cache();
     }

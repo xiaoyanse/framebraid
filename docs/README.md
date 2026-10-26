@@ -25,6 +25,7 @@
 
 - [Media C API](../sdk/include/am_camera.h), [Vision C API](../sdk/include/am_vision.h), [shared types](../sdk/include/am_sdk_types.h).
 - [ABI design](design/dual-dll-abi.md) and [type contracts](design/dual-dll-abi-types.md).
+- [Local ABI 1.1 extension](design/dual-sdk-abi-freeze-v1.1.md) and [probe/report verification](verification/sdk-r2-abi11-hardware-20261026.md); published v0.1.0 remains ABI 1.0.
 - [Delivery boundaries](design/dual-dll-sdk.md).
 - [Native hardware discovery / 原生硬件发现](design/native-hardware.md) — local Rust work, separate from frozen C ABI and public CPU assets.
 - [Shared frames](design/dual-sdk-shared-frames.md) and [layout](design/dual-sdk-shared-layout-v1.md).

@@ -1,14 +1,14 @@
 {
-  "id": "am-sdk-cabi-1.0-20261026-r5",
-  "previousFreezeSha256": "51ffbc15d2577ed0f6f075278ce8d83b32b8ae508f1a140120d68c00cbf37042",
-  "abiVersion": 65536,
+  "id": "am-sdk-cabi-1.1-20261026-r6",
+  "previousFreezeSha256": "add7a1ab62935e1d675f6d2d560ee349ba0d8da4019191d338d92fb4c1851059",
+  "abiVersion": 65537,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
   "files": [
     {
       "path": "sdk/include/am_camera.h",
-      "sha256": "37e2ae17922bc7f49279796862a3c76d52d26666d9f4dad4cafba432739bf439",
-      "bytes": 7795
+      "sha256": "eb244c31a5838cd21e72eb0d8a9a23a756a2e610cbfb6b6ee213c0cfd62ef49b",
+      "bytes": 8113
     },
     {
       "path": "sdk/include/am_vision.h",
@@ -17,12 +17,12 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "153215983593445a5033531f8a4e507122a43dd2445295bf183bc4a577a29612",
+      "sha256": "babfc25f3199f1ea29af4ca67aac9408349055ee3f859ce5d244d7187e61b529",
       "bytes": 64831
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "facd7b74ec96e98b6f4efc4555c95545dc70bf9509a13632a2f1ac573c65f4de",
+      "sha256": "07847f19781fd858503bc1a608d59f9f249a7e9bb19b21ab50a0b5cfa0a2320f",
       "bytes": 2268
     },
     {
@@ -36,14 +36,19 @@
       "bytes": 5245
     },
     {
+      "path": "sdk/abi/decode-hardware-report-v1.schema.json",
+      "sha256": "69aee230b8b0fb4e6f58468b1e645c20b792d1b0865aa0675ff946b8151c6b7d",
+      "bytes": 1663
+    },
+    {
       "path": "crates/vision/resources/profiles.json",
       "sha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
       "bytes": 3526
     },
     {
-      "path": "docs/design/dual-sdk-abi-freeze-v1.md",
-      "sha256": "2c994a5c27bc48fd0a4ef7d1e82bd1c7afdf5883ad98c84e85a5b480870c5787",
-      "bytes": 10527
+      "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",
+      "sha256": "73b98eea9189c10603fa6e20ead40f4b8cbb490131f3b63d5cced9bf33cc6ca1",
+      "bytes": 987
     }
   ]
 }

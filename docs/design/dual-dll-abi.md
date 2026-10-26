@@ -1,8 +1,10 @@
-# 双 DLL C ABI 接口设计（1.0实施冻结）
+# 双 DLL C ABI 接口设计（1.0历史冻结与1.1本地扩展）
 
 > FrameBraid source reference: historical host reports/OpenSpec are not included. For actual validation and current support, see [documentation](../README.md). Historical status text is preserved; this note does not change ABI semantics.
 
 状态：**1.0实施冻结**——2026-10-25用户授权收口并继续DLL/共享帧实施；当前定稿以[冻结记录](dual-sdk-abi-freeze-v1.md)和`sdk/abi/freeze-v1.json`为准。本文保留各轮历史整改和原候选讨论，历史“待回审/候选”不再覆盖上述当前定稿。冻结是设计状态，不等于121个入口已实现或SDK-G0～G3通过。
+
+本地R2新增ABI 1.1，以[兼容扩展冻结依据](dual-sdk-abi-freeze-v1.1.md)和当前freeze-v1.json为准；1.0正文与历史快照保留。JSON字段约束也纳入冻结：`sdk/abi/decode-hardware-report-v1.schema.json`。源码新增不等于已发布，旧v0.1.0制品仍为ABI 1.0。
 依据（冲突时以此顺序为准）：camera-sdk (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/camera-sdk/spec.md`)、inference-sdk (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/inference-sdk/spec.md`)、native-sdk-contract (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/native-sdk-contract/spec.md`) 三份 delta spec > [dual-dll-sdk.md](dual-dll-sdk.md) > 本文。本文不勾选任何实施任务。
 
 **交付主体口径（2026-10-25 用户修正）**：交付物是可脱离 AM-RT 独立构建的**源码 SDK**（am-camera+am-vision+内部纯函数依赖+独立构建清单）；本文的 Windows x64 DLL 只是编译产物之一，非 Rust 宿主经本 C ABI 消费。首版验收仍 Windows x64；其他平台单列为「首版设计、后续平台实施」（不默认宣称编译或运行已通过，与 native spec 口径一致），不扩大首版。
@@ -86,6 +88,33 @@ R2本地Rust兼容新增的设备探测/显式硬解合同见[native hardware](n
 这些工件现按1.0实施冻结记录收口；121个入口实现和SDK-G0～G3仍分别待验，不把6.1设计完成扩大为整包交付。生成器`--check`用于发现正文、头文件和Rust值类型漂移，不能代替功能测试。
 
 ## 1. 总体结构与 ABI 版本协商
+
+### 1.1 扩展：原生解码探测与拥有者快照（R2/H2，ABI 1.1 本地开发）
+
+新增兼容导出，不改变既有结构布局、枚举、内存所有权或函数签名；旧1.0冻结记录保留，新冻结链引用旧记录。两库报告共享ABI 1.1，新实现接受1.0/1.1初始化，拒绝更高次版本或不同主版本；旧实现拒绝1.1初始化。调用方先查实际ABI，再使用新导出，不能以在线文档猜旧DLL能力。
+
+```c
+/* 显式且同步的有限初始化探测；codec仅H264/H265，预算1..5000ms。
+   取得一个decoder许可并进入共用单轮选择准入，探测后释放原生设备/codec。
+   不读码流、不证明真实硬解，调用间检查软预算、不强杀驱动；回调内拒绝重入。
+   依赖缺失返回明确错误；设备不可用时保存带逐项原因的CPU选择报告并成功返回。 */
+AM_API am_status_t amc_probe_decode_hardware(amc_context_t* ctx,
+                                            uint32_t codec, uint32_t budget_ms);
+/* object为context或独立decoder；NULL缓冲+capacity=0查询所需字节（含NUL）。
+   返回UTF8 JSON schema=framebraid.decode-hardware/1，最大64KiB。
+   容量不足写required，buffer首字节置0并返回sdk.limitOutOfRange；不返回半份JSON。
+   快照只复制已有状态，不探测、不创建会话；字符串由调用方缓冲拥有，属于回调查询白名单。
+   context未显式probe时state=not_probed；decoder关闭后仍可查最后观察结果。
+   现阶段不接受source句柄，RTSP控制/快照由后续兼容扩展接入，禁止假成功。 */
+AM_API am_status_t amc_get_decode_hardware_report(void* object, char* buffer_utf8,
+                                                 uint64_t capacity, uint64_t* required);
+```
+
+JSON必需字段schema、kind、state、selection、actual_backend、last_failure；context有探测完成的单调时钟completed_at_ms。selection沿用拥有的Rust选择报告，包含policy、selected（后端与设备）、attempts（初始化/目标配置/资源/预算/忙等原因）、fallback、elapsed_ms。selected只代表初始化选择，实际码流只能由decoder真实帧确定；probe报告actual_backend始终null，设备已释放。decoder的state区分initialized/verified/recovered_cpu/closed，实际值是最近观察结果，不表示关闭后仍持有设备；last_failure保留原生解码错误类别与可用的错误号。普通查询不会刷新设备列表，显式probe/reset才刷新。GPU标识无凭据、地址或运行库路径；LUID为无符号整数，调用方不得经浮点损失精度或与CUDA ordinal混同。
+
+探测按策略找到首个可初始化设备即停止，attempts仅表示已经尝试的候选，不是完整显卡清单或全部profile支持证明。该限制不取代后续完整设备/源策略任务；不得把一次成功泛化成所有GPU/码流兼容。
+
+探测缓存每context最多一份，探测阶段预留64KiB控制额度，完成后按缓冲capacity及拥有者开销收缩，许可覆盖缓存寿命；同context最多一轮，重叠调用返回tryAgain。显式新探测先撤销旧缓存，期间查询not_probed，失败不伪装成旧成功。查询decoder的序列化暂存预留32KiB控制额度；余额不足明确返回resourceExhausted，不为查询扩大默认控制预算。无持久化、后台探测线程或无界诊断历史。本扩展不承诺RTSP自动硬解已完成，也不把GPU冷启动当吞吐提升。
 
 ### 1.1 句柄体系与对象生命周期总则（B07）
 

@@ -4,6 +4,7 @@
 在用资源，不主动卸载 DLL。原始视图只在其拥有者存活期间可读。
 """
 import ctypes as c
+import json
 from pathlib import Path
 import queue
 import threading
@@ -283,6 +284,22 @@ class Model(Resource):
 
 
 class CameraContext(Context):
+    def get_decode_hardware_report(self):
+        with self._lock:
+            version = self.library.amc_get_abi_version()
+            if version >> 16 != 1 or version < 0x10001:
+                raise RuntimeError("Decode hardware reports require C ABI 1.1 in major version 1")
+            output, count = c.create_string_buffer(65536), c.c_uint64()
+            self._check(self.library.amc_get_decode_hardware_report(self._require(), output, len(output), c.byref(count)), "read decode hardware report")
+            if not 1 <= count.value <= len(output):
+                raise RuntimeError("Invalid hardware report length")
+            return json.loads(output.raw[:count.value - 1])
+
+    def probe_decode_hardware(self, codec=a.AM_CODEC_H264, budget_ms=1500):
+        with self._lock:
+            self._check(self.library.amc_probe_decode_hardware(self._require(), codec, budget_ms), "probe decode hardware")
+            return self.get_decode_hardware_report()
+
     def open_source(self, url, username=None, password=None, rtsp=False, reuse=True):
         desc, credentials = sized(a.am_source_desc_t), sized(a.am_credential_data_t)
         desc.kind, desc.url_utf8 = a.AM_SRC_RTSP_URL if rtsp else a.AM_SRC_ISAPI_URL, url.encode("utf-8")

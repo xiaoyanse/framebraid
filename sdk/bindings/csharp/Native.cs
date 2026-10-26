@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 namespace AmrtSdk {
-    internal static class Native {
+    internal static partial class Native {
         private const CallingConvention Convention = CallingConvention.Cdecl;
         [UnmanagedFunctionPointer(Convention)] internal delegate void Notify(IntPtr model, ulong request, uint state, IntPtr user);
         internal delegate int CloseFunction(IntPtr handle, uint timeout, out uint state);

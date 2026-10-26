@@ -17,6 +17,8 @@ H2.0d已验证参数上下文重建复用设备引用，见[记录](verification
 
 H2.3a直接C入口自动硬解/CPU恢复已验证，见[记录](verification/sdk-r2-direct-auto-20261026.md)。短测GPU冷启动更慢，不能据此宣称吞吐提升或选择最快设备；继续RTSP接线、完整查询和H5。
 
+本地ABI 1.1显式探测/已有context与decoder快照已实现并做C/Python/C#实调，见[记录](verification/sdk-r2-abi11-hardware-20261026.md)。五层原因及真实执行区分已补，RTSP策略/源快照仍须实际装配后补齐，不将H2.1/H2.3整体关闭。
+
 R2 1.2采样前移代码及H.264原生/生产fanout量化已保存，见[记录](verification/sdk-r2-sampling-20261026.md)。真实网络、HEVC/MJPEG矩阵未验，本项不勾选；同时明确RTSP源缺硬解策略字段，须兼容新增合同再接线，不借用保留位。
 本次将原 R3 热路径优化前移为 R2，原 R2 恢复深化改为 R3；R1/R4/R5 的主要职责保留。
 重排不撤销已有队列与租约保护，也不把所有建议变成本轮必做。

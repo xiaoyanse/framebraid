@@ -54,6 +54,20 @@ def generate():
     return "\n".join(lines)
 
 
+def hardware_functions():
+    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report"]
+    primitive = {c.c_uint32: "uint", c.c_uint64: "ulong", c.c_int32: "int"}
+    lines = ["// Generated from the public ctypes ABI; do not edit.",
+             "using System;", "using System.Runtime.InteropServices;",
+             "namespace AmrtSdk {", "    internal static partial class Native {"]
+    for name in names:
+        result, args = a.FUNCTIONS[name]
+        parameters = ", ".join(primitive.get(kind, "IntPtr") + " arg" + str(i) for i, kind in enumerate(args))
+        lines.append('        [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]')
+        lines.append("        internal static extern " + primitive[result] + " " + name + "(" + parameters + ");")
+    return "\n".join(lines + ["    }", "}", ""])
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
@@ -66,3 +80,9 @@ if __name__ == "__main__":
     else:
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(expected, encoding="utf-8", newline="\n")
+    extension = SDK / "bindings/csharp/NativeHardware.cs"
+    if args.check:
+        if not extension.is_file() or extension.read_text(encoding="utf-8") != hardware_functions():
+            raise SystemExit("C# hardware declarations differ; regenerate")
+    else:
+        extension.write_text(hardware_functions(), encoding="utf-8", newline="\n")
