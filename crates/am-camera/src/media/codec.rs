@@ -39,6 +39,10 @@ pub struct DecodedRgba {
     pub info: FrameInfo,
     pub data: Vec<u8>,
 }
+enum HardwareInput<'a> {
+    New(super::hardware::Backend, &'a super::hardware::Adapter),
+    Existing(super::hardware::Backend, *mut AVBufferRef),
+}
 
 pub struct CpuDecoder {
     api: Arc<FfmpegApi>,
@@ -73,7 +77,31 @@ impl CpuDecoder {
         backend: super::hardware::Backend,
         adapter: &super::hardware::Adapter,
     ) -> Result<Self> {
-        Self::create_inner(api, codec, extradata, max_pixels, Some((backend, adapter)))
+        Self::create_inner(
+            api,
+            codec,
+            extradata,
+            max_pixels,
+            Some(HardwareInput::New(backend, adapter)),
+        )
+    }
+
+    /// 重建参数上下文并引用已有设备；不重新探测，不转移待输出帧或已验证状态。
+    pub fn reconfigure(&self, codec: VideoCodec, extra: &[u8], max_pixels: u64) -> Result<Self> {
+        let hardware = self.hardware.as_ref().map(|binding| {
+            HardwareInput::Existing(binding.backend(), unsafe { (*self.ctx).hw_device_ctx })
+        });
+        Self::create_inner(self.api.clone(), codec, extra, max_pixels, hardware)
+    }
+
+    /// 上层决定回退时创建独立CPU上下文；输入重同步和预算仍由上层负责。
+    pub fn software_reconfigure(
+        &self,
+        codec: VideoCodec,
+        extra: &[u8],
+        max_pixels: u64,
+    ) -> Result<Self> {
+        Self::create(self.api.clone(), codec, extra, max_pixels)
     }
 
     fn create_inner(
@@ -81,7 +109,7 @@ impl CpuDecoder {
         codec: VideoCodec,
         extradata: &[u8],
         max_pixels: u64,
-        hardware: Option<(super::hardware::Backend, &super::hardware::Adapter)>,
+        hardware: Option<HardwareInput<'_>>,
     ) -> Result<Self> {
         if max_pixels == 0 || max_pixels > 8192 * 8192 || extradata.len() > 16 * 1024 * 1024 {
             return Err(DecodeError::InvalidInput);
@@ -135,14 +163,25 @@ impl CpuDecoder {
                 }
                 (*ctx).extradata_size = extradata.len() as i32;
             }
-            if let Some((backend, adapter)) = hardware {
-                result.hardware = Some(hardware::Binding::attach(
-                    result.api.clone(),
-                    ctx,
-                    decoder,
-                    backend,
-                    adapter,
-                )?);
+            if let Some(input) = hardware {
+                result.hardware = Some(match input {
+                    HardwareInput::New(backend, adapter) => hardware::Binding::attach(
+                        result.api.clone(),
+                        ctx,
+                        decoder,
+                        backend,
+                        adapter,
+                    )?,
+                    HardwareInput::Existing(backend, device) => {
+                        hardware::Binding::attach_reference(
+                            &result.api,
+                            ctx,
+                            decoder,
+                            backend,
+                            device,
+                        )?
+                    }
+                });
             }
             let rc = (result.api.avcodec_open2)(ctx, decoder, ptr::null_mut());
             if rc < 0 {

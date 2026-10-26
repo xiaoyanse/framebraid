@@ -37,12 +37,26 @@ impl Binding {
         backend: Backend,
         adapter: &Adapter,
     ) -> Result<Box<Self>> {
-        let format =
-            unsafe { Self::format(&api, codec, backend) }.ok_or(DecodeError::InvalidInput)?;
+        // 不支持目标解码配置时，不触碰驱动或初始化设备。
+        unsafe { Self::format(&api, codec, backend) }.ok_or(DecodeError::InvalidInput)?;
         let device = Device::create(api.clone(), backend, adapter).map_err(|e| match e {
             ProbeError::DeviceInit(code) => DecodeError::Runtime(code),
             _ => DecodeError::InvalidInput,
         })?;
+        unsafe { Self::attach_reference(&api, ctx, codec, backend, device.pointer) }
+    }
+    pub(super) unsafe fn attach_reference(
+        api: &FfmpegApi,
+        ctx: *mut AVCodecContext,
+        codec: *const core::ffi::c_void,
+        backend: Backend,
+        device: *mut AVBufferRef,
+    ) -> Result<Box<Self>> {
+        if device.is_null() {
+            return Err(DecodeError::InvalidInput);
+        }
+        let format =
+            unsafe { Self::format(api, codec, backend) }.ok_or(DecodeError::InvalidInput)?;
         let binding = Box::new(Self {
             backend,
             format,
@@ -50,7 +64,7 @@ impl Binding {
         });
         unsafe {
             // CodecContext拥有独立设备引用，guard归还原引用，避免free_context双重释放。
-            (*ctx).hw_device_ctx = (api.av_buffer_ref)(device.pointer);
+            (*ctx).hw_device_ctx = (api.av_buffer_ref)(device);
             if (*ctx).hw_device_ctx.is_null() {
                 return Err(DecodeError::AllocationFailed);
             }
@@ -59,6 +73,9 @@ impl Binding {
             (*ctx).get_format = Some(select_format);
         }
         Ok(binding)
+    }
+    pub(super) fn backend(&self) -> Backend {
+        self.backend
     }
     pub(super) fn observe(&self, format: i32) {
         self.verified.store(self.matches(format), Ordering::Relaxed);

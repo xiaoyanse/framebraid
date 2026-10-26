@@ -61,6 +61,11 @@ SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、�
 - **WHEN** 同会话连续处理相同格式尺寸
 - **THEN** 转换上下文不随帧数逐次重建，格式改变及时重建，帧持有与关闭安全保持
 
+#### Scenario: Reconfigure an initialized hardware decoder
+
+- **WHEN** 参数集变更需要新codec上下文但所选设备仍可用
+- **THEN** 取得已有设备的独立引用而非重新探测或初始化设备；新上下文真实执行状态重新验证，构造失败不破坏原上下文或待输出帧，调用方仍管理关键帧和源代次
+
 ### Requirement: Sample before pixel materialization
 
 流式 SDK SHALL 在无到期像素消费者时避免无用颜色转换，同时维护视频参考链和控制通知。

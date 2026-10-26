@@ -28,6 +28,8 @@ R2 H2.0c/1.1 readback reservations and conversion caches are locally verified ([
 
 ## Public version / 公开版本
 
+Local H2.0d device reuse is verified ([record](verification/sdk-r2-device-reuse-20261026.md)): independent contexts share an initialized device without inheriting execution verification. Construction-only measurements are not decode-throughput claims. / 参数重建设备复用已实测，DLL/RTSP自动恢复仍未交付。
+
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)
 
 The public source is a clean initial snapshot; prior local history is retained

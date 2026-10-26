@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "fe6fae4f3e72fa6c971796e188f729c02bdf2cb6",
+  "reviewBaseCommit": "9252a010347c8cf0297a882ee0597fa920452172",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -54,8 +54,8 @@
     {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
       "previousSha256": null,
-      "sha256": "450ae152780c013f3315c54e871ca0e46873c249ddbe25cf0df15a0f2fca73e5",
-      "reason": "R2 reviewed shared bounded initialization selection; actual and injected failure/CPU fallback tests; C ABI unchanged"
+      "sha256": "e74b10237071efbd971ac840dcd49b694069d8d1bde93ae54134bbcff683aef6",
+      "reason": "H2.0d reviewed independent codec contexts retain native device reference; synthetic native construction and ownership validation; unchanged C ABI"
     },
     {
       "path": "crates/am-camera/src/media/hardware.rs",
@@ -72,8 +72,8 @@
     {
       "path": "crates/am-camera/src/media/codec.rs",
       "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "09c99da76433509b33db1410062c1d8f22fd92d2350a1513f259703bb73ee645",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "834b0349a54b9b0671e18b173ebe9f367aa88d5044b5f19b386d026f613599f3",
+      "reason": "H2.0d reviewed independent codec contexts retain native device reference; synthetic native construction and ownership validation; unchanged C ABI"
     },
     {
       "path": "crates/am-camera/src/media/codec/convert.rs",

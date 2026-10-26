@@ -28,6 +28,10 @@ D3D11创建后从真实设备查询IDXGIAdapter LUID，与请求快照核对；�
 
 ## 运行库与验收
 
+### 参数重建的设备复用（H2.0d 实施合同）
+
+直接解码器和RTSP像素订阅在参数集变化时需要重建codec上下文。`CpuDecoder::reconfigure(codec, extra, max_pixels)`构造独立新上下文，硬件路径引用已有设备，不重新发现或初始化设备；原上下文与待输出帧不受构造失败影响。新上下文尚无真实输出时不得继承旧上下文的硬解验证状态，调用方负责随机访问点与代次管理，不搬运旧队列或重放旧输入。`software_reconfigure`明确构造CPU上下文供上层恢复，不私自决定重试和回退策略。设备引用和运行库均覆盖上下文全寿命，允许新旧上下文分别销毁。CPU路径同样保留该语义。本原语不代表DLL自动回退已经完成。
+
 ### 回读预算接线（H2.0c 实施合同）
 
 `hardware_readback_bytes()`在取得待输出帧后返回CPU回读所需保守字节数；CPU帧为0。`copy_pixels_with_readback_budget(max_output_bytes, format, max_readback_bytes)`先核两项预算，再分配和回读，所有退出路径释放CPU暂存；`copy_pixels_reusing_readback`最多保留一张CPU目标帧供复用，调用方许可必须覆盖缓存全寿命，直至`release_readback_cache`/丢弃/关闭，不能在copy返回时提前归还。预算不足或回读失败保持原硬件帧/PTS供重试。
