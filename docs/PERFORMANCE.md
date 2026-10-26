@@ -38,6 +38,16 @@ python -B scripts/sdk/benchmark-decode-stream.py --dll-dir .local/build/current/
 
 这是S1单路调用与资源基线；不包含网络、显示、全图跨语言复制、模型精度、混合消费者、多路或耐压。公开SDK/ABI、默认选择策略、支持范围均不因工具变化扩大。新鲜度200ms等数值仅属目标卡实验线，不是产品SLA。
 
+### MET-2 real-model CPU baseline / 真实模型CPU基线
+
+`benchmark-inference-resources.py` uses the frozen Pose model and the real Vision image/async path. It separates process/model construction from paced 5 FPS response and resource measurements. CPU-runtime OpenVINO/CUDA strict rejection and allowed CPU fallback run in separate processes; they do not verify accelerator execution. See the [target card](verification/sdk-met2-s3-target-20261026.md) and [results](verification/sdk-met2-s3-20261026.md).
+
+```powershell
+python -B scripts/sdk/benchmark-inference-resources.py --dll-dir .local/build/current/release --runtime-dir .local/releases/candidates/0.1.0-local-20261026-final/windows-x64/runtime/onnxruntime-cpu --model .local/tests/met2-s3/yolo26n-pose.onnx --input .local/tests/met2-s3/input.png --target-card docs/verification/sdk-met2-s3-target-20261026.md --output .local/evidence/met2-s3-new
+```
+
+仅接收档案指定SHA的测试模型；模型、图片和运行库自行备料于私有测试目录，工具不下载/发布。默认三轮20请求/4秒，另观察关闭；有界子进程及输出源码副本用于追溯。输出校验计进程CPU但不计submit→fetch延迟，GPU未知不写0；raw/P95与整数毫秒SDK区间不冒充精确ORT耗时。没有硬件EP运行库时只能验证缺依赖与CPU回退，不能称硬件选择整包完成。
+
 Local sampling ablation uses the Release `native_sampling` test with explicit `AM_RT_FFMPEG_DIR` and `AM_SDK_H264_SAMPLE`. It runs real decode and production fanout under a virtual 30 FPS clock, observes native sws_scale calls, excludes full-plane hash/pull work from timing and retains 5% alerts. See [sampling measurements](verification/sdk-r2-sampling-20261026.md); this is not RTSP network throughput or a historical-binary A/B.
 
 Direct DLL native-policy smoke: `python scripts/sdk/test-decoder-hardware.py --dll-dir <release> --runtime-dir <matched-ffmpeg> --samples-dir <synthetic-inputs>`, adding `--software` for a same-build CPU control. Records actual backend, generations, pixel hashes, create/first-receive times; requires the documented four synthetic fixtures and real hardware for native mode. See [direct decoder verification](verification/sdk-r2-direct-auto-20261026.md). Cold-start costs are not sustained-stream FPS or a historical-binary A/B.
