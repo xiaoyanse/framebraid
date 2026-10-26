@@ -86,6 +86,8 @@ struct Data {
     waiting_key: bool,
     generation: u32,
     last_frame: Option<Instant>,
+    #[cfg(test)]
+    selections: VecDeque<Instant>,
     waiters: u32,
 }
 pub struct Subscription {
@@ -208,22 +210,39 @@ impl Subscription {
             d.bytes = 0;
             d.waiting_key = matches!(self.kind, Kind::Encoded { .. });
             d.last_frame = None;
+            #[cfg(test)]
+            d.selections.clear();
         }
         self.wake.notify_all();
     }
-    fn eligible(&self, data: &Data, now: Instant) -> bool {
+    fn next_at(&self, data: &Data, now: Instant) -> Option<Instant> {
         let Kind::Frames { fps, .. } = self.kind else {
-            return false;
+            return None;
         };
-        !data.stopped
-            && !data.changing
-            && (self.mode != AM_SUB_PUSH || data.callback.is_some())
-            && (fps == 0
-                || data.last_frame.is_none_or(|at| {
-                    now.saturating_duration_since(at).as_secs_f64() >= 1. / fps as f64
-                }))
+        if data.stopped || data.changing || self.mode == AM_SUB_PUSH && data.callback.is_none() {
+            return None;
+        }
+        if fps == 0 {
+            return Some(now);
+        }
+        match data.last_frame {
+            None => Some(now),
+            // 向上取整，不以浮点容差把帧率上限变成可提前发布。
+            Some(at) => at
+                .checked_add(Duration::from_nanos(1_000_000_000u64.div_ceil(fps as u64)))
+                .map(|at| at.max(now)),
+        }
+    }
+    fn eligible(&self, data: &Data, now: Instant) -> bool {
+        self.next_at(data, now).is_some_and(|at| at <= now)
+    }
+    pub fn next_pixels_at(&self, now: Instant) -> Option<Instant> {
+        lock(&self.data)
+            .ok()
+            .and_then(|data| self.next_at(&data, now))
     }
     /// 转换前只查询需求，不提前占掉失败或未发布帧的采样机会。
+    #[cfg(test)]
     pub fn needs_pixels(&self, now: Instant) -> bool {
         lock(&self.data).is_ok_and(|data| self.eligible(&data, now))
     }
@@ -235,7 +254,23 @@ impl Subscription {
             return false;
         }
         d.last_frame = Some(now);
+        #[cfg(test)]
+        {
+            if d.selections.len() == 128 {
+                d.selections.pop_front();
+            }
+            d.selections.push_back(now);
+        }
         true
+    }
+    #[cfg(test)]
+    pub fn selection_times(&self) -> Vec<Instant> {
+        lock(&self.data)
+            .unwrap()
+            .selections
+            .iter()
+            .copied()
+            .collect()
     }
     pub fn enqueue(&self, item: Item) {
         let mut resync = false;

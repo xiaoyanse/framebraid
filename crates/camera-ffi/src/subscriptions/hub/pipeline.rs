@@ -4,7 +4,11 @@ use crate::frames::{ControlCharge, DecoderPermit};
 use std::thread::{Scope, ScopedJoinHandle};
 mod decode;
 #[cfg(test)]
+mod live_sampling_tests;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod timing_tests;
 
 #[cfg(test)]
 #[derive(Default)]
@@ -170,6 +174,26 @@ impl Pipeline {
     }
     pub(super) fn current(&self, epoch: u64) -> bool {
         !self.stopping.load(Ordering::Acquire) && self.epoch.load(Ordering::Acquire) == epoch
+    }
+    pub(super) fn has_newer_backlog(&self, epoch: u64) -> bool {
+        self.current(epoch) && lock(&self.data).is_ok_and(|data| !data.queue.is_empty())
+    }
+    pub(super) fn wait_until(&self, epoch: u64, deadline: Instant) -> Result<bool> {
+        if deadline.saturating_duration_since(Instant::now()) > Duration::from_millis(50) {
+            return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+        }
+        loop {
+            if !self.current(epoch) {
+                return Ok(false);
+            }
+            let now = Instant::now();
+            if now >= deadline {
+                return Ok(true);
+            }
+            // Windows条件变量的毫秒超时可能跨系统tick；标准sleep使用可用的高精度计时器。
+            // 分片只为重验取消，不自旋，也不持队列/配置/订阅锁。
+            std::thread::sleep((deadline - now).min(Duration::from_millis(2)));
+        }
     }
     fn resync(&self) -> Result<()> {
         let mut data = lock(&self.data)?;

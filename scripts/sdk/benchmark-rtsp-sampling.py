@@ -72,6 +72,24 @@ def stats_snapshot(lib,ctx):
     finally: checked(lib.amc_stats_release(pointer))
 
 
+def drain_warmup(lib, encoded, subscriptions):
+    counts=[]
+    for sub, pull, release, kind, maximum in [
+        (encoded, lib.amc_encoded_pull, lib.amc_encoded_packet_release, a.am_encoded_packet_t, 36),
+        *[(sub, lib.amc_frame_pull, lib.amc_frame_release, a.amc_frame_t, 4) for sub in subscriptions],
+    ]:
+        count=0
+        for _ in range(maximum):
+            pointer=c.POINTER(kind)()
+            code=pull(sub,0,c.byref(pointer))
+            if code in (a.AM_ERR_SDK_TRY_AGAIN,a.AM_ERR_SDK_DEADLINE_EXCEEDED): break
+            checked(code)
+            checked(release(pointer)); count+=1
+        counts.append(count)
+    return dict(encoded=counts[0],frames=counts[1:],
+                caveat="bounded warmup drain; one pre-window in-flight output may remain")
+
+
 def run_case(lib,args,url,rates):
     paths=(c.c_char_p*1)(str(args.runtime_dir.resolve()).encode())
     params=sized(a.amc_init_params_t)
@@ -101,11 +119,13 @@ def run_case(lib,args,url,rates):
             subscriptions.append(sub)
         source_identity=None; encoded_rows=[]; frame_rows=[[] for _ in rates]
         all_ids=[set() for _ in rates]; encoded_seq=set(); last_pts=[None for _ in rates]
-        warmed=False; before=None; start=time.perf_counter()
+        warmed=False; before=None; warmup_drain=None; start=time.perf_counter()
         parallelism,method=available_parallelism()
         while time.perf_counter()-start<args.warmup_s+args.window_s:
             if not warmed and time.perf_counter()-start>=args.warmup_s:
                 sampler=ResourceSampler().start()
+                # 计数器初始化期间队列继续接收；不把旧预热输出算进稳态FPS。
+                warmup_drain=drain_warmup(lib,encoded,subscriptions)
                 # 资源计数器初始化不挤进固定稳态窗口。
                 start=time.perf_counter()-args.warmup_s
                 before=cpu_snapshot(); warmed=True
@@ -155,7 +175,7 @@ def run_case(lib,args,url,rates):
         close(lib,source,lib.amc_source_close); source=c.POINTER(a.amc_source_t)()
         closed=stats_snapshot(lib,ctx)
         if closed["external_held_items"]: raise RuntimeError("unreturned frame/packet after source drained")
-        return dict(rates=rates,planned_window_s=args.window_s,cpu=dict(resources,parallelism_method=method),observation=observation,
+        return dict(rates=rates,planned_window_s=args.window_s,warmup_drain=warmup_drain,cpu=dict(resources,parallelism_method=method),observation=observation,
             compressed_packets=len(encoded_rows),compressed_fps=len(encoded_rows)/resources["wall_s"],encoded=encoded_rows,
             consumers=[dict(max_fps=rate,delivered=len(rows),effective_fps=len(rows)/resources["wall_s"],
                 age=summarize([row["age_ms"]*1e6 for row in rows]),frames=rows) for rate,rows in zip(rates,frame_rows)],

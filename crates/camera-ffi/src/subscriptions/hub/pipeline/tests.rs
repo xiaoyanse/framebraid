@@ -20,7 +20,7 @@ fn job(source: &SharedSource, config: &Arc<Configuration>, seq: u64, key: bool) 
         epoch: 0,
     }
 }
-fn config(source: &SharedSource) -> Arc<Configuration> {
+pub(super) fn config(source: &SharedSource) -> Arc<Configuration> {
     Arc::new(Configuration {
         stream: Arc::new(Stream {
             info: StreamInfo {
@@ -218,6 +218,108 @@ fn blocked_pixel_execution_keeps_decoder_permit_and_does_not_spawn_replacement()
         assert_eq!(source.state.usage_snapshot().unwrap(), (0, 0, 0));
     }
     drop((config, hub));
+    let key = source.state.ctx_key;
+    drop(source);
+    domain.close(key, 100).unwrap();
+    domain.destroy(key).unwrap();
+}
+
+#[test]
+fn sampling_wait_obeys_real_deadline_without_consuming_it_and_rejects_far_future() {
+    let (domain, source, hub, _) = super::super::tests::fixture();
+    let pipe = Pipeline::new(source.state.clone()).unwrap();
+    let delivery = Delivery {
+        pipe: &pipe,
+        epoch: 1,
+        config: 1,
+    };
+    let sub = super::super::tests::sub(&source, &hub, 5, AM_SUB_PULL);
+    let anchor = Instant::now() - Duration::from_millis(197);
+    assert!(sub.due(anchor));
+    let earliest = anchor + Duration::from_millis(200);
+    assert!(super::super::sampling::wait_due(std::slice::from_ref(&sub), &delivery).unwrap());
+    let actual = Instant::now();
+    assert!(actual >= earliest);
+    assert!(sub.due(actual));
+    assert!(!sub.due(actual));
+    assert!(!super::super::sampling::wait_due(std::slice::from_ref(&sub), &delivery).unwrap());
+    assert_eq!(
+        pipe.wait_until(1, Instant::now() + Duration::from_secs(1)),
+        Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE)
+    );
+    source.config_generation.fetch_add(1, Ordering::AcqRel);
+    assert!(!delivery.current(&source), "等待后不能把旧帧贴新配置");
+    pipe.stop();
+    assert!(!pipe.wait_until(1, Instant::now()).unwrap());
+    drop((sub, pipe, hub));
+    assert_eq!(source.state.usage_snapshot().unwrap(), (0, 0, 0));
+    let key = source.state.ctx_key;
+    drop(source);
+    domain.close(key, 100).unwrap();
+    domain.destroy(key).unwrap();
+}
+
+#[test]
+fn sampled_backlog_skips_old_pixels_but_unlimited_consumer_preserves_every_frame() {
+    let (domain, source, hub, _) = super::super::tests::fixture();
+    let config = config(&source);
+    let pipe = Pipeline::new(source.state.clone()).unwrap();
+    pipe.submit(job(&source, &config, 1, true)).unwrap();
+    let epoch = pipe.epoch.load(Ordering::Acquire);
+    let delivery = Delivery {
+        pipe: &pipe,
+        epoch,
+        config: 1,
+    };
+    let sampled = super::super::tests::sub(&source, &hub, 5, AM_SUB_PULL);
+    assert!(super::super::sampling::superseded(
+        std::slice::from_ref(&sampled),
+        &delivery
+    ));
+    let unlimited = super::super::tests::sub(&source, &hub, 0, AM_SUB_PULL);
+    assert!(!super::super::sampling::superseded(
+        &[sampled.clone(), unlimited.clone()],
+        &delivery
+    ));
+    drop(pipe.pop().unwrap().unwrap());
+    assert!(!super::super::sampling::superseded(
+        std::slice::from_ref(&sampled),
+        &delivery
+    ));
+    pipe.stop();
+    assert!(!super::super::sampling::superseded(
+        &[sampled.clone(), unlimited.clone()],
+        &delivery
+    ));
+    drop((sampled, unlimited, pipe, config, hub));
+    assert_eq!(source.state.usage_snapshot().unwrap(), (0, 0, 0));
+    let key = source.state.ctx_key;
+    drop(source);
+    domain.close(key, 100).unwrap();
+    domain.destroy(key).unwrap();
+}
+
+#[test]
+fn closing_or_epoch_change_interrupts_sampling_wait_and_does_not_lock_the_producer() {
+    let (domain, source, hub, _) = super::super::tests::fixture();
+    for stop in [false, true] {
+        let pipe = Pipeline::new(source.state.clone()).unwrap();
+        std::thread::scope(|scope| {
+            let waiting = pipe.clone();
+            let waiter = scope
+                .spawn(move || waiting.wait_until(1, Instant::now() + Duration::from_millis(40)));
+            if stop {
+                pipe.stop();
+            } else {
+                pipe.resync().unwrap();
+                pipe.wake.notify_all();
+            }
+            assert!(!waiter.join().unwrap().unwrap());
+        });
+        pipe.stop();
+    }
+    drop(hub);
+    assert_eq!(source.state.usage_snapshot().unwrap(), (0, 0, 0));
     let key = source.state.ctx_key;
     drop(source);
     domain.close(key, 100).unwrap();

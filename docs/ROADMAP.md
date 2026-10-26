@@ -4,7 +4,7 @@
 
 日期：2026-10-26。公开基线仍为`5ee707153796cf1d8f9dd7118c664bacf757f97b`（v0.1.0），本地实现复核基线`088f821`。MET-2文档已收口；用户现已授权恢复开发，先完成R1必要量化前置。SDK核心本阶段未改，旧原始数据不覆盖。
 
-**当前阶段：已恢复SDK main串行开发。R1新增S1真实GOP/CPU与GPU采集和三轮A/A已验证，见[记录](verification/sdk-met2-s1-20261026.md)；单路硬解CPU收益仍证据不足；[S3真实Pose CPU与缺EP回退](verification/sdk-met2-s3-20261026.md)已测，[S2真实RTSP](verification/sdk-met2-s2-20261026.md)已复现30 FPS配置约16～17 FPS，仍未修复；R1量化前置收口，真实加速及后续功能继续，未关闭整包任务。任务与证据以[OpenSpec](../openspec/README.md)及[统一指标](PERFORMANCE_ACCEPTANCE.md)为准，不改变发布制品。**
+**当前阶段：已恢复SDK main串行开发。R1新增S1真实GOP/CPU与GPU采集和三轮A/A已验证，见[记录](verification/sdk-met2-s1-20261026.md)；单路硬解CPU收益仍证据不足；[S3真实Pose CPU与缺EP回退](verification/sdk-met2-s3-20261026.md)已测，[S2真实RTSP](verification/sdk-met2-s2-20261026.md)复现30 FPS配置约16～17 FPS；后续[采样修复](verification/sdk-r2-cadence-20261026.md)三组对照达29.49～29.75 FPS，帧龄代价与HEVC/MJPEG完整矩阵仍分别登记；R1量化前置收口，真实加速及后续功能继续，未关闭整包任务。任务与证据以[OpenSpec](../openspec/README.md)及[统一指标](PERFORMANCE_ACCEPTANCE.md)为准，不改变发布制品。**
 阶段编号 R1～R5 是工作包编号，不是严格串行顺序、已确定的版本号、日期或完成率。
 2026-10-26 用户追加：**原生解码和推理的硬件探测、自动选择、实际后端查询及故障恢复提升为本轮前置项**。R1 最小基线后，R5 第 1 组与 H5、R2 的 H2 优先，之后继续 R2 热路径及其余阶段；不再把基础硬件能力一概留给 E2。
 
@@ -114,7 +114,7 @@ that planned capabilities are implemented or production-accepted.
 | 顺序/ID | 原问题、阶段成果与剩余范围 | 参考 | 必测的机制指标与正确性 |
 | --- | --- | --- | --- |
 | R2-1 | [copy_pixels](../crates/am-camera/src/media/codec.rs)原来逐次创建转换上下文；SwsContext及单回读缓存复用已保存，后续按热点评估输出分配/复用 | REF-A1 | 上下文创建/释放次数、输出分配次数与字节/帧、转换耗时；稳定格式下创建不再随帧数线性增加，格式变化只在需要时重建 |
-| R2-2 | [emit_decoded](../crates/camera-ffi/src/subscriptions/hub.rs)像素需求已前移，保留[fanout](../crates/camera-ffi/src/subscriptions/pixels.rs)推进采样机会；局部量化已有，网络/编码矩阵及告警复核仍待 | REF-W1 | 实际解码帧数、像素转换次数、交付次数、有效采样率；无到期像素消费者时避免无用转换，预览与控制通知不被误停 |
+| R2-2 | [emit_decoded](../crates/camera-ffi/src/subscriptions/hub.rs)像素需求已前移，保留[fanout](../crates/camera-ffi/src/subscriptions/pixels.rs)推进采样机会；H.264实际节拍已三组对照修复，延迟仍受250ms保护；完整编码/尺寸矩阵和长跑仍待 | REF-W1 | 实际解码帧数、像素转换次数、交付次数、有效采样率；无到期像素消费者时避免无用转换，预览与控制通知不被误停 |
 | R2-3 | [prepare](../crates/vision/src/sdk/prepare.rs) 生成浮点数组，[TensorData::new](../crates/vision/src/sdk/model.rs) 再分配并复制；先减少中间复制，再评估安全工作区与 SIMD | REF-A2/REF-P1 | 张量分配次数/字节、复制字节/帧、前处理耗时；目标路径取消可避免的临时数组到最终张量复制，保持对齐、并发安全和输出坐标合同 |
 | R2-4（条件项） | 减少共享帧发布、缩放输出和 C#/Python 搬运；必要颜色/布局转换单独列账 | REF-A1/REF-P3 | 先列当前复制图；只有仍属实测热点且前三项收益可复现时纳入，否则转后续候选，不阻塞 R2 收口 |
 
@@ -303,9 +303,9 @@ HEAD 仅标记定位快照，其他团队的未提交工作不被本路线归档
 
 | 阶段 | 当前状态 | 开工前提 |
 | --- | --- | --- |
-| R1 | 旧CPU/合成基线完成；MET-2目标卡、A/A及资源采集前置待补 | 原始证据不变，新前置见R1 tasks；不可把旧预算外推成SLA |
+| R1 | MET-2目标卡、S1/S2/S3与A/A前置已收口，见R1 tasks | 原始证据不变，新前置见R1 tasks；不可把旧预算外推成SLA |
 | R2 | H2基础/直接DLL/RTSP及转换缓存已有阶段成果；采样有局部证据，整包未完成 | 先MET-2当前硬解CPU卸载/组合负载证据，再继续设备复用、张量热路径及未验矩阵 |
-| R3 | 未开工；原 R2 恢复深化后移 | 复用 R1/R2 候选，补整条路径压力、组合故障与恢复证据 |
+| R3 | 像素worker隔离首项已验；其余组合故障/预算/长跑开放 | 复用 R1/R2 候选，补整条路径压力、组合故障与恢复证据 |
 | R4 | 未开工 | 所有权/错误语义稳定，代表模型来源与档案明确 |
 | R5 | 第1组排队清理、H5 Rust选择及C探测/报告已阶段保存；模型C策略/恢复/组批和整包未完成 | 先MET-2目标卡与真实可用性，后按依赖推进组批与组合/长跑，不凭单请求5%标签下结论 |
 | E1～E4 | 讨论储备 | 明确需求后重新评估范围与成本 |

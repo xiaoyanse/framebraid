@@ -94,6 +94,16 @@ SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、�
 - **WHEN** 30 FPS 输入被不同 FPS 消费者订阅
 - **THEN** 交付率按各订阅配置验证，减少转换不等于任意跳过压缩参考帧解码
 
+#### Scenario: Frame arrives just before a sampling deadline
+
+- **WHEN** 像素worker内新解码帧距可服务订阅到期点不超过其一采样周期及50ms上限
+- **THEN** 可提前物化并在该worker有界等待，到期后按实际单调时间重新检查严格最短间隔；失败/关闭/新配置不提前消费机会或发布旧输出，压缩读取不等待，不以允许突发放宽max_fps
+
+#### Scenario: Sampled consumers lag behind newer input
+
+- **WHEN** 全部有效像素订阅均配置非零上限，且内部存在更新待处理包
+- **THEN** SDK可略过旧画面的像素物化，但保留参考帧解码及维度通知；任何0上限消费者存在时不执行此额外合并，队列/在途帧继续受已有预算及代次检查约束
+
 ### Requirement: Hardware readback reservation
 
 SDK SHALL 在CPU回读目标帧分配前核对其对齐与填充后的保守字节数，不能只检查输出RGBA字节。可缓存一张目标帧，但预算许可 MUST 覆盖其完整寿命，先释放缓冲再归还许可；错误或重新配置不得遗留未计费缓存。

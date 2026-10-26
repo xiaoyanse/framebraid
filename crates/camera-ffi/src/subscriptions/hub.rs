@@ -11,6 +11,7 @@ use std::thread::JoinHandle;
 mod consume;
 mod native;
 mod pipeline;
+mod sampling;
 #[cfg(test)]
 mod tests;
 #[derive(Clone, Copy)]
@@ -428,7 +429,19 @@ impl Hub {
             }
             // 序号仍随解码帧推进，不能因省略颜色转换而隐藏采样间隙。
             let seq = sequence(&self.frame_sequence)?;
-            if EARLY_SAMPLING && !subs.iter().any(|sub| sub.needs_pixels(self.now())) {
+            if delivery
+                .as_ref()
+                .is_some_and(|d| sampling::superseded(subs, d))
+            {
+                cpu.discard_frame().map_err(|_| IoError::Invalid)?;
+                source
+                    .state
+                    .metrics
+                    .frames_dropped
+                    .fetch_add(1, Ordering::AcqRel);
+                continue;
+            }
+            if EARLY_SAMPLING && !sampling::ready_soon(subs, self.now(), delivery.is_some()) {
                 cpu.discard_frame().map_err(|_| IoError::Invalid)?;
                 source.received(received);
                 continue;
@@ -470,6 +483,11 @@ impl Hub {
                     }
                     Err(_) => return Err(IoError::Invalid),
                 };
+            if let Some(d) = delivery.as_ref() {
+                if !sampling::wait_due(subs, d)? {
+                    continue;
+                }
+            }
             let _guard = lock(&self.configuration).map_err(|_| IoError::Resource)?;
             if !self.current(source, stamp) || delivery.as_ref().is_some_and(|d| !d.current(source))
             {

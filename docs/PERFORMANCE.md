@@ -54,6 +54,8 @@ python -B scripts/sdk/benchmark-inference-resources.py --dll-dir .local/build/cu
 
 ### MET-2 live sampling / 实际RTSP节拍
 
+The [cadence A/B](verification/sdk-r2-cadence-20261026.md) uses bounded warmup-queue draining after resource-counter initialization for both binaries. Three interleaved H.264 pairs restore useful capped delivery, at higher measured receipt age still within the predeclared guard. Exact selection intervals are verified separately from pull timestamps; raw preview failures are retained. / 三组交替对照不以配置FPS或CPU低当收益，全编码/硬件及长跑未关闭。
+
 `benchmark-rtsp-sampling.py` creates only an isolated loopback MediaMTX and a paced FFmpeg publisher. It measures encoded-only, 5/10/30 FPS ceilings and mixed consumers against real QPC receipt age, retaining actual delivery rather than claiming configured rates. See the [target card](verification/sdk-met2-s2-target-20261026.md) and [observed gaps](verification/sdk-met2-s2-20261026.md). Active queued SDK frames may consume external-frame quota; leak checks require source/queue drain.
 
 ```powershell

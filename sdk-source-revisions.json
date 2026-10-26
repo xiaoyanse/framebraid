@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "1eb75d5c8dcffa487d6bb59e9debda22d83acac8",
+  "reviewBaseCommit": "ec3358c17ef1750156c2e94c4261c9030ae8fe4c",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "a6c5ccbedf52cc0ad0cedc95a564fdf45ef094020f5c8478f4e0c0407a8680f5",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "d69be5e4c7ee96556df03542d9695ed82cfecbe26e20d4107be8969d543ccd68",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -180,8 +180,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/queue.rs",
       "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-      "sha256": "6e79eb6c60b17730f3b211c8a7a4d0397864ffb57d561e630e03a5928fdef20c",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "f979db48031e3a0fcd5837375e654f6065ecc466672d40fe2930050ff1946182",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
@@ -354,20 +354,38 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline.rs",
       "previousSha256": null,
-      "sha256": "cdc5c0045271802750002b8f43b8cb3c93e67134d43ed97156688837a38011f4",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "7e2abf849bb370ac58afdb2c71edebad0276a0c24e88f3bcec7eb55094901682",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode.rs",
       "previousSha256": null,
-      "sha256": "f8d19b11e2bf1e559589f2c02d510cdcd2312a63e4e21dde23cb139d7cd750d3",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "a1570eebb5228a432aebbcd34442d9b05896d7a855163fa236eff66030a41b48",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/tests.rs",
       "previousSha256": null,
-      "sha256": "e573a3f466e0f63b90c93d954b7918a7142a88d22735815fc1e6d8c63eb29d49",
-      "reason": "R3 reviewed bounded scoped pixel worker with existing decoder permit, generation/configuration/queue epoch checks, blocking/pressure/drain and actual loopback codec validation; unchanged ABI"
+      "sha256": "31204ba153abbe1731416912513f774abc2df8f9cda33bbfbee162daaeed5a03",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/sampling.rs",
+      "previousSha256": null,
+      "sha256": "cac020ac50bd9b9e48bb525c0d48f08d0ada80b223c7063c74d3898773f8cbd7",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/timing_tests.rs",
+      "previousSha256": null,
+      "sha256": "357ffe34e10c30d0583e3324888fb76b1664bf213e57aaf48e5278e69f952801",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/live_sampling_tests.rs",
+      "previousSha256": null,
+      "sha256": "74045a9d8be9d2850f669094d33d8959b43877fdc7b5c7d4d53d723deac2b1ba",
+      "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
     }
   ]
 }

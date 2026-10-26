@@ -243,7 +243,15 @@ impl<'a> Worker<'a> {
             delivery.config = source.config_generation.load(Ordering::Acquire);
         }
         let seq = sequence(&self.hub.frame_sequence)?;
-        if !subscribers.iter().any(|s| s.needs_pixels(Instant::now())) {
+        if super::super::sampling::superseded(subscribers, delivery) {
+            source
+                .state
+                .metrics
+                .frames_dropped
+                .fetch_add(1, Ordering::AcqRel);
+            return Ok(());
+        }
+        if !super::super::sampling::ready_soon(subscribers, Instant::now(), true) {
             return Ok(());
         }
         let _rgba = source
@@ -252,6 +260,9 @@ impl<'a> Worker<'a> {
             .map_err(|_| IoError::Resource)?;
         let image = am_camera_core::media::sdk_io::decode_image(header.encoded, max_pixels, true)?;
         if let Some(rgba) = image.rgba {
+            if !super::super::sampling::wait_due(subscribers, delivery)? {
+                return Ok(());
+            }
             let _guard = lock(&self.hub.configuration).map_err(|_| IoError::Resource)?;
             if !self.hub.current(source, self.stamp) || !delivery.current(source) {
                 return Err(IoError::Closed);
