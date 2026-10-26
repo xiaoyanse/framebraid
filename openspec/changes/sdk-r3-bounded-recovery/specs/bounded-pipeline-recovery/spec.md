@@ -251,3 +251,8 @@ SDK SHALL 在模型IO副本分配前核每向32项/name4096字节/rank8，Ffi实
 
 - **WHEN** 完整来源快照已捕获后发生新增/关闭
 - **THEN** 保留当次成员的强引用、锁外消费和关闭过滤，不重复计算共享源或遗漏快照成员；明确固定栈成本，不宣称所有规模更快
+
+#### Scenario: Hardware reports reach their temporary storage boundary
+
+- **WHEN** Media源、decoder或硬件probe报告序列化或缓存
+- **THEN** 借用已拥有报告、分配前准入固定输出，越界明确拒绝且不扩容/发布截断JSON；缓存保留到最后引用释放，原生设备与宿主线程/栈成本单独列账

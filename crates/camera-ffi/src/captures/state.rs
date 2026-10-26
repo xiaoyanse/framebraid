@@ -166,3 +166,13 @@ impl Drop for Worker {
         self.0.changed.notify_all();
     }
 }
+
+#[cfg(test)]
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!(
+        "r3_capture_foundation state={} close_hooks={} arc_header_bytes=16 max_contexts=8",
+        std::mem::size_of::<State>(),
+        std::mem::size_of::<CloseHooks>()
+    );
+}

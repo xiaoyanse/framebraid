@@ -119,7 +119,7 @@ pub unsafe extern "C" fn amc_source_set_decode_policy(src: *mut amc_source_t, po
 pub(crate) fn owner(key: usize) -> Result<Arc<CameraState>> {
     Ok(get(key)?.data::<Source>()?.shared.state.clone())
 }
-pub(crate) fn report(key: usize) -> Result<serde_json::Value> {
+pub(crate) fn report(key: usize) -> Result<Vec<u8>> {
     let entry = get(key)?;
     let source = entry.data::<Source>()?;
     let state = source
@@ -130,22 +130,57 @@ pub(crate) fn report(key: usize) -> Result<serde_json::Value> {
     // 关闭的一个拥有者不能观察其他拥有者后续的活动状态。
     let closed = source.closed.load(Ordering::Acquire);
     let hidden = closed || source.closing.load(Ordering::Acquire);
-    Ok(serde_json::json!({
-        "schema":"framebraid.decode-hardware/1", "kind":"source",
-        "state":if closed {"closed"} else if hidden {"closing"} else {state.phase},
-        "selection":if hidden {None} else {state.selection.as_deref()},
-        "actual_backend":if hidden {None} else {state.actual},
-        "last_failure":if hidden {None} else {state.failure},
-        "last_status":if hidden {None} else {state.last_status},
-        "stream_verified":!hidden && state.active && state.actual.is_some(),
-        "requested_policy":state.policy,
-        "effective_policy":if hidden {state.policy} else {state.effective},
-        "policy_locked":state.locked, "decoder_active":!hidden && state.active,
-        "source_id":source.shared.source_id,
-        "decode_generation":state.generation,
-        "source_generation":source.shared.generation.load(Ordering::Acquire),
-        "config_generation":source.shared.config_generation.load(Ordering::Acquire)
-    }))
+    #[derive(serde::Serialize)]
+    struct Report<'a> {
+        schema: &'static str,
+        kind: &'static str,
+        state: &'static str,
+        selection: Option<&'a SelectionReport>,
+        actual_backend: Option<&'static str>,
+        last_failure: Option<DecodeError>,
+        last_status: Option<i32>,
+        stream_verified: bool,
+        requested_policy: u32,
+        effective_policy: u32,
+        policy_locked: bool,
+        decoder_active: bool,
+        source_id: u64,
+        decode_generation: u32,
+        source_generation: u32,
+        config_generation: u32,
+    }
+    crate::hardware::serialize(&Report {
+        schema: "framebraid.decode-hardware/1",
+        kind: "source",
+        state: if closed {
+            "closed"
+        } else if hidden {
+            "closing"
+        } else {
+            state.phase
+        },
+        selection: if hidden {
+            None
+        } else {
+            state.selection.as_deref()
+        },
+        actual_backend: if hidden { None } else { state.actual },
+        last_failure: if hidden { None } else { state.failure },
+        last_status: if hidden { None } else { state.last_status },
+        stream_verified: !hidden && state.active && state.actual.is_some(),
+        requested_policy: state.policy,
+        effective_policy: if hidden {
+            state.policy
+        } else {
+            state.effective
+        },
+        policy_locked: state.locked,
+        decoder_active: !hidden && state.active,
+        source_id: source.shared.source_id,
+        decode_generation: state.generation,
+        source_generation: source.shared.generation.load(Ordering::Acquire),
+        config_generation: source.shared.config_generation.load(Ordering::Acquire),
+    })
 }
 
 #[cfg(test)]

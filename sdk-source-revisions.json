@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "eec8251c2d87dd1bfe3c545db9806c52d4c27a35",
+  "reviewBaseCommit": "9079b0d264b83cfd0e04c4af5c3ed978a09a14c4",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -114,8 +114,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "d9c4c1ced7679ec09065d00819f78b84058f48d1b7e78b5319eb2cadbf1d5c97",
-      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
+      "sha256": "0a41cfe88d078632ff78f231cbcf5064a1a89eaeecb32f15d60ce0609f6f3d47",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
@@ -156,8 +156,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/tests.rs",
       "previousSha256": null,
-      "sha256": "d59ca22201e05243e73b130353c81dc06b7838ef38b9d7a0658dc8fe0b8db8b5",
-      "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
+      "sha256": "2a73f8bb29ffe350e5c627de0ca957c4df539709dcbd72d5caad09f99f33d272",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/frames/budget_tests.rs",
@@ -198,8 +198,8 @@
     {
       "path": "crates/camera-ffi/Cargo.toml",
       "previousSha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b",
-      "sha256": "380af189c9aeaff494304a9975903381ad48fef969c42e2d381a49def91f5f41",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "11556c0644a8b3d13ec86209cb5d8f3e7d9c90cf4c0fced364661dd0dbd55ff7",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/lib.rs",
@@ -222,14 +222,14 @@
     {
       "path": "crates/camera-ffi/src/hardware.rs",
       "previousSha256": null,
-      "sha256": "3bb05497f420f7c0ef59c7af76c9a1c9d28a56c1fe22713a83d6bb455b2bb745",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "1358108d5e0b2c8b1534a53500613aff93cb1b0ad26f62795db5072771932d3b",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/sources/tests.rs",
       "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-      "sha256": "a0bebb609cd61c4fd4dd9ded0d5f6926538b6bbdd78367e88e0418bab0f412fd",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/mod.rs",
@@ -246,8 +246,8 @@
     {
       "path": "crates/camera-ffi/src/sources/hardware.rs",
       "previousSha256": null,
-      "sha256": "5fb116c69b7aa85a76e849acf17ade9a83d4ec68ada53d11666eda0490d4d1ab",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "9c91d9bbddf355ec0771fefe5edd99fe2ce39fc1cc45873579e23104ac2f4fbf",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/native.rs",
@@ -312,14 +312,14 @@
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
       "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
-      "sha256": "2fdd2d9f6ea36080db2c34d9e28eab3022419fdd23d9a7ce2a7a8801267ec56a",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "1af49dcdbf986aa62c256a062d62c96e12eadb956eb546cfb6810c89a34dc09b",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
       "previousSha256": null,
-      "sha256": "e06239d0d7fa1ca3376707061dc912f913e0735806375db59dc6586c750cf640",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "5c209b9c49fc89b46608070668b7ac8a68d26adf596488296b1d35fb5dc88797",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/vision/src/sdk/prepare.rs",
@@ -486,8 +486,8 @@
     {
       "path": "crates/vision-ffi/src/inference/selection.rs",
       "previousSha256": null,
-      "sha256": "5de45b9bf47a6624ba9a722e02932b571fd6f98cf119214805310885a350fae2",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "9d6fd74dacb1b4595327114209511b845524d7151a4c08b9b607cfaa5b28d963",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/vision-ffi/src/inference/selection_tests.rs",
@@ -540,8 +540,8 @@
     {
       "path": "crates/camera-ffi/src/captures/state.rs",
       "previousSha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5",
-      "sha256": "0d2fccb4770dea519ad699ac1a0803af06f9cc710c8f1af094bb3ae0eedff4a8",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged；R3固定Context服务登记/关闭基础存储并接线"
+      "sha256": "0a1a3dd54d796b455a8bc70b615b375532b274ec9b463fd0fe23824e2bd53dc9",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/captures/continuous.rs",
@@ -738,8 +738,8 @@
     {
       "path": "crates/camera-ffi/src/threads.rs",
       "previousSha256": null,
-      "sha256": "2143dd2ba71a45cf20592f7b80817d41c38b2dbfb908380f2bcd377d1b218a61",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "9e30f85cbc022953f2e27ddb0f201ce04b3ee44a271e547d2352b32541d91a57",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/sdk-support/src/lib.rs",
@@ -756,8 +756,8 @@
     {
       "path": "crates/sdk-support/tests/services.rs",
       "previousSha256": null,
-      "sha256": "23bf98844107dd94482c3a62802168f53f1c65bf190a29f14f55259ed266351a",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "8ed991bee050dc38f15d812434ff14b8a3a8fab4261669054e6c01eb0a66570a",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/sdk-support/src/buffers.rs",
@@ -810,8 +810,8 @@
     {
       "path": "crates/camera-ffi/src/probe/storage.rs",
       "previousSha256": null,
-      "sha256": "2d53e3c8caa9142b72b576c3e49f12855835ced96434c63fbd8359831d00f049",
-      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+      "sha256": "48cb49990c40af44119a79d106b2dac13bdc1dafda65203bade98e8718b117b1",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/probe/tests.rs",
@@ -822,8 +822,8 @@
     {
       "path": "crates/camera-ffi/src/frames/registry_tests.rs",
       "previousSha256": null,
-      "sha256": "09951ed2a69f88c3bac9f16558ca2b9a68201151660406abfcb7d4d146d7c15a",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "40f1bad19523640d6492b4e3627dc97854ec383bd1939abc282e02e8012e0354",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/registry.rs",
@@ -894,14 +894,20 @@
     {
       "path": "crates/vision-ffi/src/inference/models/metadata/tests.rs",
       "previousSha256": null,
-      "sha256": "7aa6474335b5a3bcada882e3f0e15a2adf97ae4d7f7d5e7ace8a0a9908dd977f",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+      "sha256": "15b0e2cfa99cd1c352747d12280073546d4e7b4956cfa90cbcad905c406df59e",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     },
     {
       "path": "crates/vision/src/sdk/model/validation_tests.rs",
       "previousSha256": null,
       "sha256": "aeaeed8c0207f4b226f872de768d0b375475011f91f092ba1e9dd45b023a30c3",
       "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/hardware/tests.rs",
+      "previousSha256": null,
+      "sha256": "10fbc67c60d3ed91aa000385fb2daedb5dc80f83d090f5debf633df4afc5b201",
+      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
     }
   ]
 }

@@ -504,7 +504,7 @@ pub unsafe extern "C" fn amc_decoder_get_info(
         unsafe { args::write(out, info) }
     })
 }
-pub(crate) fn hardware_report(key: usize) -> Result<serde_json::Value> {
+pub(crate) fn hardware_report(key: usize) -> Result<Vec<u8>> {
     let entry = domain().get(key)?;
     let decoder = entry.data::<Decoder>()?;
     let info = decoder
@@ -531,12 +531,29 @@ pub(crate) fn hardware_report(key: usize) -> Result<serde_json::Value> {
     } else {
         "initialized"
     };
-    Ok(
-        serde_json::json!({"schema":"framebraid.decode-hardware/1", "kind":"decoder", "state":state,
-        "selection":&*info.selection, "actual_backend":backend, "last_failure":info.last_failure,
-        "stream_verified":info.executed, "source_generation":decoder.generation.load(Ordering::Acquire),
-        "config_generation":info.config_generation}),
-    )
+    #[derive(serde::Serialize)]
+    struct Report<'a> {
+        schema: &'static str,
+        kind: &'static str,
+        state: &'static str,
+        selection: &'a am_camera_core::media::codec::selection::SelectionReport,
+        actual_backend: Option<&'a str>,
+        last_failure: Option<am_camera_core::media::codec::DecodeError>,
+        stream_verified: bool,
+        source_generation: u32,
+        config_generation: u32,
+    }
+    crate::hardware::serialize(&Report {
+        schema: "framebraid.decode-hardware/1",
+        kind: "decoder",
+        state,
+        selection: &info.selection,
+        actual_backend: backend,
+        last_failure: info.last_failure,
+        stream_verified: info.executed,
+        source_generation: decoder.generation.load(Ordering::Acquire),
+        config_generation: info.config_generation,
+    })
 }
 pub(crate) fn hardware_report_owner(key: usize) -> Result<Arc<CameraState>> {
     let entry = domain().get(key)?;

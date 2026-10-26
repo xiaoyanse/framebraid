@@ -195,3 +195,12 @@ mod tests {
         assert_eq!(budget.snapshot(), Ok((0, 2)));
     }
 }
+
+#[cfg(test)]
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!(
+        "r3_thread_foundation budget={} arc_header_bytes=16 max_contexts=8",
+        std::mem::size_of::<Budget>()
+    );
+}

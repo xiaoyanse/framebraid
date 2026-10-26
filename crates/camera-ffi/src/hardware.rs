@@ -10,7 +10,7 @@ use std::{
     },
     time::Duration,
 };
-const MAX_REPORT: usize = 64 * 1024;
+pub(crate) const REPORT_BYTES: usize = 16 * 1024;
 const QUERY_RESERVATION: usize = 32 * 1024;
 struct Cached {
     bytes: Vec<u8>,
@@ -70,7 +70,7 @@ pub unsafe extern "C" fn amc_probe_decode_hardware(
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
             .take();
         drop(previous);
-        let mut charge = state.control(MAX_REPORT, false)?;
+        let mut charge = state.control(QUERY_RESERVATION, false)?;
         let pixels = (state.limits()?.frame_budget_bytes / 4).min(8192 * 8192);
         if pixels == 0 {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
@@ -86,11 +86,28 @@ pub unsafe extern "C" fn amc_probe_decode_hardware(
         .map_err(crate::decoder::config::convert)?;
         // 本入口测试并释放设备；绝不将初始化测试报告成正在执行码流。
         drop(selected.decoder);
-        let value = serde_json::json!({"schema":"framebraid.decode-hardware/1", "kind":"probe",
-            "state":"probe_complete", "selection":selected.report, "actual_backend":null,
-            "last_failure":null, "stream_verified":false,
-            "completed_at_ms":am_sdk_support::clock::monotonic_ms()});
-        let bytes = serialize(value)?;
+        #[derive(serde::Serialize)]
+        struct Report<'a> {
+            schema: &'static str,
+            kind: &'static str,
+            state: &'static str,
+            selection: &'a am_camera_core::media::codec::selection::SelectionReport,
+            actual_backend: Option<&'static str>,
+            last_failure: Option<&'static str>,
+            stream_verified: bool,
+            completed_at_ms: i64,
+        }
+        let bytes = serialize(&Report {
+            schema: "framebraid.decode-hardware/1",
+            kind: "probe",
+            state: "probe_complete",
+            selection: &selected.report,
+            actual_backend: None,
+            last_failure: None,
+            stream_verified: false,
+            completed_at_ms: am_sdk_support::clock::monotonic_ms(),
+        })?;
+        drop(selected.report);
         charge.shrink_to(bytes.capacity() + std::mem::size_of::<Cached>() + 16)?;
         *slot.value.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)? = Some(Arc::new(Cached {
             bytes,
@@ -99,12 +116,31 @@ pub unsafe extern "C" fn amc_probe_decode_hardware(
         Ok(())
     })
 }
-fn serialize(value: serde_json::Value) -> Result<Vec<u8>> {
-    let bytes = serde_json::to_vec(&value).map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-    if bytes.len() >= MAX_REPORT {
+// 借用报告直接写入固定输出，超限不增长，不先构造JSON树副本。
+pub(crate) fn serialize(value: &impl serde::Serialize) -> Result<Vec<u8>> {
+    let mut bytes = Vec::new();
+    bytes
+        .try_reserve_exact(REPORT_BYTES)
+        .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+    if bytes.capacity() != REPORT_BYTES {
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
-    Ok(bytes)
+    let mut output = BoundedJson(bytes);
+    serde_json::to_writer(&mut output, value).map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+    Ok(output.0)
+}
+struct BoundedJson(Vec<u8>);
+impl std::io::Write for BoundedJson {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if bytes.len() > REPORT_BYTES - 1 - self.0.len() {
+            return Err(std::io::ErrorKind::WriteZero.into());
+        }
+        self.0.extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
 }
 unsafe fn copy_report(
     bytes: &[u8],
@@ -184,50 +220,14 @@ pub unsafe extern "C" fn amc_get_decode_hardware_report(
             crate::decoder::hardware_report_owner(object as usize)?
         };
         let _temporary = state.control(QUERY_RESERVATION, false)?;
-        let bytes = serialize(if source {
+        let bytes = if source {
             crate::sources::hardware::report(object as usize)?
         } else {
             crate::decoder::hardware_report(object as usize)?
-        })?;
+        };
         unsafe { copy_report(&bytes, buffer, capacity, required) }
     })
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-    #[test]
-    fn blocking_probe_rejects_callback_before_touching_handles_or_drivers() {
-        let _callback = am_sdk_support::callbacks::Scope::enter();
-        assert_eq!(
-            unsafe { amc_probe_decode_hardware(std::ptr::null_mut(), AM_CODEC_H264, 1) },
-            AM_ERR_SDK_CALLBACK_CONTRACT_VIOLATION
-        );
-    }
-    #[test]
-    fn json_copy_is_owned_bounded_nul_terminated_and_rejects_overlap() {
-        let mut needed = 0;
-        assert_eq!(
-            unsafe { copy_report(b"{}", std::ptr::null_mut(), 0, &mut needed) },
-            Ok(())
-        );
-        assert_eq!(needed, 3);
-        let mut out = [42i8; 4];
-        assert_eq!(
-            unsafe { copy_report(b"{}", out.as_mut_ptr(), 2, &mut needed) },
-            Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE)
-        );
-        assert_eq!(out, [0, 42, 42, 42]);
-        assert_eq!(
-            unsafe { copy_report(b"{}", out.as_mut_ptr(), 4, &mut needed) },
-            Ok(())
-        );
-        assert_eq!(out, [123, 125, 0, 42]);
-        let mut overlap = 0u64;
-        let ptr = &mut overlap as *mut u64;
-        assert_eq!(
-            unsafe { copy_report(b"{}", ptr.cast(), 8, ptr) },
-            Err(AM_ERR_SDK_INVALID_ARGUMENT)
-        );
-    }
-}
+mod tests;

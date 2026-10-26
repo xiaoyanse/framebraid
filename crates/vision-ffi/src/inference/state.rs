@@ -239,3 +239,13 @@ impl State {
         })
     }
 }
+
+#[cfg(test)]
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!(
+        "r3_vision_foundation state={} usage={} arc_header_bytes=16 max_contexts=8",
+        std::mem::size_of::<State>(),
+        std::mem::size_of::<Usage>()
+    );
+}

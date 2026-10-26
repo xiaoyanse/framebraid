@@ -42,3 +42,5 @@
 基础容量后续整合见[记录](sdk-r3-foundation-integration-20261027.md)：BP10补初始化/状态/Hub与全域源，BP11补共享固定索引及初始借用失败原子性。剩余快照/模型元数据仍保持父1.1开放；固定时长及全硬件矩阵的验收地位以最新用户裁决为准。
 
 模型元数据已明确IO双向+input副本418624B包络并验证195点失败回滚，每Run元数据克隆65→0；事件/stats快照固定栈，见[记录](sdk-r3-model-metadata-20261027.md)。所有来源/模型新增代码已纳同候选339项和真实CPU/RTSP定向回归；BP10最后边界汇总仍待。
+
+固定基础体、Media/Vision报告与原生/宿主边界已补测，见[报告记录](sdk-r3-report-storage-20261027.md)。本机all-features Context1224B、Media基础服务含Arc952B/Context、Vision392B/Context；Media实际7服务仍在16槽内，旧6服务观察已过时。最后新增模型文件读取竞态仍需修复后关闭父项；不恢复已撤销硬件矩阵/固定时长门槛。

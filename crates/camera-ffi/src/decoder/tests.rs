@@ -1,6 +1,10 @@
 use super::*;
 use am_camera_core::media::{ffmpeg_lib::FfmpegApi, ffmpeg_sys::AVFrame};
 use std::sync::{atomic::AtomicBool, OnceLock};
+fn hardware_report(key: usize) -> Result<serde_json::Value> {
+    let bytes = super::hardware_report(key)?;
+    Ok(serde_json::from_slice(&bytes).unwrap())
+}
 static API: OnceLock<Arc<FfmpegApi>> = OnceLock::new();
 static FAIL: AtomicBool = AtomicBool::new(false);
 unsafe extern "C" fn transfer(out: *mut AVFrame, src: *const AVFrame, flags: i32) -> i32 {

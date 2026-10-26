@@ -281,3 +281,9 @@ pub unsafe extern "C" fn amv_get_selection_attempt_report(
         }
     })
 }
+
+#[cfg(test)]
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!("r3_selection_foundation slot={} cached={} data={} cache_reservation={} query_reservation={} arc_header_bytes=16",std::mem::size_of::<Slot>(),std::mem::size_of::<Cached>(),std::mem::size_of::<Data>(),CACHE_BYTES,QUERY_BYTES);
+}

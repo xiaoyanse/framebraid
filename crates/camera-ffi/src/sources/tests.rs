@@ -44,10 +44,12 @@ fn source_decode_policy_is_shared_frozen_on_push_subscription_and_closed_report_
         AM_ERR_CAMERA_MODE_CONFLICT,
         "尚无回调的push订阅也必须冻结策略"
     );
-    let report = hardware::report(first as usize).unwrap();
+    let report: serde_json::Value =
+        serde_json::from_slice(&hardware::report(first as usize).unwrap()).unwrap();
     assert_eq!(report["policy_locked"], true);
     assert_eq!(report["actual_backend"], serde_json::Value::Null);
-    let closed = hardware::report(second as usize).unwrap();
+    let closed: serde_json::Value =
+        serde_json::from_slice(&hardware::report(second as usize).unwrap()).unwrap();
     assert_eq!(closed["state"], "closed");
     assert_eq!(closed["selection"], serde_json::Value::Null);
     assert_eq!(closed["decoder_active"], false);
@@ -71,7 +73,8 @@ fn source_decode_policy_is_shared_frozen_on_push_subscription_and_closed_report_
         .data::<Source>()
         .unwrap()
         .request_close();
-    let closing = hardware::report(first as usize).unwrap();
+    let closing: serde_json::Value =
+        serde_json::from_slice(&hardware::report(first as usize).unwrap()).unwrap();
     assert_eq!(closing["state"], "closing", "排空前不能报告closed");
     assert_eq!(closing["decoder_active"], false);
     let _callback = am_sdk_support::callbacks::Scope::enter();

@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Serialize borrowed decode hardware reports into admitted fixed storage instead of building JSON trees; record fixed foundation body costs. / [验证与取舍](docs/verification/sdk-r3-report-storage-20261027.md)，C ABI和JSON字段不变。
+
 - Make bounded model IO ownership copies fallible, release native sessions before failed-load permits, and borrow input metadata instead of cloning on each Run; use fixed source snapshots for events/statistics. / [量化和验证](docs/verification/sdk-r3-model-metadata-20261027.md)，C ABI不变。
 
 - Remove exhaustive hardware-matrix and mandatory 4h/24h soak gates from current optimization acceptance; retain scoped functional, recovery, resource and lifetime checks. / [用户裁决](docs/verification/sdk-acceptance-scope-20261027.md)，不是将未执行测试记为通过。

@@ -213,3 +213,13 @@ mod tests {
         assert_eq!(state.control_usage_snapshot().unwrap(), (0, 0));
     }
 }
+
+#[cfg(test)]
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!(
+        "r3_probe_foundation cache={} entry={} arc_header_bytes=16 max_contexts=8",
+        std::mem::size_of::<Cache>(),
+        std::mem::size_of::<Cached>()
+    );
+}

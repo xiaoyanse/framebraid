@@ -130,3 +130,8 @@ fn retained_state_prevents_destroy_and_does_not_free_a_ninth_context_slot() {
     }
     assert!(registry.idle());
 }
+
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!("r3_media_foundation camera_state={} usage={} metrics={} arc_header_bytes=16 max_contexts=8", std::mem::size_of::<CameraState>(),std::mem::size_of::<Usage>(),std::mem::size_of::<CameraMetrics>());
+}

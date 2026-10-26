@@ -20,3 +20,5 @@
 基础包整合已完成pending目录准入、固定8状态/64Hub快照、共享4/32/8表及全域源4096预留，具体边界/取舍/329项及真实DLL见[整合记录](sdk-r3-foundation-integration-20261027.md)。剩余重点为事件/stats临时快照、模型IO多份元数据fallible复制与服务固定本体汇总；不再将已收口项重复列为待实施。
 
 后续模型FFI元数据fallible复制/实际容量和每Run校验克隆、来源事件/stats临时快照已收口，见[模型记录](sdk-r3-model-metadata-20261027.md)及[快照记录](sdk-r3-source-snapshots-20261027.md)。剩余仅为固定服务体/核心与原生元信息、硬件JSON暂存及宿主调用栈的边界汇总，非新增完整硬件或长跑门槛。
+
+固定基础体、Media/Vision报告与原生/宿主边界已补测，见[报告记录](sdk-r3-report-storage-20261027.md)。本机all-features Context1224B、Media基础服务含Arc952B/Context、Vision392B/Context；Media实际7服务仍在16槽内，旧6服务观察已过时。最后新增模型文件读取竞态仍需修复后关闭父项；不恢复已撤销硬件矩阵/固定时长门槛。

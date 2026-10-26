@@ -372,3 +372,13 @@ fn invalid_runtime_directories_do_not_allocate_and_vision_failure_can_retry() {
     domain.close(key, 0).unwrap();
     domain.destroy(key).unwrap();
 }
+
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!(
+        "r3_context_foundation context={} services={} close_hooks={} arc_header_bytes=16",
+        std::mem::size_of::<Context>(),
+        std::mem::size_of::<Services>(),
+        std::mem::size_of::<CloseHooks>()
+    );
+}

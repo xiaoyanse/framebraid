@@ -241,3 +241,8 @@ fn equivalent_metadata_copy_allocation_work_is_compared_without_speed_claim() {
     assert!(new_calls <= old_calls);
     eprintln!("model_metadata allocation_comparison equivalent_io_items=32 previous_calls={old_calls} exact_fallible_calls={new_calls}; no_latency_claim=true");
 }
+
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!("r3_model_foundation handle={} info={} core_model={} tensor_info={} arc_header_bytes=16 max_models_per_context=8",std::mem::size_of::<super::super::ModelHandle>(),std::mem::size_of::<super::super::Info>(),std::mem::size_of::<am_vision_core::sdk::Model>(),std::mem::size_of::<TensorInfo>());
+}

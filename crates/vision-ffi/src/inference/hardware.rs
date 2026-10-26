@@ -211,3 +211,9 @@ mod tests {
         assert_eq!(bounded.0.capacity(), 32 * 1024);
     }
 }
+
+#[cfg(test)]
+#[test]
+fn fixed_foundation_layout_snapshot() {
+    println!("r3_vision_hardware_foundation slot={} cached={} cache_reservation={} query_reservation={} arc_header_bytes=16",std::mem::size_of::<Slot>(),std::mem::size_of::<Cached>(),CACHE_RESERVATION,QUERY_RESERVATION);
+}
