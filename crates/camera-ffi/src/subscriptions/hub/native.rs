@@ -159,9 +159,9 @@ impl Hub {
         state.generation = state.generation.checked_add(1).ok_or(IoError::Resource)?;
         state.failed(error, hardware, self.now());
         drop(state);
-        for sub in self
-            .list()
-            .into_iter()
+        let subscribers = self.list();
+        for sub in subscribers
+            .iter()
             .filter(|sub| matches!(sub.kind, Kind::Frames { .. }))
         {
             sub.reset();
@@ -195,9 +195,11 @@ mod tests {
             0,
         )
         .unwrap();
-        lock(&hub.subscribers)
-            .unwrap()
-            .extend([Arc::downgrade(&pixel), Arc::downgrade(&encoded)]);
+        {
+            let mut registry = lock(&hub.subscribers).unwrap();
+            registry.push(Arc::downgrade(&pixel)).unwrap();
+            registry.push(Arc::downgrade(&encoded)).unwrap();
+        }
         let bytes = std::fs::read(std::env::var("AM_SDK_HEVC_REXT_SAMPLE").unwrap()).unwrap();
         let info = StreamInfo {
             codec: AM_CODEC_H265,
@@ -266,7 +268,7 @@ mod tests {
             &source,
             &mut cpu.raw,
             &info,
-            std::slice::from_ref(&pixel),
+            &Snapshot::from_iter([pixel.clone()]),
             &VecDeque::from([(2, 2)]),
             stamp,
         )

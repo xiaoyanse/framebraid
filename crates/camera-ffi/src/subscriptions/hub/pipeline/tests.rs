@@ -264,12 +264,16 @@ fn sampling_wait_obeys_real_deadline_without_consuming_it_and_rejects_far_future
     let anchor = Instant::now() - Duration::from_millis(197);
     assert!(sub.due(anchor));
     let earliest = anchor + Duration::from_millis(200);
-    assert!(super::super::sampling::wait_due(std::slice::from_ref(&sub), &delivery).unwrap());
+    assert!(
+        super::super::sampling::wait_due(&Snapshot::from_iter([sub.clone()]), &delivery).unwrap()
+    );
     let actual = Instant::now();
     assert!(actual >= earliest);
     assert!(sub.due(actual));
     assert!(!sub.due(actual));
-    assert!(!super::super::sampling::wait_due(std::slice::from_ref(&sub), &delivery).unwrap());
+    assert!(
+        !super::super::sampling::wait_due(&Snapshot::from_iter([sub.clone()]), &delivery).unwrap()
+    );
     assert_eq!(
         pipe.wait_until(1, Instant::now() + Duration::from_secs(1)),
         Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE)
@@ -300,22 +304,22 @@ fn sampled_backlog_skips_old_pixels_but_unlimited_consumer_preserves_every_frame
     };
     let sampled = super::super::tests::sub(&source, &hub, 5, AM_SUB_PULL);
     assert!(super::super::sampling::superseded(
-        std::slice::from_ref(&sampled),
+        &Snapshot::from_iter([sampled.clone()]),
         &delivery
     ));
     let unlimited = super::super::tests::sub(&source, &hub, 0, AM_SUB_PULL);
     assert!(!super::super::sampling::superseded(
-        &[sampled.clone(), unlimited.clone()],
+        &Snapshot::from_iter([sampled.clone(), unlimited.clone()]),
         &delivery
     ));
     drop(pipe.pop().unwrap().unwrap());
     assert!(!super::super::sampling::superseded(
-        std::slice::from_ref(&sampled),
+        &Snapshot::from_iter([sampled.clone()]),
         &delivery
     ));
     pipe.stop();
     assert!(!super::super::sampling::superseded(
-        &[sampled.clone(), unlimited.clone()],
+        &Snapshot::from_iter([sampled.clone(), unlimited.clone()]),
         &delivery
     ));
     drop((sampled, unlimited, pipe, config, hub));

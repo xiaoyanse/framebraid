@@ -10,11 +10,14 @@ use am_camera_core::media::{
 };
 use std::thread::JoinHandle;
 mod consume;
+mod registry;
+pub(super) use registry::Snapshot;
+use registry::Subscribers;
 mod native;
 mod pipeline;
 mod sampling;
 #[cfg(test)]
-mod tests;
+pub(super) mod tests;
 #[derive(Clone, Copy)]
 struct SessionStamp {
     revision: u64,
@@ -24,7 +27,7 @@ struct SessionStamp {
 
 pub struct Hub {
     pub(super) source: Weak<SharedSource>,
-    pub(super) subscribers: Mutex<Vec<Weak<Subscription>>>,
+    pub(super) subscribers: Mutex<Subscribers>,
     pub(super) codec: AtomicU32,
     pub(super) changed: Condvar,
     revision: AtomicU64,
@@ -154,18 +157,15 @@ impl Hub {
             );
         }
     }
-    fn list(&self) -> Vec<Arc<Subscription>> {
+    fn list(&self) -> Snapshot {
         let Ok(mut subs) = self.subscribers.lock() else {
-            return Vec::new();
+            return Snapshot::default();
         };
-        subs.retain(|s| s.upgrade().is_some_and(|s| s.occupies_slot()));
-        subs.iter()
-            .filter_map(Weak::upgrade)
-            .filter(|s| !s.stopped())
-            .collect()
+        subs.prune();
+        subs.snapshot()
     }
     fn reset_subscribers(&self) {
-        for sub in self.list() {
+        for sub in self.list().iter() {
             sub.reset();
         }
     }
@@ -370,7 +370,7 @@ impl Hub {
         source: &Arc<SharedSource>,
         cpu: &mut crate::decoder::budget::BudgetedDecoder,
         info: &StreamInfo,
-        subs: &[Arc<Subscription>],
+        subs: &Snapshot,
         times: &VecDeque<(i64, i64)>,
         stamp: SessionStamp,
     ) -> std::result::Result<(), IoError> {
@@ -382,7 +382,7 @@ impl Hub {
         source: &Arc<SharedSource>,
         cpu: &mut crate::decoder::budget::BudgetedDecoder,
         info: &StreamInfo,
-        subs: &[Arc<Subscription>],
+        subs: &Snapshot,
         times: &VecDeque<(i64, i64)>,
         stamp: SessionStamp,
         mut delivery: Option<&mut pipeline::Delivery<'_>>,

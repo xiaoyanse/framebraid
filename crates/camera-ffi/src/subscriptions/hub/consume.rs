@@ -152,7 +152,7 @@ impl Hub {
                 if !self.current(source, stamp) {
                     return Err(IoError::Closed);
                 }
-                for sub in &subscribers {
+                for sub in subscribers.iter() {
                     if matches!(sub.kind, Kind::Encoded { .. }) {
                         sub.enqueue(Item::Encoded(data.clone()));
                     }

@@ -34,14 +34,16 @@ fn run(codec: u32, first: &str, alternate: &str) {
     hub.codec.store(codec, Ordering::Release);
     let mut config = configuration(&source, codec, 1, (256, 144));
     let rates = [5, 10, 30, 30];
-    let subscribers: Vec<_> = rates
+    let subscribers: Snapshot = rates
         .iter()
         .map(|fps| super::super::tests::sub(&source, &hub, *fps, AM_SUB_PULL))
         .collect();
-    hub.subscribers
-        .lock()
-        .unwrap()
-        .extend(subscribers.iter().map(Arc::downgrade));
+    {
+        let mut registry = hub.subscribers.lock().unwrap();
+        for sub in subscribers.iter() {
+            registry.push(Arc::downgrade(sub)).unwrap();
+        }
+    }
     let stamp = SessionStamp {
         revision: 0,
         generation: 1,

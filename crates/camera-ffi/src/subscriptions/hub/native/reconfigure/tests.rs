@@ -115,7 +115,7 @@ fn rtsp_parameter_rebuild_reuses_device_and_permit_and_preserves_owned_pixels() 
                     &source,
                     &mut decoder.raw,
                     &info,
-                    std::slice::from_ref(&pixel),
+                    &Snapshot::from_iter([pixel.clone()]),
                     &VecDeque::from([(pts, pts)]),
                     stamp,
                 )

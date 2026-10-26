@@ -2,6 +2,8 @@ use super::*;
 #[cfg(test)]
 mod budget_tests;
 #[cfg(test)]
+pub(crate) mod registry_tests;
+#[cfg(test)]
 pub(crate) fn isolated_test_state() -> (am_sdk_support::handles::Domain, Arc<CameraState>) {
     let domain = am_sdk_support::handles::Domain::new(false);
     let params = amc_init_params_t {
@@ -20,7 +22,6 @@ pub(crate) fn isolated_test_state() -> (am_sdk_support::handles::Domain, Arc<Cam
 use am_sdk_support::{args, buffers::Buffer, context::Context, handles::Entry, Result};
 use std::{
     any::Any,
-    collections::HashMap,
     ffi::c_void,
     sync::{atomic::Ordering, Arc, Mutex, Weak},
 };
@@ -55,70 +56,97 @@ pub struct CameraState {
     pub metrics: Arc<CameraMetrics>,
     usage: Arc<Mutex<Usage>>,
 }
-type States = Mutex<HashMap<usize, Weak<CameraState>>>;
+struct StateRegistry {
+    rows: [(usize, Weak<CameraState>); SDK_MAX_CONTEXTS as usize],
+}
+impl Default for StateRegistry {
+    fn default() -> Self {
+        Self {
+            rows: std::array::from_fn(|_| (0, Weak::new())),
+        }
+    }
+}
+impl StateRegistry {
+    #[cfg(any(windows, test))]
+    fn idle(&self) -> bool {
+        self.rows.iter().all(|(_, state)| state.strong_count() == 0)
+    }
+    fn state(
+        &mut self,
+        domain: &am_sdk_support::handles::Domain,
+        key: usize,
+    ) -> Result<Arc<CameraState>> {
+        for (stored_key, weak) in &mut self.rows {
+            if let Some(state) = weak.upgrade() {
+                if *stored_key == key {
+                    return Ok(state);
+                }
+            } else {
+                *stored_key = 0;
+                *weak = Weak::new();
+            }
+        }
+        let ctx = domain.get(key)?;
+        ctx.data::<Context>()?;
+        let slot = self
+            .rows
+            .iter_mut()
+            .find(|(key, _)| *key == 0)
+            .ok_or(AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+        let usage = {
+            let mut services = ctx
+                .data::<Context>()?
+                .services
+                .lock()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+            let id = std::any::TypeId::of::<Mutex<Usage>>();
+            services
+                .get_or_insert_with(id, || Arc::new(Mutex::<Usage>::default()))?
+                .downcast::<Mutex<Usage>>()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+        };
+        let metrics = {
+            let mut services = ctx
+                .data::<Context>()?
+                .services
+                .lock()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+            let id = std::any::TypeId::of::<CameraMetrics>();
+            services
+                .get_or_insert_with(id, || Arc::new(CameraMetrics::default()))?
+                .downcast::<CameraMetrics>()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+        };
+        let state = Arc::new(CameraState {
+            ctx,
+            ctx_key: key,
+            usage,
+            metrics,
+        });
+        *slot = (key, Arc::downgrade(&state));
+        Ok(state)
+    }
+}
+type States = Mutex<StateRegistry>;
 static STATES: am_sdk_support::unload::UnloadCell<States> =
     am_sdk_support::unload::UnloadCell::new();
 #[cfg(all(windows, not(test)))]
 pub fn unload_ready() -> bool {
-    STATES.get().is_none_or(|states| {
-        states
-            .try_lock()
-            .is_ok_and(|values| values.values().all(|state| state.strong_count() == 0))
-    })
+    STATES
+        .get()
+        .is_none_or(|states| states.try_lock().is_ok_and(|values| values.idle()))
 }
 #[cfg(all(windows, not(test)))]
 pub unsafe fn unload_static() {
-    let _ = unsafe {
-        STATES.clear_if(|states| {
-            states
-                .try_lock()
-                .is_ok_and(|values| values.values().all(|state| state.strong_count() == 0))
-        })
-    };
+    let _ =
+        unsafe { STATES.clear_if(|states| states.try_lock().is_ok_and(|values| values.idle())) };
 }
 pub fn camera_state(key: usize) -> Result<Arc<CameraState>> {
-    let mut states = STATES
+    STATES
         .get_or_init(Mutex::default)
         .lock()
-        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-    states.retain(|_, s| s.strong_count() != 0);
-    if let Some(state) = states.get(&key).and_then(Weak::upgrade) {
-        return Ok(state);
-    }
-    let ctx = domain().get(key)?;
-    ctx.data::<Context>()?;
-    let usage = {
-        let mut services = ctx
-            .data::<Context>()?
-            .services
-            .lock()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        let id = std::any::TypeId::of::<Mutex<Usage>>();
-        services
-            .get_or_insert_with(id, || Arc::new(Mutex::<Usage>::default()))?
-            .downcast::<Mutex<Usage>>()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-    };
-    let metrics = {
-        let mut services = ctx
-            .data::<Context>()?
-            .services
-            .lock()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        let id = std::any::TypeId::of::<CameraMetrics>();
-        services
-            .get_or_insert_with(id, || Arc::new(CameraMetrics::default()))?
-            .downcast::<CameraMetrics>()
-            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
-    };
-    let state = Arc::new(CameraState {
-        ctx,
-        ctx_key: key,
-        usage,
-        metrics,
-    });
-    states.insert(key, Arc::downgrade(&state));
-    Ok(state)
+        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+        .state(domain(), key)
 }
 impl CameraState {
     pub fn limits(&self) -> Result<am_limits_t> {
