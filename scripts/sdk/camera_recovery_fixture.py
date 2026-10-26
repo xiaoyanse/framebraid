@@ -329,6 +329,6 @@ def stats(lib, ctx):
     checked(lib.amc_get_stats(ctx, None, c.byref(value)))
     try:
         v = value.contents
-        return {n: getattr(v, n) for n in ["queue_items", "queue_bytes", "external_held_items", "external_held_bytes", "reconnect_count", "dropped", "resync_count"]}
+        return {n: getattr(v, n) for n in ["queue_items", "queue_bytes", "external_held_items", "external_held_bytes", "reconnect_count", "dropped", "resync_count", "frames_dropped", "accepted", "rejected_backpressure"]}
     finally:
         checked(lib.amc_stats_release(value))

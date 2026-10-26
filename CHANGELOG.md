@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Add controlled slow-consumer checks for same-source media subscribers, blocked callbacks, result quotas, inference notifications and shared-frame leases. / 补齐R3局部压力隔离验证与明确配额边界，见[记录](docs/verification/sdk-r3-pressure-isolation-20261027.md)，无生产接口变更，不代替长跑。
+
 - Add reproducible loopback C-source recovery and lifecycle checks: 20 disconnect/authentication faults, 100 real source starts/closes, capped retry waits, callback draining, request expiry and retained-result/native-batch cancellation checks. / 补齐R3恢复与启停实测，见[记录](docs/verification/sdk-r3-c-recovery-20261027.md)，不改SDK生产代码或公开ABI，不将短测当长跑。
 
 - Bound Rust H264Hub queues by both items and payload bytes, cap GOP pre-roll items, discard broken reference chains and prioritize video over stale overlays. Make close irreversible and register async waiting before checking terminal state to prevent lost close notifications. / 修复Rust辅助分发的预算、关键帧恢复和关闭唤醒，见[验证](docs/verification/sdk-r3-rust-fanout-20261027.md)，C ABI与已发布制品不变。

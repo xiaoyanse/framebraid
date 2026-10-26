@@ -1,5 +1,9 @@
 # FrameBraid 双 SDK 接入说明
 
+## Local pressure verification / 本地压力验证
+
+新增开发工具`test-camera-pressure.py`和`test-inference-pressure.py`分别验证同源慢消费者和CPU结果/通知/共享帧隔离，命令及目标卡见[记录](../docs/verification/sdk-r3-pressure-isolation-20261027.md)。结果总配额在Context内共享；若需隔离未取结果的消费者，应使用各自Context并遵守全域预算。活共享槽不能被超时强抢，满池明确拒绝；另一池仍独立受总映射预算约束。These developer checks do not promise unlimited isolation, hardware capacity or soak acceptance.
+
 ## Local recovery verification / 本地恢复验证
 
 Windows开发环境可运行`scripts/sdk/test-camera-recovery.py`，显式提供`--dll-dir`、`--runtime-dir`（FFmpeg）、`--mediamtx`和新的仓内`--work-dir`。默认20次故障、100次源启停及5次预热，随机回环端口、自产H.264和仅本轮合成认证，不使用相机地址；输出逐次结果与所拥有进程退出记录，拒绝覆盖旧测试目录。`test-inference-recovery-ownership.py`另需CPU ORT与合成Tensor/Batch模型目录。完整命令及范围见[验证](../docs/verification/sdk-r3-c-recovery-20261027.md)。These are local developer checks, not a hardware/soak support promise; no production interface changes.
