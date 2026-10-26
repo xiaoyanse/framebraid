@@ -30,6 +30,16 @@ impl std::ops::DerefMut for BudgetedDecoder {
     }
 }
 impl BudgetedDecoder {
+    pub(crate) fn reconfigure(
+        &mut self,
+        codec: VideoCodec,
+        extra: &[u8],
+        max_pixels: u64,
+    ) -> std::result::Result<CpuDecoder, DecodeError> {
+        let result = self.raw.reconfigure(codec, extra, max_pixels);
+        self.last_error = result.as_ref().err().copied();
+        result
+    }
     pub(crate) fn take_last_error(&mut self) -> Option<DecodeError> {
         self.last_error.take()
     }

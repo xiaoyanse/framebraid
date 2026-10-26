@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Reuse the selected device and decoder permit when RTSP codec parameters change, switch only at a new random-access picture, clear execution verification and preserve retained old frames. Local H.264/H.265 CPU/D3D11VA component and loopback DLL checks pass; sampling delivery, slow-driver isolation and full fault/soak coverage remain open. / RTSP参数重建不重复探测/创建设备，公开ABI和发布制品不变。
+
 - Write image preprocessing directly into the final aligned owned tensor, removing one full temporary f32 buffer/copy. Byte/transform reference checks, allocation/paired local timings, actual CPU Pose/NV12 and retained-camera input regressions verified locally; public API/ABI, budgets and released assets unchanged. / 前处理内部直写，640×640每次少4,915,200字节临时分配与复制，局部收益不外推系统性能。
 
 - Add loopback RTSP sampling/mixed-consumer measurements tied to a rebuilt Media DLL. Preserve observed delivery shortfalls and distinguish active queued-frame quota from post-drain leaks; no sampling-contract or performance-support change. / 补实际采样基线，保留30 FPS低交付问题，不将测试工具完成当功能通过。

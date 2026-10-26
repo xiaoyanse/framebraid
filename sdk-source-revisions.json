@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "ddae5152a8026090a55dd3501952c93e46922689",
+  "reviewBaseCommit": "72f86cdd7601464e91c24dbf89726d2ee757dab4",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -120,8 +120,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
       "previousSha256": null,
-      "sha256": "408cfabee453143ceeec09a7d2d54fde4f5632fa2c48e2bdd0b5584bd2bf1683",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "9232b2421d3f640f4dd6a7241036eb4fa9666904421218e8e90a317a1e07f1d3",
+      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
@@ -186,8 +186,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
       "previousSha256": null,
-      "sha256": "21091a02ef08112bbef8359e1c5a3ce6b27222f8c7c7f621c5fcf8b520a29619",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "3ab4aba4382ab04bf4bbc9426ec7b3d859badab20ecb0f64d55baf459f0d5c2b",
+      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
@@ -252,8 +252,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/native.rs",
       "previousSha256": null,
-      "sha256": "f64bce5df8dc9e1ce2cf6fe6efa173fd5bb5dfbbd5c4aede219c58edff3c92c1",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "d920ca7a86635f397afedf1124e5b047a8c8449ebc0b433685cfdaa6e6016ac2",
+      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
     },
     {
       "path": "crates/vision/src/sdk/mod.rs",
@@ -338,6 +338,18 @@
       "previousSha256": null,
       "sha256": "5fb6243dee273586fbcdb107788710c689cde6d528b423f2ae9c650b370411e4",
       "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/native/reconfigure.rs",
+      "previousSha256": null,
+      "sha256": "b1024115c993efd4da021b4eed60b39bb79ddddc9fd3eab6ae1a25de76a06b9f",
+      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/native/reconfigure/tests.rs",
+      "previousSha256": null,
+      "sha256": "f8a7b1bbfe3e7b3c241a0ba173b52b5ac918aa7034efa8fb07457f79828532b7",
+      "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
     }
   ]
 }

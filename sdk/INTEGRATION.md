@@ -226,6 +226,10 @@ cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-c
 
 Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; C model-selection extensions, accelerated inference and recovery acceptance remain open. See [core verification](../docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
 
+### Local RTSP parameter reuse / 本地RTSP参数复用
+
+Local RTSP parameter changes reuse the existing selected device and decoder permit at the next random-access picture; queried execution is cleared until a new frame succeeds. Retained frames remain valid. Budget pressure waits for a later random-access picture; native failure follows CPU recovery without replaying the failed RTSP packet. No new API or published asset is required by this internal change; see [validation](../docs/verification/sdk-r2-rtsp-reconfigure-20261026.md). / 本地参数重建复用不代表硬件整包或真实采样帧率问题已完成。
+
 ### Local inference device reports / 本地推理设备报告
 
 Unpublished ABI1.1 r8 only: use bindings and DLL from the same source revision. C callers invoke `amv_probe_inference_hardware(ctx, 1500)` explicitly, then `amv_get_inference_hardware_report(ctx, buffer, 65536, &required)`; required includes NUL. Zero-capacity length lookup does not probe. Python: `VisionContext(..., shared_frames=True).probe_inference_hardware()` / `.get_inference_hardware_report()`; C#: `ProbeInferenceHardware()` / `GetInferenceHardwareReport()`. Close/dispose the context normally. Examples of exact raw calls and buffer/error handling are in `scripts/sdk/test-inference-hardware.py`.

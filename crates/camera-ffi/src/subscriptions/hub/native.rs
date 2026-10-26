@@ -3,6 +3,13 @@ use super::*;
 use crate::decoder::budget::BudgetedDecoder;
 use am_camera_core::media::codec::{selection::HardwarePolicy, DecodeError};
 use std::hash::{Hash, Hasher};
+mod reconfigure;
+
+fn configuration_key(info: &StreamInfo, extra: &[u8]) -> u64 {
+    let mut hash = std::collections::hash_map::DefaultHasher::new();
+    (info.codec, info.width, info.height, extra).hash(&mut hash);
+    hash.finish()
+}
 
 pub(super) struct NativeDecoder {
     pub raw: BudgetedDecoder,
@@ -38,9 +45,7 @@ impl NativeDecoder {
         extra: &[u8],
         now: Instant,
     ) -> Result<Option<Self>> {
-        let mut hash = std::collections::hash_map::DefaultHasher::new();
-        (info.codec, info.width, info.height, extra).hash(&mut hash);
-        let key = hash.finish();
+        let key = configuration_key(info, extra);
         let policy = {
             let mut state = lock(&source.decode)?;
             let Some(policy) = state.prepare(key, now) else {

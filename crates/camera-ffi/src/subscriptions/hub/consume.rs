@@ -57,6 +57,7 @@ impl Hub {
         }
         drop(_initial_charge);
         let mut decoder: Option<super::native::NativeDecoder> = None;
+        let mut reconfigure_pending = false;
         let mut times = VecDeque::new();
         let _times_charge = source
             .state
@@ -100,7 +101,13 @@ impl Hub {
                     cache_bytes = extra.len() as u64;
                     source.config_generation.fetch_add(1, Ordering::AcqRel);
                     gate.dirty = false;
-                    decoder.take();
+                    reconfigure_pending = decoder.is_some();
+                    if reconfigure_pending {
+                        let mut state = lock(&source.decode).map_err(|_| IoError::Resource)?;
+                        state.actual = None;
+                        state.active = false;
+                        state.phase = "waiting_keyframe";
+                    }
                     times.clear();
                     self.reset_subscribers();
                     source.event(
@@ -155,6 +162,7 @@ impl Hub {
             let frames = subscribers.iter().any(|s| s.wants_frames());
             if !frames {
                 decoder.take();
+                reconfigure_pending = false;
                 times.clear();
                 if let Ok(mut state) = source.decode.lock() {
                     state.idle();
@@ -163,6 +171,35 @@ impl Hub {
                 continue;
             }
             if let Some(codec) = codec {
+                if reconfigure_pending {
+                    if !random {
+                        continue;
+                    }
+                    let _extra_charge = match source.state.charge(cache_bytes, false) {
+                        Ok(charge) => charge,
+                        Err(_) => {
+                            source.report(
+                                AM_SRC_LIVE as u32,
+                                AM_FAULT_RESOURCE as u32,
+                                c"camera.pixelOutputResourceWait",
+                            );
+                            continue;
+                        }
+                    };
+                    if !self.reconfigure_pixels(
+                        source,
+                        &mut decoder,
+                        codec,
+                        &info,
+                        &gate.as_ref().map_or_else(Vec::new, Gate::extra),
+                        random,
+                    )? {
+                        // 故障已清空旧decoder时，下一随机访问点走既有create/CPU恢复。
+                        reconfigure_pending = decoder.is_some();
+                        continue;
+                    }
+                    reconfigure_pending = false;
+                }
                 if decoder.is_none() {
                     if !random {
                         if source.fault.load(Ordering::Acquire) != AM_FAULT_RESOURCE as u32 {
