@@ -36,3 +36,5 @@ Finite local tests do not establish universal FPS, camera counts, lossless queue
 有限测试不保证通用 FPS、路数、无损队列、端到端延迟或 7×24 稳定性。设置预算、观测诊断并按负载验收。模型置信度不证明无危险，安全级停机须独立安全系统。
 
 This is a capability statement, not an additional license restriction. / 本文为能力说明，不增加许可限制。
+
+Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hardware-20261026.md) covers shared policy, actual D3D11VA and CPU/MJPEG controls. Hardware availability is separate from speed; reader isolation, full hardware/pressure/soak acceptance and H5 remain open. Published v0.1.0 is unchanged. / 本地候选与旧公开CPU制品区分，H2整体未关闭。

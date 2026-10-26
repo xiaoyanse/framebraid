@@ -7,6 +7,7 @@ impl Hub {
         reader: &mut Reader,
         stamp: SessionStamp,
     ) -> std::result::Result<(), IoError> {
+        let _activity = super::native::Activity(Arc::downgrade(source));
         let old = reader.info();
         let _info_charge = source
             .state
@@ -27,6 +28,16 @@ impl Hub {
             AM_CODEC_MJPEG => None,
             _ => return Err(IoError::Unsupported),
         };
+        if codec.is_none() {
+            let mut state = lock(&source.decode).map_err(|_| IoError::Resource)?;
+            state.selection.take();
+            state.report_charge.take();
+            state.key = None;
+            state.failure = None;
+            state.last_status = None;
+            state.recovered = false;
+            state.effective = AM_DHW_SOFTWARE_ONLY as u32;
+        }
         let _initial_charge = source
             .state
             .charge(info.extradata.len() as u64, false)
@@ -45,10 +56,7 @@ impl Hub {
             gate.dirty = false;
         }
         drop(_initial_charge);
-        let mut decoder: Option<(
-            crate::decoder::budget::BudgetedDecoder,
-            crate::frames::DecoderPermit,
-        )> = None;
+        let mut decoder: Option<super::native::NativeDecoder> = None;
         let mut times = VecDeque::new();
         let _times_charge = source
             .state
@@ -93,6 +101,7 @@ impl Hub {
                     source.config_generation.fetch_add(1, Ordering::AcqRel);
                     gate.dirty = false;
                     decoder.take();
+                    times.clear();
                     self.reset_subscribers();
                     source.event(
                         AM_EVENT_SPATIAL_CHANGED,
@@ -146,6 +155,10 @@ impl Hub {
             let frames = subscribers.iter().any(|s| s.wants_frames());
             if !frames {
                 decoder.take();
+                times.clear();
+                if let Ok(mut state) = source.decode.lock() {
+                    state.idle();
+                }
                 source.received(received);
                 continue;
             }
@@ -161,54 +174,87 @@ impl Hub {
                         }
                         continue;
                     }
-                    let permit = match source.state.decoder() {
-                        Ok(permit) => permit,
-                        Err(_) => {
+                    let extra = gate.as_ref().map_or_else(Vec::new, Gate::extra);
+                    let _extra_charge = match source.state.charge(extra.len() as u64, false) {
+                        Ok(charge) => charge,
+                        Err(_) => continue,
+                    };
+                    match super::native::NativeDecoder::create(
+                        source,
+                        codec,
+                        &info,
+                        &extra,
+                        self.now(),
+                    ) {
+                        Ok(Some(value)) => decoder = Some(value),
+                        Ok(None) => continue,
+                        Err(code) => {
+                            if let Ok(mut state) = source.decode.lock() {
+                                state.last_status = Some(code);
+                                state.retry_after = Some(self.now() + Duration::from_secs(1));
+                                state.actual = None;
+                                state.active = false;
+                                state.phase = if code == AM_ERR_SDK_RESOURCE_EXHAUSTED {
+                                    "waiting_resource"
+                                } else {
+                                    "failed"
+                                };
+                            }
                             source.report(
                                 AM_SRC_LIVE as u32,
                                 AM_FAULT_RESOURCE as u32,
-                                c"camera.decoderBudgetExceeded",
+                                c"camera.pixelDecoderUnavailable",
                             );
                             continue;
                         }
-                    };
-                    let extra = gate.as_ref().map_or_else(Vec::new, Gate::extra);
-                    let _extra_charge = source
-                        .state
-                        .charge(extra.len() as u64, false)
-                        .map_err(|_| IoError::Resource)?;
-                    let cpu = CpuDecoder::create(
-                        config::runtime(&source.state).map_err(|_| IoError::Unsupported)?,
-                        codec,
-                        &extra,
-                        (source
-                            .state
-                            .limits()
-                            .map_err(|_| IoError::Resource)?
-                            .frame_budget_bytes
-                            / 4)
-                        .min(8192 * 8192),
-                    )
-                    .map_err(|_| IoError::Unsupported)?;
-                    decoder = Some((crate::decoder::budget::BudgetedDecoder::from(cpu), permit));
+                    }
                 }
                 times.push_back((packet.pts, received));
                 while times.len() > 128 {
                     times.pop_front();
                 }
-                if let Some((cpu, _permit)) = &mut decoder {
-                    let mut sent = cpu
-                        .send(&data.bytes, packet.pts, packet.dts)
-                        .map_err(|_| IoError::Invalid)?;
-                    self.emit_decoded::<true>(source, cpu, &info, &subscribers, &times, stamp)?;
-                    if !sent {
-                        sent = cpu
+                if let Some(native) = &mut decoder {
+                    let cpu = &mut native.raw;
+                    let decoded = (|| {
+                        let mut sent = cpu
                             .send(&data.bytes, packet.pts, packet.dts)
                             .map_err(|_| IoError::Invalid)?;
                         self.emit_decoded::<true>(source, cpu, &info, &subscribers, &times, stamp)?;
-                    }
-                    if !sent {
-                        return Err(IoError::Resource);
+                        if !sent {
+                            sent = cpu
+                                .send(&data.bytes, packet.pts, packet.dts)
+                                .map_err(|_| IoError::Invalid)?;
+                            self.emit_decoded::<true>(
+                                source,
+                                cpu,
+                                &info,
+                                &subscribers,
+                                &times,
+                                stamp,
+                            )?;
+                        }
+                        if sent {
+                            Ok(())
+                        } else {
+                            Err(IoError::Resource)
+                        }
+                    })();
+                    match decoded {
+                        Ok(()) => {}
+                        Err(IoError::Closed) => return Err(IoError::Closed),
+                        Err(IoError::Resource) => {
+                            source.report(
+                                AM_SRC_LIVE as u32,
+                                AM_FAULT_RESOURCE as u32,
+                                c"camera.pixelOutputResourceWait",
+                            );
+                        }
+                        Err(_) => self.pixel_failure(
+                            source,
+                            &mut decoder,
+                            &mut times,
+                            am_camera_core::media::codec::DecodeError::InvalidInput,
+                        )?,
                     }
                 }
             } else {
@@ -259,6 +305,13 @@ impl Hub {
                 let image =
                     am_camera_core::media::sdk_io::decode_image(header.encoded, max_pixels, true)?;
                 if let Some(rgba) = image.rgba {
+                    {
+                        let mut state = lock(&source.decode).map_err(|_| IoError::Resource)?;
+                        state.actual = Some("image-cpu");
+                        state.effective = AM_DHW_SOFTWARE_ONLY as u32;
+                        state.active = true;
+                        state.phase = "verified";
+                    }
                     source.state.metrics.decoded.fetch_add(1, Ordering::AcqRel);
                     self.observe_dimensions(source, image.width, image.height);
                     if !self.current(source, stamp) {

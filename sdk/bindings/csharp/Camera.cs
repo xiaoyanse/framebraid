@@ -52,6 +52,13 @@ namespace AmrtSdk {
         }
     }
     public sealed class CameraSource : OwnedResource {
+        public string GetDecodeHardwareReport() { lock (Gate) { return HardwareReports.Read(Raw); } }
+        public void SetDecodePolicy(bool softwareOnly) {
+            lock (Gate) {
+                HardwareReports.RequireApi();
+                Diagnostics.Check(Native.amc_source_set_decode_policy(Raw, softwareOnly ? 1U : 0U), "set source decode policy", Raw, false);
+            }
+        }
         private readonly CameraContext context;
         internal CameraSource(CameraContext owner, IntPtr raw) : base(raw, owner, Native.amc_source_close, Native.amc_object_destroy, null) { context = owner; }
         public CapturedImage Capture(bool cpuPixels) {

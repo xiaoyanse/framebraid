@@ -3,6 +3,95 @@ use am_camera_core::media::{ffmpeg_lib::FfmpegApi, ffmpeg_sys::SwsContext};
 use std::{ffi::c_int, hash::Hasher, sync::OnceLock};
 static API: OnceLock<Arc<FfmpegApi>> = OnceLock::new();
 static CONVERSIONS: AtomicU64 = AtomicU64::new(0);
+
+#[test]
+#[ignore = "显式设置FFmpeg/H264合成1080p单AU；当前策略A/B，不是RTSP吞吐基准"]
+fn native_stream_policy_quantifies_processing_cost_and_delivery() {
+    let sample = std::fs::read(std::env::var("AM_SDK_H264_SAMPLE").unwrap()).unwrap();
+    for round in 0..3 {
+        let order = if round % 2 == 0 {
+            [AM_DHW_SOFTWARE_ONLY, AM_DHW_PREFER_HW]
+        } else {
+            [AM_DHW_PREFER_HW, AM_DHW_SOFTWARE_ONLY]
+        };
+        for policy in order {
+            let (domain, source, hub, _) = fixture();
+            lock(&source.decode).unwrap().policy = policy as u32;
+            let info = StreamInfo {
+                codec: AM_CODEC_H264,
+                width: 1920,
+                height: 1080,
+                fps: 30.0,
+                time_base_num: 1,
+                time_base_den: 30,
+                extradata: vec![],
+            };
+            let start = Instant::now();
+            let mut native = super::native::NativeDecoder::create(
+                &source,
+                VideoCodec::H264,
+                &info,
+                &[],
+                hub.now(),
+            )
+            .unwrap()
+            .unwrap();
+            let initialization_us = start.elapsed().as_micros();
+            let subscription = sub(&source, &hub, 0, AM_SUB_PULL);
+            let stamp = SessionStamp {
+                revision: 0,
+                generation: 1,
+                credentials: source.credential_version(),
+            };
+            let mut costs = Vec::new();
+            let mut delivered = 0;
+            for n in -20..120 {
+                let start = Instant::now();
+                assert!(native.raw.send(&sample, n, n).unwrap());
+                hub.emit_decoded::<true>(
+                    &source,
+                    &mut native.raw,
+                    &info,
+                    std::slice::from_ref(&subscription),
+                    &VecDeque::from([(n, 1000 + n)]),
+                    stamp,
+                )
+                .unwrap();
+                let cost = start.elapsed().as_micros();
+                let Item::Frame(frame) = subscription.pull(0).unwrap() else {
+                    panic!("像素订阅必须交付真实帧")
+                };
+                assert_eq!((frame.meta.pts, frame.meta.received_at_ms), (n, 1000 + n));
+                assert_eq!(frame.data.len(), 1920 * 1080 * 4);
+                if n >= 0 {
+                    costs.push(cost);
+                    delivered += 1;
+                }
+            }
+            let report = lock(&source.decode).unwrap();
+            assert_eq!(
+                report.actual,
+                Some(if policy == AM_DHW_SOFTWARE_ONLY {
+                    "ffmpeg-cpu"
+                } else {
+                    "ffmpeg-d3d11va"
+                }),
+                "本机量化需真实D3D11VA，不把CPU回退计作硬件策略"
+            );
+            let backend = report.actual.unwrap();
+            costs.sort_unstable();
+            println!("stream-policy-quant {{\"round\":{round},\"policy\":{policy},\"backend\":\"{backend}\",\"initialization_us\":{initialization_us},\"frames\":{delivered},\"warmup\":20,\"median_us\":{},\"p95_us\":{},\"total_us\":{},\"budget_bytes_after\":{},\"scope\":\"send+receive+RGBA readback+production fanout; repeated IDR; no network/consumer copy\"}}",
+                costs[costs.len()/2],costs[(costs.len()*95).div_ceil(100)-1],costs.iter().sum::<u128>(),source.state.usage_snapshot().unwrap().0);
+            drop(report);
+            drop((subscription, native, hub));
+            assert_eq!(source.state.usage_snapshot().unwrap(), (0, 0, 0));
+            let key = source.state.ctx_key;
+            drop(source);
+            domain.close(key, 100).unwrap();
+            domain.destroy(key).unwrap();
+        }
+    }
+}
 unsafe extern "C" fn scale(
     ctx: *mut SwsContext,
     src: *const *const u8,
@@ -15,7 +104,7 @@ unsafe extern "C" fn scale(
     CONVERSIONS.fetch_add(1, Ordering::Relaxed);
     unsafe { (API.get().unwrap().sws_scale)(ctx, src, stride, y, h, dst, out_stride) }
 }
-fn fixture() -> (
+pub(super) fn fixture() -> (
     am_sdk_support::handles::Domain,
     Arc<SharedSource>,
     Arc<Hub>,
@@ -45,7 +134,7 @@ fn fixture() -> (
     });
     (domain, source, hub, nanos)
 }
-fn sub(source: &SharedSource, hub: &Arc<Hub>, fps: u32, mode: u32) -> Arc<Subscription> {
+pub(super) fn sub(source: &SharedSource, hub: &Arc<Hub>, fps: u32, mode: u32) -> Arc<Subscription> {
     Subscription::new(
         source.state.clone(),
         hub,

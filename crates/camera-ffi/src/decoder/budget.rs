@@ -30,8 +30,17 @@ impl std::ops::DerefMut for BudgetedDecoder {
     }
 }
 impl BudgetedDecoder {
-    pub(super) fn take_last_error(&mut self) -> Option<DecodeError> {
+    pub(crate) fn take_last_error(&mut self) -> Option<DecodeError> {
         self.last_error.take()
+    }
+    pub(crate) fn peek(
+        &mut self,
+    ) -> std::result::Result<Option<am_camera_core::media::codec::FrameInfo>, DecodeError> {
+        let result = self.raw.peek();
+        if let Err(error) = result {
+            self.last_error = Some(error);
+        }
+        result
     }
     pub(super) fn clear_cache(&mut self) {
         self.raw.release_readback_cache();
@@ -40,7 +49,22 @@ impl BudgetedDecoder {
     }
     pub(crate) fn discard_frame(&mut self) -> std::result::Result<(), DecodeError> {
         let result = self.raw.discard_frame();
+        if let Err(error) = result {
+            self.last_error = Some(error);
+        }
         self.clear_cache();
+        result
+    }
+    pub(crate) fn send(
+        &mut self,
+        bytes: &[u8],
+        pts: i64,
+        dts: i64,
+    ) -> std::result::Result<bool, DecodeError> {
+        let result = self.raw.send(bytes, pts, dts);
+        if let Err(error) = result {
+            self.last_error = Some(error);
+        }
         result
     }
 }

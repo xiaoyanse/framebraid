@@ -13,7 +13,7 @@
 
 R2本地Rust兼容新增的设备探测/显式硬解合同见[native hardware](native-hardware.md)。不改变本文1.0 C ABI，直接解码/RTSP的自动选择及诊断导出仍须按H2后续任务完成；设备探测成功不能作为C接口已硬解的证明。
 
-本地H2.3a已将既有PREFER_HW策略接入直接C解码器，新增实现语义与恢复约束见上述硬件合同及[验证](../verification/sdk-r2-direct-auto-20261026.md)。布局、枚举和1.0冻结未变；get_info的NULL未定/实际后端语义沿用附录，RTSP及完整设备诊断仍未完成，不扩张旧公开制品承诺。
+本地H2.3a已将既有PREFER_HW策略接入直接C解码器，新增实现语义与恢复约束见上述硬件合同及[验证](../verification/sdk-r2-direct-auto-20261026.md)。布局、枚举和1.0冻结未变；get_info的NULL未定/实际后端语义沿用附录，RTSP基本接线r7已完成，完整设备/耐压诊断仍未完成，不扩张旧公开制品承诺。
 
 ## 0. 范围与读法
 
@@ -100,15 +100,21 @@ R2本地Rust兼容新增的设备探测/显式硬解合同见[native hardware](n
    依赖缺失返回明确错误；设备不可用时保存带逐项原因的CPU选择报告并成功返回。 */
 AM_API am_status_t amc_probe_decode_hardware(amc_context_t* ctx,
                                             uint32_t codec, uint32_t budget_ms);
-/* object为context或独立decoder；NULL缓冲+capacity=0查询所需字节（含NUL）。
+/* object为context、独立decoder或source；NULL缓冲+capacity=0查询所需字节（含NUL）。
    返回UTF8 JSON schema=framebraid.decode-hardware/1，最大64KiB。
    容量不足写required，buffer首字节置0并返回sdk.limitOutOfRange；不返回半份JSON。
    快照只复制已有状态，不探测、不创建会话；字符串由调用方缓冲拥有，属于回调查询白名单。
    context未显式probe时state=not_probed；decoder关闭后仍可查最后观察结果。
-   现阶段不接受source句柄，RTSP控制/快照由后续兼容扩展接入，禁止假成功。 */
+   source关闭返回closed和空执行状态；不泄露其他共享拥有者后续活动。 */
 AM_API am_status_t amc_get_decode_hardware_report(void* object, char* buffer_utf8,
                                                  uint64_t capacity, uint64_t* required);
+/* RTSP源的共享连接策略；单拥有者、首次像素订阅前可变；同值幂等。
+   策略0=PREFER_HW/1=SOFTWARE_ONLY；共享或冻结后变更=modeConflict。
+   不启动探测，ISAPI源=modeConflict，回调内拒绝重入。 */
+AM_API am_status_t amc_source_set_decode_policy(amc_source_t* source, uint32_t policy);
 ```
+
+本地r7兼容扩展支持source快照（kind=source），包含requested_policy/effective_policy、decoder_active与最近原因；源排空期间返回closing、完成后才返回closed，两者均隐藏实际执行状态。RTSP故障/冷却/配置代次的边界见[native-hardware](native-hardware.md) H2.3b。r6原件保留，1.1尚未对外发布，开发绑定仍须与同提交DLL配套。
 
 JSON必需字段schema、kind、state、selection、actual_backend、last_failure；context有探测完成的单调时钟completed_at_ms。selection沿用拥有的Rust选择报告，包含policy、selected（后端与设备）、attempts（初始化/目标配置/资源/预算/忙等原因）、fallback、elapsed_ms。selected只代表初始化选择，实际码流只能由decoder真实帧确定；probe报告actual_backend始终null，设备已释放。decoder的state区分initialized/verified/recovered_cpu/closed，实际值是最近观察结果，不表示关闭后仍持有设备；last_failure保留原生解码错误类别与可用的错误号。普通查询不会刷新设备列表，显式probe/reset才刷新。GPU标识无凭据、地址或运行库路径；LUID为无符号整数，调用方不得经浮点损失精度或与CUDA ordinal混同。
 

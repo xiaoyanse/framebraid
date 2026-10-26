@@ -9,5 +9,7 @@ namespace AmrtSdk {
         internal static extern int amc_probe_decode_hardware(IntPtr arg0, uint arg1, uint arg2);
         [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]
         internal static extern int amc_get_decode_hardware_report(IntPtr arg0, IntPtr arg1, ulong arg2, IntPtr arg3);
+        [DllImport("am_camera.dll", CallingConvention=CallingConvention.Cdecl)]
+        internal static extern int amc_source_set_decode_policy(IntPtr arg0, uint arg1);
     }
 }

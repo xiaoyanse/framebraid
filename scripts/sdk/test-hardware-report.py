@@ -42,6 +42,15 @@ def snapshot(lib, owner):
     for name in ("kind", "state", "actual_backend"):
         assert value[name] in CONTRACT["properties"][name]["enum"]
     assert type(value["stream_verified"]) is bool
+    if value["kind"] == "source":
+        for name in ("requested_policy", "effective_policy"):
+            assert value[name] in (0, 1)
+        assert type(value["decoder_active"]) is bool
+        assert type(value["policy_locked"]) is bool
+        assert value["decode_generation"] >= 1
+        if value["state"] == "closed":
+            assert value["actual_backend"] is None and value["selection"] is None
+            assert not value["decoder_active"] and not value["stream_verified"]
     if value["selection"] is not None:
         contract = CONTRACT["properties"]["selection"]["oneOf"][1]
         assert set(contract["required"]).issubset(value["selection"])

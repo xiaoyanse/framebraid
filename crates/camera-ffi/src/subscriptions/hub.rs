@@ -9,6 +9,7 @@ use am_camera_core::media::{
 };
 use std::thread::JoinHandle;
 mod consume;
+mod native;
 #[cfg(test)]
 mod tests;
 #[derive(Clone, Copy)]
@@ -367,6 +368,20 @@ impl Hub {
             let Some(next) = cpu.peek().map_err(|_| IoError::Invalid)? else {
                 break;
             };
+            {
+                let mut hardware = lock(&source.decode).map_err(|_| IoError::Resource)?;
+                hardware.actual = Some(match cpu.hardware_backend() {
+                    Some(am_camera_core::media::hardware::Backend::D3d11va) => "ffmpeg-d3d11va",
+                    Some(am_camera_core::media::hardware::Backend::Dxva2) => "ffmpeg-dxva2",
+                    None => "ffmpeg-cpu",
+                });
+                hardware.active = true;
+                hardware.phase = if hardware.recovered {
+                    "recovered_cpu"
+                } else {
+                    "verified"
+                };
+            }
             source.state.metrics.decoded.fetch_add(1, Ordering::AcqRel);
             let received = times
                 .iter()

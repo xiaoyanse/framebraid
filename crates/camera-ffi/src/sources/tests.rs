@@ -1,6 +1,86 @@
 use super::{api::*, *};
 use std::time::{Duration, Instant};
 
+#[test]
+fn source_decode_policy_is_shared_frozen_on_push_subscription_and_closed_report_is_idle() {
+    let mut f = Fixture::new();
+    let desc = am_source_desc_t {
+        kind: AM_SRC_RTSP_URL as u32,
+        url_utf8: c"rtsp://127.0.0.1:9/isolated".as_ptr(),
+        reuse: 1,
+        ..Default::default()
+    };
+    let mut first = std::ptr::null_mut();
+    assert_eq!(unsafe { amc_source_open(f.ctx as _, &desc, &mut first) }, 0);
+    f.sources.push(first as usize);
+    let set = hardware::amc_source_set_decode_policy;
+    assert_eq!(unsafe { set(first, AM_DHW_SOFTWARE_ONLY as u32) }, 0);
+    let mut second = std::ptr::null_mut();
+    assert_eq!(
+        unsafe { amc_source_open(f.ctx as _, &desc, &mut second) },
+        0
+    );
+    f.sources.push(second as usize);
+    assert_eq!(
+        unsafe { set(first, AM_DHW_PREFER_HW as u32) },
+        AM_ERR_CAMERA_MODE_CONFLICT
+    );
+    assert_eq!(unsafe { set(second, AM_DHW_SOFTWARE_ONLY as u32) }, 0);
+    let mut lifecycle = 0;
+    assert_eq!(unsafe { amc_source_close(second, 100, &mut lifecycle) }, 0);
+    assert_eq!(unsafe { set(first, AM_DHW_PREFER_HW as u32) }, 0);
+    let subscription = am_frame_sub_desc_t {
+        pixel_format: AM_PF_RGBA8 as u32,
+        mode: AM_SUB_PUSH,
+        ..Default::default()
+    };
+    let mut sub = std::ptr::null_mut();
+    assert_eq!(
+        unsafe { crate::subscriptions::amc_subscribe_frames(first, &subscription, &mut sub) },
+        0
+    );
+    assert_eq!(
+        unsafe { set(first, AM_DHW_SOFTWARE_ONLY as u32) },
+        AM_ERR_CAMERA_MODE_CONFLICT,
+        "尚无回调的push订阅也必须冻结策略"
+    );
+    let report = hardware::report(first as usize).unwrap();
+    assert_eq!(report["policy_locked"], true);
+    assert_eq!(report["actual_backend"], serde_json::Value::Null);
+    let closed = hardware::report(second as usize).unwrap();
+    assert_eq!(closed["state"], "closed");
+    assert_eq!(closed["selection"], serde_json::Value::Null);
+    assert_eq!(closed["decoder_active"], false);
+    assert_eq!(
+        unsafe { crate::subscriptions::amc_frame_unsubscribe(sub, 100, &mut lifecycle) },
+        0
+    );
+    domain().destroy(sub as usize).unwrap();
+    assert_eq!(
+        unsafe { set(first, AM_DHW_SOFTWARE_ONLY as u32) },
+        AM_ERR_CAMERA_MODE_CONFLICT,
+        "撤销订阅后不隐式解锁"
+    );
+    let isapi = f.open(std::ptr::null(), std::ptr::null(), 0);
+    assert_eq!(
+        unsafe { set(isapi as _, AM_DHW_PREFER_HW as u32) },
+        AM_ERR_CAMERA_MODE_CONFLICT
+    );
+    get(first as usize)
+        .unwrap()
+        .data::<Source>()
+        .unwrap()
+        .request_close();
+    let closing = hardware::report(first as usize).unwrap();
+    assert_eq!(closing["state"], "closing", "排空前不能报告closed");
+    assert_eq!(closing["decoder_active"], false);
+    let _callback = am_sdk_support::callbacks::Scope::enter();
+    assert_eq!(
+        unsafe { set(first, AM_DHW_PREFER_HW as u32) },
+        AM_ERR_SDK_CALLBACK_CONTRACT_VIOLATION
+    );
+}
+
 struct Fixture {
     ctx: usize,
     sources: Vec<usize>,

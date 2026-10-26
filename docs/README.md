@@ -44,3 +44,5 @@ The source checkout uses `sdk/include`, `sdk/bindings` and `sdk/examples`. Older
 `sdk-source-manifest.json` records the original extraction, not a continuously regenerated release manifest. Documentation can evolve without rewriting provenance. Updating core fingerprints requires an explicit source-baseline review. Future releases need separate source commits and artifact checksums.
 
 来源清单记录历史提取；文档演进不回写历史。核心指纹升级须审来源基线，正式发布另建版本与制品清单。
+
+Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hardware-20261026.md) covers shared policy, actual D3D11VA and CPU/MJPEG controls. Hardware availability is separate from speed; reader isolation, full hardware/pressure/soak acceptance and H5 remain open. Published v0.1.0 is unchanged. / 本地候选与旧公开CPU制品区分，H2整体未关闭。

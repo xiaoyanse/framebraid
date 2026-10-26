@@ -5,13 +5,14 @@
 - [x] H2.0 完成显式Rust设备探测与硬解基础接线：有界枚举、D3D9/LUID映射、实际D3D11设备身份核对、硬件帧回读及失败保帧；修正新FFmpeg构建现代D3D11配置并在本机Intel/NVIDIA以合成H.264/H.265 Main实测。范围与未验项见`docs/verification/sdk-r2-hardware-foundation-20261026.md`，本项不代替H2.1～H2.4自动策略、C ABI与全局预算验收。
 
 - [ ] H2.1 审核现有硬解策略与查询合同，明确编译支持/设备发现/依赖/初始化/实际码流解码五层状态、适配器身份与失败原因；新增字段或策略先修合同和生成器，不覆盖旧冻结。
-  - ABI 1.1首组已交付显式probe、context/独立decoder报告及跨语言验证，见`docs/verification/sdk-r2-abi11-hardware-20261026.md`；RTSP源策略/快照尚未装配，整体保持开放。
+  - ABI 1.1首组已交付显式probe、context/独立decoder报告及跨语言验证，见`docs/verification/sdk-r2-abi11-hardware-20261026.md`；r7已装配RTSP源策略/快照；完整设备/耐压矩阵仍开放。
 - [x] H2.0b 实现共用Rust SoftwareOnly/PreferHardware选择工厂，复用有界探测准入并返回拥有的选择/失败报告；真实帧验证、初始化失败、探测忙和无硬件回退定向测试后保存，不冒充DLL/RTSP与运行期恢复完成。证据见`docs/verification/sdk-r2-hardware-selection-20261026.md`。
 - [ ] H2.2 实现 Windows H.264/H.265 原生硬解探测与自动选择：优先 D3D11VA，构建支持时尝试 DXVA2；枚举实际适配器并受初始化/探测并发预算限制，不只凭显卡名称或编译能力判可用。CUDA/QSV 专用视频后端后续，不与推理 CUDA 混同。
 - [x] H2.0c 在CPU回读分配前报告/校验保守字节预算，避免未计费的transfer pool残留；作用域释放或保留许可的单缓冲复用，验证预算不足、失败保帧、重试及关闭归还，两个复制入口共用全局Charge适配器。证据见`docs/verification/sdk-r2-readback-cache-20261026.md`；不等于自动硬解整链完成。
 - [x] H2.0d 参数重建引用已选设备，不重新探测/创建；独立上下文生命周期、失败保旧帧和实际验证状态清空；同进程交替量化设备重建与复用耗时。见`docs/verification/sdk-r2-device-reuse-20261026.md`，DLL/RTSP自动接线仍按H2.3推进。
 - [ ] H2.3 将选择接入直接解码和 RTSP 像素订阅两入口，遵循现有 SOFTWARE_ONLY/PREFER_HW；实际后端/适配器/失败原因可查询，纯压缩直传不启动解码器。缺设备/依赖或格式不支持时按合同回退 CPU，不修改浏览器播放器。
-- [x] H2.3a 直接C解码入口接入共用选择、初始化未知/真实后端查询和单次CPU恢复；验证Rext不兼容、回读故障、启动包有界重试、非RAP抑制、预算拒绝、旧帧与显式reset。见`docs/verification/sdk-r2-direct-auto-20261026.md`。完整设备/分层失败查询及RTSP入口仍未完成，H2.3保持开放。
+- [x] H2.3a 直接C解码入口接入共用选择、初始化未知/真实后端查询和单次CPU恢复；验证Rext不兼容、回读故障、启动包有界重试、非RAP抑制、预算拒绝、旧帧与显式reset。见`docs/verification/sdk-r2-direct-auto-20261026.md`。r7已补RTSP策略与源报告，H2.3仍因源参数重建设备复用和完整故障/关闭矩阵保持开放。
+- [x] H2.3b RTSP共享源实际消费PREFER_HW/SOFTWARE_ONLY策略，首次像素订阅冻结（含无回调push）、源快照与实际执行分离；真实三编码RTSP、软件对照及Rext硬件错误后CPU恢复通过，像素故障不清压缩队列/改其配置代次。见`docs/verification/sdk-r2-rtsp-hardware-20261026.md`；同步读流阻塞、源参数设备复用及完整H2.4仍未验，本项不关闭H2.3。
 - [ ] H2.4 覆盖真实 H.264/H.265 尺寸/profile/位深、设备选择、初始化失败/运行期失效、关键帧重同步、有界重试与关闭竞争；无可用硬件的环境验证明确诊断和回退，有设备才标硬解已验。对比 CPU/硬解端到端 P95、有效交付率、CPU/显存与回读开销，不承诺 GPU 零拷贝。
 
 ## 1. 优先实施与定向验收

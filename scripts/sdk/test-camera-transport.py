@@ -14,6 +14,11 @@ ROOT = Path(__file__).resolve().parents[2]
 SDK = ROOT / "sdk" if (ROOT / "sdk/bindings").is_dir() else ROOT
 sys.path.insert(0, str(SDK / "bindings/python"))
 import amrt_sdk as a
+import importlib.util
+_report_spec = importlib.util.spec_from_file_location("hardware_report_check", Path(__file__).with_name("test-hardware-report.py"))
+_report_module = importlib.util.module_from_spec(_report_spec)
+_report_spec.loader.exec_module(_report_module)
+snapshot = _report_module.snapshot
 
 
 def sized(kind):
@@ -184,6 +189,8 @@ def child(args):
     desc.creds, desc.reuse = c.pointer(credentials), 1
     source = c.POINTER(a.amc_source_t)()
     checked(lib.amc_source_open(ctx, c.byref(desc), c.byref(source)))
+    policy = a.AM_DHW_SOFTWARE_ONLY if args.decode_policy == "software" else a.AM_DHW_PREFER_HW
+    checked(lib.amc_source_set_decode_policy(source, policy))
     encoded_desc = sized(a.am_encoded_sub_desc_t)
     encoded_desc.codec_mask, encoded_desc.mode = args.codec, a.AM_SUB_PULL
     encoded_desc.queue_max_items, encoded_desc.queue_max_bytes = 36, 8 * 1024 * 1024
@@ -195,11 +202,16 @@ def child(args):
     slow_desc.queue_max_items, slow_desc.queue_max_bytes = 2, 1024 * 1024
     slow = c.POINTER(a.amc_encoded_sub_t)()
     subscribe_when_ready(lib.amc_subscribe_encoded, source, slow_desc, slow, lib)
+    before_pixels = snapshot(lib, source)
+    assert before_pixels["state"] == "idle" and before_pixels["selection"] is None
+    assert not before_pixels["decoder_active"] and before_pixels["actual_backend"] is None
     frame_desc = sized(a.am_frame_sub_desc_t)
     frame_desc.pixel_format, frame_desc.sampling_max_fps = a.AM_PF_RGBA8, 4
     frame_desc.mode, frame_desc.queue_max_items, frame_desc.queue_max_bytes = a.AM_SUB_PULL, 4, 2 * 1024 * 1024
     frames = c.POINTER(a.amc_frame_sub_t)()
     subscribe_when_ready(lib.amc_subscribe_frames, source, frame_desc, frames, lib)
+    assert lib.amc_source_set_decode_policy(source, 1-policy) == a.AM_ERR_CAMERA_MODE_CONFLICT
+    checked(lib.amc_source_set_decode_policy(source, policy))
     timestamps, sequences, identities, keyframes, sizes = [], [], [], 0, []
     deadline = time.monotonic() + 15
     while len(timestamps) < 16:
@@ -272,6 +284,16 @@ def child(args):
         decoded.append(meta.pts)
         checked(lib.amc_frame_release(frame))
     assert len(set(decoded)) == len(decoded), decoded
+    hardware = snapshot(lib, source)
+    assert hardware["stream_verified"] and hardware["decoder_active"]
+    assert hardware["requested_policy"] == policy and hardware["policy_locked"]
+    if args.codec == a.AM_CODEC_MJPEG:
+        assert hardware["actual_backend"] == "image-cpu"
+    elif policy == a.AM_DHW_SOFTWARE_ONLY:
+        assert hardware["actual_backend"] == "ffmpeg-cpu"
+        assert hardware["selection"]["attempts"] == []
+    elif args.require_hardware:
+        assert hardware["actual_backend"] in ("ffmpeg-d3d11va", "ffmpeg-dxva2"), hardware
     close(lib, frames, lib.amc_frame_unsubscribe)
     close(lib, sub, lib.amc_encoded_unsubscribe)
     close(lib, source, lib.amc_source_close)
@@ -280,7 +302,7 @@ def child(args):
     directory.close()
     return {"codec": args.codec, "packets": len(timestamps), "keyframes": keyframes,
             "timeBase": args.timebase, "maxPacketBytes": max(sizes), "retainRelease": True,
-            "decodedFrames":len(decoded), "decodedRgbaRealPixels":True,"nativeLogLevelRestored":True,
+            "hardware":hardware, "compressedOnlyDidNotDecode":True, "decodedFrames":len(decoded), "decodedRgbaRealPixels":True,"nativeLogLevelRestored":True,
             "slowSubscriberResynchronized":True,"slowSubscriberPackets":slow_count}
 
 
@@ -301,7 +323,8 @@ def stop(process):
 
 
 def main(args):
-    output = Path(args.work_dir).resolve()
+    from local_paths import local_path
+    output = local_path(args.work_dir, "tests")
     output.mkdir(parents=True, exist_ok=True)
     port = free_port()
     config = output / "mediamtx.yml"
@@ -359,6 +382,9 @@ paths:
                         child_command = [sys.executable, __file__, "--child", "--dll-dir", args.dll_dir,
                             "--runtime-dir", args.runtime_dir, "--url", url, "--codec", str(codec),
                             "--timebase", stream["time_base"]]
+                        child_command += ["--decode-policy", args.decode_policy]
+                        if args.require_hardware:
+                            child_command.append("--require-hardware")
                         if args.native_layout_only:
                             child_command.append("--native-layout-only")
                         result = subprocess.run(child_command, text=True, capture_output=True, timeout=45)
@@ -381,7 +407,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dll-dir", required=True)
     parser.add_argument("--runtime-dir", required=True)
-    parser.add_argument("--work-dir", default="D:/AM-RT-tests/sdk-transport-stage18")
+    parser.add_argument("--work-dir", default=str(ROOT / ".local/tests/sdk-transport"))
+    parser.add_argument("--decode-policy", choices=("prefer", "software"), default="prefer")
+    parser.add_argument("--require-hardware", action="store_true")
     parser.add_argument("--mediamtx", default=str(Path(os.environ.get("TEMP", ".")) / "p08-mediamtx/mediamtx.exe"))
     parser.add_argument("--child", action="store_true")
     parser.add_argument("--url")

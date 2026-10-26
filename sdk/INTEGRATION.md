@@ -1,6 +1,6 @@
 # FrameBraid 双 SDK 接入说明
 
-原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP和完整设备诊断仍在H2实施中。
+原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
 Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥有的原因报告，仍须在送包/收帧后核实实际后端。直接DLL在创建/reset时选择硬件，初始化选中但未出帧时get_info后端NULL；真实出帧后返回ffmpeg-d3d11va/dxva2/cpu。硬件运行失败先过CPU预算，递增代次并等待关键帧；仅首次输出前单启动画面允许保留原输入重试一次，显式reset才重试硬件。见[直接入口验证](../docs/verification/sdk-r2-direct-auto-20261026.md)。初始化1.5秒为原生调用间软预算，不强杀驱动；不保证GPU启动或每帧比CPU更快。
 
@@ -14,7 +14,7 @@ Rust调用方可用`CpuDecoder::create_with_policy`获得初始化选择与拥�
 
 本地ABI 1.1新增`amc_probe_decode_hardware(ctx, codec, budget_ms)`及`amc_get_decode_hardware_report(object, buffer, capacity, required)`。先查ABI再用新增符号；新DLL接受1.0初始化，旧DLL不接受1.1。新Python高层绑定须配新DLL；C#保留核心1.0初始化，新硬件方法检查1.1。旧公开v0.1.0包取对应tag绑定，不把当前main绑定拷进旧包。
 
-Python `CameraContext.probe_decode_hardware()`返回dict，`get_decode_hardware_report()`仅复制缓存；C#对应`ProbeDecodeHardware`/`GetDecodeHardwareReport`返回UTF8 JSON字符串。探测报告selected仅表示初始化，actual_backend为空且stream_verified=false；独立decoder真实输出后再据快照确认。快照支持context和独立decoder、关闭后保留最后结果，当前不接受RTSP source句柄。JSON最低字段约束、预算、线程与所有权见[ABI 1.1合同](../docs/design/dual-dll-abi.md)，实测见[验证](../docs/verification/sdk-r2-abi11-hardware-20261026.md)。
+Python `CameraContext.probe_decode_hardware()`返回dict，`get_decode_hardware_report()`仅复制缓存；C#对应`ProbeDecodeHardware`/`GetDecodeHardwareReport`返回UTF8 JSON字符串。探测报告selected仅表示初始化，actual_backend为空且stream_verified=false；独立decoder真实输出后再据快照确认。快照支持context和独立decoder、关闭后保留最后结果，r7接受RTSP source句柄；source关闭返回closed且无实际活动值。JSON最低字段约束、预算、线程与所有权见[ABI 1.1合同](../docs/design/dual-dll-abi.md)，实测见[验证](../docs/verification/sdk-r2-abi11-hardware-20261026.md)。
 
 探测是同步耗时操作，宿主应放普通工作线程，不在UI线程或SDK回调内执行；SDK回调内直接拒绝探测重入。预算只在原生调用间检查，不能强杀驱动。纯快照查询不做驱动/会话工作。
 
@@ -219,3 +219,7 @@ cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-c
 默认输出在 `target/release/`；设置 `CARGO_TARGET_DIR` 后以该目录为准。Rust 源码 SDK 可静态链接进宿主；同进程采用静态宿主或双 DLL 消费形态之一，不要把两种域重复装配。源码包与 Windows 包的来源版本、文件清单分别按各包 manifest 核对。
 
 `licenses/`、第三方声明、对应源码及构建材料属于运行包材料，部署/再分发时保持与实际运行库对应。模型权重和现场凭据不随 SDK 包提供。内部构建日志、环境清单、测试数据库和现场数据不是接入所需文件；验收与发布审批仍以单独归档的证据和负责人决定为准，本说明不代替未执行平台/硬件测试。
+
+本地r7新增`amc_source_set_decode_policy(source, policy)`；Python `Source.set_decode_policy(software_only=True)` / `Source.get_decode_hardware_report()`，C# `CameraSource.SetDecodePolicy(true)` / `GetDecodeHardwareReport()`。调用顺序：打开源→在单拥有者且未订阅像素时设置→订阅；SOFTWARE_ONLY=1不探测硬件，默认PREFER_HW=0不是“最快后端”。多拥有者或首次像素订阅后变更拒绝，可用reuse=0新开独占源；push尚无回调也冻结。相同值幂等，不触发刷新。
+
+查询返回requested_policy/effective_policy、初始化selection、实际actual_backend、last_failure/last_status、decode_generation；仅有真实帧才stream_verified。像素失败后新关键帧恢复CPU，不重放旧RTSP包，不改变压缩配置代次；无像素消费者不创建decoder。初始化与解码目前在源线程同步执行，仍可能延迟压缩读取；不要把队列隔离当延迟隔离，详见[限制和量化](../docs/verification/sdk-r2-rtsp-hardware-20261026.md)。本机RGBA回读硬件慢于CPU，按宿主需求选择策略，不保证自动最快。

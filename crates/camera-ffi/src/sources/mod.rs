@@ -22,6 +22,7 @@ use std::{
 mod api;
 mod credentials;
 mod events;
+pub(crate) mod hardware;
 #[cfg(test)]
 mod tests;
 use credentials::{Credentials, Provider};
@@ -47,6 +48,7 @@ pub struct SharedSource {
     pub fault: AtomicU32,
     pub reconnect_attempts: AtomicU32,
     pub last_frame: AtomicI64,
+    pub(crate) decode: Mutex<hardware::DecodeState>,
     owners: AtomicUsize,
     credentials: Arc<Credentials>,
     sources: Mutex<Vec<Weak<Source>>>,
@@ -339,6 +341,7 @@ fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<
         fault: AtomicU32::new(AM_FAULT_NONE as u32),
         reconnect_attempts: AtomicU32::new(0),
         last_frame: AtomicI64::new(0),
+        decode: Mutex::default(),
         owners: AtomicUsize::new(1),
         credentials: Arc::new(Credentials::default()),
         sources: Mutex::default(),

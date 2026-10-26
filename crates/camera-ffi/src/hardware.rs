@@ -182,9 +182,18 @@ pub unsafe extern "C" fn amc_get_decode_hardware_report(
             };
         }
         // 独立decoder保留拥有的初始化报告；序列化暂存也先过控制字节额度。
-        let state = crate::decoder::hardware_report_owner(object as usize)?;
+        let source = entry.data::<crate::sources::Source>().is_ok();
+        let state = if source {
+            crate::sources::hardware::owner(object as usize)?
+        } else {
+            crate::decoder::hardware_report_owner(object as usize)?
+        };
         let _temporary = state.control(QUERY_RESERVATION, false)?;
-        let bytes = serialize(crate::decoder::hardware_report(object as usize)?)?;
+        let bytes = serialize(if source {
+            crate::sources::hardware::report(object as usize)?
+        } else {
+            crate::decoder::hardware_report(object as usize)?
+        })?;
         unsafe { copy_report(&bytes, buffer, capacity, required) }
     })
 }

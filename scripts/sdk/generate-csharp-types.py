@@ -55,7 +55,7 @@ def generate():
 
 
 def hardware_functions():
-    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report"]
+    names = ["amc_get_abi_version", "amc_probe_decode_hardware", "amc_get_decode_hardware_report", "amc_source_set_decode_policy"]
     primitive = {c.c_uint32: "uint", c.c_uint64: "ulong", c.c_int32: "int"}
     lines = ["// Generated from the public ctypes ABI; do not edit.",
              "using System;", "using System.Runtime.InteropServices;",

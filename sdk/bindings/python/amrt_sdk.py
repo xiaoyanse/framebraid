@@ -226,10 +226,10 @@ class am_pixel_view_t(Structure):
 class amc_context_t(Structure):
     pass
 
-class amv_context_t(Structure):
+class amc_source_t(Structure):
     pass
 
-class amc_source_t(Structure):
+class amv_context_t(Structure):
     pass
 
 class amc_encoded_sub_t(Structure):
@@ -1312,6 +1312,7 @@ AMV_CAP_SHARED_FRAME_POOL = 256
 FUNCTIONS = {
     "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),
     "amc_get_decode_hardware_report": (am_status_t, [c_void_p, c_char_p, c_uint64, POINTER(c_uint64)]),
+    "amc_source_set_decode_policy": (am_status_t, [POINTER(amc_source_t), c_uint32]),
     "amc_get_abi_version": (c_uint32, []),
     "amv_get_abi_version": (c_uint32, []),
     "amc_get_version_info": (am_status_t, [POINTER(am_version_info_t)]),

@@ -7,11 +7,11 @@ pub struct amc_context_t {
     _opaque: [u8; 0],
 }
 #[repr(C)]
-pub struct amv_context_t {
+pub struct amc_source_t {
     _opaque: [u8; 0],
 }
 #[repr(C)]
-pub struct amc_source_t {
+pub struct amv_context_t {
     _opaque: [u8; 0],
 }
 #[repr(C)]

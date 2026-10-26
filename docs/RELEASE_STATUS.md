@@ -22,19 +22,19 @@ Local R2/H2 explicit Rust hardware foundation is verified on synthetic H.264/HEV
 
 R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、跨语言诊断及H5推理选择尚未完成，不扩大公开CPU支持范围。
 
-R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); DLL/RTSP integration, runtime recovery and global budgets remain incomplete. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
+R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); later H2.3a/b integrate direct/RTSP selection and recovery; complete pressure acceptance remains open. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
 
 R2 H2.0c/1.1 readback reservations and conversion caches are locally verified ([record](verification/sdk-r2-readback-cache-20261026.md)); both pixel-copy entries use the budget adapter, but automatic native hardware activation/recovery and production/soak validation remain open. / 回读额度覆盖缓存寿命、转换缓存已验证，不改变公开CPU制品和未验事项。
 
 ## Public version / 公开版本
 
-Local C ABI 1.1 probe/report extension is verified through C/Python/C# and ABI 1.0 initialization ([record](verification/sdk-r2-abi11-hardware-20261026.md)). Published v0.1.0 remains ABI 1.0; match DLLs and bindings by tag/build. / 本地扩展未发布，不以初始化探测替代真实码流验收，RTSP策略和H5仍开放。
+Local C ABI 1.1 probe/report extension is verified through C/Python/C# and ABI 1.0 initialization ([record](verification/sdk-r2-abi11-hardware-20261026.md)). Published v0.1.0 remains ABI 1.0; match DLLs and bindings by tag/build. / 本地扩展未发布，不以初始化探测替代真实码流验收，RTSP策略r7已接线，H5及完整硬件验收仍开放。
 
 Local sampling-before-conversion is measured on real H.264 decode/production fanout with a virtual 30 FPS clock ([record](verification/sdk-r2-sampling-20261026.md)). Live RTSP timing, HEVC/MJPEG and dimension-change validation remain open; no public artifacts were replaced. / 采样前移已有局部量化证据，不作为完整1.2或RTSP硬解验收。
 
-Local H2.3a direct C decoder automatic hardware selection and CPU recovery are verified on synthetic H.264/HEVC Main/Main10 plus unsupported HEVC Rext and injected readback failures ([record](verification/sdk-r2-direct-auto-20261026.md)). RTSP, complete device diagnostics and long-run matrices remain open. / 本地直接入口验证通过，未替换公开制品，不宣称整包H2完成。
+Local H2.3a direct C decoder automatic hardware selection and CPU recovery are verified on synthetic H.264/HEVC Main/Main10 plus unsupported HEVC Rext and injected readback failures ([record](verification/sdk-r2-direct-auto-20261026.md)). RTSP basic integration is now verified in r7; complete device diagnostics and long-run matrices remain open. / 本地直接入口验证通过，未替换公开制品，不宣称整包H2完成。
 
-Local H2.0d device reuse is verified ([record](verification/sdk-r2-device-reuse-20261026.md)): independent contexts share an initialized device without inheriting execution verification. Construction-only measurements are not decode-throughput claims. / 参数重建设备复用已实测，DLL/RTSP自动恢复仍未交付。
+Local H2.0d device reuse is verified ([record](verification/sdk-r2-device-reuse-20261026.md)): independent contexts share an initialized device without inheriting execution verification. Construction-only measurements are not decode-throughput claims. / 参数重建设备复用已实测，底层设备复用不代替DLL/RTSP整链验收。
 
 [Repository](https://github.com/xiaoyanse/framebraid) · [v0.1.0 downloads](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)
 
@@ -116,3 +116,5 @@ location after cleanup; recovery of those raw logs is unconfirmed.
 
 五类真实权重、加速器、硬解、跨平台及长期/现场验收不混同本轮结果。
 过程资料已归档，公开入口已精简；本次已获发布授权，宿主迁移及未来版本发布另行安排。
+
+Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hardware-20261026.md) covers shared policy, actual D3D11VA and CPU/MJPEG controls. Hardware availability is separate from speed; reader isolation, full hardware/pressure/soak acceptance and H5 remain open. Published v0.1.0 is unchanged. / 本地候选与旧公开CPU制品区分，H2整体未关闭。

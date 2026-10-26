@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "c4777a07ca519f5a417de38e81898614087c8fb9",
+  "reviewBaseCommit": "b065bf10181c74ace5c8850672a5d75fc82e2869",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -120,14 +120,14 @@
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
       "previousSha256": null,
-      "sha256": "e28bf5c0f27d65011dab9c9b9e1db9c572c8a87b031bb7243163a0c70d1e65b5",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "408cfabee453143ceeec09a7d2d54fde4f5632fa2c48e2bdd0b5584bd2bf1683",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "3b9028757eaa6589f7aa819b5a28fea1cd5b5eee0b99ea6a80a1da5b281f9143",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "520678c38d5e071a56ca4ad99eee440809f983388141a15a70d11222ac091e1d",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -168,8 +168,8 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "76e29bebc7fb52efe36f645cd3eaac82ed972bc619d7c5dc4c343a240243e0be",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "01da874c1242bf3564dae92bf0211c20b822a2a0fe934a6b5ccfb086d1fd7baa",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -186,14 +186,14 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
       "previousSha256": null,
-      "sha256": "e9ac6205c16b49b2b392f3b5f98d41b19642fcf522ce18bbb5a8685d9a2dd844",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "21091a02ef08112bbef8359e1c5a3ce6b27222f8c7c7f621c5fcf8b520a29619",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
       "previousSha256": null,
-      "sha256": "de305ac99d578a914f8f0bfff4772024fee09728dd3c0c59c1af379932817d99",
-      "reason": "R2 early pixel-demand checkpoint: native conversion/output/seq validation; mixed-demand P95 warning and live matrix remain open; unchanged C ABI"
+      "sha256": "fd9faeedd56eab751cc65eed27d7c17c2930ab916533a3591b4c086b552bf65d",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
     },
     {
       "path": "crates/camera-ffi/Cargo.toml",
@@ -222,8 +222,38 @@
     {
       "path": "crates/camera-ffi/src/hardware.rs",
       "previousSha256": null,
-      "sha256": "bf3247131197f22891604794a944d2feedcc109281b4d2b4e880650b52dc7fc1",
-      "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+      "sha256": "b08c333e754aadb4e6c809a167a36c16dc485fa177a6cf3806a3c5a7140e727a",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/tests.rs",
+      "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
+      "sha256": "a1fa512154dd0c3b626c0ea234651afec6853f6fdb4d7afb5ee5797085910824",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/mod.rs",
+      "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
+      "sha256": "ceed8feae93658f15a3074ed96973eabca3631ef84023bbebc3f7e65f91d37dd",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+    },
+    {
+      "path": "crates/sdk-abi/src/base.rs",
+      "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
+      "sha256": "310b210748f66fd790c15b7afb650449d6d827432d0cfac4b6850719eb3a266e",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+    },
+    {
+      "path": "crates/camera-ffi/src/sources/hardware.rs",
+      "previousSha256": null,
+      "sha256": "5fb116c69b7aa85a76e849acf17ade9a83d4ec68ada53d11666eda0490d4d1ab",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/native.rs",
+      "previousSha256": null,
+      "sha256": "f64bce5df8dc9e1ce2cf6fe6efa173fd5bb5dfbbd5c4aede219c58edff3c92c1",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
     }
   ]
 }

@@ -283,17 +283,21 @@ class Model(Resource):
             super().close(timeout_ms)
 
 
+def _read_decode_hardware_report(resource):
+    with resource._lock:
+        version = resource.library.amc_get_abi_version()
+        if version >> 16 != 1 or version < 0x10001:
+            raise RuntimeError("Decode hardware reports require C ABI 1.1 in major version 1")
+        output, count = c.create_string_buffer(65536), c.c_uint64()
+        resource._check(resource.library.amc_get_decode_hardware_report(resource._require(), output, len(output), c.byref(count)), "read decode hardware report")
+        if not 1 <= count.value <= len(output):
+            raise RuntimeError("Invalid hardware report length")
+        return json.loads(output.raw[:count.value - 1])
+
+
 class CameraContext(Context):
     def get_decode_hardware_report(self):
-        with self._lock:
-            version = self.library.amc_get_abi_version()
-            if version >> 16 != 1 or version < 0x10001:
-                raise RuntimeError("Decode hardware reports require C ABI 1.1 in major version 1")
-            output, count = c.create_string_buffer(65536), c.c_uint64()
-            self._check(self.library.amc_get_decode_hardware_report(self._require(), output, len(output), c.byref(count)), "read decode hardware report")
-            if not 1 <= count.value <= len(output):
-                raise RuntimeError("Invalid hardware report length")
-            return json.loads(output.raw[:count.value - 1])
+        return _read_decode_hardware_report(self)
 
     def probe_decode_hardware(self, codec=a.AM_CODEC_H264, budget_ms=1500):
         with self._lock:
@@ -326,6 +330,14 @@ class CameraContext(Context):
 
 
 class Source(Resource):
+    def get_decode_hardware_report(self):
+        return _read_decode_hardware_report(self)
+
+    def set_decode_policy(self, software_only=False):
+        with self._lock:
+            self._check(self.library.amc_source_set_decode_policy(self._require(),
+                a.AM_DHW_SOFTWARE_ONLY if software_only else a.AM_DHW_PREFER_HW), "set source decode policy")
+
     def capture(self, cpu_frame=False):
         request = sized(a.am_capture_request_t)
         request.output_kind = a.AM_CAP_CPU_FRAME if cpu_frame else a.AM_CAP_ENCODED_JPEG

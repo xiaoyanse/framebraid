@@ -9,6 +9,7 @@ AM_API am_status_t amc_probe_decode_hardware(amc_context_t* ctx,
                                             uint32_t codec, uint32_t budget_ms);
 AM_API am_status_t amc_get_decode_hardware_report(void* object, char* buffer_utf8,
                                                  uint64_t capacity, uint64_t* required);
+AM_API am_status_t amc_source_set_decode_policy(amc_source_t* source, uint32_t policy);
 AM_API uint32_t amc_get_abi_version(void);
 AM_API am_status_t amc_get_version_info(am_version_info_t* out_info);
 AM_API am_status_t amc_init(const amc_init_params_t* params, amc_context_t** out_ctx);

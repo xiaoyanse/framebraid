@@ -57,6 +57,20 @@ Rust设备探测入口 MUST 有界、显式且与普通状态查询分离；设�
 - **WHEN** 运行库能创建设备但目标解码器没有该设备的HW_DEVICE_CTX配置
 - **THEN** 不为该组合创建设备，保留缺配置原因，并继续有限候选或CPU回退
 
+### Requirement: Shared source hardware policy and pixel isolation
+
+RTSP源硬件策略 SHALL 属于共享连接；单拥有者首次像素订阅前可改，同值幂等。共享或首次成功像素订阅后改变 MUST 返回modeConflict，包括尚未安装回调的push订阅；失败的订阅不得冻结。只读快照 MUST 不启动硬件探测。
+
+#### Scenario: Pixel decoder fails while compressed consumers remain
+
+- **WHEN** 目标码流使硬件解码失败，另有压缩消费者
+- **THEN** 清像素队列并按下一真实随机访问点有界CPU恢复，保持连接/压缩队列/源代次/压缩配置代次；报告单独decode_generation诊断值、原生原因和实际执行；慢驱动隔离和服务延迟另按R3量化，不能以不重连代替低延迟证明
+
+#### Scenario: Source owner closes while another remains
+
+- **WHEN** 同连接一个source句柄关闭但其他拥有者继续
+- **THEN** 已关闭句柄快照返回closed、空选择/实际后端和非活动状态，不泄露其他拥有者后续活动；新独占源可重新设置策略
+
 ### Requirement: Reuse without changing output
 
 SDK MUST 在支持的像素与张量路径减少可避免的上下文创建、分配或复制，保留原像素/张量与坐标映射合同。
