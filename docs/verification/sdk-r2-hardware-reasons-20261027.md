@@ -11,4 +11,4 @@
 
 ## 边界和剩余
 
-结果证明本机指定样本及注入场景，不能推断全部设备、码流或 GPU 资源收益。自动选择在无适配器时不输出完整逐后端编译清单，五层查询合同 H2.1 仍开放；低层 Rust `create_on_device` 仍返回原有通用 `DecodeError`。RTSP 驱动阻塞、关闭竞争及 MET-2 CPU 卸载与 GPU 资源取舍等定向验证仍由后续任务完成。相关原始日志在 `.local/evidence/r2-hardware-reasons-20261027`，RTSP 合成结果在 `.local/tests/r2-hardware-reasons-rtsp-retry-20261027`。
+结果证明本机指定样本及注入场景，不能推断全部设备、码流或 GPU 资源收益。自动选择在无适配器时不输出完整逐后端编译清单，五层查询合同 H2.1 仍开放；低层 Rust `create_on_device` 仍返回原有通用 `DecodeError`。RTSP 驱动阻塞、关闭竞争及 MET-2 CPU 卸载与 GPU 资源取舍等定向验证仍由后续任务完成。相关原始日志在 `.local/evidence/r2-hardware-reasons-20261027`，RTSP 合成结果归档于 `.local/evidence/r2-hardware-reasons-20261027/rtsp-result.json`（SHA-256 `0da134d83bb656cdf8bc563c523784c6e544087da9efd96a5edce35798cffcbd`），测试临时目录已回收。
