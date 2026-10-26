@@ -4,7 +4,7 @@
 
 日期：2026-10-26。公开基线仍为`5ee707153796cf1d8f9dd7118c664bacf757f97b`（v0.1.0），本地实现复核基线`088f821`。MET-2文档已收口；用户现已授权恢复开发，先完成R1必要量化前置。SDK核心本阶段未改，旧原始数据不覆盖。
 
-**当前阶段：已恢复SDK main串行开发。R1新增S1真实GOP/CPU与GPU采集和三轮A/A已验证，见[记录](verification/sdk-met2-s1-20261026.md)；单路硬解CPU收益仍证据不足；[S3真实Pose CPU与缺EP回退](verification/sdk-met2-s3-20261026.md)已测，S2/真实加速及后续功能继续，未关闭整包任务。任务与证据以[OpenSpec](../openspec/README.md)及[统一指标](PERFORMANCE_ACCEPTANCE.md)为准，不改变发布制品。**
+**当前阶段：已恢复SDK main串行开发。R1新增S1真实GOP/CPU与GPU采集和三轮A/A已验证，见[记录](verification/sdk-met2-s1-20261026.md)；单路硬解CPU收益仍证据不足；[S3真实Pose CPU与缺EP回退](verification/sdk-met2-s3-20261026.md)已测，[S2真实RTSP](verification/sdk-met2-s2-20261026.md)已复现30 FPS配置约16～17 FPS，仍未修复；R1量化前置收口，真实加速及后续功能继续，未关闭整包任务。任务与证据以[OpenSpec](../openspec/README.md)及[统一指标](PERFORMANCE_ACCEPTANCE.md)为准，不改变发布制品。**
 阶段编号 R1～R5 是工作包编号，不是严格串行顺序、已确定的版本号、日期或完成率。
 2026-10-26 用户追加：**原生解码和推理的硬件探测、自动选择、实际后端查询及故障恢复提升为本轮前置项**。R1 最小基线后，R5 第 1 组与 H5、R2 的 H2 优先，之后继续 R2 热路径及其余阶段；不再把基础硬件能力一概留给 E2。
 

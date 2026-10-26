@@ -2,7 +2,7 @@
 import copy
 import unittest
 
-from perf_met2 import review_stream_rows, spread, validate_stream
+from perf_met2 import review_sampling, review_stream_rows, spread, validate_stream
 
 
 def fixture():
@@ -15,6 +15,25 @@ def fixture():
 
 
 class ReviewTests(unittest.TestCase):
+    def test_sampling_ceiling_not_mistaken_for_achieved_rate(self):
+        row=dict(cpu=dict(wall_s=4),compressed_packets=120,
+            consumers=[dict(max_fps=30,delivered=60,frames=[dict(frame_id=i) for i in range(60)],age=dict(p95_ms=150))],
+            stats=dict(external_held_items=1),after_source_close=dict(external_held_items=0))
+        result=review_sampling(row)
+        self.assertFalse(result["experimental_guards_met"])
+        self.assertEqual(len(result["findings"]),1)
+        self.assertTrue(result["postclose_count_observed"])
+
+    def test_sampling_missing_source_and_leases_reported_separately(self):
+        row=dict(cpu=dict(wall_s=4),compressed_packets=60,consumers=[],
+                 after_source_close=dict(external_held_items=1))
+        self.assertEqual(len(review_sampling(row)["findings"]),2)
+
+    def test_sampling_fixed_window_integer_floor_not_clock_tail(self):
+        row=dict(cpu=dict(wall_s=4.001),compressed_packets=120,
+            consumers=[dict(max_fps=10,delivered=32,frames=[dict(frame_id=i) for i in range(32)],age=dict(p95_ms=100))])
+        self.assertTrue(review_sampling(row,4)["experimental_guards_met"])
+
     def test_inflight_conservation_is_not_simple_attempted_delivered(self):
         validate_stream(fixture())
         row = fixture()

@@ -48,3 +48,36 @@ def review_stream_rows(rows, window_s):
             gpu_observed=all(row["observation"]["gpu_series"] is not None for row in values),
             verdict="A/A observations only; primary gain and guards require target-card review")
     return review
+
+
+def review_sampling(row, planned_window_s=None):
+    """S2测前实验线，只列不足；配置max_fps不是最低交付承诺。"""
+    wall=row["cpu"]["wall_s"]
+    if not math.isfinite(wall) or wall<=0:
+        raise ValueError("invalid sampling wall interval")
+    planned=row.get("planned_window_s",planned_window_s if planned_window_s is not None else wall)
+    if not math.isfinite(planned) or planned<=0:
+        raise ValueError("invalid planned sampling window")
+    findings=[]
+    if abs(wall-planned)>.1:
+        findings.append("measurement wall window drift exceeds 100 ms")
+    if row["compressed_packets"]/wall<27:
+        findings.append("source supply below experimental 27 FPS")
+    for consumer in row["consumers"]:
+        count=consumer["delivered"]
+        if count!=len(consumer["frames"]):
+            raise ValueError("sampling output denominator mismatch")
+        if len({frame["frame_id"] for frame in consumer["frames"]})!=count:
+            raise ValueError("duplicate sampling frame identity")
+        # 固定4秒窗口的10 FPS×80%=32帧；几百微秒尾差不把32帧误判不足。
+        if count < math.ceil(consumer["max_fps"]*.8*planned):
+            findings.append(f"{consumer['max_fps']} max FPS below experimental 80 percent delivery")
+        p95=consumer["age"]["p95_ms"]
+        if p95 is None or p95>250:
+            findings.append(f"{consumer['max_fps']} max FPS freshness insufficient")
+    closed=row.get("after_source_close")
+    if closed is not None and closed["external_held_items"]:
+        findings.append("external frame remains after source drained")
+    return dict(findings=findings,experimental_guards_met=not findings,
+                postclose_count_observed=closed is not None,
+                acceptance="not minimum FPS guarantee, optimization gain or whole-package acceptance")

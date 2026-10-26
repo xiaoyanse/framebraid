@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Add loopback RTSP sampling/mixed-consumer measurements tied to a rebuilt Media DLL. Preserve observed delivery shortfalls and distinguish active queued-frame quota from post-drain leaks; no sampling-contract or performance-support change. / 补实际采样基线，保留30 FPS低交付问题，不将测试工具完成当功能通过。
+
 - Add a frozen real-Pose CPU resource/async-response benchmark and isolated strict/fallback controls for missing accelerator EPs. Preserve actual DLL identities and raw A/A variation; no new selection ABI, accelerator execution or speedup claim. / 补真实模型资源基线与缺EP负控制，未扩大支持范围。
 
 - Add a separate MET-2 paced-GOP decoder measurement tool: process CPU time, bounded per-PID/LUID GPU-engine sampling, in-flight accounting and A/A summaries. Local single-stream H.264 CPU/native controls only; no SDK/ABI change or proven offload gain. / 新增量化工具及真实GOP资源对照，保留旧数据，不改变SDK和公开制品。

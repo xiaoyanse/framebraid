@@ -48,6 +48,16 @@ python -B scripts/sdk/benchmark-inference-resources.py --dll-dir .local/build/cu
 
 仅接收档案指定SHA的测试模型；模型、图片和运行库自行备料于私有测试目录，工具不下载/发布。默认三轮20请求/4秒，另观察关闭；有界子进程及输出源码副本用于追溯。输出校验计进程CPU但不计submit→fetch延迟，GPU未知不写0；raw/P95与整数毫秒SDK区间不冒充精确ORT耗时。没有硬件EP运行库时只能验证缺依赖与CPU回退，不能称硬件选择整包完成。
 
+### MET-2 live sampling / 实际RTSP节拍
+
+`benchmark-rtsp-sampling.py` creates only an isolated loopback MediaMTX and a paced FFmpeg publisher. It measures encoded-only, 5/10/30 FPS ceilings and mixed consumers against real QPC receipt age, retaining actual delivery rather than claiming configured rates. See the [target card](verification/sdk-met2-s2-target-20261026.md) and [observed gaps](verification/sdk-met2-s2-20261026.md). Active queued SDK frames may consume external-frame quota; leak checks require source/queue drain.
+
+```powershell
+python -B scripts/sdk/benchmark-rtsp-sampling.py --dll-dir .local/build/current/release --runtime-dir .local/runtimes/ffmpeg-h2-20261026/runtime --input .local/tests/met2-s1/source.mp4 --mediamtx .local/tools/mediamtx-h2/mediamtx.exe --target-card docs/verification/sdk-met2-s2-target-20261026.md --output .local/evidence/met2-s2-new --work-dir .local/tests/met2-s2-new
+```
+
+仅使用自行备料的本地工具/视频，默认三轮2秒热身/4秒窗口，退出只关闭自建进程；不连接用户相机。80%等是目标卡调查线，`max_fps`是最高速率合同，不是最低交付保证。新脚本不提供真实转换次数或历史二进制收益证明；已观察30 FPS配置低于调查线，不能将工具正常退出当优化验收。
+
 Local sampling ablation uses the Release `native_sampling` test with explicit `AM_RT_FFMPEG_DIR` and `AM_SDK_H264_SAMPLE`. It runs real decode and production fanout under a virtual 30 FPS clock, observes native sws_scale calls, excludes full-plane hash/pull work from timing and retains 5% alerts. See [sampling measurements](verification/sdk-r2-sampling-20261026.md); this is not RTSP network throughput or a historical-binary A/B.
 
 Direct DLL native-policy smoke: `python scripts/sdk/test-decoder-hardware.py --dll-dir <release> --runtime-dir <matched-ffmpeg> --samples-dir <synthetic-inputs>`, adding `--software` for a same-build CPU control. Records actual backend, generations, pixel hashes, create/first-receive times; requires the documented four synthetic fixtures and real hardware for native mode. See [direct decoder verification](verification/sdk-r2-direct-auto-20261026.md). Cold-start costs are not sustained-stream FPS or a historical-binary A/B.
