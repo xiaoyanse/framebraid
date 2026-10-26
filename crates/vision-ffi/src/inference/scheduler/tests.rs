@@ -2,6 +2,7 @@ use super::*;
 
 #[test]
 fn last_model_joins_workers_and_concurrent_generations_do_not_overlap() {
+    let _guard = TEST_ENGINE_LOCK.lock().unwrap();
     let budget = ThreadBudget {
         parallel: 2,
         total: 4,

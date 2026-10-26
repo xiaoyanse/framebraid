@@ -3,6 +3,7 @@ mod budget;
 mod execution;
 mod native_execution;
 mod retired;
+mod storage;
 use super::{
     error, lock,
     models::ModelHandle,
@@ -26,8 +27,11 @@ use std::{
 
 static THREADS_PEAK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
 static ENGINE: Mutex<Option<Arc<Engine>>> = Mutex::new(None);
+#[cfg(test)]
+static TEST_ENGINE_LOCK: Mutex<()> = Mutex::new(());
 struct Data {
     queue: VecDeque<Job>,
+    storage_bytes: usize,
     retirement_pending: bool,
     contexts: Vec<Weak<State>>,
     inflight: usize,
@@ -103,24 +107,15 @@ pub fn reserve_model(budget: ThreadBudget, extra: usize) -> Result<ModelPermit> 
     }
     let mut global = lock(&ENGINE)?;
     if global.is_none() {
+        let data = Data::new(budget)?;
+        let mut threads = storage::thread_slots(budget.parallel as usize)?;
         let engine = Arc::new(Engine {
-            data: Mutex::new(Data {
-                queue: VecDeque::new(),
-                retirement_pending: false,
-                contexts: Vec::new(),
-                inflight: 0,
-                bytes: 0,
-                extra_threads: 0,
-                last: None,
-                waiters: 0,
-                models: 0,
-            }),
+            data: Mutex::new(data),
             wake: Condvar::new(),
             budget,
             stop: AtomicBool::new(false),
             threads: Mutex::default(),
         });
-        let mut threads = Vec::new();
         for index in 0..budget.parallel {
             let owned = engine.clone();
             match std::thread::Builder::new()
@@ -309,7 +304,7 @@ pub fn snapshot(state: &Arc<State>) -> Result<(usize, usize, usize, usize)> {
         return Ok((0, 0, 0, THREADS_PEAK.load(Ordering::Acquire)));
     };
     let d = lock(&e.data)?;
-    let jobs = d
+    let (items, bytes) = d
         .queue
         .iter()
         .filter(|j| {
@@ -317,11 +312,16 @@ pub fn snapshot(state: &Arc<State>) -> Result<(usize, usize, usize, usize)> {
                 .data::<ModelHandle>()
                 .is_ok_and(|m| Arc::ptr_eq(&m.state, state))
         })
-        .collect::<Vec<_>>();
+        .fold((0, 0), |(items, bytes), job| {
+            (items + job._admission.items, bytes + job._admission.bytes)
+        });
     Ok((
-        jobs.iter().map(|j| j._admission.items).sum(),
-        jobs.iter().map(|j| j._admission.bytes).sum(),
+        items,
+        bytes,
         d.extra_threads + e.budget.parallel as usize,
         THREADS_PEAK.load(Ordering::Acquire),
     ))
 }
+
+#[cfg(test)]
+mod storage_tests;

@@ -1,7 +1,7 @@
 //! 分类、本Context及共享执行器三层准入，真实归还输入后一起出账。
 use super::*;
 
-const EXECUTOR_BYTES: usize = 64 * 1024 * 1024;
+pub(super) const EXECUTOR_BYTES: usize = 64 * 1024 * 1024;
 
 pub(super) fn reserve(
     engine: Arc<Engine>,
@@ -17,7 +17,10 @@ pub(super) fn reserve(
     let mut used = lock(&usage.preprocess)?;
     let next_class = used[class].checked_add(bytes);
     let next_context = next_class.and_then(|n| n.checked_add(used[1 - class]));
-    let next_total = data.bytes.checked_add(bytes);
+    let next_total = data
+        .bytes
+        .checked_add(bytes)
+        .and_then(|value| value.checked_add(data.storage_bytes));
     let next_items = data.inflight.checked_add(count);
     if count > policy.max_items as usize
         || next_class.is_none_or(|n| n as u64 > policy.max_bytes)
@@ -50,6 +53,8 @@ mod tests {
         Arc::new(Engine {
             data: Mutex::new(Data {
                 queue: VecDeque::new(),
+                // 分类账定向测试不分配执行器容器；真实存储另由storage_tests覆盖。
+                storage_bytes: 0,
                 retirement_pending: false,
                 contexts: Vec::new(),
                 inflight: 0,

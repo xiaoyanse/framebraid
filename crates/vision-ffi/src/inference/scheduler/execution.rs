@@ -3,16 +3,7 @@ use am_vision_core::profiles::{self, ImageMapping, Options, TensorView};
 use std::time::Duration;
 pub(super) fn worker(engine: Arc<Engine>) {
     loop {
-        let contexts = engine
-            .data
-            .lock()
-            .map(|d| d.contexts.clone())
-            .unwrap_or_default();
-        for state in contexts.into_iter().filter_map(|w| w.upgrade()) {
-            if let Ok(mut records) = state.records.lock() {
-                state.purge(&mut records);
-            }
-        }
+        storage::purge_contexts(&engine);
         let job = {
             let mut data = match engine.data.lock() {
                 Ok(d) => d,

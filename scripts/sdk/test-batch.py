@@ -373,8 +373,11 @@ def main():
     parser.add_argument("--dll-dir", type=Path, required=True)
     parser.add_argument("--runtime-dir", type=Path, required=True)
     parser.add_argument("--sample-dir", type=Path, required=True)
-    parser.add_argument("--model-dir", type=Path, required=True)
+    parser.add_argument("--model-dir", type=Path)
+    parser.add_argument("--raw-only", action="store_true", help="显式只验原始张量调度；不代表五类档案已验")
     args = parser.parse_args()
+    if not args.raw_only and args.model_dir is None:
+        parser.error("--model-dir is required unless --raw-only is explicitly selected")
     vision = c.CDLL(str((args.dll_dir/"am_vision.dll").resolve()))
     missing = a.bind(vision, "amv_")
     assert "amv_infer_batch" not in missing and "amv_receipt_release" not in missing
@@ -383,7 +386,9 @@ def main():
     check(vision.amv_query_capability(ctx, c.byref(cap)))
     assert cap.feature_bits & a.AMV_CAP_BATCH
     result = {"modes": basic(vision, ctx, args.sample_dir), "partial": partial_and_modes(vision, ctx, args.sample_dir),
-              "native64": sixty_four(vision, ctx, args.sample_dir), "profileImages": profile_images(vision, ctx, args.model_dir)}
+              "native64": sixty_four(vision, ctx, args.sample_dir),
+              "profileImages": {"skipped": True, "reason": "explicit --raw-only; profile acceptance remains separate"}
+                  if args.raw_only else profile_images(vision, ctx, args.model_dir)}
     base.shared.close(vision, ctx, False)
     result["receipt"] = receipt_close(vision, args.runtime_dir, args.sample_dir)
     result["nativeCancel"] = native_cancel(vision, args.runtime_dir, args.sample_dir)

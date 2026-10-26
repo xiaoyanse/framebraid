@@ -111,6 +111,7 @@ pub(super) unsafe fn submit(
     if deadline.is_some_and(|d| std::time::Instant::now() >= d) {
         return Err(AM_ERR_SDK_DEADLINE_EXCEEDED);
     }
+    data.register_context(state)?;
     if let Some(old) = replacement {
         data.retirement_pending = true;
         if let Some(r) = records.get_mut(&old) {
@@ -144,14 +145,6 @@ pub(super) unsafe fn submit(
         .accepted
         .fetch_add(count as u64, Ordering::AcqRel);
     model.inflight.fetch_add(count, Ordering::AcqRel);
-    data.contexts.retain(|w| w.strong_count() > 0);
-    if !data
-        .contexts
-        .iter()
-        .any(|w| w.ptr_eq(&Arc::downgrade(state)))
-    {
-        data.contexts.push(Arc::downgrade(state));
-    }
     let mut params = plans[0].params();
     params.raw_preprocess = std::ptr::null();
     let input = if native {

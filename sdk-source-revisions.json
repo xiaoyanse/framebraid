@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "3459d8548eb00cc6c93c2487d672d4bc8bc7bf4e",
+  "reviewBaseCommit": "f3bbfcbfc3b2d1092dccb34a61189a338f54855d",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -24,20 +24,20 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler.rs",
       "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-      "sha256": "1fc3e3585dbe49526c954cde4fb905a7debb8dd5d7fc121b07d008e53d7ffe62",
-      "reason": "R3 Context and class preprocessing byte isolation, combined and shared ceilings, in-flight release ownership and deterministic concurrent admission checks; C ABI unchanged"
+      "sha256": "6204a68797a7c45709fa748197ffd06088049b5a6565d8645eebdd813e457662",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
       "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
-      "sha256": "c7a03c09ac3cb25cafc06146ac0fa8afb7ffb62a7e1cdfef728176c75a5cbe9e",
-      "reason": "R3 Context and class preprocessing byte isolation, combined and shared ceilings, in-flight release ownership and deterministic concurrent admission checks; C ABI unchanged"
+      "sha256": "fe1f26c5d557f7d5e006731da1f4886128dc89a4b4cc7c1cb23f83c102ba90ab",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "87fc215ae8e9acef2b99a6f278ba68a2c1ea7445bab1d1ab773197b5a0f076da",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "f03fb4345e846329ff6d98efedfa701a6d2e6928d29e9413b0e9316a2b2fba15",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -510,14 +510,14 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
       "previousSha256": "515897059c2a19e3105e027fb9699f5be7e03277a4f0b308c13e9acb61e20e8b",
-      "sha256": "3ca070b815af351ee476f49e2e1f71ae61ae4829e93e59e750bcbfddd90c1760",
-      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
+      "sha256": "825d64643d01ae516e8027a17e22b9cf98d6ad0b9832bf14a424bf00dd44973b",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/budget.rs",
       "previousSha256": null,
-      "sha256": "89af78fc41685629aac7ef230a4e5eec813e784332eedd4849c5feb8ad62dd62",
-      "reason": "R3 Context and class preprocessing byte isolation, combined and shared ceilings, in-flight release ownership and deterministic concurrent admission checks; C ABI unchanged"
+      "sha256": "bc6b870b363689d0ced31d58a2b1331f92437c93a5253e129c9a45a95f4f949d",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/h264/fanout.rs",
@@ -674,6 +674,18 @@
       "previousSha256": null,
       "sha256": "a78930e0febf2187b5b16db59e1c10e2edea498b620e67a8fa12bb518aa96265",
       "reason": "R3 continuous capture fixed reference/history backing, full pre-admission and consumer registration rollback; native Digest/ownership validation, C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/storage.rs",
+      "previousSha256": null,
+      "sha256": "dc318e48a84274045f65aee2df218bfbb60c50b5ea5383f395e92dd10db5be29",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
+      "previousSha256": null,
+      "sha256": "91e8d3b2a1dd35416cd73ea60931fdc75260b778242f2f4aeb0bc3d742c22427",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
     }
   ]
 }
