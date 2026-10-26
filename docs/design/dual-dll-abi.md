@@ -1206,6 +1206,8 @@ AM_API am_status_t amv_shared_pool_get_stats(const amv_shared_pool_t* pool,
 
 ### R3 独立解码配置/参数集预算补充（兼容行为，本地未发布）
 
+R3媒体抓图索引：请求、合并Flight、最近图频率、消费者及活动订阅表的实际容量计控制字节，增长先保留新旧重叠，空闲容量持续计费至服务销毁。Flight本体另预付；请求仍占原控制项token，但不重复按记录len计本体字节，内部存储不新增外持关闭屏障。受理前记录表/订阅登记超额返回拒绝、无新ID/订阅；受理后Flight/HTTP/缓存失败则以原ID给失败终态，受理不代表图片成功。缓存失败须通知全部本Flight等待者并移除在途登记，不能留下永久Pending。已关闭但仍有句柄的订阅可退出活动索引，句柄本体和图片寿命不因此提前释放；降低允许新增源/订阅限额不撤销已打开源/订阅。Context queue_bytes仍为逻辑数据口径，不含全部控制容量或RSS，C ABI不变。见[验证](../verification/sdk-r3-capture-tables-20261027.md)。
+
 R3推理请求记录表：实际容量及增长新旧重叠先占Context控制字节，空闲容量持续计费到服务销毁；不是外持结果/快照，不增加控制快照项数或Context外持关闭屏障。预算不足返回resourceExhausted，不发布ID、不替换旧请求；既有记录数限制、TTL、取消与C ABI保持。已经保留的容量可以复用，后续降低控制上限不追溯撤销旧存储；新存储不得超额。get_stats(context).queue_bytes仍是逻辑在途/结果口径，不包含全部控制存储或进程RSS。见[验证](../verification/sdk-r3-record-storage-20261027.md)。
 
 §2.8的extradata复制先占Context帧字节，配置许可随不可变拥有者存活；reset(NULL)共享该配置引用。每个新原生上下文的Gate缓存另计，更新先校验并规划，预留/分配成功后原子提交；原生重配置的序列化extra副本独立计费至调用结束。新旧上下文构造期间重叠资源均计费，预算不足明确返回resourceExhausted；create/reset构造失败不改变旧配置/代次，外持旧帧继续有效。该保证不扩展为所有原生执行故障的事务回滚，原有恢复合同保留。Rust同步借用NAL访问入口不分配列表，可能在最终错误前访问部分NAL；不改C签名、结构或枚举。见[定向验证](../verification/sdk-r3-decoder-retained-20261027.md)。

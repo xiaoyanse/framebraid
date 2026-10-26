@@ -11,6 +11,7 @@ mod images;
 mod io;
 mod requests;
 mod state;
+mod tables;
 
 pub(crate) fn queue_usage(ctx: usize) -> Result<(u64, u64)> {
     use am_sdk_support::context::Context;
@@ -45,13 +46,12 @@ pub(crate) fn queue_usage(ctx: usize) -> Result<(u64, u64)> {
     }
     let subscriptions = {
         let mut subscriptions = lock(&state.subscriptions)?;
-        subscriptions.retain(|sub| sub.strong_count() != 0);
-        subscriptions
-            .iter()
-            .filter_map(std::sync::Weak::upgrade)
-            .collect::<Vec<_>>()
+        subscriptions.retain(|_, sub| sub.strong_count() != 0);
+        let mut values = subscriptions.values();
+        // 当前连续采集硬限4；查询不用额外堆快照。
+        std::array::from_fn::<_, 4, _>(|_| values.next().and_then(std::sync::Weak::upgrade))
     };
-    for sub in subscriptions {
+    for sub in subscriptions.into_iter().flatten() {
         let usage = sub.queue_usage()?;
         items = items.saturating_add(usage.0);
         bytes = bytes.saturating_add(usage.1);

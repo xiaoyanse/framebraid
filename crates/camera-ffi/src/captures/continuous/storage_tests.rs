@@ -64,9 +64,28 @@ fn failed_consumer_registration_returns_its_capacity() {
         panic!("injected registration poison");
     }));
     assert_eq!(
-        reserve_consumer(&state, 1, 1000, 1),
+        reserve_consumer(&state, &camera, 1, 1000, 1),
         Err(AM_ERR_SDK_INTERNAL_ERROR)
     );
     assert_eq!(state.continuous.load(Ordering::Acquire), 0);
     assert!(state.subscriptions.lock().unwrap().is_empty());
+}
+
+#[test]
+fn consumer_index_storage_failure_returns_capacity_without_external_barrier() {
+    let (_domain, camera) = crate::frames::isolated_test_state();
+    let state = state::State::get(&camera).unwrap();
+    let ctx = camera
+        .ctx
+        .data::<am_sdk_support::context::Context>()
+        .unwrap();
+    ctx.queues.lock().unwrap()[AM_Q_CONTROL as usize].max_bytes = 0;
+    assert_eq!(
+        reserve_consumer(&state, &camera, 1, 1000, 1),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    );
+    assert_eq!(state.continuous.load(Ordering::Acquire), 0);
+    assert!(state.consumers.lock().unwrap().is_empty());
+    assert_eq!(camera.control_usage_snapshot().unwrap(), (0, 0));
+    assert_eq!(ctx.buffers.load(Ordering::Acquire), 0);
 }

@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "87baecd237b68816c90793b5203774bc77f2a17e",
+  "reviewBaseCommit": "3e0898a77d7996d16ebcfb5b04d991dbea839fe6",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -138,8 +138,8 @@
     {
       "path": "crates/camera-ffi/src/frames.rs",
       "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-      "sha256": "624577130930582108e8341ad94daeab273bfedb94bf9a600482e4a4f3b9cda4",
-      "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
+      "sha256": "ff4e7f1f7361213365137dab964e4fdcaa8cf682577ec2def3a44611e08deef7",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -540,26 +540,26 @@
     {
       "path": "crates/camera-ffi/src/captures/state.rs",
       "previousSha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5",
-      "sha256": "603663238a513a0b38e7fca1faa574ed4853ffaf0e01c101819da9952b4d0805",
-      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+      "sha256": "9cb2947c244441dc6876fa3f0170dc08de26069cf1a0d23ec5ac708e5a8bfd4d",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/continuous.rs",
       "previousSha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced",
-      "sha256": "c3b3e9e0d8a39b7a631b6d19dcb6addb92d3c3b16e3b14388c82a5f83bf650dc",
-      "reason": "R3 continuous capture fixed reference/history backing, full pre-admission and consumer registration rollback; native Digest/ownership validation, C ABI unchanged"
+      "sha256": "055e604c6c12905ca2124e90678e7176f04c72fff66c6deff76f81a818901a21",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/io.rs",
       "previousSha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18",
-      "sha256": "632a181dcdf202e2d09f838f318c42b5173c57ae807f24406f074a92b0f35880",
-      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+      "sha256": "0e1b652626e77dbec81d2827710c9ec2e4956b654dc25bfe351dc063a2fb3f61",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/io/tests.rs",
       "previousSha256": null,
-      "sha256": "76ebc163ad0dc075846606f86b21f7f076cac3524e20bfd596648866f9d42b58",
-      "reason": "R3 ISAPI缓存归属/回收与停止竞争回归；保留HTTP保守额度和外部图片寿命，仅本地未发布"
+      "sha256": "e2e4b32a62f882a1909e04cacb543008c4032e36afc07af222e8c515ba4fcc95",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
@@ -672,8 +672,8 @@
     {
       "path": "crates/camera-ffi/src/captures/continuous/storage_tests.rs",
       "previousSha256": null,
-      "sha256": "a78930e0febf2187b5b16db59e1c10e2edea498b620e67a8fa12bb518aa96265",
-      "reason": "R3 continuous capture fixed reference/history backing, full pre-admission and consumer registration rollback; native Digest/ownership validation, C ABI unchanged"
+      "sha256": "021364c10eeb0aceea64aae4e1d3df3a3588caab8cebf97fe3900ff8796c477b",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/storage.rs",
@@ -698,6 +698,30 @@
       "previousSha256": null,
       "sha256": "d67d15e081d035d0d26c7ddfac1e137f0a9f35e2ad1fe430d2d7e455bccf3d1b",
       "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/mod.rs",
+      "previousSha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981",
+      "sha256": "e813b88c76422d19ed91928dc5a230d84a1746d7a57fad3a2b146fd77607797c",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/requests.rs",
+      "previousSha256": "0b8b6901fb88baf76225e8f6bdf43d218304fe1c00ff39591f06360983ce2e2a",
+      "sha256": "f469229280877abcf871affc9453cea1682ca44c738289aea17561e983ded63d",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/tables.rs",
+      "previousSha256": null,
+      "sha256": "579c0968e81aa2914af49a7c2bf35cb2acac269c73ee1299ba066471cb18cbb6",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/tables/tests.rs",
+      "previousSha256": null,
+      "sha256": "1dcf609fc691939e2d924b48f4841afb5f3af68d9f2738a850f213dadc1ed7eb",
+      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
     }
   ]
 }

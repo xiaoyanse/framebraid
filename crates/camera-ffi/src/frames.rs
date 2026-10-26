@@ -149,16 +149,27 @@ impl CameraState {
         Ok((usage.controls, usage.control_bytes))
     }
     pub fn control(self: &Arc<Self>, bytes: usize, external: bool) -> Result<ControlCharge> {
+        self.reserve_control(bytes, external, true)
+    }
+    pub(crate) fn metadata(self: &Arc<Self>, bytes: usize) -> Result<ControlCharge> {
+        self.reserve_control(bytes, false, false)
+    }
+    fn reserve_control(
+        self: &Arc<Self>,
+        bytes: usize,
+        external: bool,
+        counted: bool,
+    ) -> Result<ControlCharge> {
         let l = self.limits()?;
         let ctx = self.ctx.data::<Context>()?;
         let q = ctx.queues.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?[5];
         let mut u = self.usage.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        if u.controls >= (l.control_max_items.min(q.max_items)) as usize
+        if counted && u.controls >= (l.control_max_items.min(q.max_items)) as usize
             || bytes > (q.max_bytes as usize).saturating_sub(u.control_bytes)
         {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
-        u.controls += 1;
+        u.controls += usize::from(counted);
         u.control_bytes += bytes;
         if external {
             ctx.buffers.fetch_add(1, Ordering::AcqRel);
@@ -168,6 +179,7 @@ impl CameraState {
             usage: self.usage.clone(),
             bytes,
             external,
+            counted,
         })
     }
     pub fn decoder(self: &Arc<Self>) -> Result<DecoderPermit> {
@@ -486,6 +498,7 @@ pub struct ControlCharge {
     usage: Arc<Mutex<Usage>>,
     bytes: usize,
     external: bool,
+    counted: bool,
 }
 impl ControlCharge {
     pub(crate) fn shrink_to(&mut self, bytes: usize) -> Result<()> {
@@ -501,7 +514,7 @@ impl ControlCharge {
 impl Drop for ControlCharge {
     fn drop(&mut self) {
         if let Ok(mut usage) = self.usage.lock() {
-            usage.controls -= 1;
+            usage.controls -= usize::from(self.counted);
             usage.control_bytes -= self.bytes;
         }
         if self.external {

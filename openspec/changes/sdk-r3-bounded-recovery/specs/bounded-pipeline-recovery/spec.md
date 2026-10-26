@@ -6,6 +6,25 @@
 
 ## ADDED Requirements
 
+### Requirement: Capture metadata backing and flight completion
+
+Media SDK MUST 在抓图请求/合并采集/频率缓存/消费者/订阅索引分配前计控制字节，包含增长重叠及空闲保留容量；Flight本体独立计费，不将内部存储当外持缓冲或新增控制项目。
+
+#### Scenario: Cache admission fails after a coalesced capture
+
+- **WHEN** 共享采集已返回而最近图缓存登记因控制字节不足失败
+- **THEN** SDK向本次合并请求发布一致失败、唤醒等待者并移除在途索引，后续采集不能永久复用未完成Flight
+
+#### Scenario: Capture metadata allocation is refused
+
+- **WHEN** 受理前请求表或连续订阅登记需要的底层容量超额
+- **THEN** SDK保留旧容量/记录，返回明确拒绝且无对外新ID/订阅，消费者/worker许可不能泄漏，停止不提前收回外持图片
+
+#### Scenario: Accepted asynchronous capture cannot allocate a Flight
+
+- **WHEN** 请求表已受理但工作线程无法预留Flight索引或本体
+- **THEN** 原ID进入可查询/ack的失败终态，不能伪称受理成功等于图片成功，且不发起未准入的HTTP或遗留在途登记
+
 ### Requirement: Inference record backing storage
 
 SDK MUST 在推理请求表分配前核Context控制字节，包含增长时新旧重叠及清空后保留容量；元数据不能计为外持结果或快照项目。拒绝 MUST 不发布请求ID、不替换既有请求；原记录数、TTL和关闭合同保持。

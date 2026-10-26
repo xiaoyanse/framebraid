@@ -18,6 +18,7 @@ pub struct Raw {
 pub struct Flight {
     result: Mutex<Option<Result<Arc<Raw>>>>,
     changed: Condvar,
+    _charge: crate::frames::ControlCharge,
 }
 pub fn continuous(
     state: &Arc<state::State>,
@@ -47,11 +48,16 @@ pub fn continuous(
     if state.closed.load(Ordering::Acquire) || source.stop.load(Ordering::Acquire) {
         return Err(AM_ERR_SDK_HANDLE_CLOSED);
     }
-    cache_recent(state, key, &image)?;
+    cache_recent(state, &source.state, key, &image)?;
     Ok(image)
 }
 
-fn cache_recent(state: &state::State, key: (u64, u32), image: &Arc<Raw>) -> Result<()> {
+fn cache_recent(
+    state: &state::State,
+    camera: &Arc<CameraState>,
+    key: (u64, u32),
+    image: &Arc<Raw>,
+) -> Result<()> {
     // 与最后订阅回收同序；在途请求可返回给读者，但不能重建无主缓存。
     let consumers = lock(&state.consumers)?;
     if state.closed.load(Ordering::Acquire) || consumers.get(&key).copied().unwrap_or(0) == 0 {
@@ -62,7 +68,12 @@ fn cache_recent(state: &state::State, key: (u64, u32), image: &Arc<Raw>) -> Resu
         .get(&key)
         .is_none_or(|old| old.meta.frame_id < image.meta.frame_id)
     {
-        recent.insert(key, image.clone());
+        recent.try_insert(
+            camera,
+            key,
+            image.clone(),
+            am_sdk_support::abi::default_limits(false).max_capture_continuous as usize,
+        )?;
     }
     Ok(())
 }
@@ -112,9 +123,17 @@ fn acquire_for(
         match flights.get(&source.source_id) {
             Some(existing) => (existing.clone(), false),
             None => {
+                flights.reserve(
+                    &source.state,
+                    1,
+                    // 下调允许新增源的限额不撤销已打开源。
+                    am_sdk_support::abi::default_limits(false).max_sources as usize,
+                )?;
+                let charge = source.state.metadata(std::mem::size_of::<Flight>())?;
                 let f = Arc::new(Flight {
                     result: Mutex::default(),
                     changed: Condvar::new(),
+                    _charge: charge,
                 });
                 flights.insert(source.source_id, f.clone());
                 (f, true)
@@ -122,22 +141,15 @@ fn acquire_for(
         }
     };
     if leader {
-        let result = capture(source, timeout);
-        if let (Some((key, _)), Ok(image)) = (freshness, result.as_ref()) {
-            if !source.stop.load(Ordering::Acquire) {
-                cache_recent(state, key, image)?;
+        let result = capture(source, timeout).and_then(|image| {
+            if let Some((key, _)) = freshness {
+                if !source.stop.load(Ordering::Acquire) {
+                    cache_recent(state, &source.state, key, &image)?;
+                }
             }
-        }
-        *lock(&flight.result)? = Some(result.clone());
-        flight.changed.notify_all();
-        let mut flights = lock(&state.flights)?;
-        if flights
-            .get(&source.source_id)
-            .is_some_and(|f| Arc::ptr_eq(f, &flight))
-        {
-            flights.remove(&source.source_id);
-        }
-        result
+            Ok(image)
+        });
+        finish(state, source.source_id, &flight, result)
     } else {
         let until = Instant::now() + timeout;
         let mut result = lock(&flight.result)?;
@@ -159,6 +171,20 @@ fn acquire_for(
                 .0;
         }
     }
+}
+fn finish(
+    state: &state::State,
+    source: u64,
+    flight: &Arc<Flight>,
+    result: Result<Arc<Raw>>,
+) -> Result<Arc<Raw>> {
+    *lock(&flight.result)? = Some(result.clone());
+    flight.changed.notify_all();
+    let mut flights = lock(&state.flights)?;
+    if flights.get(&source).is_some_and(|f| Arc::ptr_eq(f, flight)) {
+        flights.remove(&source);
+    }
+    result
 }
 fn capture(source: &Arc<SharedSource>, timeout: Duration) -> Result<Arc<Raw>> {
     let charge = source.state.charge(4 * 1024 * 1024, false)?;

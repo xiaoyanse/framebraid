@@ -6,7 +6,6 @@ use am_sdk_support::{
 };
 use std::{
     any::TypeId,
-    collections::HashMap,
     sync::{
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
         Condvar, Weak,
@@ -27,13 +26,13 @@ pub struct State {
     pub ctx: Weak<Entry>,
     prefix: u64,
     next: AtomicU64,
-    pub records: Mutex<HashMap<u64, Record>>,
-    pub flights: Mutex<HashMap<u64, Arc<io::Flight>>>,
-    pub recent: Mutex<HashMap<(u64, u32), Arc<io::Raw>>>,
+    pub records: Mutex<tables::Table<u64, Record>>,
+    pub flights: Mutex<tables::Table<u64, Arc<io::Flight>>>,
+    pub recent: Mutex<tables::Table<(u64, u32), Arc<io::Raw>>>,
     pub running: AtomicUsize,
     pub continuous: AtomicUsize,
-    pub consumers: Mutex<HashMap<(u64, u32), usize>>,
-    pub subscriptions: Mutex<Vec<Weak<super::continuous::Subscription>>>,
+    pub consumers: Mutex<tables::Table<(u64, u32), usize>>,
+    pub subscriptions: Mutex<tables::Table<usize, Weak<super::continuous::Subscription>>>,
     pub closed: AtomicBool,
     pub changed: Condvar,
 }
@@ -134,7 +133,7 @@ impl State {
             AM_ERR_SDK_REQUEST_UNKNOWN
         }
     }
-    pub fn purge(&self, records: &mut HashMap<u64, Record>) {
+    pub fn purge(&self, records: &mut tables::Table<u64, Record>) {
         let now = monotonic_ms();
         records.retain(|_, r| r.state < AM_REQ_DONE as u32 || now < r.expires);
     }

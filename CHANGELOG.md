@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Account retained capture record/coalescing/cache/consumer/subscription index capacity and Flight bodies; complete coalesced failures before retiring their index. / 修复媒体抓图元数据漏计与缓存失败的等待者收口，保留控制项数及外持关闭边界；见[验证](docs/verification/sdk-r3-capture-tables-20261027.md)，C ABI不变。
+
 - Charge retained inference request-table capacity and allocation overlap to Context control bytes before accepting IDs or replacing requests. / 推理请求表实际容量计费，低额度明确拒绝、保留旧请求，常驻存储不阻止关闭；见[验证](docs/verification/sdk-r3-record-storage-20261027.md)，C ABI不变。
 
 - Account executor Job/worker-handle slots and retained Context-index capacity, reserve growth overlap, and use bounded cleanup snapshots/direct statistics folds. / 修复共享执行器常驻存储与临时列表，真实CPU回归及原始慢轮见[记录](docs/verification/sdk-r3-executor-storage-20261027.md)，C ABI不变。

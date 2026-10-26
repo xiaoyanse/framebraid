@@ -2,6 +2,8 @@
 
 [Documentation / 文档入口](README.md) · [Release checklist / 发布清单](RELEASE_CHECKLIST.md)
 
+Local Media capture backing storage now includes request/coalescing/cadence/subscription index capacity and Flight bodies, with overlap reservation and retained idle credits. Cache errors publish a terminal result and retire the coalesced Flight. [Validation](verification/sdk-r3-capture-tables-20261027.md) covers actual low-budget admission/execution distinctions, failed-cache retries, closed-handle reuse, 53 unit tests and loopback Digest/cancellation/consumer isolation. / 未发布，不代表全部元数据、线程、硬件或长跑已验。
+
 Local R3 inference request storage now reserves exact backing capacity and growth overlap against control bytes; rejected growth neither publishes IDs nor replaces pending requests. Idle metadata does not hold Context closing. [Validation](verification/sdk-r3-record-storage-20261027.md): 21 shared-feature/20 no-default unit tests and actual CPU batch/notify/pressure checks passed, with raw latency variations retained. / 本地未发布补请求表预算，不代表R3全路径、硬件或长跑已通过。
 
 Updated 2026-10-26. Version 0.1.0 developer preview; Windows x64 CPU.

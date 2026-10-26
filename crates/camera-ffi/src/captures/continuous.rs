@@ -64,7 +64,13 @@ impl Queue {
         self.received.push_back(last);
     }
 }
-fn reserve_consumer(state: &state::State, source: u64, interval: u32, max: usize) -> Result<()> {
+fn reserve_consumer(
+    state: &state::State,
+    camera: &Arc<CameraState>,
+    source: u64,
+    interval: u32,
+    max: usize,
+) -> Result<()> {
     state
         .continuous
         .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| {
@@ -72,11 +78,19 @@ fn reserve_consumer(state: &state::State, source: u64, interval: u32, max: usize
         })
         .map_err(|_| AM_ERR_CAMERA_CAPTURE_CAPACITY)?;
     // 注册锁失败还没有Subscription拥有许可，须在此归还容量。
-    let mut consumers = lock(&state.consumers).inspect_err(|_| {
+    let result = (|| {
+        let mut consumers = lock(&state.consumers)?;
+        if let Some(count) = consumers.get_mut(&(source, interval)) {
+            *count += 1;
+        } else {
+            consumers.try_insert(camera, (source, interval), 1, max)?;
+        }
+        Ok(())
+    })();
+    if result.is_err() {
         state.continuous.fetch_sub(1, Ordering::AcqRel);
-    })?;
-    *consumers.entry((source, interval)).or_default() += 1;
-    Ok(())
+    }
+    result
 }
 pub struct Subscription {
     source: Arc<SharedSource>,
@@ -186,7 +200,13 @@ pub unsafe extern "C" fn amc_capture_continuous_start(
             .control(metadata_bytes(config.queue_max_items as usize), false)?;
         let queue = Queue::new(config.queue_max_items as usize)?;
         let max = source.state.limits()?.max_capture_continuous as usize;
-        reserve_consumer(&state, source.source_id, config.target_interval_ms, max)?;
+        reserve_consumer(
+            &state,
+            &source.state,
+            source.source_id,
+            config.target_interval_ms,
+            max,
+        )?;
         let sub = Arc::new(Subscription {
             source,
             state,
@@ -204,8 +224,11 @@ pub unsafe extern "C" fn amc_capture_continuous_start(
         let key = domain().insert(src as usize, sub.clone())?;
         let registered = (|| -> Result<()> {
             let mut subscriptions = lock(&sub.state.subscriptions)?;
-            subscriptions.retain(|sub| sub.strong_count() != 0);
-            subscriptions.push(Arc::downgrade(&sub));
+            subscriptions.retain(|_, sub| {
+                sub.upgrade()
+                    .is_some_and(|s| s.reserved.load(Ordering::Acquire))
+            });
+            subscriptions.try_insert(&sub.source.state, key, Arc::downgrade(&sub), max)?;
             Ok(())
         })();
         if let Err(code) = registered {

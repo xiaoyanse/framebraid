@@ -60,9 +60,9 @@ pub unsafe extern "C" fn amc_capture_async(
         }
         let state = state::State::get(&source.state)?;
         let worker = state.reserve_worker()?;
-        let id = state.id()?;
-        let charge = source.state.control(size_of::<state::Record>(), false)?;
-        {
+        // 记录本体在表存储计费，原控制项目token仍保留。
+        let charge = source.state.control(0, false)?;
+        let id = {
             let mut records = lock(&state.records)?;
             state.purge(&mut records);
             let policy = state.result_policy()?;
@@ -70,6 +70,12 @@ pub unsafe extern "C" fn amc_capture_async(
             if records.len() >= policy.max_items.min(limits.result_max_items) as usize {
                 return Err(AM_ERR_SDK_QUEUE_FULL);
             }
+            records.reserve(
+                &source.state,
+                1,
+                policy.max_items.min(limits.result_max_items) as usize,
+            )?;
+            let id = state.id()?;
             records.insert(
                 id,
                 state::Record {
@@ -82,7 +88,8 @@ pub unsafe extern "C" fn amc_capture_async(
                     _charge: charge,
                 },
             );
-        }
+            id
+        };
         let state_copy = state.clone();
         if std::thread::Builder::new()
             .name("amc-capture".into())
