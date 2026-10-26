@@ -43,15 +43,15 @@ fn gop_cache_bounds_and_keyframe_start() {
     assert!(gop.snapshot().is_empty(), "超上限应弃置整组等下个关键帧");
 }
 
-/// 慢客户端：队列满丢旧+重同步信令一次+非关键帧丢弃+关键帧续发恢复。
-#[test]
-fn slow_client_overflow_resync_then_keyframe_resume() {
+/// 慢客户端：队列满清受损链+重同步一次+非关键帧丢弃+关键帧续发恢复。
+#[tokio::test]
+async fn slow_client_overflow_resync_then_keyframe_resume() {
     let fan = Arc::new(ClientFan::new());
     // 填满队列（初始不在等待关键帧状态）
     for seq in 1..=CLIENT_QUEUE_MAX as u64 {
         fan.deliver(H264Message::Packet(packet(seq, seq == 1)));
     }
-    // 溢出一帧非关键包：丢最旧+信令一次+转入等关键帧
+    // 溢出后旧参考链不可继续交付，通知消费方等新关键帧。
     fan.deliver(H264Message::Packet(packet(257, false)));
     {
         let queue = fan.queue.lock_for_test();
@@ -67,10 +67,8 @@ fn slow_client_overflow_resync_then_keyframe_resume() {
             "溢出应丢最旧（seq=1 被移除）"
         );
         assert!(
-            queue
-                .iter()
-                .any(|m| matches!(m, H264Message::Packet(p) if p.seq == 2)),
-            "仅最旧一帧被移除（seq=2 保留）"
+            !queue.iter().any(|m| matches!(m, H264Message::Packet(_))),
+            "旧P帧失去参考帧后必须一起清理"
         );
         assert!(!queue
             .iter()
@@ -91,7 +89,12 @@ fn slow_client_overflow_resync_then_keyframe_resume() {
             .iter()
             .any(|m| matches!(m, H264Message::Packet(p) if p.seq == 259)));
     }
-    // 再次溢出会再发信令（去重标记已随关键帧清除）
+    assert!(matches!(
+        fan.queue.recv().await,
+        Some(H264Message::ResyncRequired { .. })
+    ));
+    assert!(matches!(fan.queue.recv().await, Some(H264Message::Packet(p)) if p.seq == 259));
+    // 消费恢复后，再次溢出应有新信令，而不是保留旧信令和受损P帧。
     let overflow_base = 300u64;
     for seq in overflow_base..overflow_base + CLIENT_QUEUE_MAX as u64 + 2 {
         fan.deliver(H264Message::Packet(packet(seq, false)));
@@ -102,7 +105,7 @@ fn slow_client_overflow_resync_then_keyframe_resume() {
             .iter()
             .filter(|m| matches!(m, H264Message::ResyncRequired { .. }))
             .count(),
-        2,
+        1,
         "第二轮溢出应再次信令"
     );
 }

@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "a4f9c12f689eec2868a4f98b96e4d7c1eccacf95",
+  "reviewBaseCommit": "b8f22c91a6ee3b371d4daadca5fb1b4279b8a429",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -518,6 +518,24 @@
       "previousSha256": null,
       "sha256": "89af78fc41685629aac7ef230a4e5eec813e784332eedd4849c5feb8ad62dd62",
       "reason": "R3 Context and class preprocessing byte isolation, combined and shared ceilings, in-flight release ownership and deterministic concurrent admission checks; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/fanout.rs",
+      "previousSha256": "54bf768ac934f5f3c1da1473d9f2f5c43aa59cc60ad509488dbb5ad25bd7600d",
+      "sha256": "2dd88e223b59600ef8de0ca497c582ee094a72e1f33c876e087bd9c7025ad744",
+      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/fanout/tests.rs",
+      "previousSha256": null,
+      "sha256": "0793b9f61cab13cacb9065029a1f60f80d2fde033cea9b10782bef03ddc93783",
+      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/session_tests.rs",
+      "previousSha256": "d8268827e64df362ad31d296425d7e644a8a5c8f8c2f23f41c1d84e3f1fa8ad4",
+      "sha256": "1eb0270083a9e2fd716327ddf24dc608087654b1bad50262a9b15001a43f978a",
+      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
     }
   ]
 }

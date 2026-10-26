@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Bound Rust H264Hub queues by both items and payload bytes, cap GOP pre-roll items, discard broken reference chains and prioritize video over stale overlays. Make close irreversible and register async waiting before checking terminal state to prevent lost close notifications. / 修复Rust辅助分发的预算、关键帧恢复和关闭唤醒，见[验证](docs/verification/sdk-r3-rust-fanout-20261027.md)，C ABI与已发布制品不变。
+
 - Isolate realtime/offline preprocessing byte admission by Context and queue class while retaining combined Context and shared-executor ceilings. Slow owner release no longer causes false queue-full failures in healthy classes or Contexts; excessive work still rejects and remains charged until actual release. / 修复推理分类预算串扰，见[验证](docs/verification/sdk-r3-budget-isolation-20261027.md)，未改变C ABI或发布制品。
 
 - Admit ordered backend candidates against their own thread requirements, allowing an explicitly listed CPU fallback when OpenVINO cannot fit the shared budget. Keep legacy loading behavior and thread ceilings unchanged; validate one native failure without replay and explicit model rebuild. / 修复最昂贵候选预留阻断后续CPU，见[验证](docs/verification/sdk-h5-resource-admission-20261027.md)。

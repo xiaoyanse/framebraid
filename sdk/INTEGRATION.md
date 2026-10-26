@@ -1,5 +1,11 @@
 # FrameBraid 双 SDK 接入说明
 
+## Local Rust H264Hub bounds / 本地Rust辅助分发约束
+
+未发布修复：`am_camera::media::h264::session::H264Hub`的每订阅队列最多36项、8 MiB载荷（`fanout::CLIENT_QUEUE_MAX_BYTES`），GOP预滚最多35包并保留配置的字节上限。长GOP或种子超限时只先给配置，等待下一关键帧；持续视频分发不因此降采样。读取`ResyncRequired`时应重建消费端参考链，再从新关键帧继续。单包超8 MiB收到`Closed(1009, "media.packetTooLarge")`，持续不消费可收到1011；终态之后不再有新配置/包/叠层。叠层低优先级，仅保留最新一项，过载时先让位视频。
+
+This Rust helper has bounded payload and item retention, keyframe-safe resynchronization and irreversible close. It is separate from C source/subscription APIs and their Context budgets; an 8-MiB logical queue ceiling is not a process-RSS bound. Callers retain responsibility for overall source/session deployment and any messages they hold externally. See [verification](../docs/verification/sdk-r3-rust-fanout-20261027.md). No C ABI, published binaries or platform support changes.
+
 ## Local ordered model selection / 本地有序选择
 
 ABI1.1 r9未发布，须使用同提交DLL/绑定并检查`AMV_CAP_ORDERED_SELECTION`。路径和内存均可选择；最多3个(backend, device_id)候选，CPU=0、OpenVINO CPU=1、CUDA=2。`allow_fallback=false`只尝试首项；没有列CPU就不会回退CPU；`budget_ms`为1～5000软预算，不能强杀原生Session构造。运行库仍由调用方初始化，不自动替换CPU/GPU版ORT。

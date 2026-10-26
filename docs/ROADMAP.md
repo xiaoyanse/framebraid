@@ -66,6 +66,8 @@ that planned capabilities are implemented or production-accepted.
 
 R3 分类预算阶段：推理实时/离线与多 Context 不再用一个全局字节数套用各自较小上限；保留 Context 合计及执行器总额、在途归还屏障。三场景各三轮由0/9健康准入变为9/9，超额拒绝、并发与批量/关闭回归另验，见[记录](verification/sdk-r3-budget-isolation-20261027.md)。这是隔离可用性修复，不代表吞吐提速或全路径/长跑通过。
 
+R3 Rust辅助分发阶段：H264Hub补齐36项/8 MiB双限、35包GOP、视频优先及不可逆终态，消除关闭丢唤醒；源文件读取/重开代次与健康200包隔离通过，见[记录](verification/sdk-r3-rust-fanout-20261027.md)。队列载荷峰值12→8 MiB是该受控用例的有界性结果，不是RSS下降比例或C/RTSP整包验收。
+
 现状证据入口：
 
 - [共享池发布](../crates/sdk-support/src/shared/pool.rs)、[租约桥接](../crates/vision-ffi/src/shared.rs)。

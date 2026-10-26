@@ -25,6 +25,11 @@ SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，�
 - **WHEN** 一个 Context 的实时输入尚未归还，另一类或另一 Context 在自身字节预算内提交
 - **THEN** 分别核分类暂存、本 Context 合计及执行器总额，不将其他分类或 Context 用量套入当前类较小上限；超额拒绝不留账、不产生请求 ID，归还屏障完成后才释放原占用
 
+#### Scenario: Rust H264Hub subscriber stalls or closes
+
+- **WHEN** Rust辅助分发的客户端停滞、视频和叠层共同占用队列，或关闭与等待/投递重叠
+- **THEN** 单订阅36项及8 MiB载荷有界，GOP最多35包并受字节限制；叠层先让位视频，受损参考链等待新关键帧，关闭只交付一次终态且不可复活，健康订阅不被慢订阅的清队列或关闭影响
+
 ### Requirement: Generation-safe recovery and draining
 
 恢复和关闭 SHALL 保留正确源代次与请求终态，重建参考链后才交付，关闭排空后不再回调。
