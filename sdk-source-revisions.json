@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "f3bbfcbfc3b2d1092dccb34a61189a338f54855d",
+  "reviewBaseCommit": "87baecd237b68816c90793b5203774bc77f2a17e",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -30,8 +30,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
       "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
-      "sha256": "fe1f26c5d557f7d5e006731da1f4886128dc89a4b4cc7c1cb23f83c102ba90ab",
-      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+      "sha256": "9781bc2f21df17261172bddb3246dbea209eac9aea30d1014f00e6d0b636f478",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
@@ -42,8 +42,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
       "previousSha256": null,
-      "sha256": "adb616df5d21d6697f62f462cf192728280445cc3214357fde6647bbb9a4823c",
-      "reason": "R5 reviewed queued retirement; actual CPU DLL A/B and lifecycle tests; unchanged ABI"
+      "sha256": "d13c0673ef46421e2d8fa691c47953281c08edf8e44cb5f04c189a02a99b032c",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
     },
     {
       "path": "crates/am-camera/src/media/mod.rs",
@@ -306,14 +306,14 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "ceca1a2350bc8d8869bb3654f95cc25fd1323eb3386096a0aad87ece776a5fd5",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "bf6454fd364f5f2924801027707b6e4306d837683365d2e2e6c4e41505ae194a",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
     },
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
       "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
-      "sha256": "e737593390c663ad48d80195365d28fdba11f4ffe1efde99cf9570b4f2bae440",
-      "reason": "R3 Context and class preprocessing byte isolation, combined and shared ceilings, in-flight release ownership and deterministic concurrent admission checks; C ABI unchanged"
+      "sha256": "1d951d67514af78ebd559256900f80f09753f767cbc38ded1fd0b218ac6a0393",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
     },
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
@@ -684,8 +684,20 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
       "previousSha256": null,
-      "sha256": "91e8d3b2a1dd35416cd73ea60931fdc75260b778242f2f4aeb0bc3d742c22427",
-      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+      "sha256": "abe37e6c02228c23c45d9288e528c5ef5ffca8d3d54d943d28dc0931f1c79e46",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/records.rs",
+      "previousSha256": null,
+      "sha256": "196c89948593d1d7b9463e51fb5397806921f8f6f8c8ec6aa3ee289f9920b5a6",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/records/tests.rs",
+      "previousSha256": null,
+      "sha256": "d67d15e081d035d0d26c7ddfac1e137f0a9f35e2ad1fe430d2d7e455bccf3d1b",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
     }
   ]
 }

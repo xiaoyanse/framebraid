@@ -6,6 +6,15 @@
 
 ## ADDED Requirements
 
+### Requirement: Inference record backing storage
+
+SDK MUST 在推理请求表分配前核Context控制字节，包含增长时新旧重叠及清空后保留容量；元数据不能计为外持结果或快照项目。拒绝 MUST 不发布请求ID、不替换既有请求；原记录数、TTL和关闭合同保持。
+
+#### Scenario: Record capacity exceeds control bytes
+
+- **WHEN** 新提交需要增长请求表且旧容量与新容量合计超出控制额度
+- **THEN** SDK返回resourceExhausted，保留旧记录/容量/计费且没有新请求ID，不能通过提前出账或未计费HashMap扩容接受请求
+
 ### Requirement: End-to-end bounded pressure
 
 SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，外部持有独立统计，不用无限重试消化过载。

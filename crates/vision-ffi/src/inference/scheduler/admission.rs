@@ -103,6 +103,11 @@ pub(super) unsafe fn submit(
     if sequence + count as u64 > 0xffffffffffff {
         return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
     }
+    records.reserve(
+        state,
+        count,
+        limits.result_max_items as usize + limits.control_max_items as usize,
+    )?;
     let ids = (0..count)
         .map(|i| state.prefix | (sequence + i as u64))
         .collect::<Vec<_>>();

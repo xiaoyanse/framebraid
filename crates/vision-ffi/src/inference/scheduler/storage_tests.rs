@@ -177,7 +177,7 @@ fn one_busy_record_table_does_not_block_cleanup_of_another_context() {
     let engine = isolated_engine();
     let first = state();
     let second = state();
-    second.records.lock().unwrap().insert(
+    *second.records.lock().unwrap() = super::super::records::Records::isolated([(
         1,
         Record {
             model: 0,
@@ -192,7 +192,7 @@ fn one_busy_record_table_does_not_block_cleanup_of_another_context() {
             canceled: false,
             offline: false,
         },
-    );
+    )]);
     {
         let mut data = engine.data.lock().unwrap();
         data.register_context(&first).unwrap();

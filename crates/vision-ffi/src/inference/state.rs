@@ -1,8 +1,7 @@
-use super::{lock, results::ResultBuffer};
+use super::{lock, records::Records, results::ResultBuffer};
 use am_sdk_support::{abi::*, context::Context, handles::Entry, Result};
 use std::{
     any::TypeId,
-    collections::HashMap,
     sync::{
         atomic::{AtomicU64, AtomicUsize, Ordering},
         Arc, Condvar, Mutex, Weak,
@@ -27,7 +26,7 @@ pub struct State {
     pub ctx: Weak<Entry>,
     pub prefix: u64,
     pub next: AtomicU64,
-    pub records: Mutex<HashMap<u64, Record>>,
+    pub records: Mutex<Records>,
     pub changed: Condvar,
     pub usage: Arc<Usage>,
     pub models: AtomicUsize,
@@ -54,13 +53,16 @@ pub struct ResultCharge {
 }
 pub struct ControlCharge {
     external: bool,
+    counted: bool,
     ctx: Weak<Entry>,
     usage: Arc<Usage>,
     bytes: usize,
 }
 impl Drop for ControlCharge {
     fn drop(&mut self) {
-        self.usage.snapshots.fetch_sub(1, Ordering::AcqRel);
+        if self.counted {
+            self.usage.snapshots.fetch_sub(1, Ordering::AcqRel);
+        }
         self.usage
             .control_bytes
             .fetch_sub(self.bytes, Ordering::AcqRel);
@@ -128,7 +130,7 @@ impl State {
             AM_ERR_SDK_REQUEST_UNKNOWN
         }
     }
-    pub fn purge(&self, records: &mut HashMap<u64, Record>) {
+    pub fn purge(&self, records: &mut Records) {
         let now = am_sdk_support::clock::monotonic_ms();
         records.retain(|_, r| {
             let keep = r.state < AM_REQ_DONE as u32 || now < r.expires;
@@ -145,12 +147,20 @@ impl State {
         self.reserve_result(bytes, 0)
     }
     pub fn control(&self, bytes: usize) -> Result<ControlCharge> {
-        self.reserve_control(bytes, true)
+        self.reserve_control(bytes, true, true)
     }
     pub fn cached_control(&self, bytes: usize) -> Result<ControlCharge> {
-        self.reserve_control(bytes, false)
+        self.reserve_control(bytes, false, true)
     }
-    fn reserve_control(&self, bytes: usize, external: bool) -> Result<ControlCharge> {
+    pub fn record_storage(&self, bytes: usize) -> Result<ControlCharge> {
+        self.reserve_control(bytes, false, false)
+    }
+    fn reserve_control(
+        &self,
+        bytes: usize,
+        external: bool,
+        counted: bool,
+    ) -> Result<ControlCharge> {
         let ctx = self.context()?;
         let _read = ctx.readable()?;
         let c = ctx.data::<Context>()?;
@@ -174,7 +184,7 @@ impl State {
                 Err(n) => used = n,
             }
         }
-        if self.usage.snapshots.fetch_add(1, Ordering::AcqRel) >= max {
+        if counted && self.usage.snapshots.fetch_add(1, Ordering::AcqRel) >= max {
             self.usage.snapshots.fetch_sub(1, Ordering::AcqRel);
             self.usage.control_bytes.fetch_sub(bytes, Ordering::AcqRel);
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
@@ -184,6 +194,7 @@ impl State {
         }
         Ok(ControlCharge {
             external,
+            counted,
             ctx: self.ctx.clone(),
             usage: self.usage.clone(),
             bytes,

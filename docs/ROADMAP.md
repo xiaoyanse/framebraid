@@ -2,7 +2,9 @@
 
 [文档入口 / Documentation](README.md) · [当前交付 / Release status](RELEASE_STATUS.md) · [支持范围 / Support](SUPPORT.md)
 
-日期：2026-10-26。公开基线仍为`5ee707153796cf1d8f9dd7118c664bacf757f97b`（v0.1.0），本地实现复核基线`088f821`。MET-2文档已收口；用户现已授权恢复开发，先完成R1必要量化前置。SDK核心本阶段未改，旧原始数据不覆盖。
+日期：2026-10-27。公开基线仍为`5ee707153796cf1d8f9dd7118c664bacf757f97b`（v0.1.0）。MET-2后续本地实现及候选身份见各阶段验证；旧原始数据不覆盖，未替换公开制品。
+
+R3 1.1m推理请求表容量/增长重叠已纳入控制字节，真实低预算拒绝、无ID空洞/旧请求替换、批量/取消/压力及关闭通过；见[记录](verification/sdk-r3-record-storage-20261027.md)。仅修计费，不宣称整体推理提速；BP10媒体记录/服务索引、BP12线程与整包长跑仍待。
 
 **当前阶段：已恢复SDK main串行开发。R1新增S1真实GOP/CPU与GPU采集和三轮A/A已验证，见[记录](verification/sdk-met2-s1-20261026.md)；单路硬解CPU收益仍证据不足；[S3真实Pose CPU与缺EP回退](verification/sdk-met2-s3-20261026.md)已测，[S2真实RTSP](verification/sdk-met2-s2-20261026.md)复现30 FPS配置约16～17 FPS；后续[采样修复](verification/sdk-r2-cadence-20261026.md)三组对照达29.49～29.75 FPS，帧龄代价与HEVC/MJPEG完整矩阵仍分别登记；R1量化前置收口，真实加速及后续功能继续，未关闭整包任务。任务与证据以[OpenSpec](../openspec/README.md)及[统一指标](PERFORMANCE_ACCEPTANCE.md)为准，不改变发布制品。**
 阶段编号 R1～R5 是工作包编号，不是严格串行顺序、已确定的版本号、日期或完成率。

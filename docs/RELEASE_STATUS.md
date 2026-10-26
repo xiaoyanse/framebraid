@@ -2,6 +2,8 @@
 
 [Documentation / 文档入口](README.md) · [Release checklist / 发布清单](RELEASE_CHECKLIST.md)
 
+Local R3 inference request storage now reserves exact backing capacity and growth overlap against control bytes; rejected growth neither publishes IDs nor replaces pending requests. Idle metadata does not hold Context closing. [Validation](verification/sdk-r3-record-storage-20261027.md): 21 shared-feature/20 no-default unit tests and actual CPU batch/notify/pressure checks passed, with raw latency variations retained. / 本地未发布补请求表预算，不代表R3全路径、硬件或长跑已通过。
+
 Updated 2026-10-26. Version 0.1.0 developer preview; Windows x64 CPU.
 
 更新于 2026-10-26，0.1.0 开发者预览版，首发验证 Windows x64 CPU。

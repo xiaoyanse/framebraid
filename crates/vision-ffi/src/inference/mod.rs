@@ -6,6 +6,7 @@ mod input;
 mod models;
 mod notify;
 mod receipt;
+mod records;
 mod results;
 mod scheduler;
 mod selected_exports;

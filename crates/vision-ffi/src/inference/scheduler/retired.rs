@@ -1,5 +1,6 @@
+use super::super::records::Records;
 use super::*;
-use std::{collections::HashMap, sync::TryLockError};
+use std::sync::TryLockError;
 
 // 只检查仍在执行器队列中的Job；已经被原生执行读取的输入不会进入此路径。
 pub(super) fn check(job: &Job) -> Option<bool> {
@@ -14,7 +15,7 @@ pub(super) fn check(job: &Job) -> Option<bool> {
     check_records(&model.state.records, ids)
 }
 
-fn check_records(records: &Mutex<HashMap<u64, Record>>, ids: &[u64]) -> Option<bool> {
+fn check_records(records: &Mutex<Records>, ids: &[u64]) -> Option<bool> {
     match records.try_lock() {
         Ok(records) => Some(ids.iter().all(|id| {
             records
@@ -82,7 +83,7 @@ mod tests {
 
     #[test]
     fn mixed_native_batch_preserves_all_inputs_until_live_item_completes() {
-        let records = Mutex::new(HashMap::from([
+        let records = Mutex::new(Records::isolated([
             (1, record(AM_REQ_PENDING as u32, true)),
             (2, record(AM_REQ_PENDING as u32, false)),
         ]));
@@ -93,7 +94,10 @@ mod tests {
 
     #[test]
     fn replaced_or_expired_records_do_not_hold_unused_admission() {
-        let records = Mutex::new(HashMap::from([(1, record(AM_REQ_REPLACED as u32, false))]));
+        let records = Mutex::new(Records::isolated([(
+            1,
+            record(AM_REQ_REPLACED as u32, false),
+        )]));
         assert_eq!(check_records(&records, &[1, 2]), Some(true));
         records
             .lock()
@@ -104,7 +108,7 @@ mod tests {
 
     #[test]
     fn records_contention_never_blocks_while_executor_lock_is_held() {
-        let records = Mutex::new(HashMap::new());
+        let records = Mutex::new(Records::default());
         let _guard = records.lock().unwrap();
         assert_eq!(check_records(&records, &[1]), None);
     }
