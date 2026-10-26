@@ -1,4 +1,5 @@
 mod admission;
+mod budget;
 mod execution;
 mod native_execution;
 mod retired;
@@ -200,14 +201,19 @@ fn engine() -> Result<Arc<Engine>> {
 }
 pub(super) struct Admission {
     engine: Arc<Engine>,
+    usage: Arc<super::state::Usage>,
+    class: usize,
     bytes: usize,
     items: usize,
 }
 impl Drop for Admission {
     fn drop(&mut self) {
         if let Ok(mut d) = self.engine.data.lock() {
-            d.inflight -= self.items;
-            d.bytes -= self.bytes;
+            if let Ok(mut used) = self.usage.preprocess.lock() {
+                d.inflight -= self.items;
+                d.bytes -= self.bytes;
+                used[self.class] -= self.bytes;
+            }
         }
         self.engine.wake.notify_all();
     }
@@ -254,19 +260,9 @@ pub(super) fn reserve_metadata(state: &State, bytes: usize) -> Result<Admission>
     let e = engine()?;
     let ctx = state.context()?;
     let c = ctx.data::<Context>()?;
-    let max = lock(&c.limits)?
-        .preprocess_budget_bytes
-        .min(lock(&c.queues)?[AM_Q_OFFLINE_BATCH as usize].max_bytes) as usize;
-    let mut d = lock(&e.data)?;
-    if d.bytes.checked_add(bytes).is_none_or(|v| v > max) {
-        return Err(AM_ERR_SDK_QUEUE_FULL);
-    }
-    d.bytes += bytes;
-    Ok(Admission {
-        engine: e.clone(),
-        bytes,
-        items: 0,
-    })
+    let limits = *lock(&c.limits)?;
+    let policy = lock(&c.queues)?[AM_Q_OFFLINE_BATCH as usize];
+    budget::reserve(e, state.usage.clone(), 1, 0, bytes, &limits, &policy)
 }
 pub(super) struct Waiter {
     engine: Arc<Engine>,

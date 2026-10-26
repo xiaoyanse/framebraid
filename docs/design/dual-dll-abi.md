@@ -885,6 +885,8 @@ AM_API am_status_t amv_set_queue_policy(amv_context_t* ctx, uint32_t queue_class
 
 `am_queue_policy_t`（max_items/max_bytes/max_waiters/wait_deadline_ms/ttl_ms）与读写函数两库对称（附录 §1.4）：`am?_get_queue_policy` / `am?_set_queue_policy`。逐类读取/收紧（包络见 §6）；收紧对新接收生效，不回收已持有对象。慢订阅者只消耗自己的预算；推拉用独立订阅句柄（独立游标），同一订阅句柄内双模式互斥（`camera.modeConflict`）。有界队列 ≠ 有界总内存：总预算另受 §6 持有上限约束。
 
+R3 字节记账明确化：推理实时与离线类的 `max_bytes` 分别约束本 Context 的该类已准入暂存，含正在执行或输入归还尚未完成的工作；离线规划元数据同属离线类。两类合计仍受本 Context 的 `preprocess_budget_bytes` 约束，所有 Context 再受共享执行器 64 MiB 硬限约束。不得拿另一类或另一 Context 的用量套用当前类的较小上限；也不得借分类绕过共享总额。项数仍沿用每模型×槽实时在途、离线单次及执行器域在途的既有约束，不改变队列策略结构或默认值。
+
 ### 5.6 跨 DLL 像素视图互操作（相机帧直接喂推理；B08 统一签名）
 
 ```c

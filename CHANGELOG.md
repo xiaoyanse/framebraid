@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Isolate realtime/offline preprocessing byte admission by Context and queue class while retaining combined Context and shared-executor ceilings. Slow owner release no longer causes false queue-full failures in healthy classes or Contexts; excessive work still rejects and remains charged until actual release. / 修复推理分类预算串扰，见[验证](docs/verification/sdk-r3-budget-isolation-20261027.md)，未改变C ABI或发布制品。
+
 - Admit ordered backend candidates against their own thread requirements, allowing an explicitly listed CPU fallback when OpenVINO cannot fit the shared budget. Keep legacy loading behavior and thread ceilings unchanged; validate one native failure without replay and explicit model rebuild. / 修复最昂贵候选预留阻断后续CPU，见[验证](docs/verification/sdk-h5-resource-admission-20261027.md)。
 
 - Add ordered model selection to the local ABI 1.1 candidate: path/memory loading, bounded attempt/model diagnostics and Python/C# helpers. Explicit allowlists govern fallback; retained results own their actual-device strings. CPU and missing-EP controls are verified separately from accelerated execution. / H5有序选择接线，见[验证](docs/verification/sdk-h5-ordered-selection-20261026.md)，未发布。

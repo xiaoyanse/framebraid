@@ -34,27 +34,15 @@ pub(super) unsafe fn submit(
         })
         .ok_or(AM_ERR_SDK_QUEUE_FULL)?;
     let e = engine()?;
-    let admission = {
-        let mut d = lock(&e.data)?;
-        if d.inflight + count > e.budget.slots as usize
-            || count > queues[class].max_items as usize
-            || d.bytes.checked_add(cost).is_none_or(|n| {
-                n > limits
-                    .preprocess_budget_bytes
-                    .min(queues[class].max_bytes)
-                    .min(64 * 1024 * 1024) as usize
-            })
-        {
-            return Err(AM_ERR_SDK_QUEUE_FULL);
-        }
-        d.inflight += count;
-        d.bytes += cost;
-        Admission {
-            engine: e.clone(),
-            bytes: cost,
-            items: count,
-        }
-    };
+    let admission = budget::reserve(
+        e.clone(),
+        state.usage.clone(),
+        usize::from(offline),
+        count,
+        cost,
+        &limits,
+        &queues[class],
+    )?;
     let inputs = plans
         .iter()
         .map(|p| unsafe { p.capture() })

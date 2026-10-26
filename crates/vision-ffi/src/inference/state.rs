@@ -37,6 +37,7 @@ pub struct State {
 }
 #[derive(Default)]
 pub struct Usage {
+    pub preprocess: Mutex<[usize; 2]>,
     pub bytes: AtomicUsize,
     pub items: AtomicUsize,
     pub snapshots: AtomicUsize,

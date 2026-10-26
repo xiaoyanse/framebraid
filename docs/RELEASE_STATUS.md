@@ -134,3 +134,5 @@ H5.0b本地探测报告与原生/语言回归详见[验证](verification/sdk-h5-
 Local unpublished ABI1.1 r9 adds ordered C model selection, bounded reports and Python/C# helpers. CPU/negative-EP controls and retained-result ownership are checked in [verification](verification/sdk-h5-ordered-selection-20261026.md); accelerated execution, full fault recovery and soak remain open. Existing release assets are unchanged. / 本地阶段功能验证与性能/生产验收分开。
 
 Local H5 resource admission fixes explicitly allowed CPU fallback under tight thread budgets, with native-failure/no-replay and explicit-rebuild checks. [Verification](verification/sdk-h5-resource-admission-20261027.md). C ABI and published artifacts remain unchanged; accelerated/fault/soak acceptance is separate.
+
+Local R3 byte-admission isolation separates realtime/offline and Context ledgers without increasing the shared ceiling. Controlled slow-release cases improve healthy acceptance from 0/9 to 9/9 with identical outputs; overload and existing batch/close controls pass. [Verification](verification/sdk-r3-budget-isolation-20261027.md). Full-path budget audit, fault combinations and soak remain open; no new release or platform claim.

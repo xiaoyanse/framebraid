@@ -64,6 +64,8 @@ that planned capabilities are implemented or production-accepted.
 | 设备接入辅助 | 显式端点探测；Rust CameraEndpoint 生成无凭据 ISAPI/主/子流地址 | 自动网络发现、跨品牌发现及部署参数建议属于扩展 | E1 |
 | 持续运行 | 已有有限生命周期、资源拒绝及反复装卸验证 | 长时间负载、故障组合与故障后恢复，不能由短测推导 | 贯穿 R1～R5 |
 
+R3 分类预算阶段：推理实时/离线与多 Context 不再用一个全局字节数套用各自较小上限；保留 Context 合计及执行器总额、在途归还屏障。三场景各三轮由0/9健康准入变为9/9，超额拒绝、并发与批量/关闭回归另验，见[记录](verification/sdk-r3-budget-isolation-20261027.md)。这是隔离可用性修复，不代表吞吐提速或全路径/长跑通过。
+
 现状证据入口：
 
 - [共享池发布](../crates/sdk-support/src/shared/pool.rs)、[租约桥接](../crates/vision-ffi/src/shared.rs)。
