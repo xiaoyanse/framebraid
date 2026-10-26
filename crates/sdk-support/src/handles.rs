@@ -66,6 +66,40 @@ struct Registry {
     entries: crate::registry::Table<Arc<Entry>>,
     quarantine: VecDeque<Box<u64>>,
     sequence: u64,
+    pending_contexts: usize,
+}
+pub(crate) struct ContextAdmission<'a> {
+    domain: &'a Domain,
+    pending: bool,
+}
+impl ContextAdmission<'_> {
+    pub(crate) fn commit(mut self, body: Arc<dyn Managed>) -> Result<usize> {
+        if !body.is_context() {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let mut registry = self
+            .domain
+            .registry
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        let key = Domain::insert_locked(&mut registry, 0, body, true)?;
+        registry.pending_contexts -= 1;
+        self.pending = false;
+        Ok(key)
+    }
+}
+impl Drop for ContextAdmission<'_> {
+    fn drop(&mut self) {
+        if self.pending {
+            // 准入失败也必须归还名额；锁毒化不允许遗留永久占位。
+            let mut registry = self
+                .domain
+                .registry
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            registry.pending_contexts -= 1;
+        }
+    }
 }
 pub struct Domain {
     registry: Mutex<Registry>,
@@ -77,7 +111,9 @@ pub struct Domain {
 impl Domain {
     /// 卸载钩子不得替调用方关对象，也不等待仍占用注册表的线程。
     pub fn idle_for_unload(&self) -> bool {
-        self.registry.try_lock().is_ok_and(|r| r.entries.is_empty())
+        self.registry
+            .try_lock()
+            .is_ok_and(|r| r.entries.is_empty() && r.pending_contexts == 0)
             && self.buffers.idle_for_unload()
     }
     pub fn new(vision: bool) -> Self {
@@ -92,12 +128,44 @@ impl Domain {
             thread_config: Mutex::new(None),
         }
     }
+    pub(crate) fn admit_context(&self) -> Result<ContextAdmission<'_>> {
+        let mut registry = self
+            .registry
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        let contexts = registry
+            .entries
+            .values()
+            .filter(|e| e.body.is_context())
+            .count();
+        if contexts + registry.pending_contexts >= SDK_MAX_CONTEXTS as usize
+            || registry.entries.len() + registry.pending_contexts
+                >= SDK_MAX_REGISTERED_HANDLES as usize
+        {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        }
+        registry.pending_contexts += 1;
+        Ok(ContextAdmission {
+            domain: self,
+            pending: true,
+        })
+    }
     pub fn insert(&self, parent: usize, body: Arc<dyn Managed>) -> Result<usize> {
         let mut registry = self
             .registry
             .lock()
             .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
-        if registry.entries.len() >= SDK_MAX_REGISTERED_HANDLES as usize {
+        Self::insert_locked(&mut registry, parent, body, false)
+    }
+    fn insert_locked(
+        registry: &mut Registry,
+        parent: usize,
+        body: Arc<dyn Managed>,
+        reserved: bool,
+    ) -> Result<usize> {
+        // 已准入的上下文在同一临界区将占位转成在册项，不能再算一遍。
+        let pending = registry.pending_contexts - usize::from(reserved);
+        if registry.entries.len() + pending >= SDK_MAX_REGISTERED_HANDLES as usize {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
         }
         if body.is_context()
@@ -106,6 +174,7 @@ impl Domain {
                 .values()
                 .filter(|e| e.body.is_context())
                 .count()
+                + pending
                 >= SDK_MAX_CONTEXTS as usize
         {
             return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);

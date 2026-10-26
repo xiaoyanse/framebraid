@@ -156,3 +156,120 @@ fn closing_reader_is_fenced_again_at_final_resource_close() {
     drop(entry);
     domain.destroy(key).unwrap();
 }
+
+struct ContextResource;
+impl Managed for ContextResource {
+    fn as_any(&self) -> &dyn Any {
+        self
+    }
+    fn is_context(&self) -> bool {
+        true
+    }
+}
+#[test]
+fn pending_context_admission_is_bounded_and_does_not_hold_the_registry_lock() {
+    let domain = Domain::new(false);
+    let entered = std::sync::Barrier::new(SDK_MAX_CONTEXTS as usize + 1);
+    let release = std::sync::Barrier::new(SDK_MAX_CONTEXTS as usize + 1);
+    std::thread::scope(|scope| {
+        for _ in 0..SDK_MAX_CONTEXTS {
+            scope.spawn(|| {
+                let admission = domain.admit_context().unwrap();
+                entered.wait();
+                release.wait();
+                drop(admission);
+            });
+        }
+        entered.wait();
+        assert_eq!(domain.context_count().unwrap(), 0);
+        assert!(!domain.idle_for_unload());
+        assert!(matches!(
+            domain.admit_context(),
+            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+        ));
+        assert_eq!(
+            domain.insert(0, Arc::new(ContextResource)),
+            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+        );
+        // 普通句柄操作在初始化占位期间仍可进行。
+        let key = domain
+            .insert(0, Arc::new(Resource(AtomicUsize::new(0))))
+            .unwrap();
+        domain.close(key, 0).unwrap();
+        domain.destroy(key).unwrap();
+        release.wait();
+    });
+    assert!(domain.idle_for_unload());
+    assert_eq!(domain.registry.lock().unwrap().pending_contexts, 0);
+}
+#[test]
+fn context_admission_transfers_once_and_reserves_its_handle_slot() {
+    let domain = Domain::new(false);
+    let admission = domain.admit_context().unwrap();
+    let mut keys = Vec::new();
+    for _ in 1..SDK_MAX_REGISTERED_HANDLES {
+        keys.push(
+            domain
+                .insert(0, Arc::new(Resource(AtomicUsize::new(0))))
+                .unwrap(),
+        );
+    }
+    assert_eq!(
+        domain.insert(0, Arc::new(Resource(AtomicUsize::new(0)))),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    );
+    let context = admission.commit(Arc::new(ContextResource)).unwrap();
+    assert_eq!(domain.context_count().unwrap(), 1);
+    assert_eq!(domain.registry.lock().unwrap().pending_contexts, 0);
+    for key in keys.into_iter().chain([context]) {
+        domain.close(key, 0).unwrap();
+        domain.destroy(key).unwrap();
+    }
+    assert!(domain.idle_for_unload());
+    let admission = domain.admit_context().unwrap();
+    assert_eq!(
+        admission.commit(Arc::new(Resource(AtomicUsize::new(0)))),
+        Err(AM_ERR_SDK_INVALID_ARGUMENT)
+    );
+    assert!(domain.idle_for_unload());
+    let mut contexts = Vec::new();
+    for _ in 1..SDK_MAX_CONTEXTS {
+        contexts.push(domain.insert(0, Arc::new(ContextResource)).unwrap());
+    }
+    let last = domain
+        .admit_context()
+        .unwrap()
+        .commit(Arc::new(ContextResource))
+        .unwrap();
+    assert_eq!(domain.context_count().unwrap(), SDK_MAX_CONTEXTS as usize);
+    assert!(matches!(
+        domain.admit_context(),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    ));
+    for key in contexts.into_iter().chain([last]) {
+        domain.close(key, 0).unwrap();
+        domain.destroy(key).unwrap();
+    }
+}
+
+#[test]
+fn failed_admission_commit_returns_the_pending_slot() {
+    let domain = Domain::new(false);
+    domain.registry.lock().unwrap().sequence = u64::MAX;
+    let admission = domain.admit_context().unwrap();
+    assert_eq!(
+        admission.commit(Arc::new(ContextResource)),
+        Err(AM_ERR_SDK_RESOURCE_EXHAUSTED)
+    );
+    assert!(domain.idle_for_unload());
+    assert_eq!(domain.registry.lock().unwrap().pending_contexts, 0);
+    domain.registry.lock().unwrap().sequence = 0;
+    let key = domain
+        .admit_context()
+        .unwrap()
+        .commit(Arc::new(ContextResource))
+        .unwrap();
+    domain.close(key, 0).unwrap();
+    domain.destroy(key).unwrap();
+    assert!(domain.idle_for_unload());
+}
