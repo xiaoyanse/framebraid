@@ -4,6 +4,7 @@ use std::time::Duration;
 pub(super) fn worker(engine: Arc<Engine>) {
     loop {
         storage::purge_contexts(&engine);
+        let mut pruned_later = Vec::new();
         let job = {
             let mut data = match engine.data.lock() {
                 Ok(d) => d,
@@ -12,10 +13,13 @@ pub(super) fn worker(engine: Arc<Engine>) {
             if engine.stop.load(Ordering::Acquire) {
                 return;
             }
-            // 攒批窗口触发（凑满/截止/关闭排空）在选队前搬入执行队列。
-            for job in batching::tick(std::time::Instant::now()) {
+            // 攒批窗口触发（凑满/截止/关闭排空）在选队前搬入执行队列；
+            // 剪除项的收口延迟到域锁外（finish 锁序与正常执行完成一致）。
+            let outcome = batching::tick(std::time::Instant::now());
+            for job in outcome.jobs {
                 data.queue.push_back(job);
             }
+            pruned_later = outcome.pruned;
             let available = |job: &Job| {
                 job.model.data::<ModelHandle>().is_ok_and(|m| {
                     !m.busy.load(Ordering::Acquire)
@@ -83,6 +87,7 @@ pub(super) fn worker(engine: Arc<Engine>) {
                 }
             }
         };
+        batching::finish_pruned(std::mem::take(&mut pruned_later));
         if let Some((job, retired)) = job {
             if retired {
                 retired::release(job);

@@ -235,3 +235,24 @@ fn prune_removes_canceled_items_before_any_later_batch() {
     assert!(c.prune(|_| false).is_empty());
     assert_eq!(stats, zero_stats());
 }
+
+#[test]
+fn prune_keeps_remaining_items_flushable_by_deadline_tick() {
+    // 部分取消后，剩余活动项仍须被窗口截止正常成批（真实DLL发现的组合缺陷回归）。
+    let mut c: Coordinator<u32, u32> = Coordinator::default();
+    let mut stats = zero_stats();
+    let start = Instant::now();
+    assert!(matches!(
+        c.submit(1, vec![1, 2, 3], Some(config(4, 30)), 1, start, &mut stats),
+        Submitted::Parked
+    ));
+    assert_eq!(c.prune(|id| *id != 2), vec![2]);
+    assert_eq!(c.window_len(), 2);
+    let flush = c
+        .tick(start + Duration::from_millis(31), &mut stats)
+        .expect("截止后剩余2项必须成批flush");
+    assert!(flush.batched && flush.items == vec![1, 3]);
+    assert_eq!(stats.formed_batches, 1);
+    assert_eq!(stats.batched_items, 2);
+    assert_eq!(stats.timeout_batches, 1);
+}

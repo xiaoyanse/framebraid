@@ -36,8 +36,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "673443186083f4ff3d0b3cf3716bac470f26fb13ffc296908c5127addf38917a",
-      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "37512189e6283239ad5a438ea9a537965b38570f84710a5f879c2f125e0a8878",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；攒批死锁修复：prune收口移出域锁（TickOutcome拆分），同构正常完成锁序"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",

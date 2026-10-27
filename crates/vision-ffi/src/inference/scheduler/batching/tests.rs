@@ -213,7 +213,7 @@ fn key_mismatch_and_generation_switch_execute_immediately() {
     assert_eq!(jobs.len(), 1);
     assert!(matches!(jobs[0].input, Payload::Single(_)));
     drop(jobs);
-    let drained = tick_inner(Instant::now() + Duration::from_secs(6), |_| false);
+    let drained = tick_inner(Instant::now() + Duration::from_secs(6), |_| false).jobs;
     assert_eq!(drained.len(), 1);
     assert!(matches!(drained[0].input, Payload::Single(_)));
     drop(drained);
@@ -238,9 +238,13 @@ fn deadline_tick_forms_batch_and_under_two_runs_per_item() {
     )
     .is_empty());
     // 未到期不触发。
-    assert!(tick_inner(Instant::now() + Duration::from_millis(10), |_| false).is_empty());
+    assert!(
+        tick_inner(Instant::now() + Duration::from_millis(10), |_| false)
+            .jobs
+            .is_empty()
+    );
     // 截止：≥2 项合成一个原生 Job，计为超时批次。
-    let jobs = tick_inner(Instant::now() + Duration::from_millis(2001), |_| false);
+    let jobs = tick_inner(Instant::now() + Duration::from_millis(2001), |_| false).jobs;
     assert_eq!(jobs.len(), 1);
     let Payload::Native { ids, .. } = &jobs[0].input else {
         panic!("截止≥2项应成批");
@@ -265,7 +269,7 @@ fn deadline_tick_forms_batch_and_under_two_runs_per_item() {
         pending(&f, &[9], admissions(&f, 1, 8))
     )
     .is_empty());
-    let singles = tick_inner(Instant::now() + Duration::from_millis(2001), |_| false);
+    let singles = tick_inner(Instant::now() + Duration::from_millis(2001), |_| false).jobs;
     assert_eq!(singles.len(), 1);
     assert!(matches!(singles[0].input, Payload::Single(_)));
     drop(singles);
@@ -290,7 +294,7 @@ fn stopping_drains_window_and_disable_clears_stats() {
     )
     .is_empty());
     // 模型关闭排空：立即触发，≥2 项按单一物理批次执行。
-    let jobs = tick_inner(Instant::now(), |_| true);
+    let jobs = tick_inner(Instant::now(), |_| true).jobs;
     assert_eq!(jobs.len(), 1);
     assert!(matches!(jobs[0].input, Payload::Native { .. }));
     drop(jobs);
@@ -353,7 +357,7 @@ fn next_deadline_tracks_open_windows() {
     let deadline = next_deadline().expect("开窗后应有截止");
     assert!(deadline <= Instant::now() + Duration::from_millis(300));
     // 排空后不再报告（其他用例串行收尾、登记已回收）。
-    let jobs = tick_inner(Instant::now(), |_| true);
+    let jobs = tick_inner(Instant::now(), |_| true).jobs;
     drop(jobs);
     assert!(next_deadline().is_none());
 }

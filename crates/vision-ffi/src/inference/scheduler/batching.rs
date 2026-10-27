@@ -215,7 +215,14 @@ pub(in crate::inference) fn route(
 }
 
 /// 周期触发：窗口截止成批；模型关闭排空。由 worker 持域锁调用，产出 Job 直接入队。
-pub(in crate::inference) fn tick(now: Instant) -> Vec<Job> {
+/// tick 产物：jobs 入执行队列；pruned 需在域锁外收口（finish 会取
+/// records/queues，域锁内调用会与等待域锁的队列持有者成环）。
+pub(in crate::inference) struct TickOutcome {
+    pub jobs: Vec<Job>,
+    pub pruned: Vec<(Arc<Entry>, Vec<Pending>)>,
+}
+
+pub(in crate::inference) fn tick(now: Instant) -> TickOutcome {
     tick_inner(now, |entry| {
         entry
             .data::<ModelHandle>()
@@ -223,10 +230,27 @@ pub(in crate::inference) fn tick(now: Instant) -> Vec<Job> {
     })
 }
 
-fn tick_inner(now: Instant, stopping_of: impl Fn(&Arc<Entry>) -> bool) -> Vec<Job> {
+/// 域锁外收口剪除项；与正常执行完成路径同构（锁序一致）。
+pub(in crate::inference) fn finish_pruned(pruned: Vec<(Arc<Entry>, Vec<Pending>)>) {
+    for (entry, pendings) in pruned {
+        if let Ok(model) = entry.data::<ModelHandle>() {
+            for pending in pendings {
+                finish_pending(model, pending);
+            }
+        }
+    }
+}
+
+fn tick_inner(now: Instant, stopping_of: impl Fn(&Arc<Entry>) -> bool) -> TickOutcome {
     let mut jobs = Vec::new();
+    // prune 收口（finish会取records/queues并通知）移出REGISTRY持锁区执行，
+    // 避免与提交/取消/查询路径形成跨锁长链；REGISTRY内只收集不移除的判定。
+    let mut pruned_all: Vec<(Arc<Entry>, Vec<Pending>)> = Vec::new();
     let Ok(mut registry) = lock(&REGISTRY) else {
-        return jobs;
+        return TickOutcome {
+            jobs,
+            pruned: pruned_all,
+        };
     };
     for r in registry.iter_mut() {
         // 已取消/已终态的等待项不进入后续批次；records仅try_lock，与既有
@@ -234,12 +258,13 @@ fn tick_inner(now: Instant, stopping_of: impl Fn(&Arc<Entry>) -> bool) -> Vec<Jo
         if let Ok(model) = r.entry.data::<ModelHandle>() {
             match model.state.records.try_lock() {
                 Ok(records) => {
-                    for pending in r.coord.prune(|p| {
+                    let pruned = r.coord.prune(|p| {
                         records
                             .get(&p.id)
                             .is_none_or(|r| !r.canceled && r.state < AM_REQ_DONE as u32)
-                    }) {
-                        finish_pending(model, pending);
+                    });
+                    if !pruned.is_empty() {
+                        pruned_all.push((r.entry.clone(), pruned));
                     }
                 }
                 Err(std::sync::TryLockError::WouldBlock) => {}
@@ -255,7 +280,11 @@ fn tick_inner(now: Instant, stopping_of: impl Fn(&Arc<Entry>) -> bool) -> Vec<Jo
             jobs.extend(flush_jobs(&r.entry, r.parallel, flush));
         }
     }
-    jobs
+    drop(registry);
+    TickOutcome {
+        jobs,
+        pruned: pruned_all,
+    }
 }
 
 /// 窗口中止项逐项收口：与 retired::release 同构——不进批次、按关闭类错误
