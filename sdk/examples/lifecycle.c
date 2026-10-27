@@ -32,8 +32,13 @@ int main(void) {
   assert(amv_object_query_state(camera, &state) == AM_ERR_SDK_HANDLE_INVALID);
   cap.struct_size = sizeof(cap);
   assert(amc_query_capability(camera, &cap) == AM_OK);
-  assert((cap.feature_bits & ~(AMC_CAP_SHARED_FRAME_POOL | AMC_CAP_DECODE_H264 |
-      AMC_CAP_DECODE_H265 | AMC_CAP_DECODER_STANDALONE | AMC_CAP_BSF_ANNEXB)) == 0);
+  /* 掩码须随 am_sdk_types.h 能力位定义同步演进；此处核当前公开全集。 */
+  assert((cap.feature_bits & ~(AMC_CAP_ENCODED_H264 | AMC_CAP_ENCODED_H265 |
+      AMC_CAP_DECODE_H264 | AMC_CAP_DECODE_H265 | AMC_CAP_DECODE_MJPEG |
+      AMC_CAP_DECODER_STANDALONE | AMC_CAP_CAPTURE_ISAPI | AMC_CAP_CAPTURE_CONTINUOUS |
+      AMC_CAP_PUSH | AMC_CAP_PULL | AMC_CAP_REUSE | AMC_CAP_SCALE |
+      AMC_CAP_BSF_ANNEXB | AMC_CAP_BSF_LENGTH_PREFIX | AMC_CAP_SHARED_FRAME_POOL |
+      AMC_CAP_WORKER_BUDGET)) == 0);
   queue.struct_size = sizeof(queue);
   assert(amc_get_queue_policy(camera, AM_Q_ENCODED_STREAM, &queue) == AM_OK);
   assert(queue.max_items == 36);

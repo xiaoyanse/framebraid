@@ -8,8 +8,11 @@
 | --- | --- | --- |
 | Python | `sdk/examples/inference.py` | **通过**：CPU 同步/异步、fetch/ack、共享租约（绑定/运行库全部取自解压包，模型为本机 Identity 样本） |
 | C# | `sdk/examples/Inference.cs`（csc `/warnaserror` + 包内绑定） | **通过**：CPU sync/async、fetch/ack、shared lease、SafeHandle |
-| C/C++ | inference.c/.cpp、lifecycle.c、shared_frame.c | **本轮未重跑**：本机 MinGW gcc 15.2.0 的 `cc1` 静默失败（`--version` 零输出、最小程序 exit 1，环境故障非源码问题；无 MSVC/clang 可用）。同示例集在 2026-10-26 [ABI 1.1 记录](sdk-r2-abi11-hardware-20261026.md)有 GCC C11/C++17 `-Wall/-Wextra/-Werror` 编译与真实 DLL 调用证据（源码树构建）；干净包与本批源码差异仅本日测试脚本/RG 表优化（已过 workspace 回归），头文件与导入库在包内经 check-boundary 生成链核对一致 |
+| C | `inference.c`（`-municode`）、`lifecycle.c`、`shared_frame.c`（GCC 15.2.0 `-std=c11 -Wall -Wextra -Werror`） | **通过**：Identity 原始输出/ack/release/close-destroy、双域生命周期/限额、共享帧复制/借用桥（编译与运行均取自解压包头文件/导入库/DLL） |
+| C++17 | `inference.cpp`（`-municode`） | **通过**：共享帧、结果 RAII、逆序依赖清理 |
 | Python | `sdk/examples/camera.py --rtsp` | **环境装配未通过**：本地 MediaMTX 回环推流（外部 ffprobe 可读到 H.264 流）下 SDK 帧拉取 5 秒超时，根因未定位；不推断 SDK 缺陷也不冒充通过，登记待查 |
+
+本轮示例修复（随本批提交）：`inference.cpp` 的 `NOMINMAX` 加保护宏（MinGW libstdc++ 头已预定义为 1，裸重定义触发 `-Werror`）；`lifecycle.c` 能力位掩码从旧五位更新为 `am_sdk_types.h` 当前 16 位全集（示例断言未随合同演进，真实包上运行即暴露）。wmain 入口在 MinGW 下需 `-municode` 链接（MSVC 由 CRT 自动处理），已作为示例验证环境备注。运行参数注意：混合斜杠路径会被运行库目录校验拒绝，示例调用须用统一分隔符。
 
 ## 打包过程修正（如实记录）
 
@@ -17,4 +20,4 @@
 
 ## 结论与边界
 
-R4 1.4 以"干净解压包 + Python/C# 真实运行 + C/C++ 凭既有同示例证据 + camera RTSP 如实登记未过"收口：头文件/绑定/运行库/许可/来源指纹在包内一致（check-boundary 与打包校验通过），中英文接入说明（INTEGRATION.md/README）随包分发。C/C++ 干净包重跑待编译环境修复后补一次即可（示例与包不变）；camera.py RTSP 链路问题单独排查，不与包验证混同。本候选未授权发布，发布须另按 RELEASE_CHECKLIST 全量核对。
+R4 1.4 以"干净解压包 + Python/C#/C/C++17 全部示例真实编译运行 + camera RTSP 如实登记未过"收口：头文件/绑定/运行库/许可/来源指纹在包内一致（check-boundary 与打包校验通过），中英文接入说明（INTEGRATION.md/README）随包分发。首轮"C/C++ 环境故障"后查明为**会话 shell 的 PATH 解析顺序问题**：Claude Code 的 Git Bash 中 `C:\Program Files\Git\mingw64\bin` 先于 MSYS2，cc1 按搜索序加载到 Git 附带的旧运行库（新符号缺失表现为 `0xC0000139` 静默退出）；MSYS2 工具链本身完好，前置 `/c/msys64/mingw64/bin` 后立即恢复，MSYS2 终端用户不受影响。camera.py RTSP 链路问题单独排查，不与包验证混同。本候选未授权发布，发布须另按 RELEASE_CHECKLIST 全量核对。
