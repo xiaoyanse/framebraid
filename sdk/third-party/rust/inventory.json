@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "target": "x86_64-pc-windows-msvc",
   "scope": "Resolved Cargo metadata including build dependencies; not exact linked-code attribution",
-  "cargoLockSha256": "8f2eeb6035999cfca927893b7f7970829a4036fbe0dff50bdb5548b861c10c8c",
+  "cargoLockSha256": "1ab570ec1d5bae8a436efeb1cb8de7fed5e608be6c73ced9be11745126817e76",
   "noticeParts": [
     {
       "path": "NOTICES-1.txt",
