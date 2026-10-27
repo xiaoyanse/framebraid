@@ -374,7 +374,7 @@ def cross_process(camera, args):
     return result
 
 
-def shared_inference(camera, vision, ctx, directory, cancel=False):
+def shared_inference(camera, vision, ctx, directory, cancel=False, second_pose=False):
     camctx = shared.init(camera)
     pool, desc = shared.create(camera, camctx)
     consumer = shared.attach(vision, ctx, desc)
@@ -399,8 +399,10 @@ def shared_inference(camera, vision, ctx, directory, cancel=False):
         original_release(owner)
 
     bridge.release_owner = release
+    second_file = "yolo26n-pose.onnx" if second_pose else "yolo11n-cls.onnx"
+    second_profile = "pose-yolo26-e2e-coco17-v1" if second_pose else "classify-yolo11n-prob-v1"
     models = [load(vision, ctx, directory/"yolo26n-pose.onnx", "pose-yolo26-e2e-coco17-v1")[0],
-              load(vision, ctx, directory/"yolo11n-cls.onnx", "classify-yolo11n-prob-v1")[0]]
+              load(vision, ctx, directory/second_file, second_profile)[0]]
     requests = []
     expected = []
     try:
@@ -419,7 +421,10 @@ def shared_inference(camera, vision, ctx, directory, cancel=False):
         c.memset(c.byref(view), 0, c.sizeof(view))
         # 接受后立即return；两个真实ORT工作走到release时，释放屏障仍未通过。
         assert entered[0].wait(5) and entered[1].wait(5)
+        retained = c.string_at(bridge.view.contents.planes[0], frame.plane_size_bytes[0])
+        c.memset(data, 0xA5, len(data))
         shared.publish(camera, pool, pixel, a.AM_ERR_SDK_QUEUE_FULL)
+        assert c.string_at(bridge.view.contents.planes[0], frame.plane_size_bytes[0]) == retained
         state = c.c_uint32()
         check(vision.amv_shared_pool_detach(consumer, 0, c.byref(state)))
         assert state.value == a.AM_LIFECYCLE_CLOSING
@@ -447,7 +452,8 @@ def shared_inference(camera, vision, ctx, directory, cancel=False):
         gate.set()
     shared.close(camera, pool, True, True)
     shared.close(camera, camctx, True)
-    return {"samePublicationTwoModels": True, "releaseCalls": len(release_count), "cancel": cancel}
+    return {"samePublicationTwoModels": True, "heldBytesUnchanged": True,
+            "releaseCalls": len(release_count), "cancel": cancel}
 
 
 def main():
@@ -456,6 +462,8 @@ def main():
     parser.add_argument("--runtime-dir", type=Path, required=True)
     parser.add_argument("--model-dir", type=Path, required=True)
     parser.add_argument("--child", action="store_true")
+    parser.add_argument("--shared-pose-only", action="store_true",
+                        help="仅验证两个 Pose 模型实例的共享帧正常与关闭竞争")
     args = parser.parse_args()
     if args.child:
         child_inference(args)
@@ -465,6 +473,14 @@ def main():
     a.bind(camera, "amc_")
     missing = a.bind(vision, "amv_")
     ctx = initialize(vision, args.runtime_dir)
+    if args.shared_pose_only:
+        try:
+            result = [shared_inference(camera, vision, ctx, args.model_dir, cancel, second_pose=True)
+                      for cancel in (False, True)]
+            print(json.dumps(result, ensure_ascii=False))
+        finally:
+            shared.close(vision, ctx, False)
+        return
     result = {"profiles": basic(vision, ctx, args.model_dir), "shared": []}
     for cancel in [False, True]:
         result["shared"].append(shared_inference(camera, vision, ctx, args.model_dir, cancel))

@@ -36,6 +36,7 @@
 - [x] 1.4a 最近邻缩放降低重复计算，逐字节对拍并量化，见 `docs/verification/sdk-r2-nearest-scale-20261027.md`；1.4 父项仍需共享帧/跨语言搬运及 SIMD 决策。
 - [x] 1.4b 量化同进程 1080p 共享池发布/借用/显式 Python 复制与归还；见 `docs/verification/sdk-r2-shared-copy-baseline-20261027.md`，其他 1.4 范围继续开放。
 - [ ] 1.5 定向复核池耗尽/活帧持有/取消/关闭竞争及归还后的资源边界；错误不靠覆写活缓冲解决，不要求固定4小时长跑。
+  - [x] 1.5a 单槽共享帧由两个 Pose 模型实例真实推理持有，池满拒绝覆盖、取消/正常完成后归还恢复；限定条件见[记录](../../../docs/verification/sdk-r2-shared-retained-pose-20261027.md)，不关闭父项。
 - [ ] 1.6 按测前目标卡和A/A对照主目标，报告同有效交付下CPU时间/分配复制或跨后端承载取舍，以及内存/帧龄等保护指标；更新文档和来源修订，相关测试/clippy/ABI 检查通过后提交。
 
 ## Workflow follow-up
