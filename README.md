@@ -79,6 +79,8 @@ FFmpeg and ONNX Runtime are dynamically loaded. Pass compatible absolute runtime
 | C# | [Bindings](sdk/bindings/csharp), SafeHandle helpers and examples |
 | Python | [Bindings](sdk/bindings/python), standard-library `ctypes` and context managers |
 
+Rust-specific hardware/performance examples live in the repository [`examples/`](examples/) directory; four-language integration examples are under [`sdk/examples/`](sdk/examples/).
+
 Choose static Rust consumption or DLL consumption in one process, not both runtime domains. Java wrappers, Linux/macOS/mobile binaries and GPU-inference acceptance are outside the initial Windows commitment.
 
 ## Ownership, concurrency and failures

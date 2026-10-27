@@ -2,10 +2,9 @@
 
 [Documentation / 文档入口](README.md) · [Current local status / 当前本地状态](RELEASE_STATUS.md)
 
-**v0.1.0 publication authorized by the owner on 2026-10-26.** Checks refer to the
-identified build and scoped validation, not every future version or platform.
+**v0.1.0 publication authorized by the owner on 2026-10-26; v0.2.0 authorized on 2026-10-28.** Each authorization covers only the identified build and scoped validation, not future versions or platforms.
 
-**负责人已于 2026-10-26 授权发布 v0.1.0。**检查对应具名构建和限定验证；未来版本须重新核对。
+**负责人已于 2026-10-26 授权发布 v0.1.0、2026-10-28 授权发布 v0.2.0。**每版授权仅覆盖具名构建与限定验证；未来版本须重新核对。
 
 ## Completed locally / 本地已完成
 

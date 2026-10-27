@@ -79,6 +79,8 @@ FFmpeg 与 ONNX Runtime 动态加载；初始化时传入兼容的绝对运行�
 | C# | [绑定](sdk/bindings/csharp)、SafeHandle 辅助与示例 |
 | Python | [绑定](sdk/bindings/python)、标准库 `ctypes` 与上下文管理器 |
 
+Rust 专属硬件/性能示例在仓库 [`examples/`](examples/)；四语言接入示例在 [`sdk/examples/`](sdk/examples/)。
+
 同一进程选择静态 Rust 消费或 DLL 消费之一，不混用两个运行域。Java 封装、Linux/macOS/移动端二进制与 GPU 推理验收不在首发 Windows 承诺内。
 
 ## 所有权、并发与故障
