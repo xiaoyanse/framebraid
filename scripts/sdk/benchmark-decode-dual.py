@@ -22,12 +22,13 @@ sized, checked, close, Decoder = single.sized, single.checked, single.close, sin
 
 
 def run_dual_window(lib, args, stream, packets, policies):
-    """两路独立解码器同相位定拍；每路独立延迟分账，CPU/观察器为全进程合并。"""
-    assert len(packets) == 2 and len(policies) == 2
+    """多路独立解码器同相位定拍；每路独立延迟分账，CPU/观察器为全进程合并。"""
+    lanes_total = len(policies)
+    assert all(len(lane_packets) for lane_packets in packets)
     parallelism, parallelism_method = available_parallelism()
     sampler = ResourceSampler(enabled=args.observation_controls)
     decoders, pendings, received, samples, lateness = [], [], [], [], []
-    window_counts = [dict(outputs=0, inputs=0, opening=0) for _ in range(2)]
+    window_counts = [dict(outputs=0, inputs=0, opening=0) for _ in range(lanes_total)]
     hashes = []
     state = dict(before=None, measurement_end=None)
     observation = None
@@ -164,8 +165,10 @@ def main():
     parser.add_argument("--window-s", type=float, default=6)
     parser.add_argument("--age-budget-ms", type=float, default=200)
     parser.add_argument("--rounds", type=int, default=3)
-    parser.add_argument("--policies", nargs=2, choices=("cpu", "hardware"), default=None,
-                        help="两路各自策略；默认跑 [cpu,cpu] 与 [hardware,hardware] 两组")
+    parser.add_argument("--policies", nargs="+", choices=("cpu", "hardware"), default=None,
+                        help="各路策略（路数由此决定）；默认跑全CPU与全硬件两组")
+    parser.add_argument("--lanes", type=int, default=2,
+                        help="默认组的路数（--policies 未给时生效）")
     parser.add_argument("--observation-controls", action="store_true")
     args = parser.parse_args()
     output = args.output.resolve()
@@ -176,10 +179,10 @@ def main():
     try:
         lib = c.CDLL(str(args.dll_dir.resolve() / "am_camera.dll"))
         a.bind(lib, "amc_", require_all=True)
-        groups = [args.policies] if args.policies else [["cpu", "cpu"], ["hardware", "hardware"]]
+        groups = [args.policies] if args.policies else             [["cpu"] * args.lanes, ["hardware"] * args.lanes]
         for policies in groups:
             for round_index in range(1, args.rounds + 1):
-                row = run_dual_window(lib, args, stream, [packets, packets], policies)
+                row = run_dual_window(lib, args, stream, [packets] * len(policies), policies)
                 name = f"dual-{'-'.join(policies)}-{round_index}.json"
                 (output / name).write_text(json.dumps(row, indent=1) + "\n", encoding="utf-8")
                 results.append(dict(file=name,
