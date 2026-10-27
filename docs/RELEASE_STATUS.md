@@ -56,6 +56,8 @@ R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、
 
 R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); later H2.3a/b integrate direct/RTSP selection and recovery; complete pressure acceptance remains open. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
 
+本地未发布变更：旧 C 后端矩阵查询需先显式 probe 才能判定 CUDA 硬件，见[验证](verification/sdk-h5-matrix-cache-20261027.md)；不改变已发布制品。
+
 R2 H2.0c/1.1 readback reservations and conversion caches are locally verified ([record](verification/sdk-r2-readback-cache-20261026.md)); both pixel-copy entries use the budget adapter, but automatic native hardware activation/recovery and production/soak validation remain open. / 回读额度覆盖缓存寿命、转换缓存已验证，不改变公开CPU制品和未验事项。
 
 Local R2 direct tensor preparation is verified for allocation reduction, byte/transform equivalence and CPU Pose/retained-input regression ([record](verification/sdk-r2-prepare-direct-20261026.md)); published assets and support remain unchanged. MET-2 S1/S2/S3 baselines are available, while live 30-FPS sampling delivery, accelerated inference, recovery and soak acceptance remain open. / 本地直写张量已验证，原生真实采样不足和其他阶段继续，不扩大公开支持。

@@ -43,6 +43,14 @@ def snapshot(lib, ctx):
     return value
 
 
+def matrix(lib, ctx):
+    out = sized(a.am_backend_matrix_t)
+    check(lib.amv_query_backends(ctx, c.byref(out)))
+    assert out.row_count == 3
+    return [{"backend": row.backend, "hw_detected": row.hw_detected,
+             "note": row.note_utf8.decode()} for row in out.rows[:3]]
+
+
 def main(args):
     output = args.output.resolve()
     assert output.is_relative_to((ROOT / ".local").resolve())
@@ -59,6 +67,8 @@ def main(args):
         initial = snapshot(lib, ctx)
         assert initial["state"] == "not_probed" and initial["device_probe"] is None
         assert not initial["runtime_initialized"]
+        before_matrix = matrix(lib, ctx)
+        assert before_matrix[2]["hw_detected"] == 0 and "cuda-hardware-unknown" in before_matrix[2]["note"]
         check(lib.amv_probe_inference_hardware(ctx, 0), a.AM_ERR_SDK_LIMIT_OUT_OF_RANGE)
         check(lib.amv_probe_inference_hardware(ctx, 5001), a.AM_ERR_SDK_LIMIT_OUT_OF_RANGE)
         low = sized(a.am_queue_policy_t)
@@ -76,6 +86,16 @@ def main(args):
         report = snapshot(lib, ctx)
         assert report["state"] == "probe_complete"
         probe = report["device_probe"]
+        after_matrix = matrix(lib, ctx)
+        count = probe["cuda_visible_count"]
+        if count is None:
+            assert after_matrix[2]["hw_detected"] == 0 and "unknown" in after_matrix[2]["note"]
+        elif count == 0:
+            assert after_matrix[2]["hw_detected"] == 0 and "no-device" in after_matrix[2]["note"]
+        else:
+            assert after_matrix[2]["hw_detected"] == 1
+        for _ in range(50):
+            assert matrix(lib, ctx) == after_matrix
         assert 1 <= probe["cpu_logical_parallelism"] and len(probe["cuda_devices"]) <= 16
         assert report["observations"]["executed_mask"] == 0
         assert not report["runtime_initialized"], "probe不得隐式初始化ORT"
@@ -92,6 +112,8 @@ def main(args):
         # 新一轮余额不足必须撤销旧成功，不留下看似新鲜的旧结果。
         check(lib.amv_set_queue_policy(ctx, a.AM_Q_CONTROL, c.byref(low)))
         check(lib.amv_probe_inference_hardware(ctx, 1500), a.AM_ERR_SDK_RESOURCE_EXHAUSTED)
+        cleared_matrix = matrix(lib, ctx)
+        assert cleared_matrix[2]["hw_detected"] == 0 and "unknown" in cleared_matrix[2]["note"]
         # 队列额度按现有合同只能降低，不能为了测试把额度调大；关闭态查询仍必须可用。
         check(lib.amv_get_inference_hardware_report(ctx, None, 0, c.byref(c.c_uint64())), a.AM_ERR_SDK_RESOURCE_EXHAUSTED)
     finally:

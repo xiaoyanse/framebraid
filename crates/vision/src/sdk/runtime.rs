@@ -126,8 +126,25 @@ pub fn observations() -> Result<BackendObservations> {
         executed_mask: state.executed,
     })
 }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CudaSnapshot {
+    Unprobed,
+    Failed,
+    Absent,
+    Present,
+}
+
 pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
-    let cuda = windows::cuda_hardware();
+    let cuda = if windows::cuda_hardware() {
+        CudaSnapshot::Present
+    } else {
+        CudaSnapshot::Absent
+    };
+    query_snapshot(dirs, cuda)
+}
+
+/// 仅读取调用方提供的可见性快照，不调用原生硬件驱动。
+pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<BackendStatus>> {
     let state = observations()?;
     let ready = initialized();
     Ok((0..3)
@@ -168,11 +185,23 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
                 hardware: match backend {
                     0 => true,
                     1 => cfg!(target_arch = "x86_64"),
-                    _ => cuda,
+                    _ => cuda == CudaSnapshot::Present,
                 },
                 loaded,
                 executed: loaded && state.executed_mask & (1 << backend) != 0,
-                note: if conflict {
+                note: if backend == 2 && conflict && cuda == CudaSnapshot::Unprobed {
+                    c"vision.backendConflict; cuda-hardware-unknown; explicit-probe-required"
+                } else if backend == 2 && conflict && cuda == CudaSnapshot::Failed {
+                    c"vision.backendConflict; cuda-hardware-unknown; probe-failed"
+                } else if backend == 2 && conflict && cuda == CudaSnapshot::Absent {
+                    c"vision.backendConflict; cuda-no-device"
+                } else if backend == 2 && cuda == CudaSnapshot::Unprobed {
+                    c"cuda-hardware-unknown; explicit-probe-required; check-dependency-and-provider-fields"
+                } else if backend == 2 && cuda == CudaSnapshot::Failed {
+                    c"cuda-hardware-unknown; probe-failed; check-detailed-report"
+                } else if backend == 2 && cuda == CudaSnapshot::Absent {
+                    c"cuda-no-device; explicit-probe-observed-zero"
+                } else if conflict {
                     c"vision.backendConflict"
                 } else if !dependencies {
                     c"vision.runtimeMissing"
@@ -191,6 +220,19 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
 #[cfg(test)]
 mod backend_tests {
     use super::*;
+    #[test]
+    fn cached_cuda_unknown_and_absent_do_not_claim_hardware() {
+        for (cuda, reason) in [
+            (CudaSnapshot::Unprobed, "explicit-probe-required"),
+            (CudaSnapshot::Failed, "probe-failed"),
+            (CudaSnapshot::Absent, "no-device"),
+        ] {
+            let rows = query_snapshot(&[], cuda).unwrap();
+            assert!(!rows[2].hardware);
+            assert!(rows[2].note.to_str().unwrap().contains(reason));
+        }
+        assert!(query_snapshot(&[], CudaSnapshot::Present).unwrap()[2].hardware);
+    }
     #[test]
     fn readiness_snapshot_does_not_wait_for_native_initialization_lock() {
         let guard = RUNTIME.lock().unwrap();

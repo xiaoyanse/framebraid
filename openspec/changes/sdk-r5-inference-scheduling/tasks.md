@@ -11,6 +11,7 @@
 - [x] H5.0c MET-2真实Pose CPU三轮资源/异步响应基线及独立进程缺EP strict/CPU回退控制完成，见[记录](../../../docs/verification/sdk-met2-s3-20261026.md)。不关闭H5.1～H5.4真实加速/模型策略/恢复与压力矩阵。
 - [x] H5.0d 有序模型C路径/内存加载、按ID尝试/独立模型缓存、Python/C#、实际CPU Identity/Pose及缺EP strict/回退验证，ABI1.1本地r9历史与Schema同步，见[验证](../../../docs/verification/sdk-h5-ordered-selection-20261026.md)。仅完成C接线阶段；旧矩阵迁移、实际加速、资源竞争/恢复及完整H5.1～H5.4验收继续，不用本项代替整包通过。
 - [x] H5.0e 原生Run成功观察与结果交付分开，CPU Identity输出预算拒绝与Gather原生失败两项显式回归、clippy及全工作区302通过/20忽略，见[记录](../../../docs/verification/sdk-h5-native-observation-20261027.md)。H5.1/3/4完整硬件验收继续。
+- [x] H5.0f 旧 C 矩阵改读显式探测缓存，未知与无设备分开并记录行为迁移；见 `docs/verification/sdk-h5-matrix-cache-20261027.md`，H5.1/H5.3 继续开放。
 - [ ] H5.1 补齐 CPU/OpenVINO/CUDA 的设备发现、依赖、provider 加载、目标模型会话和真实推理状态；缺失/失败/未测分开，不能仅依赖 nvidia-smi 或将有显卡等同可用。
 - [x] H5.2 实现调用方允许列表/优先级及 strict/fallback 约束下的自动选择，查询请求与实际 provider/设备/回退原因；OpenVINO 仍按当前 CPU 合同，不暗增 GPU 支持。兼容新增先更新合同、生成器与语言封装，不重定义既有策略值。C接线见H5.0d，逐候选线程准入/允许回退及strict/未列CPU拒绝见[本轮验证](../../../docs/verification/sdk-h5-resource-admission-20261027.md)；真实加速/硬件故障和资源收益仍按H5.1/3/4验收，不由本项代验。
 - [ ] H5.3 验证缺依赖、provider 加载失败、模型不兼容、设备忙/内存不足、运行期故障及显式重试；不迁移在读输入、不自动重放已完成或状态不确定请求，不突破当前单加速后端共存约束。探测可刷新且有界，不将暂时故障永久缓存。

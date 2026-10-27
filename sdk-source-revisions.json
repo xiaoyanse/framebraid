@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "8393ddde223c9d01d11c28dee1efee91027ed3ae",
+  "reviewBaseCommit": "e8af4970cfa6a517e34ffffad9dcdcf09a53112f",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -270,8 +270,8 @@
     {
       "path": "crates/vision/src/sdk/runtime.rs",
       "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
-      "sha256": "3468d59f246943fb7477aa449346e3ad787ada1fada4346ec647358a54fc91ce",
-      "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+      "sha256": "a0053ef4bb08594e3123cbf7c190a28ee3846391d75b0f666b05ec820baca0f2",
+      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
     },
     {
       "path": "crates/vision/src/sdk/runtime/devices.rs",
@@ -318,8 +318,8 @@
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
       "previousSha256": null,
-      "sha256": "5c209b9c49fc89b46608070668b7ac8a68d26adf596488296b1d35fb5dc88797",
-      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+      "sha256": "bf8100bb03540f54b6e10ff5da16527f41f65fb8e330471c9eb8fe2880214c2d",
+      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
     },
     {
       "path": "crates/vision/src/sdk/prepare.rs",
@@ -920,6 +920,12 @@
       "previousSha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526",
       "sha256": "11faf70d3c866bd357d11fd501943d0a7465c04e2b4e6d6ac3fb77df804e259e",
       "reason": "最近邻像素缩放按通道复制，逐字节对拍与局部 A/A 量化，其他语义不变"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/backends.rs",
+      "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
+      "sha256": "40c5b97e072340608c7b54943b7142935f48daf332f15cbe87567574220c2a97",
+      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
     }
   ]
 }

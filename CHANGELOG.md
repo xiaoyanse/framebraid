@@ -87,6 +87,8 @@
 - Add ABI1.1 r8 explicit inference-device probes and bounded cached JSON reports, with Python/C# helpers. Preserve all existing layouts, initialization and model-selection contracts; no ORT needed for device-only use. Local native C/C#/Python and shutdown/budget checks only; not accelerated inference or release acceptance.
 
 
+旧 C 后端矩阵改读显式 probe 缓存；调用方需先探测，未知与无设备由 note 区分。[验证](docs/verification/sdk-h5-matrix-cache-20261027.md)
+
 最近邻平面缩放减少重复坐标和通道转换；像素逐字节对拍及限定局部量化见 [验证](docs/verification/sdk-r2-nearest-scale-20261027.md)。
 
 硬解报告增加后端编译与编码配置快照；Rust SelectionReport 结构字面量需补字段，C ABI 布局不变。[验证](docs/verification/sdk-r2-backend-support-20261027.md)

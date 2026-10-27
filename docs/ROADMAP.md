@@ -32,6 +32,8 @@ R3 1.1m推理请求表容量/增长重叠已纳入控制字节，真实低预算
 
 H2.0b的共用Rust初始化选择与回退见[本地记录](verification/sdk-r2-hardware-selection-20261026.md)；后续H2.3a/b已接直接DLL与RTSP，仍不作为整组完成。
 
+H5 旧 C 矩阵改用显式设备探测缓存，迁移和限定验证见[记录](verification/sdk-h5-matrix-cache-20261027.md)；Rust 旧入口及真实加速验证继续。
+
 R2 当前候选单路硬解资源对照见[记录](verification/sdk-r2-current-s1-20261027.md)：指定 CPU RGBA 输出下本轮硬解 CPU 时间更高且波动较大，不能外推或宣称已实现卸载。
 
 R2 同进程共享帧与 Python 复制局部基线见[记录](verification/sdk-r2-shared-copy-baseline-20261027.md)，不代表全链零拷贝或跨进程性能。

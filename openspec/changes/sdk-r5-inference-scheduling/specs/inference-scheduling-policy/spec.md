@@ -29,6 +29,11 @@ SDK MUST 区分硬件可见、依赖存在、provider 可加载、目标模型�
 - **WHEN** 暂时设备忙或内存不足后调用方显式重试
 - **THEN** 在预算和运行库共存约束内重验，不受永久失败缓存锁死，记录恢复结果且保持请求唯一终态
 
+#### Scenario: Legacy matrix queried before or during CUDA probe
+
+- **WHEN** 调用方查询旧C后端矩阵而本context尚未探测、探测失败或正在刷新
+- **THEN** 查询不初始化 CUDA 驱动，硬件未知通过 note 显示且不能冒充已确定不存在；仅已得到设备数的显式探测快照可作为可见性依据
+
 ### Requirement: Bounded model selection and honest execution evidence
 
 选择 SHALL 仅尝试调用方允许的最多3个backend/device候选，严格模式只尝试首项，未列CPU不得隐式回退。模型/档案错误 MUST 停止选型；后端失败可按策略继续，保留有界阶段诊断。状态锁 MUST 不跨原生构造持有，旧公开可修改字段不得伪造执行成功。

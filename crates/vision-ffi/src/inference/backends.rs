@@ -90,8 +90,9 @@ pub unsafe extern "C" fn amv_query_backends(
         args::write(out, am_backend_matrix_t::default())?;
         let state = State::get(ctx as usize)?;
         let context = state.context()?;
-        let dirs = &context.data::<Context>()?.runtime_dirs;
-        let observed = runtime::query(dirs).map_err(error)?;
+        let context = context.data::<Context>()?;
+        let cuda = super::hardware::cached_cuda(context)?;
+        let observed = runtime::query_snapshot(&context.runtime_dirs, cuda).map_err(error)?;
         let mut rows = lock(&state.backends)?;
         for (to, from) in rows.0.iter_mut().zip(observed) {
             *to = am_backend_row_t {

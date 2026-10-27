@@ -42,6 +42,38 @@ fn slot(context: &Context) -> Result<Arc<Slot>> {
         .downcast()
         .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
 }
+/// 不创建服务或访问驱动；探测中缓存已撤销，返回未知。
+pub(super) fn cached_cuda(context: &Context) -> Result<runtime::CudaSnapshot> {
+    let slot = {
+        let services = lock(&context.services)?;
+        services.get(&TypeId::of::<Slot>()).cloned()
+    };
+    let Some(slot) = slot else {
+        return Ok(runtime::CudaSnapshot::Unprobed);
+    };
+    let slot = slot
+        .downcast::<Slot>()
+        .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+    cuda_from_slot(&slot)
+}
+fn cuda_from_slot(slot: &Slot) -> Result<runtime::CudaSnapshot> {
+    if slot.busy.load(Ordering::Acquire) {
+        return Ok(runtime::CudaSnapshot::Unprobed);
+    }
+    let cached = lock(&slot.value)?;
+    if slot.busy.load(Ordering::Acquire) {
+        return Ok(runtime::CudaSnapshot::Unprobed);
+    }
+    Ok(cuda_from_report(cached.as_ref().map(|value| &value.report)))
+}
+fn cuda_from_report(report: Option<&devices::DeviceProbeReport>) -> runtime::CudaSnapshot {
+    match report.map(|value| value.cuda_visible_count) {
+        None => runtime::CudaSnapshot::Unprobed,
+        Some(None) => runtime::CudaSnapshot::Failed,
+        Some(Some(0)) => runtime::CudaSnapshot::Absent,
+        Some(Some(_)) => runtime::CudaSnapshot::Present,
+    }
+}
 #[no_mangle]
 pub unsafe extern "C" fn amv_probe_inference_hardware(
     ctx: *mut amv_context_t,
@@ -193,6 +225,50 @@ impl std::io::Write for BoundedJson {
 mod tests {
     use super::*;
     use std::io::Write;
+    #[test]
+    fn probing_matrix_does_not_wait_for_cache_lock() {
+        let slot = Arc::new(Slot::default());
+        slot.busy.store(true, Ordering::Release);
+        let guard = slot.value.lock().unwrap();
+        let other = slot.clone();
+        let (tx, rx) = std::sync::mpsc::channel();
+        let worker = std::thread::spawn(move || tx.send(cuda_from_slot(&other)).unwrap());
+        let result = rx.recv_timeout(Duration::from_secs(1));
+        drop(guard);
+        worker.join().unwrap();
+        assert_eq!(result.unwrap().unwrap(), runtime::CudaSnapshot::Unprobed);
+    }
+    #[test]
+    fn absent_failure_and_unprobed_are_distinct() {
+        let mut report = devices::DeviceProbeReport {
+            schema: "test",
+            cpu_logical_parallelism: 1,
+            cuda_driver_present: false,
+            cuda_initialized: false,
+            cuda_driver_version: None,
+            cuda_visible_count: None,
+            cuda_devices: Vec::new(),
+            limit_reached: false,
+            stopped: None,
+            elapsed_ms: 0,
+            soft_budget_exceeded: false,
+        };
+        assert_eq!(cuda_from_report(None), runtime::CudaSnapshot::Unprobed);
+        assert_eq!(
+            cuda_from_report(Some(&report)),
+            runtime::CudaSnapshot::Failed
+        );
+        report.cuda_visible_count = Some(0);
+        assert_eq!(
+            cuda_from_report(Some(&report)),
+            runtime::CudaSnapshot::Absent
+        );
+        report.cuda_visible_count = Some(1);
+        assert_eq!(
+            cuda_from_report(Some(&report)),
+            runtime::CudaSnapshot::Present
+        );
+    }
     #[test]
     fn serializer_capacity_is_fixed_and_worst_driver_names_fit() {
         let mut bounded = BoundedJson(Vec::with_capacity(32 * 1024));
