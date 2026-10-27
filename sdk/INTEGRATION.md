@@ -49,6 +49,10 @@ Python方法`load_model_memory_selected`与C# `LoadModelMemorySelected`复制接
 
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
+C# 可在结果存活时调用 `result.CopyPose()` 复制 Pose 框与关键点，复制数组可修改且不会更改原生结果；旧 `BorrowView()` 仍是借用。其他任务类型的 C# 安全复制待完成。
+
+C# `result.CopyPose()` copies Pose boxes and keypoints while the result is alive; the returned arrays are independent and mutable. `BorrowView()` remains borrowed. Other structured result types are pending.
+
 Python 另提供 `copy_detect()`、`copy_classify()`、`copy_segment()`、`copy_obb()`，输出结构、限制和当前验证见[记录](../docs/verification/sdk-r4-python-structured-copy-20261027.md)。结果需在调用时存活，返回值随后独立；分割掩膜会产生额外字节复制。
 
 Python also provides `copy_detect()`, `copy_classify()`, `copy_segment()`, and `copy_obb()`. The result must remain alive during the call; returned values are independent. Masks are copied. See the linked local validation for limits and scope.

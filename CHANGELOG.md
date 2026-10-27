@@ -87,6 +87,8 @@
 - Add ABI1.1 r8 explicit inference-device probes and bounded cached JSON reports, with Python/C# helpers. Preserve all existing layouts, initialization and model-selection contracts; no ORT needed for device-only use. Local native C/C#/Python and shutdown/budget checks only; not accelerated inference or release acceptance.
 
 
+C# 新增 Pose 框和关键点安全复制；既有 BorrowView 保持借用，见[验证](docs/verification/sdk-r4-csharp-pose-copy-20261027.md)。
+
 Python 检测、分类、分割和旋转框结果支持有界深拷贝；[合成结构验证](docs/verification/sdk-r4-python-structured-copy-20261027.md)，真实模型对拍仍待。
 
 Python 新增拥有者锁保护的 Pose 框及关键点复制；结果释放后复制值仍有效，见[验证](docs/verification/sdk-r4-python-pose-copy-20261027.md)。
