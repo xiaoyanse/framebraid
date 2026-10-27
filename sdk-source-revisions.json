@@ -916,12 +916,6 @@
       "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
     },
     {
-      "path": "crates/am-camera/src/media/pixel_ops.rs",
-      "previousSha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526",
-      "sha256": "11faf70d3c866bd357d11fd501943d0a7465c04e2b4e6d6ac3fb77df804e259e",
-      "reason": "最近邻像素缩放按通道复制，逐字节对拍与局部 A/A 量化，其他语义不变"
-    },
-    {
       "path": "crates/vision-ffi/src/inference/backends.rs",
       "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
       "sha256": "40c5b97e072340608c7b54943b7142935f48daf332f15cbe87567574220c2a97",
@@ -935,9 +929,15 @@
     },
     {
       "path": "crates/am-camera/src/media/pixel_ops.rs",
-      "previousSha256": "11faf70d3c866bd357d11fd501943d0a7465c04e2b4e6d6ac3fb77df804e259e",
+      "previousSha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526",
       "sha256": "8d71366c21a5812dc280ab9bd430e8ac122d8d95dbf142dba1278ff9f3b690e7",
-      "reason": "R2 1.4 SIMD决策：定点重写被256^3穷举否决（半整数边界rgb(7,39,43)），保留f64路径改进程级RG表，逐位一致由穷举对拍保证"
+      "reason": "最近邻像素缩放按通道复制，逐字节对拍与局部 A/A 量化，其他语义不变；R2 1.4 SIMD决策：定点重写被256^3穷举否决（半整数边界rgb(7,39,43)），保留f64路径改进程级RG表，逐位一致由穷举对拍保证"
+    },
+    {
+      "path": "crates/sdk-support/src/shared/tests.rs",
+      "previousSha256": "9de8d0ab9e97d398306574a959543b4f61482806547f4d18e70ae803f8bbf9dc",
+      "sha256": "55ac6d3071d517de3303a654e59d98eeba7c3b59b1327f64637400e923036612",
+      "reason": "R2 1.5b新增共享池多槽/借用记录耗尽、等待中关闭打断与归还复用定向测试，仅测试代码"
     }
   ]
 }
