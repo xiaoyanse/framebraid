@@ -28,7 +28,7 @@ node scripts/sdk/check-boundary.mjs
 
 推理：init（显式运行库目录）→ load路径/内存模型 → 图像或命名张量同步/异步/批量 → fetch → ack缓存 → release外持 → model close/destroy → ctx shutdown/destroy。
 
-- 五个固定导出档案Pose/Detect/Classify/Segment/OBB；档案ID、SHA/前后处理以crates/vision/resources/profiles.json及设计为准，不承诺任意YOLO版本通用。RAW支持五dtype、多命名IO和显式图像前处理。固定batch不能成完整批次明确拒绝；NATIVE/SPLIT/AUTO回执逐项表达接受/失败，自动攒批/尾填充后续。
+- 五个固定导出档案Pose/Detect/Classify/Segment/OBB；档案ID、SHA/前后处理以crates/vision/resources/profiles.json及设计为准，不承诺任意YOLO版本通用。RAW支持五dtype、多命名IO和显式图像前处理。固定batch不能成完整批次明确拒绝；NATIVE/SPLIT/AUTO回执逐项表达接受/失败。未发布本地扩展：动态批量轴模型可经 amv_model_configure_batching 显式启用有界自适应攒批（AUTO语义内凑满/截止/排空三触发，逐项身份不变），默认关闭、固定轴拒绝、尾填充仍不支持，合同见 dual-dll-abi §3.5 末；合成数据单测已验，真实模型组批实测待验。
 - 图像JPEG/PNG或RGBA/RGB/BGR/NV12；异步默认复制，BORROW_RETAINED保留拥有者至真实执行结束。同步超时返回后原输入可释放，终态仍可按request_id查询。
 - CPU可与单一种OpenVINO或CUDA共存，同进程单一ORT路径；另一加速类型明确冲突。OpenVINO固定CPU设备且provider/ORT线程均计配额；strict失败不偷回退，允许回退返回实际后端。query_backends不偷偷建探测会话，硬件/依赖/实际加载/实际执行分开，未观察不假称已验。
 - 提供目录的init严格加载，失败不给ctx且保持故障；所有ctx销毁后显式backend_retry恢复。显式AM_INIT_SHARED_FRAMES且无runtime_dirs可仅共享帧，不能据此执行模型。错误初始化不污染已正常运行库。

@@ -24,26 +24,26 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler.rs",
       "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-      "sha256": "6204a68797a7c45709fa748197ffd06088049b5a6565d8645eebdd813e457662",
-      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+      "sha256": "5ae81cb131c6e8293abd06926d6004aed9b556268e594deaf5935f8baa683ce0",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
       "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
-      "sha256": "9781bc2f21df17261172bddb3246dbea209eac9aea30d1014f00e6d0b636f478",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+      "sha256": "f3fac25e46de9930b6d8d0efc9f0e05ac7a06db7d1126ae039ea7668504c3951",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "f03fb4345e846329ff6d98efedfa701a6d2e6928d29e9413b0e9316a2b2fba15",
-      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+      "sha256": "673443186083f4ff3d0b3cf3716bac470f26fb13ffc296908c5127addf38917a",
+      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
       "previousSha256": null,
-      "sha256": "d13c0673ef46421e2d8fa691c47953281c08edf8e44cb5f04c189a02a99b032c",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+      "sha256": "9c7730a0cf821c1e46eae00f8a90e19c6dc1c86e0b58f13af62d268b96e80884",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/am-camera/src/media/mod.rs",
@@ -210,8 +210,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "256eb1d1c606100f4982902c5c626ef400f2fcca1ca045ae53263e7a2e252460",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "30de1f8522d72490d00be0aede4fe2e4643af6a50ebaf01d97ccaf56343fb8c9",
+      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-support/src/context.rs",
@@ -258,8 +258,8 @@
     {
       "path": "crates/vision/src/sdk/mod.rs",
       "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-      "sha256": "e90a3e53f96b3228773b7960096c3f29ce54e04282d30cf70653a689fc23b39c",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+      "sha256": "64322fe73350cb0d3c3c0b49c3d473cd8a9d1058f5e29c52887544f0d6f827ac",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision/src/sdk/model.rs",
@@ -306,8 +306,8 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "bf6454fd364f5f2924801027707b6e4306d837683365d2e2e6c4e41505ae194a",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+      "sha256": "3af6e55481f19c6bdb577f1c3aa96c280bc479bd54fa62b18ecb83752d6ece77",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
@@ -324,8 +324,8 @@
     {
       "path": "crates/vision/src/sdk/prepare.rs",
       "previousSha256": "bf97f1899375ee41dd7bbea511d067d50aa67c239f92d3b139094b3c856ba4a0",
-      "sha256": "adeec286e9579581b32b54fbb230ac95ecc7807640ece0d8d0e9f779471cb699",
-      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+      "sha256": "cc1133fcbdf08405ec22300b67cdd218ddf45ef60cbfd2f1b875aae96879bd89",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision/src/sdk/prepare/reference.rs",
@@ -396,20 +396,20 @@
     {
       "path": "crates/sdk-abi/src/fields_5.rs",
       "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-      "sha256": "6f622fa670b4fb04128fbd18b4b70968dc27be512fe0fcbe4409b65d5f8f6f0c",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "242042aecbcd5bcaa41c7103a6d75b746f3f6c92905abb8839858a56168e913f",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "cd7f017b7eb2d5c7de300dcf59136b75634335aa3bf9714d42805c7e4a8cdeff",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "a9497eac980cd4ef96b9558e55758ee57070093dbc6546be7593301a0527d815",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "5b6bb20174fc52e505c0a73e58823a9e81da96b39832c41d193a7ff2cdc18f93",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "123dc9adacd617ad321cc84a1c6cc6b043ad582d740489085623177b660f7718",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
@@ -420,20 +420,20 @@
     {
       "path": "crates/sdk-abi/src/layout_5.rs",
       "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-      "sha256": "61bd3281717db344a069e6cc5dec20e2214dbc2d473aaa7188f7ae86d65d398a",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "6edff4c18cd1aafbdb0c4aaafcd4cf162b9066b474a98364eea9f93162d38258",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "aef7dfe78c573c63592db5457bed1db6ad4c46ef0d2abb408d078038464c9849",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "f82f0566906d5f9d6289b099d6d5a66af017d70d67f24087bef7fe33fcc28014",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "3e9edfbaa4113e2b660542dfd6e0f33d31da5ec4904da8c3b7fd440c01b37c8f",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "fa93cfb3882908f12883885f9592caee3d0f261a857b54c56248e62ba6d81bdb",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
@@ -444,26 +444,26 @@
     {
       "path": "crates/sdk-abi/src/types_5.rs",
       "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-      "sha256": "66d2a3b4f59a9885b5ac0006bbb0490b5ed37f702d5354686e0eac08f909e2b0",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "329b03db7ee5e0c2e71ad6b6bd7ef91a846315f92aac745146c785c4227f0c1e",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "8814c34e55053907666ea4ce11900d1268c46a2be2a0251ef687f3b09825c138",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "8631541be25e551345f3782df1b1e7aab0cb5773cd261b841ed9f496c4171b5a",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "87da96595e5dbd39f815bb0a4bf8501cca9b5a1f89c036190d272ae69f7d0ec2",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "ff6d9e05ef0f92a08b483834f7dc742c829a65e7f5151b0931c3f78752fb3868",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "b25d9c309e98cd3c5ce37ef5a64e5b8df6f3e2345d89a0b2bc475d0cbb96f877",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+      "sha256": "ebc88f0e006564b167ec6544cfa19445f0af3b10aebb2411766a0fae1b5a051d",
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/results.rs",
@@ -474,8 +474,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
       "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-      "sha256": "a0da600b783dc6d09f2497cadaf8919d84be26ea54b6bc3bd566b0605dcd72eb",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "e8daaaba403c39d0e1523b48c268469b0da4ece58452412895be22992de6faca",
+      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/selected_exports.rs",
@@ -684,8 +684,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
       "previousSha256": null,
-      "sha256": "abe37e6c02228c23c45d9288e528c5ef5ffca8d3d54d943d28dc0931f1c79e46",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+      "sha256": "9c67f87b95aa8ff17eb19219596b050ee9cb3bcfd2990b577b4ff05cb07c9eb6",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     },
     {
       "path": "crates/vision-ffi/src/inference/records.rs",
@@ -938,6 +938,12 @@
       "previousSha256": "9de8d0ab9e97d398306574a959543b4f61482806547f4d18e70ae803f8bbf9dc",
       "sha256": "55ac6d3071d517de3303a654e59d98eeba7c3b59b1327f64637400e923036612",
       "reason": "R2 1.5b新增共享池多槽/借用记录耗尽、等待中关闭打断与归还复用定向测试，仅测试代码"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/batch_exports.rs",
+      "previousSha256": "13de2cdb439cdcf8b2ce2df3553db2834b68c30028cc537cfed9cfd60ef3fee8",
+      "sha256": "399f419aecbb2dca9a29326953381a03988d01dc08cd2943ae0fcb169e35e306",
+      "reason": "自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
     }
   ]
 }

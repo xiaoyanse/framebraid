@@ -12,18 +12,18 @@
     },
     {
       "path": "sdk/include/am_vision.h",
-      "sha256": "c67a4c9e3c2ba06f0ca15a715ef8692a50406a071805d99a02801e951fd4c55a",
-      "bytes": 6492
+      "sha256": "be4aa93847c5f3cbde897900791e68b7773347c778ca82a8386945100b34d7be",
+      "bytes": 6717
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "05f961d39eff055803896222011ad2321361769811427a5a35ebb2c777511ae4",
-      "bytes": 65842
+      "sha256": "e56d61be2dd3e8623571b9ddb76bd421e5fec1993e3c307c5d26665515548ae0",
+      "bytes": 66790
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "2bb5d3684d414da190e9ad17c75ff3163859dd32d64348c93e875fc10abbee9d",
-      "bytes": 2347
+      "sha256": "e18e730a4e8e182672f059ffec6bd0bd23e75891ab5f1024b3e946c725bf9f00",
+      "bytes": 2376
     },
     {
       "path": "sdk/abi/defaults.json",
@@ -32,8 +32,8 @@
     },
     {
       "path": "sdk/abi/layout-win-x64.json",
-      "sha256": "2f20e5f4fa0989b3f40a2feda2f2502db516f919afe65b3f59caccc4c0cedb3a",
-      "bytes": 5392
+      "sha256": "b7ee70a9d3f3277fc91a549d8e28a60f7e7859dcf5f3e110ae82b4e14cfe58f2",
+      "bytes": 5536
     },
     {
       "path": "sdk/abi/decode-hardware-report-v1.schema.json",

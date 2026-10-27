@@ -65,6 +65,8 @@ Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 
 
 For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view.
 
+未发布本地扩展：`amv_model_configure_batching(model, &options)` 显式启用自适应攒批（`AM_BATCHING_ENABLE`，max_batch_items 2..64 或 0 取动态上限，max_wait_ms 0..5000，0 为凑满即发），传 NULL 关闭；仅动态批量轴模型、仅 AUTO 语义生效，固定批量轴返回 `vision.batchUnsupported`，不填伪样本。凑满/窗口截止/关闭排空触发单一物理批次，逐项 request_id/取消/TTL 不变；等待项计入既有队列与等待者上限。`amv_model_get_batching` 查询生效配置与累计计数（formed_batches/batched_items/timeout_batches/rejected_items，关闭清零）。合成数据单测与生成器同步已验，真实模型组批实测待验；绑定由生成链同步。
+
 旧 `amv_query_backends` 现只读本 context 的显式 CUDA probe 缓存；需要设备判定时先调用 `amv_probe_inference_hardware`。hw_detected=0 需结合 note 区分未知和已确认无设备。
 
 `amv_query_backends` now reads the context probe cache. Call `amv_probe_inference_hardware` first when device visibility is required; inspect note to distinguish unknown from confirmed absence.
