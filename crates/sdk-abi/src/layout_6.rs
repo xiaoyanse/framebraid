@@ -1,6 +1,66 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_tensor_out_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_tensor_out_t>(), 56);
+    assert_eq!(core::mem::align_of::<am_tensor_out_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, name),
+        0,
+        "am_tensor_out_t.name"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, dtype),
+        8,
+        "am_tensor_out_t.dtype"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, shape),
+        16,
+        "am_tensor_out_t.shape"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, shape_len),
+        24,
+        "am_tensor_out_t.shape_len"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, data),
+        32,
+        "am_tensor_out_t.data"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, data_size),
+        40,
+        "am_tensor_out_t.data_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tensor_out_t, is_contiguous),
+        48,
+        "am_tensor_out_t.is_contiguous"
+    );
+}
+#[test]
+fn am_keypoint_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_keypoint_t>(), 12);
+    assert_eq!(core::mem::align_of::<am_keypoint_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_keypoint_t, x),
+        0,
+        "am_keypoint_t.x"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_keypoint_t, y),
+        4,
+        "am_keypoint_t.y"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_keypoint_t, confidence),
+        8,
+        "am_keypoint_t.confidence"
+    );
+}
+#[test]
 fn am_pose_detection_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_pose_detection_t>(), 32);
     assert_eq!(core::mem::align_of::<am_pose_detection_t>(), 8);
@@ -198,70 +258,5 @@ fn am_segment_instance_t_matches_c() {
         core::mem::offset_of!(am_segment_instance_t, roi_map),
         48,
         "am_segment_instance_t.roi_map"
-    );
-}
-#[test]
-fn am_segment_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_segment_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_segment_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_segment_result_t, count),
-        0,
-        "am_segment_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_segment_result_t, instances),
-        8,
-        "am_segment_result_t.instances"
-    );
-}
-#[test]
-fn am_obb_instance_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_obb_instance_t>(), 64);
-    assert_eq!(core::mem::align_of::<am_obb_instance_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, vertices_xy),
-        0,
-        "am_obb_instance_t.vertices_xy"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, center_x),
-        32,
-        "am_obb_instance_t.center_x"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, center_y),
-        36,
-        "am_obb_instance_t.center_y"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, width),
-        40,
-        "am_obb_instance_t.width"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, height),
-        44,
-        "am_obb_instance_t.height"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, angle),
-        48,
-        "am_obb_instance_t.angle"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, confidence),
-        52,
-        "am_obb_instance_t.confidence"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, class_id),
-        56,
-        "am_obb_instance_t.class_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_instance_t, angle_normalized),
-        60,
-        "am_obb_instance_t.angle_normalized"
     );
 }

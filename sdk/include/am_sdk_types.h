@@ -71,6 +71,8 @@ typedef struct am_tensor_in_s am_tensor_in_t;
 typedef struct am_batch_item_s am_batch_item_t;
 typedef struct am_batch_options_s am_batch_options_t;
 typedef struct am_batch_receipt_s am_batch_receipt_t;
+typedef struct am_batching_options_s am_batching_options_t;
+typedef struct am_batching_stats_s am_batching_stats_t;
 typedef struct am_preprocess_meta_s am_preprocess_meta_t;
 typedef struct am_tensor_out_s am_tensor_out_t;
 typedef struct am_keypoint_s am_keypoint_t;
@@ -136,6 +138,7 @@ typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DON
 #define AM_BATCH_NATIVE UINT32_C(0)
 #define AM_BATCH_SPLIT UINT32_C(1)
 #define AM_BATCH_AUTO UINT32_C(2)
+#define AM_BATCHING_ENABLE UINT32_C(1)
 #define AM_REUSE_ALLOWED UINT32_C(1)
 #define AM_PIXEL_VIEW_MAGIC UINT32_C(1095585880)
 #define AM_RESIZE_LETTERBOX UINT32_C(0)
@@ -872,6 +875,17 @@ typedef struct am_batch_receipt_s {   /* 逐项回执（B11）：接受/拒绝�
   uint64_t* request_ids;      /* DLL 分配；被拒项 request_ids[i]=0 */
   const am_status_t* rejects; /* 被拒原因（背压/校验失败逐项区分） */
 } am_batch_receipt_t;
+typedef struct am_batching_options_s {  /* 自适应攒批（未发布兼容扩展 R5-2.1，主文件 §3.5 末）：
+                                           默认关闭；仅动态批量轴模型可启用 */
+  uint32_t struct_size; uint32_t abi_minor;  /* 版本协商同全局规则 */
+  uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */
+  uint32_t max_wait_ms;                      /* 0..5000；0=凑满即发不等 */
+  uint32_t flags;                            /* AM_BATCHING_ENABLE=1 */
+} am_batching_options_t;
+typedef struct am_batching_stats_s {   /* 累计只读计数；关闭状态查询返回全零 */
+  uint32_t struct_size; uint32_t abi_minor;
+  uint64_t formed_batches, batched_items, timeout_batches, rejected_items;
+} am_batching_stats_t;
 
 typedef enum am_task_e { AM_TASK_NONE = 0, AM_TASK_POSE, AM_TASK_DETECT, AM_TASK_CLASSIFY,
                          AM_TASK_SEGMENT, AM_TASK_OBB, AM_TASK_GENERIC } am_task_e;

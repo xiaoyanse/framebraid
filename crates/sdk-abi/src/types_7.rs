@@ -2,6 +2,25 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_segment_result_t {
+    pub count: u32,
+    pub instances: *const am_segment_instance_t,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_obb_instance_t {
+    pub vertices_xy: [f32; 8],
+    pub center_x: f32,
+    pub center_y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub angle: f32,
+    pub confidence: f32,
+    pub class_id: i32,
+    pub angle_normalized: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_obb_result_t {
     pub count: u32,
     pub instances: *const am_obb_instance_t,

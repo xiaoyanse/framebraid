@@ -4,7 +4,7 @@ use super::{
 };
 use crate::{Error, Result};
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq)]
 pub struct Preprocess {
     pub width: u32,
     pub height: u32,

@@ -30,13 +30,13 @@ fn non_power_of_two_job_slots_have_exact_backing_capacity() {
                 id: index,
                 params: Default::default(),
                 parallel: 1,
-                _admission: Admission {
+                _admissions: vec![Admission {
                     engine: engine.clone(),
                     usage: usage.clone(),
                     class: 0,
                     bytes: 0,
                     items: 0,
-                },
+                }],
             });
         }
         let capacity = data.queue.capacity();

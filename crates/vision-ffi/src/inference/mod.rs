@@ -1,5 +1,6 @@
 pub(crate) mod backends;
 mod batch_exports;
+mod batching_exports;
 mod exports;
 mod hardware;
 mod input;

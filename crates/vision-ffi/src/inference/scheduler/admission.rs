@@ -6,6 +6,7 @@ pub(super) unsafe fn submit(
     plans: &[&Plan],
     native: bool,
     offline: bool,
+    auto: bool,
     deadline: Option<std::time::Instant>,
 ) -> Result<Vec<u64>> {
     if plans.is_empty() || plans.len() > 64 || (!native && plans.len() != 1) {
@@ -26,23 +27,44 @@ pub(super) unsafe fn submit(
         AM_Q_REALTIME_INFER
     } as usize;
     let count = plans.len();
-    let cost = plans
-        .iter()
-        .try_fold(0usize, |n, p| {
-            n.checked_add(p.cost())
-                .and_then(|n| n.checked_add(if native { p.native_extra() } else { 0 }))
-        })
-        .ok_or(AM_ERR_SDK_QUEUE_FULL)?;
+    // 自适应攒批（R5-2.1）：仅 AUTO 语义且动态批量轴模型启用时入窗；显式
+    // NATIVE/SPLIT 与未启用模型维持现行逐次执行。窗口项逐项计费，等待期
+    // 计入既有请求队列与等待者上限，不占推理线程。
+    let parking = auto && batching::enabled(model);
+    let item_cost = |p: &Plan| {
+        p.cost()
+            .saturating_add(if native { p.native_extra() } else { 0 })
+    };
     let e = engine()?;
-    let admission = budget::reserve(
-        e.clone(),
-        state.usage.clone(),
-        usize::from(offline),
-        count,
-        cost,
-        &limits,
-        &queues[class],
-    )?;
+    let admissions: Vec<Admission> = if parking {
+        let mut guards = Vec::with_capacity(count);
+        for p in plans {
+            guards.push(budget::reserve(
+                e.clone(),
+                state.usage.clone(),
+                usize::from(offline),
+                1,
+                item_cost(p),
+                &limits,
+                &queues[class],
+            )?);
+        }
+        guards
+    } else {
+        let cost = plans
+            .iter()
+            .try_fold(0usize, |n, p| n.checked_add(item_cost(p)))
+            .ok_or(AM_ERR_SDK_QUEUE_FULL)?;
+        vec![budget::reserve(
+            e.clone(),
+            state.usage.clone(),
+            usize::from(offline),
+            count,
+            cost,
+            &limits,
+            &queues[class],
+        )?]
+    };
     let inputs = plans
         .iter()
         .map(|p| unsafe { p.capture() })
@@ -150,26 +172,63 @@ pub(super) unsafe fn submit(
         .accepted
         .fetch_add(count as u64, Ordering::AcqRel);
     model.inflight.fetch_add(count, Ordering::AcqRel);
-    let mut params = plans[0].params();
-    params.raw_preprocess = std::ptr::null();
-    let input = if native {
-        Payload::Native {
-            inputs,
-            ids: ids.clone(),
+    let parallel = limits.infer_parallelism as usize;
+    let mut deferred = None;
+    if parking {
+        // 窗口项逐项挂起：等待期计入既有队列与在途账目、不占推理线程；
+        // 关闭/键不匹配/代次切换由 route 立即按现行规则组 Job 入队。
+        let agg = batching::agg_key(model, plans[0]);
+        let key = model.info.key.load(Ordering::Acquire);
+        let mut pendings = Vec::with_capacity(ids.len());
+        let per_item = plans.iter().map(|p| {
+            let mut params = p.params();
+            params.raw_preprocess = std::ptr::null();
+            params
+        });
+        for ((input, id), (params, admission)) in
+            inputs.into_iter().zip(&ids).zip(per_item.zip(admissions))
+        {
+            pendings.push(batching::Pending {
+                input,
+                id: *id,
+                params,
+                admission,
+            });
         }
+        drop(data);
+        drop(records);
+        // route不可失败：请求已记账，登记异常时降级为立即执行。
+        deferred = Some(batching::route(key, &entry, parallel, agg, pendings));
     } else {
-        Payload::Single(inputs.into_iter().next().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?)
-    };
-    data.queue.push_back(Job {
-        model: entry.clone(),
-        input,
-        id: ids[0],
-        params,
-        parallel: limits.infer_parallelism as usize,
-        _admission: admission,
-    });
-    drop(data);
-    drop(records);
+        let mut params = plans[0].params();
+        params.raw_preprocess = std::ptr::null();
+        let input = if native {
+            Payload::Native {
+                inputs,
+                ids: ids.clone(),
+            }
+        } else {
+            Payload::Single(inputs.into_iter().next().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?)
+        };
+        data.queue.push_back(Job {
+            model: entry.clone(),
+            input,
+            id: ids[0],
+            params,
+            parallel,
+            _admissions: admissions,
+        });
+        drop(data);
+        drop(records);
+    }
+    if let Some(jobs) = deferred {
+        if !jobs.is_empty() {
+            let mut data = lock(&e.data)?;
+            for job in jobs {
+                data.queue.push_back(job);
+            }
+        }
+    }
     if let Some(old) = replacement {
         state.metrics.replaced.fetch_add(1, Ordering::AcqRel);
         model.notify.enqueue(model, old, AM_REQ_REPLACED as u32);

@@ -172,6 +172,12 @@ class am_batch_options_t(Structure):
 class am_batch_receipt_t(Structure):
     pass
 
+class am_batching_options_t(Structure):
+    pass
+
+class am_batching_stats_t(Structure):
+    pass
+
 class am_preprocess_meta_t(Structure):
     pass
 
@@ -976,6 +982,23 @@ am_batch_receipt_t._fields_ = [
     ("rejects", POINTER(am_status_t)),
 ]
 
+am_batching_options_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("abi_minor", c_uint32),
+    ("max_batch_items", c_uint32),
+    ("max_wait_ms", c_uint32),
+    ("flags", c_uint32),
+]
+
+am_batching_stats_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("abi_minor", c_uint32),
+    ("formed_batches", c_uint64),
+    ("batched_items", c_uint64),
+    ("timeout_batches", c_uint64),
+    ("rejected_items", c_uint64),
+]
+
 am_preprocess_meta_t._fields_ = [
     ("struct_size", c_uint32),
     ("src_w", c_uint32),
@@ -1212,6 +1235,7 @@ AM_TENSOR_CONTIGUOUS = 1
 AM_BATCH_NATIVE = 0
 AM_BATCH_SPLIT = 1
 AM_BATCH_AUTO = 2
+AM_BATCHING_ENABLE = 1
 AM_PF_ANY = 4294967295
 AM_REUSE_ALLOWED = 1
 AM_PIXEL_VIEW_MAGIC = 1095585880
@@ -1421,6 +1445,8 @@ FUNCTIONS = {
     "amv_infer_tensors_async": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
     "amv_infer_batch": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_batch_item_t), POINTER(am_batch_options_t), POINTER(am_batch_receipt_t)]),
     "amv_receipt_release": (am_status_t, [POINTER(am_batch_receipt_t)]),
+    "amv_model_configure_batching": (am_status_t, [POINTER(amv_model_t), POINTER(am_batching_options_t)]),
+    "amv_model_get_batching": (am_status_t, [POINTER(amv_model_t), POINTER(am_batching_options_t), POINTER(am_batching_stats_t)]),
     "amv_result_notify_callback_set": (am_status_t, [POINTER(amv_model_t), am_result_notify_fn, c_void_p]),
     "amv_result_fetch": (am_status_t, [POINTER(amv_context_t), c_uint64, POINTER(POINTER(amv_result_t))]),
     "amv_result_ack": (am_status_t, [POINTER(amv_context_t), c_uint64]),

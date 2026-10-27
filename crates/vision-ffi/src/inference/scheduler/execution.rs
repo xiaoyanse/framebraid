@@ -12,6 +12,10 @@ pub(super) fn worker(engine: Arc<Engine>) {
             if engine.stop.load(Ordering::Acquire) {
                 return;
             }
+            // 攒批窗口触发（凑满/截止/关闭排空）在选队前搬入执行队列。
+            for job in batching::tick(std::time::Instant::now()) {
+                data.queue.push_back(job);
+            }
             let available = |job: &Job| {
                 job.model.data::<ModelHandle>().is_ok_and(|m| {
                     !m.busy.load(Ordering::Acquire)
@@ -62,7 +66,18 @@ pub(super) fn worker(engine: Arc<Engine>) {
                         data.retirement_pending = false;
                     }
                     // records仅try_lock，避免与准入的records→域锁形成锁序反转。
-                    let delay = if contended { 1 } else { 50 };
+                    // 攒批开窗截止时间缩短睡眠，保证窗口及时触发。
+                    let delay = if contended {
+                        1
+                    } else {
+                        batching::next_deadline()
+                            .and_then(|d| {
+                                d.checked_duration_since(std::time::Instant::now())
+                                    .map(|remaining| remaining.as_millis() as u64)
+                            })
+                            .map(|ms| ms.min(50))
+                            .unwrap_or(50)
+                    };
                     let _ = engine.wake.wait_timeout(data, Duration::from_millis(delay));
                     None
                 }
@@ -84,13 +99,13 @@ fn execute(job: Job) {
         input,
         id,
         params,
-        _admission,
+        _admissions,
         parallel: _,
     } = job;
     let input = match input {
         Payload::Single(input) => input,
         Payload::Native { inputs, ids } => {
-            native_execution::execute(entry, inputs, ids, _admission);
+            native_execution::execute(entry, inputs, ids, _admissions);
             return;
         }
     };
@@ -121,7 +136,7 @@ fn execute(job: Job) {
     };
     // 终态前释放输入保留引用，取消意图不提前释放仍在运行的平面。
     drop(input);
-    drop(_admission);
+    drop(_admissions);
     finish(model, id, result);
     model.inflight.fetch_sub(1, Ordering::AcqRel);
     state.running.fetch_sub(1, Ordering::AcqRel);

@@ -156,6 +156,48 @@ impl Default for am_batch_receipt_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_batching_options_t {
+    pub struct_size: u32,
+    pub abi_minor: u32,
+    pub max_batch_items: u32,
+    pub max_wait_ms: u32,
+    pub flags: u32,
+}
+impl Default for am_batching_options_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            abi_minor: Default::default(),
+            max_batch_items: Default::default(),
+            max_wait_ms: Default::default(),
+            flags: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_batching_stats_t {
+    pub struct_size: u32,
+    pub abi_minor: u32,
+    pub formed_batches: u64,
+    pub batched_items: u64,
+    pub timeout_batches: u64,
+    pub rejected_items: u64,
+}
+impl Default for am_batching_stats_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            abi_minor: Default::default(),
+            formed_batches: Default::default(),
+            batched_items: Default::default(),
+            timeout_batches: Default::default(),
+            rejected_items: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_preprocess_meta_t {
     pub struct_size: u32,
     pub src_w: u32,
@@ -187,22 +229,4 @@ impl Default for am_preprocess_meta_t {
             valid: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_tensor_out_t {
-    pub name: *const c_char,
-    pub dtype: u32,
-    pub shape: *const i64,
-    pub shape_len: u32,
-    pub data: *const c_void,
-    pub data_size: u64,
-    pub is_contiguous: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_keypoint_t {
-    pub x: f32,
-    pub y: f32,
-    pub confidence: f32,
 }

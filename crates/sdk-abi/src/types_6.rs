@@ -2,6 +2,24 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_tensor_out_t {
+    pub name: *const c_char,
+    pub dtype: u32,
+    pub shape: *const i64,
+    pub shape_len: u32,
+    pub data: *const c_void,
+    pub data_size: u64,
+    pub is_contiguous: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_keypoint_t {
+    pub x: f32,
+    pub y: f32,
+    pub confidence: f32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_pose_detection_t {
     pub bounds: [f32; 4],
     pub confidence: f32,
@@ -63,23 +81,4 @@ pub struct am_segment_instance_t {
     pub mask_stride_bytes: u32,
     pub mask_bits: *const u8,
     pub roi_map: am_roi_map_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_segment_result_t {
-    pub count: u32,
-    pub instances: *const am_segment_instance_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_obb_instance_t {
-    pub vertices_xy: [f32; 8],
-    pub center_x: f32,
-    pub center_y: f32,
-    pub width: f32,
-    pub height: f32,
-    pub angle: f32,
-    pub confidence: f32,
-    pub class_id: i32,
-    pub angle_normalized: u32,
 }

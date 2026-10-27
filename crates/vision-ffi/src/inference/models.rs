@@ -46,6 +46,8 @@ impl Managed for ModelHandle {
     }
     fn close_resources(&self) {
         self.notify.join();
+        // 攒批登记随模型收尾回收；仍在窗的兜底项按关闭语义逐项收口。
+        scheduler::batching_release(self);
         if let Ok(mut cache) = self.selection.lock() {
             cache.take();
         }

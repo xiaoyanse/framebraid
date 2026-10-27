@@ -281,6 +281,71 @@ fn am_batch_receipt_t_matches_c() {
     );
 }
 #[test]
+fn am_batching_options_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_batching_options_t>(), 20);
+    assert_eq!(core::mem::align_of::<am_batching_options_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, struct_size),
+        0,
+        "am_batching_options_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, abi_minor),
+        4,
+        "am_batching_options_t.abi_minor"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, max_batch_items),
+        8,
+        "am_batching_options_t.max_batch_items"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, max_wait_ms),
+        12,
+        "am_batching_options_t.max_wait_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, flags),
+        16,
+        "am_batching_options_t.flags"
+    );
+}
+#[test]
+fn am_batching_stats_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_batching_stats_t>(), 40);
+    assert_eq!(core::mem::align_of::<am_batching_stats_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, struct_size),
+        0,
+        "am_batching_stats_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, abi_minor),
+        4,
+        "am_batching_stats_t.abi_minor"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, formed_batches),
+        8,
+        "am_batching_stats_t.formed_batches"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, batched_items),
+        16,
+        "am_batching_stats_t.batched_items"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, timeout_batches),
+        24,
+        "am_batching_stats_t.timeout_batches"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, rejected_items),
+        32,
+        "am_batching_stats_t.rejected_items"
+    );
+}
+#[test]
 fn am_preprocess_meta_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_preprocess_meta_t>(), 48);
     assert_eq!(core::mem::align_of::<am_preprocess_meta_t>(), 4);
@@ -343,65 +408,5 @@ fn am_preprocess_meta_t_matches_c() {
         core::mem::offset_of!(am_preprocess_meta_t, valid),
         44,
         "am_preprocess_meta_t.valid"
-    );
-}
-#[test]
-fn am_tensor_out_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_tensor_out_t>(), 56);
-    assert_eq!(core::mem::align_of::<am_tensor_out_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, name),
-        0,
-        "am_tensor_out_t.name"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, dtype),
-        8,
-        "am_tensor_out_t.dtype"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, shape),
-        16,
-        "am_tensor_out_t.shape"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, shape_len),
-        24,
-        "am_tensor_out_t.shape_len"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, data),
-        32,
-        "am_tensor_out_t.data"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, data_size),
-        40,
-        "am_tensor_out_t.data_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, is_contiguous),
-        48,
-        "am_tensor_out_t.is_contiguous"
-    );
-}
-#[test]
-fn am_keypoint_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_keypoint_t>(), 12);
-    assert_eq!(core::mem::align_of::<am_keypoint_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_keypoint_t, x),
-        0,
-        "am_keypoint_t.x"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_keypoint_t, y),
-        4,
-        "am_keypoint_t.y"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_keypoint_t, confidence),
-        8,
-        "am_keypoint_t.confidence"
     );
 }

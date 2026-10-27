@@ -1,6 +1,71 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_segment_result_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_segment_result_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_segment_result_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_segment_result_t, count),
+        0,
+        "am_segment_result_t.count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_segment_result_t, instances),
+        8,
+        "am_segment_result_t.instances"
+    );
+}
+#[test]
+fn am_obb_instance_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_obb_instance_t>(), 64);
+    assert_eq!(core::mem::align_of::<am_obb_instance_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, vertices_xy),
+        0,
+        "am_obb_instance_t.vertices_xy"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, center_x),
+        32,
+        "am_obb_instance_t.center_x"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, center_y),
+        36,
+        "am_obb_instance_t.center_y"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, width),
+        40,
+        "am_obb_instance_t.width"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, height),
+        44,
+        "am_obb_instance_t.height"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, angle),
+        48,
+        "am_obb_instance_t.angle"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, confidence),
+        52,
+        "am_obb_instance_t.confidence"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, class_id),
+        56,
+        "am_obb_instance_t.class_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, angle_normalized),
+        60,
+        "am_obb_instance_t.angle_normalized"
+    );
+}
+#[test]
 fn am_obb_result_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_obb_result_t>(), 16);
     assert_eq!(core::mem::align_of::<am_obb_result_t>(), 8);
