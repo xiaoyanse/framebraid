@@ -10,7 +10,7 @@
 | C# | `sdk/examples/Inference.cs`（csc `/warnaserror` + 包内绑定） | **通过**：CPU sync/async、fetch/ack、shared lease、SafeHandle |
 | C | `inference.c`（`-municode`）、`lifecycle.c`、`shared_frame.c`（GCC 15.2.0 `-std=c11 -Wall -Wextra -Werror`） | **通过**：Identity 原始输出/ack/release/close-destroy、双域生命周期/限额、共享帧复制/借用桥（编译与运行均取自解压包头文件/导入库/DLL） |
 | C++17 | `inference.cpp`（`-municode`） | **通过**：共享帧、结果 RAII、逆序依赖清理 |
-| Python | `sdk/examples/camera.py --rtsp` | **环境装配未通过**：本地 MediaMTX 回环推流（外部 ffprobe 可读到 H.264 流）下 SDK 帧拉取 5 秒超时，根因未定位；不推断 SDK 缺陷也不冒充通过，登记待查 |
+| Python | `sdk/examples/camera.py --rtsp` | **未通过，已定位到独立验证缺口**：经多轮二分排查（TCP-only/UDP 服务器、长流/短流、同款已验证流），问题收敛为**RTSP 纯像素订阅（无编码订阅共存）懒 worker 路径 8 秒无首帧**——同凭据/同流/同服务器下，增加编码订阅的完整订阅组合立即出帧（H2.3 矩阵四用例佐证）。合同 §2.6 承诺"首次实际像素需求懒创建 worker"，该路径疑似缺陷候选，非示例装配问题；精确复现：占位凭据 + TCP 回环 + one.h264×60 串联流 10fps + 仅 `amc_subscribe_frames`(RGBA8, sampling=0) + 持续 pull。已登记待 SDK 侧独立回归，不在本批修复（media crate 与并行工作面冲突） |
 
 本轮示例修复（随本批提交）：`inference.cpp` 的 `NOMINMAX` 加保护宏（MinGW libstdc++ 头已预定义为 1，裸重定义触发 `-Werror`）；`lifecycle.c` 能力位掩码从旧五位更新为 `am_sdk_types.h` 当前 16 位全集（示例断言未随合同演进，真实包上运行即暴露）。wmain 入口在 MinGW 下需 `-municode` 链接（MSVC 由 CRT 自动处理），已作为示例验证环境备注。运行参数注意：混合斜杠路径会被运行库目录校验拒绝，示例调用须用统一分隔符。
 
