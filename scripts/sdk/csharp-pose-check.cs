@@ -53,6 +53,31 @@ internal static class PoseCheck {
                 }
             }
         }
+        if (args.Length == 3) {
+            using (VisionContext vision = new VisionContext(new string[] { args[0] }, false))
+            using (Model model = vision.LoadModel(args[1], "pose-yolo26-e2e-coco17-v1", 0, true)) {
+                ulong request;
+                PoseDetectionCopy[] copy;
+                using (InferenceResult result = model.InferEncoded(System.IO.File.ReadAllBytes(args[2]), false, out request, null)) {
+                    copy = result.CopyPose(); amv_result_t rawResult = result.BorrowView();
+                    Check(copy.Length == rawResult.pose.count && copy.Length > 0);
+                    int rowSize = Marshal.SizeOf(typeof(am_pose_detection_t)), pointSize = Marshal.SizeOf(typeof(am_keypoint_t));
+                    for (int i = 0; i < copy.Length; ++i) {
+                        am_pose_detection_t row = Arena.Read<am_pose_detection_t>(IntPtr.Add(rawResult.pose.detections, checked(i * rowSize)));
+                        Check(copy[i].Confidence == row.confidence && copy[i].Keypoints.Length == row.kpt_count);
+                        for (int k = 0; k < 4; ++k) Check(copy[i].Bounds[k] == row.bounds[k]);
+                        for (int j = 0; j < copy[i].Keypoints.Length; ++j) {
+                            am_keypoint_t point = Arena.Read<am_keypoint_t>(IntPtr.Add(row.keypoints, checked(j * pointSize)));
+                            Check(copy[i].Keypoints[j].X == point.x && copy[i].Keypoints[j].Y == point.y && copy[i].Keypoints[j].Confidence == point.confidence);
+                        }
+                    }
+                    vision.Acknowledge(request);
+                }
+                GC.Collect(); GC.WaitForPendingFinalizers();
+                Check(copy.Length > 0 && copy[0].Keypoints.Length == 17);
+                Console.WriteLine("real_image_pose_count=" + copy.Length);
+            }
+        }
         Console.WriteLine("synthetic deep copy, invalid input, close competition passed");
     }
 }

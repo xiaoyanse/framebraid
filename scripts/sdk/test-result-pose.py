@@ -102,11 +102,34 @@ def real(args):
         return len(snapshot)
 
 
+def real_image(args):
+    with VisionContext(args.dll, [args.runtime]) as vision, \
+         vision.load_model(args.model, "pose-yolo26-e2e-coco17-v1") as model:
+        request, result = model.infer_encoded(args.image.read_bytes())
+        with result:
+            snapshot = result.copy_pose()
+            raw = result.view
+            assert raw.pose.count == len(snapshot) and len(snapshot) > 0
+            for index, copied in enumerate(snapshot):
+                native = raw.pose.detections[index]
+                assert copied[0] == tuple(native.bounds)
+                assert copied[1] == native.confidence
+                assert copied[2] == tuple((p.x, p.y, p.confidence) for p in native.keypoints[:native.kpt_count])
+            vision.ack(request)
+        gc.collect()
+        assert len(snapshot) > 0 and len(snapshot[0][2]) == 17
+        return len(snapshot)
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--dll", type=Path, required=True)
     parser.add_argument("--runtime", type=Path, required=True)
     parser.add_argument("--model", type=Path, required=True)
+    parser.add_argument("--image", type=Path)
     args = parser.parse_args()
     synthetic()
-    print({"synthetic_nonempty_copy": True, "concurrent_close": True, "real_cpu_pose_count": real(args)})
+    summary = {"synthetic_nonempty_copy": True, "concurrent_close": True, "real_cpu_pose_count": real(args)}
+    if args.image:
+        summary["real_image_nonempty_pose_count"] = real_image(args)
+    print(summary)
