@@ -25,5 +25,5 @@
 ## 边界
 
 - 单模型单次批量验收，非吞吐/延迟结论（MET-2 对照见 M1 收尾另记）；固定槽位 device 0，多 GPU ordinal 未测。
-- OpenVINO 侧（M1 另一半）：实测确认 ORT 官方 GPU 包 providers 仅 TensorRT/CUDA/CPU，**不含 OpenVINO EP**——OpenVINO 验收需 Intel 渠道构建，另行获取验证后记录。
+- OpenVINO 侧（M1 另一半）：阻塞登记（2026-10-28）。Intel `onnxruntime-openvino` 1.24.1（SDK 1.24 API 线内唯一构建）配 openvino 本体 2026.4.1/2025.1.0/2025.0.0 三轮均 WinError 127（符号缺失，版本不匹配），wheel 元数据未声明配套版本；需符号级比对或 Intel 配套表确认后复验。解除前不宣称 OpenVINO 可用。
 - CUDA 13 组件版本锁定 13.4 系（cublas 13.8 与 13.4 混搭实测初始化失败）；升级组件需重验。
