@@ -1,4 +1,16 @@
-# FrameBraid 后续优化路线图 / Optimization roadmap
+# FrameBraid 后续优化路线图
+
+## 下一轮方向 v0.3+（2026-10-28 负责人确认）
+
+已批准立即实施：
+- **离线录像文件分析**：MP4 文件源 + seek → 解码 → 推理（录像 AI 复盘）
+- **帧抓图编码输出**：解码帧/推理关联帧导出 JPEG/PNG（与后续流编码输出共享编码器）
+
+登记待实现（防遗忘，按需启动）：GPU 全程显存管线（CUDA/OpenVINO 推理验收）、运行期模型热切换、编码推流输出（RTMP/MP4）、Linux 移植、包管理器分发（PyPI/NuGet/crates.io）、跨帧目标跟踪、ROI 区域裁剪推理、多模型流水线、ARM64 Windows、GB28181 客户端、ONVIF 发现+取流（低优先）。
+
+---
+
+ / Optimization roadmap
 
 R3模型元数据/运行期校验与来源快照已收口：加载元数据165→130分配、每次32输入校验65→0，195点失败注入无部分保留；339工作区及最终DLL真实CPU/RTSP见[记录](verification/sdk-r3-model-metadata-20261027.md)。只证明局部机制和定向保护，不宣称全部场景更快；固定服务体/边界汇总仍待。
 
