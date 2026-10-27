@@ -32,6 +32,8 @@ R3 1.1m推理请求表容量/增长重叠已纳入控制字节，真实低预算
 
 H2.0b的共用Rust初始化选择与回退见[本地记录](verification/sdk-r2-hardware-selection-20261026.md)；后续H2.3a/b已接直接DLL与RTSP，仍不作为整组完成。
 
+R2 最近邻缩放局部优化与局部测量见[验证](verification/sdk-r2-nearest-scale-20261027.md)；共享搬运与整包验收继续。
+
 R2 无适配器时保留后端编译/编码配置状态及未知标识，见[验证](verification/sdk-r2-backend-support-20261027.md)；H2整体继续开放。
 
 R2 自动选择已保留设备初始化的精确失败分类；无设备时完整编译清单仍待处理。详见 [阶段验证](verification/sdk-r2-hardware-reasons-20261027.md)。

@@ -26,22 +26,32 @@ pub fn resize_plane(
         return Err("camera.invalidPlane");
     }
     for y in 0..nh {
-        for x in 0..nw {
-            let tx = ((x as f64 + 0.5) * ow as f64 / nw as f64 - 0.5).clamp(0., (ow - 1) as f64);
-            let ty = ((y as f64 + 0.5) * oh as f64 / nh as f64 - 0.5).clamp(0., (oh - 1) as f64);
-            for c in 0..channels {
-                let sample = |xx: usize, yy: usize| source[(yy * ow + xx) * channels + c] as f64;
-                let value = if method == 0 {
-                    sample(tx.round() as usize, ty.round() as usize)
-                } else {
+        let ty = ((y as f64 + 0.5) * oh as f64 / nh as f64 - 0.5).clamp(0., (oh - 1) as f64);
+        if method == 0 {
+            let sy = ty.round() as usize;
+            for x in 0..nw {
+                let tx =
+                    ((x as f64 + 0.5) * ow as f64 / nw as f64 - 0.5).clamp(0., (ow - 1) as f64);
+                let source_offset = (sy * ow + tx.round() as usize) * channels;
+                let target_offset = (y * nw + x) * channels;
+                target[target_offset..target_offset + channels]
+                    .copy_from_slice(&source[source_offset..source_offset + channels]);
+            }
+        } else {
+            for x in 0..nw {
+                let tx =
+                    ((x as f64 + 0.5) * ow as f64 / nw as f64 - 0.5).clamp(0., (ow - 1) as f64);
+                for c in 0..channels {
+                    let sample =
+                        |xx: usize, yy: usize| source[(yy * ow + xx) * channels + c] as f64;
                     let (x0, y0) = (tx.floor() as usize, ty.floor() as usize);
                     let (dx, dy) = (tx - x0 as f64, ty - y0 as f64);
                     let x1 = (x0 + 1).min(ow - 1);
                     let y1 = (y0 + 1).min(oh - 1);
-                    (sample(x0, y0) * (1. - dx) + sample(x1, y0) * dx) * (1. - dy)
-                        + (sample(x0, y1) * (1. - dx) + sample(x1, y1) * dx) * dy
-                };
-                target[(y * nw + x) * channels + c] = value.round().clamp(0., 255.) as u8;
+                    let value = (sample(x0, y0) * (1. - dx) + sample(x1, y0) * dx) * (1. - dy)
+                        + (sample(x0, y1) * (1. - dx) + sample(x1, y1) * dx) * dy;
+                    target[(y * nw + x) * channels + c] = value.round().clamp(0., 255.) as u8;
+                }
             }
         }
     }
@@ -94,6 +104,46 @@ pub fn rgba_to_nv12(source: &[u8], w: u32, h: u32) -> Result<Vec<u8>, &'static s
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn nearest_matches_frozen_half_pixel_reference() {
+        for ow in 1..=9u32 {
+            for oh in 1..=7u32 {
+                for nw in 1..=8u32 {
+                    for nh in 1..=6u32 {
+                        for channels in 1..=4usize {
+                            let source: Vec<u8> = (0..ow as usize * oh as usize * channels)
+                                .map(|i| ((i * 73 + 19) % 251) as u8)
+                                .collect();
+                            let mut result = vec![0; nw as usize * nh as usize * channels];
+                            resize_plane(&source, (ow, oh), &mut result, (nw, nh), channels, 0)
+                                .unwrap();
+                            let mut expected = vec![0; result.len()];
+                            for y in 0..nh as usize {
+                                for x in 0..nw as usize {
+                                    let tx = ((x as f64 + 0.5) * ow as f64 / nw as f64 - 0.5)
+                                        .clamp(0., (ow - 1) as f64);
+                                    let ty = ((y as f64 + 0.5) * oh as f64 / nh as f64 - 0.5)
+                                        .clamp(0., (oh - 1) as f64);
+                                    for c in 0..channels {
+                                        expected[(y * nw as usize + x) * channels + c] =
+                                            source[(ty.round() as usize * ow as usize
+                                                + tx.round() as usize)
+                                                * channels
+                                                + c];
+                                    }
+                                }
+                            }
+                            assert_eq!(
+                                result, expected,
+                                "{ow}x{oh} -> {nw}x{nh}, channels={channels}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn half_pixel_bilinear_and_chroma_are_independent() {
         let mut out = [0; 9];

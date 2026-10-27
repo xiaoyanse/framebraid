@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "00b6cc799aefba082eca279fea30ea88d74e6c70",
+  "reviewBaseCommit": "8393ddde223c9d01d11c28dee1efee91027ed3ae",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -914,6 +914,12 @@
       "previousSha256": null,
       "sha256": "5e6c721a587cfb5f8edcb6c213206a43ba2f722ed32c7711da0c8425a385770e",
       "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
+    },
+    {
+      "path": "crates/am-camera/src/media/pixel_ops.rs",
+      "previousSha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526",
+      "sha256": "11faf70d3c866bd357d11fd501943d0a7465c04e2b4e6d6ac3fb77df804e259e",
+      "reason": "最近邻像素缩放按通道复制，逐字节对拍与局部 A/A 量化，其他语义不变"
     }
   ]
 }
