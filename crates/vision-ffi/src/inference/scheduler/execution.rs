@@ -4,7 +4,7 @@ use std::time::Duration;
 pub(super) fn worker(engine: Arc<Engine>) {
     loop {
         storage::purge_contexts(&engine);
-        let mut pruned_later = Vec::new();
+        let mut pruned_later;
         let job = {
             let mut data = match engine.data.lock() {
                 Ok(d) => d,
