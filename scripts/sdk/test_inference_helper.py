@@ -10,7 +10,7 @@ def load_image_input(vis, a, size, image_path):
     assoc.source_id, assoc.frame_id = 7, 1001
     assoc.valid = a.AM_ASSOC_SOURCE | a.AM_ASSOC_FRAME
     image = size(a.am_image_input_t)
-    image.kind = a.AM_IMG_PNG
+    image.kind = a.AM_IMG_JPEG if image_path.lower().endswith((".jpg", ".jpeg")) else a.AM_IMG_PNG
     image.encoded, image.encoded_size = storage, len(payload)
     image.assoc = ctypes.pointer(assoc)
     params = size(a.am_infer_params_t)
