@@ -177,6 +177,60 @@ namespace AmrtSdk {
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct am_detect_box_t {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public float[] @bounds;
+        public float @confidence;
+        public int @class_id;
+        public IntPtr @class_name_utf8;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_classify_entry_t {
+        public int @class_id;
+        public IntPtr @class_name_utf8;
+        public float @logit;
+        public float @probability;
+        public uint @has_probability;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_segment_instance_t {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public float[] @bounds;
+        public float @confidence;
+        public int @class_id;
+        public uint @mask_width;
+        public uint @mask_height;
+        public uint @mask_stride_bytes;
+        public IntPtr @mask_bits;
+        public am_roi_map_t @roi_map;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_roi_map_t {
+        public float @scale_x;
+        public float @scale_y;
+        public float @offset_x;
+        public float @offset_y;
+        public uint @valid;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_obb_instance_t {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 8)]
+        public float[] @vertices_xy;
+        public float @center_x;
+        public float @center_y;
+        public float @width;
+        public float @height;
+        public float @angle;
+        public float @confidence;
+        public int @class_id;
+        public uint @angle_normalized;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct am_request_snapshot_t {
         public uint @struct_size;
         public uint @state;

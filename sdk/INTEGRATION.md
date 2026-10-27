@@ -53,17 +53,17 @@ Rust `runtime::query` 不再隐式探测 CUDA；需判定设备时显式 `device
 
 Rust `runtime::query` no longer probes CUDA implicitly; call `devices::probe` explicitly and pass `CudaSnapshot::from_probe` to `query_snapshot` when device visibility is needed.
 
-C# 可在结果存活时调用 `result.CopyPose()` 复制 Pose 框与关键点，复制数组可修改且不会更改原生结果；旧 `BorrowView()` 仍是借用。其他任务类型的 C# 安全复制待完成。
+C# 可在结果存活时调用 `result.CopyPose()`、`CopyDetect()`、`CopyClassify()`、`CopySegment()` 和 `CopyObb()` 复制结构化结果；复制数组可修改且不会更改原生结果，旧 `BorrowView()` 仍是借用。分割掩膜单次复制上限 64 MiB；结果关闭后不能再调用复制方法。
 
-C# `result.CopyPose()` copies Pose boxes and keypoints while the result is alive; the returned arrays are independent and mutable. `BorrowView()` remains borrowed. Other structured result types are pending.
+C# `result.CopyPose()`, `CopyDetect()`, `CopyClassify()`, `CopySegment()` and `CopyObb()` copy structured results while the result is alive; returned arrays are independent and mutable. `BorrowView()` remains borrowed. Segment masks have a 64 MiB cumulative copy budget; copying after close is rejected.
 
 Python 另提供 `copy_detect()`、`copy_classify()`、`copy_segment()`、`copy_obb()`，输出结构、限制和当前验证见[记录](../docs/verification/sdk-r4-python-structured-copy-20261027.md)。结果需在调用时存活，返回值随后独立；分割掩膜会产生额外字节复制。
 
 Python also provides `copy_detect()`, `copy_classify()`, `copy_segment()`, and `copy_obb()`. The result must remain alive during the call; returned values are independent. Masks are copied. See the linked local validation for limits and scope.
 
-Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 `(bounds, confidence, keypoints)` 元组；随后可释放结果并继续读取复制值。原 `result.view` 为借用，释放后不可用。仅为本地未发布功能；其他任务及 C# 对应复制入口尚未完成。
+Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 `(bounds, confidence, keypoints)` 元组；随后可释放结果并继续读取复制值。原 `result.view` 为借用，释放后不可用。仅为本地未发布功能。
 
-For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view. Other tasks and the C# equivalent are pending.
+For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view.
 
 旧 `amv_query_backends` 现只读本 context 的显式 CUDA probe 缓存；需要设备判定时先调用 `amv_probe_inference_hardware`。hw_detected=0 需结合 note 区分未知和已确认无设备。
 

@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Add C# Detect, Classify, Segment and OBB owned result copies with a bounded mask budget. / [局部验证](docs/verification/sdk-r4-csharp-structured-20261027.md)，真实非空模型对拍待验，C ABI不变。
+
 - Bound file-model preflight reads to the opened size and borrow memory-model inputs during synchronous loading. / [测量与调用边界](docs/verification/sdk-r3-model-read-20261027.md)；不改变C ABI或声称原生内存有界。
 
 - Serialize borrowed decode hardware reports into admitted fixed storage instead of building JSON trees; record fixed foundation body costs. / [验证与取舍](docs/verification/sdk-r3-report-storage-20261027.md)，C ABI和JSON字段不变。
