@@ -56,6 +56,8 @@ R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、
 
 R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); later H2.3a/b integrate direct/RTSP selection and recovery; complete pressure acceptance remains open. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
 
+本地未发布 Python 检测/分类/分割/旋转框复制入口仅完成合成结构验证，见[记录](verification/sdk-r4-python-structured-copy-20261027.md)。
+
 本地未发布 Python Pose 结构化结果复制入口及验证范围见[记录](verification/sdk-r4-python-pose-copy-20261027.md)，不改变现有公开制品。
 
 本地未发布变更：旧 C 后端矩阵查询需先显式 probe 才能判定 CUDA 硬件，见[验证](verification/sdk-h5-matrix-cache-20261027.md)；不改变已发布制品。

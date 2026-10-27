@@ -32,6 +32,8 @@ R3 1.1m推理请求表容量/增长重叠已纳入控制字节，真实低预算
 
 H2.0b的共用Rust初始化选择与回退见[本地记录](verification/sdk-r2-hardware-selection-20261026.md)；后续H2.3a/b已接直接DLL与RTSP，仍不作为整组完成。
 
+R4 Python 五类结构化结果均有复制入口，非 Pose 暂仅合成结构验证；C#、真实模型对拍继续，见[记录](verification/sdk-r4-python-structured-copy-20261027.md)。
+
 R4 Python Pose 结构结果复制已提供，其他结果类型及 C# 继续；见[验证](verification/sdk-r4-python-pose-copy-20261027.md)。
 
 H5 旧 C 矩阵改用显式设备探测缓存，迁移和限定验证见[记录](verification/sdk-h5-matrix-cache-20261027.md)；Rust 旧入口及真实加速验证继续。

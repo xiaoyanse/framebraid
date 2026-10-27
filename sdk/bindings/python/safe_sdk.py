@@ -302,6 +302,56 @@ class Result(Resource):
                 copied.append((tuple(detection.bounds), detection.confidence, keypoints))
             return tuple(copied)
 
+    def _structured(self, task, field, pointer, limit):
+        result = self._require().contents
+        if result.task != task:
+            raise ValueError("Result task does not match requested output")
+        value = getattr(result, field)
+        items = getattr(value, pointer)
+        if value.count > limit or (value.count and not items):
+            raise ValueError("Invalid structured result")
+        return items[:value.count]
+
+    def copy_detect(self):
+        """复制检测结果：框、置信度、类别 ID 和可选类别名。"""
+        with self._lock:
+            rows = self._structured(a.AM_TASK_DETECT, "detect", "boxes", 300)
+            return tuple((tuple(r.bounds), r.confidence, r.class_id,
+                          r.class_name_utf8.decode("utf-8") if r.class_name_utf8 else None) for r in rows)
+
+    def copy_classify(self):
+        """复制分类结果，保留 logit、概率及概率是否有效。"""
+        with self._lock:
+            rows = self._structured(a.AM_TASK_CLASSIFY, "classify", "entries", 1000)
+            return tuple((r.class_id, r.class_name_utf8.decode("utf-8") if r.class_name_utf8 else None,
+                          r.logit, r.probability, bool(r.has_probability)) for r in rows)
+
+    def copy_segment(self):
+        """复制分割结果及 LSB-first 掩膜；额外内存最多64 MiB。"""
+        with self._lock:
+            rows = self._structured(a.AM_TASK_SEGMENT, "segment", "instances", 300)
+            total = 0
+            for r in rows:
+                if not 1 <= r.mask_width <= 8192 or not 1 <= r.mask_height <= 8192:
+                    raise ValueError("Invalid segment mask size")
+                if r.mask_stride_bytes < (r.mask_width + 7) // 8 or not r.mask_bits:
+                    raise ValueError("Invalid segment mask storage")
+                total += r.mask_stride_bytes * r.mask_height
+                if total > 64 * 1024 * 1024:
+                    raise ValueError("Segment masks exceed copy budget")
+            return tuple((tuple(r.bounds), r.confidence, r.class_id,
+                          r.mask_width, r.mask_height, r.mask_stride_bytes,
+                          c.string_at(r.mask_bits, r.mask_stride_bytes * r.mask_height),
+                          (r.roi_map.scale_x, r.roi_map.scale_y, r.roi_map.offset_x,
+                           r.roi_map.offset_y, bool(r.roi_map.valid))) for r in rows)
+
+    def copy_obb(self):
+        """复制旋转框四顶点、中心、边长、角度及其归一化标记。"""
+        with self._lock:
+            rows = self._structured(a.AM_TASK_OBB, "obb", "instances", 300)
+            return tuple((tuple(r.vertices_xy), (r.center_x, r.center_y), r.width, r.height,
+                          r.angle, r.confidence, r.class_id, bool(r.angle_normalized)) for r in rows)
+
     @property
     def view(self):
         """低层借用视图；调用方须保证结果始终存活，关闭后不可读取。"""
