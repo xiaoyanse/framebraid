@@ -1,0 +1,4 @@
+[toolchain]
+# 与发布验证工具链一致；升级时同步核对 clippy 新告警并全量回归。
+channel = "1.97.1"
+profile = "minimal"
