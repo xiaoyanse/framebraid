@@ -1,4 +1,4 @@
-开发者接入从 [INTEGRATION.md](INTEGRATION.md) 开始，英文入口见 [Getting started](../docs/GETTING_STARTED.md)。当前源码仓库保留 sdk/ 层级，Windows 开发者预览包见 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+开发者接入从 [INTEGRATION.md](INTEGRATION.md) 开始，英文入口见 [Getting started](../docs/GETTING_STARTED.md)。当前源码仓库保留 sdk/ 层级，Windows 包见 [v0.2.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0)（当前）与 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)（历史）。
 
 # FrameBraid 双源码 SDK 技术说明
 
