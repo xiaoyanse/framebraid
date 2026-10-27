@@ -1,22 +1,10 @@
 # FrameBraid SDK
 
-For owned pixel inputs, prefer Python `owner.pixels().infer(model, asynchronous=True)` or C# `owner.Pixels().Submit(model)`. The owner stays alive and locked through submission; accepted async inputs use the default copy policy. Plane-copy helpers make an explicit extra copy. [Ownership validation](docs/verification/sdk-r4-owned-pixels-20261027.md).
-
-Local intermediate candidate: Python/C# model notification buffers retain up to 256 hints and drop oldest on overflow. Drop counters cover language-side loss only; retain request IDs to query/fetch results. [Validation](docs/verification/r4-language-ownership-20261027.md). This does not change the published release or complete the remaining optimization roadmap.
-
-Local unreleased Rust helper update: `H264Hub` allows up to 16 current sources per instance; stopping workers keep their slot until exit. Exhaustive `DenyReason` matches must handle `TooManySources`. This does not change the C ABI or published binaries. See [verification](docs/verification/sdk-r3-rust-hub-20261027.md).
-
 ![FrameBraid SDK — Media SDK and Vision SDK](assets/brand/framebraid-banner.webp)
 
 [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Getting started](docs/GETTING_STARTED.md) · [Roadmap](docs/ROADMAP.md)
 
 **Reusable camera, video and ONNX inference building blocks for native applications.**
-
-Local ABI 1.1 r10 adds per-context Media SDK worker budgets and live/peak statistics, with Python/C# helpers; these count SDK workers, not CPU cores or all driver threads. Use matching local DLLs/bindings. [Contract and validation](docs/verification/sdk-r3-media-workers-20261027.md); not part of the published v0.1.0 assets.
-
-Local R2 work adds Rust hardware probes and direct C decoder automatic selection/recovery ([contract](docs/design/native-hardware.md), [local verification](docs/verification/sdk-r2-direct-auto-20261026.md)). Published assets remain CPU validated; RTSP hardware policies now run locally ([verification](docs/verification/sdk-r2-rtsp-hardware-20261026.md)); pressure isolation, complete device diagnostics and acceptance remain open. Hardware readback is not guaranteed faster than CPU.
-
-Local main now develops C ABI 1.1 probe/report extensions ([verification](docs/verification/sdk-r2-abi11-hardware-20261026.md)). Use matching source-built DLLs and bindings; v0.1.0 binaries still use ABI 1.0 and require their tagged bindings. This work is not published.
 
 FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repository contains two components:
 
@@ -25,7 +13,7 @@ FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repo
 | **FrameBraid Media SDK** | ISAPI images, RTSP encoded streams, decoded frames, standalone decoding and pixel conversion |
 | **FrameBraid Vision SDK** | ONNX execution, bounded asynchronous work, raw tensors and profile-based postprocessing |
 
-**Status: v0.1.0 developer preview.** [Download source and Windows x64 binaries](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0). The initial validated target is **Windows x64 CPU**; Linux/macOS/mobile binaries and GPU acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
+**Status: v0.2.0 developer preview.** [Download source and Windows x64 binaries](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0). C ABI 1.1 (compatible additions over 1.0); the validated target is **Windows x64 CPU + hardware-decode probing**; Linux/macOS/mobile binaries and GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
 
 ## Where it fits
 
@@ -43,9 +31,10 @@ The host owns device configuration, credential storage, business rules, persiste
 - Standalone H.264/H.265 decoding from **complete Annex B access units**. Arbitrary network fragments are not complete-frame inputs.
 - ISAPI HTTP Digest snapshots and bounded continuous acquisition. Actual rate depends on the camera and network.
 - Pull/callback interfaces, bounded queues, metadata, scaling, pixel conversion and reconnect controls.
-- Advanced Rust RTSP callers can use `Reader::open_with_budget` and `read_packet_with_budget` to reserve SDK configuration/framing workspace before allocation. Existing methods remain caller-managed; C adapters apply the context budget automatically. Native FFmpeg memory is separate.
-- Explicit runtime directories and caller-injected credentials; no credential persistence.
+- Explicit hardware decode probing and automatic backend selection (D3D11VA preferred, DXVA2 where mapped, bounded CPU fallback); per-context worker budgets with live/peak statistics. Hardware readback is not guaranteed faster than CPU; consult the measured contracts.
+- Advanced Rust RTSP callers can use `Reader::open_with_budget` and `read_packet_with_budget` to reserve SDK configuration/framing workspace before allocation. Rust callers can also inspect Annex B NAL units with `am_camera::media::codec::visit_access_units` without allocating a NAL list; commit caller state only after overall success.
 - Stream probing from explicit endpoints. Rust `CameraEndpoint` generates credential-free ISAPI/main/sub addresses; this helper is not a separate C ABI device-management API.
+- Explicit runtime directories and caller-injected credentials; no credential persistence.
 
 Check runtime capabilities and contracts. H.265 decoding does not imply browser H.265 playback.
 
@@ -55,7 +44,10 @@ Check runtime capabilities and contracts. H.265 decoding does not imply browser 
 - Five **constrained model profiles**: Pose, Detect, Classify, Segment and OBB.
 - Raw named tensor inputs/outputs for custom models within supported dtype/shape contracts.
 - Synchronous, asynchronous and batch interfaces, status, notifications, acknowledgement and release.
-- CPU/OpenVINO/CUDA selection and diagnostics. CPU is validated here; other backends need separate dependencies and acceptance.
+- **Adaptive batching** (v0.2.0): explicit, bounded, off by default; aggregates AUTO submissions of compatible items on dynamic-batch-axis models into single physical batches. Fixed-batch-axis models are rejected rather than padded.
+- CPU/OpenVINO/CUDA selection with explicit device probing, allowlists and strict/fallback policies, plus layered execution diagnostics. CPU is validated here; other backends need separate dependencies and acceptance.
+- Owned pixel inputs across languages: Python `owner.pixels().infer(...)` / C# `owner.Pixels().Submit(...)` keep the owner alive and locked through submission; async inputs use the default copy policy unless retained explicitly.
+- Bounded model notification buffers (256 hints, drop-oldest) in Python/C# helpers; retain request IDs to query results after drops.
 - Optional shared frames, enabled at build time and explicitly at initialization.
 
 This is not every YOLO version/export. Match the [profile catalog](crates/vision/resources/profiles.json). Model weights and their licenses are separate.
@@ -87,7 +79,7 @@ FFmpeg and ONNX Runtime are dynamically loaded. Pass compatible absolute runtime
 | C# | [Bindings](sdk/bindings/csharp), SafeHandle helpers and examples |
 | Python | [Bindings](sdk/bindings/python), standard-library `ctypes` and context managers |
 
-Choose static Rust consumption or DLL consumption in one process, not both runtime domains. Java wrappers, Linux/macOS/mobile binaries and hardware-decoding acceptance are outside the initial Windows commitment.
+Choose static Rust consumption or DLL consumption in one process, not both runtime domains. Java wrappers, Linux/macOS/mobile binaries and GPU-inference acceptance are outside the initial Windows commitment.
 
 ## Ownership, concurrency and failures
 
@@ -102,9 +94,9 @@ See the [integration guide](sdk/INTEGRATION.md) and [ABI contracts](docs/design/
 
 ## Validation and boundaries
 
-The local Windows x64 **Release candidate** passed **177 Rust tests (3 ignored, 8 filtered)** and **11 packaged-DLL test groups**, including C/C++17/C#/Python calls. Five-family postprocessing has unit coverage; all five real-weight models were not rerun end-to-end in this pass. These results are not field, GPU or long-duration acceptance. See [candidate identity and results](docs/RELEASE_STATUS.md).
+The v0.2.0 Windows x64 **Release candidate** passed **384 workspace Rust tests** (20 environment-gated skipped), generator-chain zero-drift checks, ABI freeze (11 artifacts) and source-fingerprint boundary checks (239 files). Clean-package validation covers C/C++17/C#/Python examples plus the adaptive-batching live suite against the package's own DLLs. Hardware decode matrix (H.264/H.265, 360p–4K incl. Main10) is D3D11VA-verified with software controls; RTSP fault matrix (stream-loss resume, in-flight close) passed. Four of five real model classes were not rerun end-to-end (no local weights); CUDA/OpenVINO execution providers, field streams and long-duration acceptance remain registered as unverified. See the [v0.2.0 validation summary](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0) (VALIDATION.md asset) and [status](docs/RELEASE_STATUS.md).
 
-The source checkout excludes runtime binaries, weights, credentials, business database and host UI. The separate Windows package includes matching CPU runtimes and their source/license materials. The extraction manifest is historical provenance, not a continuously updated release manifest; 159 core files remain fingerprint-checked.
+The source checkout excludes runtime binaries, weights, credentials, business database and host UI. The separate Windows package includes matching CPU runtimes and their source/license materials. The extraction manifest is historical provenance, not a continuously updated release manifest; core files remain fingerprint-checked.
 
 See [support boundaries](docs/SUPPORT.md), [current local validation](docs/RELEASE_STATUS.md) and [release checklist](docs/RELEASE_CHECKLIST.md). Historical plans do not supersede actual evidence.
 
@@ -114,8 +106,8 @@ See [support boundaries](docs/SUPPORT.md), [current local validation](docs/RELEA
 
 | Recorded observation | Result | Scope |
 | --- | --- | --- |
-| FrameBraid Rust tests | 177 passed; 3 ignored; 8 filtered | Local candidate, Windows x64 Release |
-| FrameBraid DLL/script groups | 11 passed | Local Release candidate, CPU and language calls |
+| FrameBraid Rust tests | 384 passed; 20 environment-gated skipped | v0.2.0 candidate, Windows x64 Release |
+| DLL/script validation groups | Clean-package four-language + batching live suite | v0.2.0 package, CPU and language calls |
 | DLL reload cycles | 30; 157 process handles throughout | Historical pre-extraction SDK |
 | Post-warm-up process private-memory net growth | 0.69 MiB over 25 cycles | Historical pre-extraction SDK |
 | Queue pressure / retained owners | 37 accepted, 14 rejected; 37 retain / 37 release | Historical synthetic CPU test |
@@ -123,7 +115,7 @@ See [support boundaries](docs/SUPPORT.md), [current local validation](docs/RELEA
 Historical figures are not current FrameBraid Release performance; per-run hardware/binary identity is incomplete. No FPS or inference-latency claim is derived. See [data, queue chart and methodology](docs/BENCHMARKS.md).
 
 For current local measurements, use the [reproducible performance tools](docs/PERFORMANCE.md).
-The R1 CPU/synthetic baseline is separate from public release benchmarks and hardware acceptance.
+Performance acceptance follows [MET-2](docs/PERFORMANCE_ACCEPTANCE.md): CPU offload, useful delivery, latency and recovery have separate goals, and historical verdicts are annotated in the [review record](docs/verification/sdk-metrics-review-20261026.md).
 
 ## Contribute and report
 
@@ -134,11 +126,3 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Do not post credentials, private stream
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse).
 
 Original SDK code uses [Apache-2.0](LICENSE), allowing commercial and closed-source use subject to its terms. FFmpeg, ONNX Runtime, models and other dependencies retain their licenses. See [NOTICE](NOTICE) and [third-party materials](sdk/third-party/README.md).
-
-Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; Local r9 now adds ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports; accelerated inference and recovery acceptance remain open. See [core verification](docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
-
-Performance acceptance is now documented in [MET-2](docs/PERFORMANCE_ACCEPTANCE.md), with [historical verdict review](docs/verification/sdk-metrics-review-20261026.md). CPU offload, useful delivery, latency and recovery have separate goals. This is documentation only: existing raw measurements and release assets are unchanged, and no new performance result is claimed.
-
-Local ordered-selection validation / 本地有序选择验证: [H5 r9](docs/verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.
-
-Local Rust callers can inspect Annex B NAL units with `am_camera::media::codec::visit_access_units` without allocating a NAL list. Visits are synchronous and borrow the input; a malformed tail may fail after earlier visits, so commit caller state only after overall success. The existing Vec-returning API remains. [Decoder budget and validation](docs/verification/sdk-r3-decoder-retained-20261027.md). This unpublished change does not alter C ABI or platform support.

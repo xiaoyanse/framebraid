@@ -1,73 +1,64 @@
 # FrameBraid SDK
 
-像素输入优先用Python `owner.pixels().infer(model, asynchronous=True)` 或C# `owner.Pixels().Submit(model)`：提交期间保护拥有者，接受的异步输入默认复制；平面复制接口会额外复制。旧裸视图仍须自行保护。[拥有者验证](docs/verification/sdk-r4-owned-pixels-20261027.md)。
-
-本地中间候选：Python/C#每模型通知缓冲最多256条，满时丢最旧提示；丢弃计数仅为语言侧，调用方保留请求ID查询/提取结果。见[验证](docs/verification/r4-language-ownership-20261027.md)。不改变公开版本，不代表完整优化路线完成。
-
-本地未发布Rust辅助API调整：`H264Hub`每实例最多16个当前源，停止中的线程实际退出前保留占位；`DenyReason`穷举匹配须补`TooManySources`分支。C ABI和公开制品不变，见[验证](docs/verification/sdk-r3-rust-hub-20261027.md)。
-
-本地ABI 1.1 r10新增Media每Context工作线程额度及活槽/峰值统计，Python/C#已有封装；工作槽不等于CPU核数或驱动全部线程。须使用匹配的本地DLL和绑定，详见[验证与边界](docs/verification/sdk-r3-media-workers-20261027.md)，未替换公开v0.1.0制品。
-
 ![FrameBraid SDK — Media SDK 与 Vision SDK](assets/brand/framebraid-banner.webp)
 
 [English](README.md) · [文档入口](docs/README.md) · [快速接入](docs/GETTING_STARTED.zh-CN.md) · [后续路线图](docs/ROADMAP.md)
 
 **可复用的相机接入、视频处理与 ONNX 推理基础组件。**
 
-本地R2已接入Rust硬件探测和直接C解码入口的自动选择/恢复（见[合同](docs/design/native-hardware.md)、[实测](docs/verification/sdk-r2-direct-auto-20261026.md)）；公开制品仍按CPU验收范围，RTSP策略已实际接线（见[验证](docs/verification/sdk-r2-rtsp-hardware-20261026.md)），耐压隔离、完整设备诊断及整包验收仍未完成；硬件回读不保证比CPU更快。
-
-本地main新增ABI 1.1探测/快照扩展（见[验证](docs/verification/sdk-r2-abi11-hardware-20261026.md)），绑定须配套源码构建的DLL；旧v0.1.0二进制仍为ABI 1.0，应取对应tag中的绑定。本轮未发布。
-
 FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入，一个仓库管理两个组件：
-
-Rust高级RTSP入口新增`Reader::open_with_budget`与`read_packet_with_budget`，在SDK配置/包转换分配前预留工作区；原方法仍由调用方管理预算，C适配自动计入Context额度。该预算不包含原生FFmpeg内部内存，见[接入说明](sdk/INTEGRATION.md)。
 
 | 组件 | 用途 |
 | --- | --- |
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量及模型档案后处理 |
 
-**当前状态：v0.1.0 开发者预览版。**[下载源码与 Windows x64 二进制包](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。首发已验证范围为 **Windows x64 CPU**；Linux/macOS/移动端二进制及 GPU 验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.2.0 开发者预览版。**[下载源码与 Windows x64 二进制包](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0)。C ABI 1.1（对 1.0 的兼容新增）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
-## 适合用在哪里？
+## 适用场景
 
-- 给桌面软件或现有 Python 服务增加相机接入。
-- 通过 ISAPI 单次截图或连续取图。
-- 获取 RTSP 编码包/解码帧，或解码其他系统已取得的 H.264/H.265 数据。
-- 在多种语言中通过统一原生接口运行兼容 ONNX 模型。
-- 组合采集和推理，按需在可信本机进程间共享帧。
+- 为桌面应用或既有 Python 服务增加相机接入。
+- 单次或连续 ISAPI 抓图。
+- 接收 RTSP 包/帧，或解码已由其他系统获取的 H.264/H.265 数据。
+- 通过一套原生接口跨语言运行兼容的 ONNX 模型。
+- 组合采集与推理，可在可信本地进程间共享帧。
 
-设备配置、凭据保存、业务规则、存储、报警及 UI 由宿主负责。SDK 不是完整监控产品、浏览器播放器、视频编辑器或经过安全认证的控制系统。
+设备配置、凭据存储、业务规则、持久化、报警与 UI 由宿主负责。本 SDK 不是完整的监控产品、浏览器播放器、视频编辑器或安全认证控制系统。
 
 ## Media SDK
 
-- RTSP H.264/H.265/MJPEG 处理，提供编码包和解码帧订阅。
-- H.264/H.265 独立解码，输入为**完整 Annex B 访问单元（AU）**，任意网络分片不能直接当完整帧提交。
-- ISAPI HTTP Digest 单次截图及有界连续取图，实际速率受相机和网络影响。
+- RTSP H.264/H.265/MJPEG 接入；编码包与解码帧订阅。
+- 独立 H.264/H.265 解码，输入须为**完整 Annex B 访问单元**；任意网络分片不是完整帧输入。
+- ISAPI HTTP Digest 抓图与有界连续采集；实际节拍取决于相机与网络。
 - 拉取/回调接口、有界队列、元数据、缩放、像素转换与重连控制。
-- 显式运行库目录、调用方凭据注入，不持久化凭据。
-- 按显式地址探测码流。Rust `CameraEndpoint` 可生成不含凭据的 ISAPI/主/子码流地址，不等于 C ABI 已提供独立设备管理 API。
+- 显式硬件解码探测与自动后端选择（D3D11VA 优先、映射可用时 DXVA2、有界 CPU 回退）；每 Context 工作线程额度与活槽/峰值统计。硬件回读不保证比 CPU 更快，以实测合同为准。
+- Rust 高级 RTSP 入口 `Reader::open_with_budget`/`read_packet_with_budget` 可在 SDK 配置/包转换分配前预留工作区；`am_camera::media::codec::visit_access_units` 无需分配 NAL 列表即可检视 Annex B NAL 单元（仅在整体成功后提交调用方状态）。
+- 显式端点流探测。Rust `CameraEndpoint` 生成免凭据 ISAPI/主/子流地址；该辅助不是独立的 C ABI 设备管理接口。
+- 显式运行库目录与调用方注入凭据；不持久化凭据。
 
-具体能力以运行时查询和合同为准，支持 H.265 解码不代表浏览器可播放 H.265。
+请核对运行时能力与合同。H.265 解码能力不代表浏览器可播 H.265。
 
 ## Vision SDK
 
-- ONNX Runtime 接入、图像前处理及结构化结果。
-- 五类**限定模型档案**：Pose、Detect、Classify、Segment、OBB。
-- 自定义模型的原始命名张量输入/输出，遵循已支持 dtype/形状合同。
-- 同步、异步、批量接口，状态、通知、确认与释放。
-- CPU/OpenVINO/CUDA 选择及诊断，本轮已验 CPU，其他后端须另备依赖并验收。
-- 编译及初始化时显式启用的可选共享帧。
+- ONNX Runtime 集成、图像预处理与结构化结果。
+- 五类**受约束模型档案**：Pose、Detect、Classify、Segment、OBB。
+- 支持 dtype/shape 合同内自定义模型的原始命名张量输入/输出。
+- 同步、异步与批量接口，状态、通知、确认与释放。
+- **自适应攒批**（v0.2.0）：显式启用、有界、默认关闭；将动态批量轴模型 AUTO 语义下兼容项聚合为单次物理批次。固定批量轴模型明确拒绝，不填伪样本。
+- CPU/OpenVINO/CUDA 选择：显式设备探测、允许列表、strict/fallback 策略与分层执行诊断。CPU 已在本仓验证；其他后端需另配依赖并验收。
+- 跨语言安全像素输入：Python `owner.pixels().infer(...)` / C# `owner.Pixels().Submit(...)` 提交期间保持拥有者存活并加锁；异步输入默认复制，显式保留除外。
+- Python/C# 模型通知缓冲有界（256 条、满时丢最旧）；丢弃后凭请求 ID 仍可查询结果。
+- 可选共享帧，构建期编入并显式初始化启用。
 
-不承诺所有 YOLO 版本/导出配置通用，请匹配[模型档案](crates/vision/resources/profiles.json)。模型权重及其许可分开取得。
+本 SDK 不支持任意 YOLO 版本/导出。请对照[模型档案目录](crates/vision/resources/profiles.json)。模型权重及其许可另行获取。
 
-## 从源码构建
+## 源码构建
 
-若下载的 Windows 包已有 `bin/win-x64`，直接按[预编译接入](docs/USE_PREBUILT.md)使用，无需编译。
+下载的 Windows 包内含 `bin/win-x64` 时，直接按[预编译包指南](docs/USE_PREBUILT.md)使用，无需编译。
 
-Windows x64 需要 Rust 1.90+、x64 MSVC 工具链和 Windows SDK，首次取得 Cargo 锁定依赖。维护工具/Python 示例需要 Node.js/Python，直接加载预编译 DLL 不要求安装它们。
+Windows x64：Rust 1.90+、x64 MSVC 构建工具与 Windows SDK；首次构建拉取锁定的 Cargo 依赖。Node.js/Python 仅用于维护工具或 Python 示例，预编译 DLL 加载不需要。
 
-在仓库根目录执行，输出放在源码目录之外：
+在仓库根目录执行，构建输出保持在检出目录外：
 
 ```powershell
 $env:CARGO_TARGET_DIR = (Join-Path $PWD '.local/build/current')
@@ -75,70 +66,62 @@ cargo build --workspace --locked
 cargo build --release --locked -p am-camera-ffi -p am-vision-ffi --features am-camera-ffi/shared-frames,am-vision-ffi/shared-frames
 ```
 
-Release 命令在 `.local/build/current/release` 生成 `am_camera.dll`、`am_vision.dll` 及导入库。为兼容现有调用，保留这些文件名、`amc_*`/`amv_*` 符号和 crate 名称，不要求运行原宿主。
+Release 命令在 `.local/build/current/release` 输出 `am_camera.dll`、`am_vision.dll` 及导入库。历史文件名、`amc_*`/`amv_*` 符号与 crate 名保持兼容；不依赖原宿主应用。
 
-FFmpeg、ONNX Runtime 在运行时动态加载，初始化显式传入兼容运行库绝对目录。构建成功不等于运行依赖已可用，真实图片调用及排错见[快速接入](docs/GETTING_STARTED.zh-CN.md)。
+FFmpeg 与 ONNX Runtime 动态加载；初始化时传入兼容的绝对运行库目录。构建成功不代表运行库可用。真实图像调用与依赖排障见[快速接入](docs/GETTING_STARTED.zh-CN.md)。
 
-## 按语言接入
+## 语言接入
 
 | 语言 | 入口 |
 | --- | --- |
-| Rust | 本地依赖 `crates/am-camera`、`crates/vision`，尚未发布到 crates.io |
+| Rust | 本地依赖 `crates/am-camera` 与 `crates/vision`；未发布 crates.io |
 | C / C++ | [Media 头文件](sdk/include/am_camera.h)、[Vision 头文件](sdk/include/am_vision.h)、[示例](sdk/examples/README.md) |
-| C# | [封装](sdk/bindings/csharp)、SafeHandle 辅助及示例 |
-| Python | [封装](sdk/bindings/python)、标准库 `ctypes` 与上下文管理器 |
+| C# | [绑定](sdk/bindings/csharp)、SafeHandle 辅助与示例 |
+| Python | [绑定](sdk/bindings/python)、标准库 `ctypes` 与上下文管理器 |
 
-同一进程选择 Rust 静态接入或 DLL 消费域，不重复装配。Java、Linux/macOS/移动端二进制、硬解验收不属于首发 Windows 承诺。
+同一进程选择静态 Rust 消费或 DLL 消费之一，不混用两个运行域。Java 封装、Linux/macOS/移动端二进制与 GPU 推理验收不在首发 Windows 承诺内。
 
-## 内存、并发与故障
+## 所有权、并发与故障
 
-- 内存由所属 SDK 释放，不交给调用方 `free`/`delete`。
-- 请求确认释放缓存责任，不代替已取得结果句柄的释放。
-- 回调保持短小，保留封装引用并遵守重入限制。
-- 队列/预算有界，处理拒绝、背压、过期帧及重连代次，不承诺固定 FPS、无限路数或无损传输。
-- 组合视频与结果时保留帧身份/时间戳，预测显示不等于新推理。
-- 先排空子资源、回调和在途操作，再关闭上下文/卸载 SDK DLL，底层 FFmpeg/ORT 可常驻进程。
+- SDK 分配经所属 SDK 释放，不用调用方 `free`/`delete`。
+- 请求确认释放缓存责任，不释放已获取的结果句柄。
+- 回调保持简短、保留包装引用、遵守重入限制。
+- 队列/预算有界：处理拒绝、背压、过期帧与重连代次。不承诺无限 FPS、无限相机或无损交付。
+- 关联视频与结果时保持帧身份/时间戳。展示用的预测不是新推理结果。
+- 关闭 Context/卸载 SDK DLL 前排空子对象、回调与在途工作。底层 FFmpeg/ORT 可能常驻进程。
 
 见[接入说明](sdk/INTEGRATION.md)与[ABI 合同](docs/design/dual-dll-abi.md)。
 
 ## 验证与边界
 
-本地 Windows x64 **Release 候选包**完成 **177 项 Rust 测试通过（3 项忽略、8 项过滤）**及 **11 组包内 DLL 验证**，包含 C/C++17/C#/Python 调用。五类后处理有单测，本轮未复跑五类真实权重端到端验证；不等于现场、GPU 或长期验收。见[候选身份及结果](docs/RELEASE_STATUS.md)。
+v0.2.0 Windows x64 **Release 候选**通过 **384 项 workspace Rust 测试**（20 项环境门槛忽略）、生成器链零漂移、ABI 冻结（11 工件）与来源指纹边界检查（239 文件）。干净包验证覆盖 C/C++17/C#/Python 四语言示例与攒批实测链（包内 DLL 端到端）。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。五类模型中四类无本地权重未做端到端复跑；CUDA/OpenVINO 执行后端、现场流与长时验收如实登记未验。见 [v0.2.0 验证摘要](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0)（VALIDATION.md 资产）与[交付状态](docs/RELEASE_STATUS.md)。
 
-源码仓库不附运行库、权重、凭据、业务数据库或宿主 UI；单独的 Windows 包包含匹配的 CPU 运行库及对应源码/许可材料。来源清单保留提取历史，不充当动态发布清单；159 个核心文件继续校验指纹。
+源码检出不含运行库、权重、凭据、业务库与宿主 UI。Windows 包附带匹配的 CPU 运行库及其源码/许可材料。提取清单为历史来源记录，不是持续更新的发布清单；核心文件保持指纹核查。
 
-见[支持边界](docs/SUPPORT.md)、[当前本地验证](docs/RELEASE_STATUS.md)、[发布清单](docs/RELEASE_CHECKLIST.md)。历史规划不能替代实测。
+见[支持边界](docs/SUPPORT.md)、[当前验证状态](docs/RELEASE_STATUS.md)与[发布清单](docs/RELEASE_CHECKLIST.md)。历史计划不替代实际证据。
 
 ## 测试观察
 
-![历史 SDK 装卸稳定性记录](assets/benchmarks/reload-stability.png)
+![历史 SDK 重载稳定性](assets/benchmarks/reload-stability.png)
 
-| 已记录观察 | 结果 | 范围 |
+| 记录项 | 结果 | 范围 |
 | --- | --- | --- |
-| FrameBraid Rust 单测 | 177 通过、3 忽略、8 过滤 | 本地候选，Windows x64 Release |
-| FrameBraid DLL/脚本实调组 | 11 通过 | 本地 Release 候选，CPU 与语言调用 |
-| DLL 装卸 | 30 轮，进程句柄始终 157 | 提取前 SDK 历史测试 |
-| 预热后进程私有内存净增 | 25 轮净增 0.69 MiB | 提取前 SDK 历史测试 |
-| 队列压力/引用 | 接受 37、拒绝 14；持有/归还各 37 | 历史合成 CPU 测试 |
+| FrameBraid Rust 测试 | 384 通过；20 项环境门槛忽略 | v0.2.0 候选，Windows x64 Release |
+| DLL/脚本验证组 | 干净包四语言 + 攒批实测链 | v0.2.0 包，CPU 与语言调用 |
+| DLL 重载循环 | 30 次；全程 157 进程句柄 | 历史提取前 SDK |
+| 预热后进程私有内存净增长 | 25 循环 0.69 MiB | 历史提取前 SDK |
+| 队列压力/保留拥有者 | 37 接受、14 拒绝；37 保留/37 释放 | 历史合成 CPU 测试 |
 
-历史图表不是当前 FrameBraid Release 性能，单次测试硬件/二进制身份记录不完整；不推导 FPS 或推理延迟承诺。见[数据、队列图与方法](docs/BENCHMARKS.md)。
+历史数据不代表当前 Release 性能；单次硬件/二进制身份不全。不由此推导 FPS 或推理延迟结论。见[数据、队列图与方法](docs/BENCHMARKS.md)。
 
-当前本地测量见[可复现性能工具](docs/PERFORMANCE.md)：R1 CPU/合成基线与公开Release性能、硬件验收分别记录。
+当前本机测量请用[可复现性能工具](docs/PERFORMANCE.md)。性能验收按 [MET-2](docs/PERFORMANCE_ACCEPTANCE.md)：CPU 卸载、有效交付、延迟与恢复分目标管理，历史判定见[复核记录](docs/verification/sdk-metrics-review-20261026.md)。
 
 ## 贡献与反馈
 
-见[贡献指南](CONTRIBUTING.md)。不要公开凭据、私有取流地址或客户图片。安全报告见[安全说明](SECURITY.md)，变更见[记录](CHANGELOG.md)。
+阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。勿张贴凭据、私有流地址或客户图像。安全反馈按 [SECURITY.md](SECURITY.md) 处理。变更见 [CHANGELOG.md](CHANGELOG.md)。
 
-## 许可证
+## 许可
 
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse)。
 
-自有代码采用 [Apache-2.0](LICENSE)，按其条款允许商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可，见 [NOTICE](NOTICE) 和[第三方材料](sdk/third-party/README.md)。
-
-Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; Local r9 now adds ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports; accelerated inference and recovery acceptance remain open. See [core verification](docs/verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
-
-性能评价已统一为[MET-2指标与验收目标](docs/PERFORMANCE_ACCEPTANCE.md)，[历史结论复核](docs/verification/sdk-metrics-review-20261026.md)单独保留：区分CPU卸载、有效交付、延迟与恢复，不要求硬解必比CPU快。本次只改文档，没有新性能结果或发布，原始数据不改写。
-
-Local ordered-selection validation / 本地有序选择验证: [H5 r9](docs/verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.
-
-本地Rust兼容新增`am_camera::media::codec::visit_access_units`，同步借用Annex B输入、不分配NAL列表。末尾错误前可能已访问前面的NAL，调用方须在整体成功后再提交状态；原Vec接口保留。独立解码配置和参数缓存先准入再复制，见[预算及验证](docs/verification/sdk-r3-decoder-retained-20261027.md)。未发布，不改变C ABI或平台承诺。
+原始 SDK 代码采用 [Apache-2.0](LICENSE)，允许在遵守条款前提下商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可。见 [NOTICE](NOTICE) 与[第三方材料](sdk/third-party/README.md)。
