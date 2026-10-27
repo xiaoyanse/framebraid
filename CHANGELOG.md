@@ -2,8 +2,6 @@
 
 ## Unreleased / 未发布
 
-（无——v0.2.0 定版于 2026-10-28）
-
 ## [0.2.0] - 2026-10-28
 
 - Add the unpublished adaptive batching compatible extension (R5-2.1): `amv_model_configure_batching`/`amv_model_get_batching` plus `am_batching_options_t`/`am_batching_stats_t`/`AM_BATCHING_ENABLE`, disabled by default and limited to dynamic-batch-axis models in AUTO semantics; windows fill, expire or drain as one physical batch with per-item request identity unchanged. / 合同见 dual-dll-abi §3.5 末；合成数据单测与生成器同步已验，真实模型组批实测待验，源码指纹修订待登记。
@@ -156,7 +154,7 @@ R2 硬件自动选择保留编译、适配器和设备初始化失败原因；�
 
 新增分阶段优化路线与持续运行/故障注入验收要求，仅整理文档，尚未开始实施。
 
-## 0.1.0 — 2026-10-26 / 开发者预览版
+## [0.1.0] - 2026-10-26
 
 Initial public developer preview: source SDK and Windows x64 CPU binaries.
 

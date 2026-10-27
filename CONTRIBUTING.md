@@ -1,5 +1,6 @@
 # Contributing / 贡献指南
 
+By participating you agree to uphold the [Code of Conduct](CODE_OF_CONDUCT.md) / 参与本项目即表示遵守[行为准则](CODE_OF_CONDUCT.md)。
 [English README](README.md) · [中文 README](README.zh-CN.md)
 
 Use the repository issue/PR templates and the [current release status](docs/RELEASE_STATUS.md).

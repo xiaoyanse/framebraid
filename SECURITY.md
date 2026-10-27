@@ -2,10 +2,10 @@
 
 ## Supported scope / 支持范围
 
-Version 0.1.0 is a developer preview for Windows x64 CPU. No response-time SLA
+Version 0.2.0 is a developer preview for Windows x64 (CPU validated; hardware-decode probing included). No response-time SLA
 or safety certification is declared. Maintainer: [xiaoyanse](https://github.com/xiaoyanse).
 
-0.1.0 是 Windows x64 CPU 开发者预览版，不承诺响应时限或安全认证。
+0.2.0 是 Windows x64 开发者预览版（CPU 已验证，含硬解探测），不承诺响应时限或安全认证。
 
 ## Private reporting / 私密报告
 
