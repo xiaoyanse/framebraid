@@ -1,4 +1,9 @@
 mod admission;
+mod batching;
+pub(super) use batching::{
+    configure as batching_configure, count_rejected as batching_count_rejected,
+    enabled as batching_enabled, release as batching_release, snapshot as batching_snapshot,
+};
 mod budget;
 mod execution;
 mod native_execution;
@@ -201,6 +206,14 @@ pub(super) struct Admission {
     bytes: usize,
     items: usize,
 }
+impl Admission {
+    /// 多项合并（攒批窗口排出）时的合计计费基线：同源核心组批预算按合计输入计。
+    pub(super) fn totals(guards: &[Admission]) -> (usize, usize) {
+        guards.iter().fold((0, 0), |(items, bytes), a| {
+            (items.saturating_add(a.items), bytes.saturating_add(a.bytes))
+        })
+    }
+}
 impl Drop for Admission {
     fn drop(&mut self) {
         if let Ok(mut d) = self.engine.data.lock() {
@@ -219,7 +232,7 @@ struct Job {
     id: u64,
     params: am_infer_params_t,
     parallel: usize,
-    _admission: Admission,
+    _admissions: Vec<Admission>,
 }
 enum Payload {
     Single(Input),
@@ -228,17 +241,16 @@ enum Payload {
 // params中raw_preprocess不跨线程使用，接受前已复制进Input；其余字段是纯值。
 unsafe impl Send for Job {}
 pub unsafe fn submit(entry: Arc<Entry>, plan: Plan) -> Result<u64> {
-    let result = unsafe { admission::submit(entry.clone(), &[&plan], false, false, None) };
+    let result = unsafe { admission::submit(entry.clone(), &[&plan], false, false, true, None) };
     if result
         .as_ref()
         .is_err_and(|e| matches!(*e, AM_ERR_SDK_QUEUE_FULL | AM_ERR_SDK_RESOURCE_EXHAUSTED))
     {
-        entry
-            .data::<ModelHandle>()?
-            .state
-            .metrics
-            .rejected
-            .fetch_add(1, Ordering::AcqRel);
+        let model = entry.data::<ModelHandle>()?;
+        model.state.metrics.rejected.fetch_add(1, Ordering::AcqRel);
+        if batching::enabled(model) {
+            batching::count_rejected(model.info.key.load(Ordering::Acquire), 1);
+        }
     }
     let ids = result?;
     ids.first().copied().ok_or(AM_ERR_SDK_INTERNAL_ERROR)
@@ -247,9 +259,10 @@ pub(super) unsafe fn submit_offline(
     entry: Arc<Entry>,
     plans: &[&Plan],
     native: bool,
+    auto: bool,
     deadline: Option<std::time::Instant>,
 ) -> Result<Vec<u64>> {
-    unsafe { admission::submit(entry, plans, native, true, deadline) }
+    unsafe { admission::submit(entry, plans, native, true, native && auto, deadline) }
 }
 pub(super) fn reserve_metadata(state: &State, bytes: usize) -> Result<Admission> {
     let e = engine()?;
@@ -313,7 +326,8 @@ pub fn snapshot(state: &Arc<State>) -> Result<(usize, usize, usize, usize)> {
                 .is_ok_and(|m| Arc::ptr_eq(&m.state, state))
         })
         .fold((0, 0), |(items, bytes), job| {
-            (items + job._admission.items, bytes + job._admission.bytes)
+            let (i, b) = Admission::totals(&job._admissions);
+            (items + i, bytes + b)
         });
     Ok((
         items,

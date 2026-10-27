@@ -1,7 +1,12 @@
 use super::*;
 use am_vision_core::sdk;
 
-pub(super) fn execute(entry: Arc<Entry>, inputs: Vec<Input>, ids: Vec<u64>, admission: Admission) {
+pub(super) fn execute(
+    entry: Arc<Entry>,
+    inputs: Vec<Input>,
+    ids: Vec<u64>,
+    admissions: Vec<Admission>,
+) {
     let Ok(model) = entry.data::<ModelHandle>() else {
         return;
     };
@@ -20,17 +25,18 @@ pub(super) fn execute(entry: Arc<Entry>, inputs: Vec<Input>, ids: Vec<u64>, admi
             !live
         })
         .unwrap_or(true);
+    let input_budget = Admission::totals(&admissions).1;
     let output = if canceled || model.stopping.load(Ordering::Acquire) {
         Err(AM_ERR_SDK_HANDLE_CLOSED)
     } else {
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            run(model, &inputs, &ids, admission.bytes)
+            run(model, &inputs, &ids, input_budget)
         }))
         .unwrap_or(Err(AM_ERR_SDK_INTERNAL_ERROR))
     };
     // 固定批次内取消只改变该项终态；仍在执行的整批输入不得提前归还。
     drop(inputs);
-    drop(admission);
+    drop(admissions);
     match output {
         Ok(results) => {
             for (id, result) in ids.iter().zip(results) {

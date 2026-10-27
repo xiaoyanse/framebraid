@@ -34,6 +34,7 @@
     "AM_BATCH_NATIVE": 0,
     "AM_BATCH_SPLIT": 1,
     "AM_BATCH_AUTO": 2,
+    "AM_BATCHING_ENABLE": 1,
     "AM_DHW_PREFER_HW": 0,
     "AM_DHW_SOFTWARE_ONLY": 1,
     "AM_PF_RGBA8": 0,

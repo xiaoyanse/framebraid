@@ -42,6 +42,8 @@ AM_API am_status_t amv_infer_tensors_async(amv_model_t* model, uint32_t input_co
 AM_API am_status_t amv_infer_batch(amv_model_t* model, uint32_t item_count, const am_batch_item_t* items,
                                    const am_batch_options_t* options, am_batch_receipt_t* out_receipt);
 AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
+AM_API am_status_t amv_model_configure_batching(amv_model_t* model, const am_batching_options_t* options);
+AM_API am_status_t amv_model_get_batching(amv_model_t* model, am_batching_options_t* out, am_batching_stats_t* stats);
 AM_API am_status_t amv_result_notify_callback_set(amv_model_t* model, am_result_notify_fn cb, void* user_data);
 AM_API am_status_t amv_result_fetch(amv_context_t* ctx, uint64_t request_id, amv_result_t** out_result);
 AM_API am_status_t amv_result_ack(amv_context_t* ctx, uint64_t request_id);

@@ -32,7 +32,7 @@ pub(super) fn release(job: Job) {
         model: entry,
         input,
         id,
-        _admission,
+        _admissions,
         ..
     } = job;
     let Ok(model) = entry.data::<ModelHandle>() else {
@@ -42,14 +42,14 @@ pub(super) fn release(job: Job) {
     let count = match input {
         Payload::Single(input) => {
             drop(input);
-            drop(_admission);
+            drop(_admissions);
             execution::finish(model, id, Err(AM_ERR_SDK_HANDLE_CLOSED));
             1
         }
         Payload::Native { inputs, ids } => {
             let count = ids.len();
             drop(inputs);
-            drop(_admission);
+            drop(_admissions);
             for id in ids {
                 execution::finish(model, id, Err(AM_ERR_SDK_HANDLE_CLOSED));
             }

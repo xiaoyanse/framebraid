@@ -88,6 +88,9 @@ pub unsafe extern "C" fn amv_infer_batch(
             .metrics
             .rejected
             .fetch_add(rejected as u64, Ordering::AcqRel);
+        if rejected != 0 && scheduler::batching_enabled(m) {
+            scheduler::batching_count_rejected(m.info.key.load(Ordering::Acquire), rejected as u64);
+        }
         let value = am_batch_receipt_t {
             accepted_count: data.ids.iter().filter(|id| **id != 0).count() as u32,
             request_ids: data.ids.as_mut_ptr(),
@@ -182,6 +185,7 @@ unsafe fn process(
                         entry.clone(),
                         &selected,
                         native,
+                        options.batch_mode == AM_BATCH_AUTO,
                         (options.wait_deadline_ms != 0).then_some(deadline),
                     )
                 }

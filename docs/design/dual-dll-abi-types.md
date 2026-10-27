@@ -704,6 +704,17 @@ typedef struct am_batch_receipt_s {   /* 逐项回执（B11）：接受/拒绝�
   uint64_t* request_ids;      /* DLL 分配；被拒项 request_ids[i]=0 */
   const am_status_t* rejects; /* 被拒原因（背压/校验失败逐项区分） */
 } am_batch_receipt_t;
+typedef struct am_batching_options_s {  /* 自适应攒批（未发布兼容扩展 R5-2.1，主文件 §3.5 末）：
+                                           默认关闭；仅动态批量轴模型可启用 */
+  uint32_t struct_size; uint32_t abi_minor;  /* 版本协商同全局规则 */
+  uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */
+  uint32_t max_wait_ms;                      /* 0..5000；0=凑满即发不等 */
+  uint32_t flags;                            /* AM_BATCHING_ENABLE=1 */
+} am_batching_options_t;
+typedef struct am_batching_stats_s {   /* 累计只读计数；关闭状态查询返回全零 */
+  uint32_t struct_size; uint32_t abi_minor;
+  uint64_t formed_batches, batched_items, timeout_batches, rejected_items;
+} am_batching_stats_t;
 ```
 
 ### 3.5 结果（B02 五类完整结构 / B08 所有权）

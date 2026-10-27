@@ -229,6 +229,14 @@
       "size": 24,
       "align": 8
     },
+    "am_batching_options_t": {
+      "size": 20,
+      "align": 4
+    },
+    "am_batching_stats_t": {
+      "size": 40,
+      "align": 8
+    },
     "am_preprocess_meta_t": {
       "size": 48,
       "align": 4

@@ -31,6 +31,7 @@ pub const AM_TENSOR_CONTIGUOUS: u32 = 1;
 pub const AM_BATCH_NATIVE: u32 = 0;
 pub const AM_BATCH_SPLIT: u32 = 1;
 pub const AM_BATCH_AUTO: u32 = 2;
+pub const AM_BATCHING_ENABLE: u32 = 1;
 pub const AM_PF_ANY: u32 = 4294967295;
 pub const AM_REUSE_ALLOWED: u32 = 1;
 pub const AM_PIXEL_VIEW_MAGIC: u32 = 1095585880;

@@ -224,6 +224,58 @@ impl AbiLayout for am_batch_receipt_t {
         ),
     ];
 }
+impl AbiLayout for am_batching_options_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_batching_options_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_options_t, abi_minor),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_options_t, max_batch_items),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_options_t, max_wait_ms),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_options_t, flags),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
+impl AbiLayout for am_batching_stats_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_batching_stats_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, abi_minor),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, formed_batches),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, batched_items),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, timeout_batches),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, rejected_items),
+            core::mem::size_of::<u64>(),
+        ),
+    ];
+}
 impl AbiLayout for am_preprocess_meta_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -273,54 +325,6 @@ impl AbiLayout for am_preprocess_meta_t {
         (
             core::mem::offset_of!(am_preprocess_meta_t, valid),
             core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_tensor_out_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_tensor_out_t, name),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, dtype),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, shape),
-            core::mem::size_of::<*const i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, shape_len),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, data),
-            core::mem::size_of::<*const c_void>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, data_size),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, is_contiguous),
-            core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_keypoint_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_keypoint_t, x),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_keypoint_t, y),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_keypoint_t, confidence),
-            core::mem::size_of::<f32>(),
         ),
     ];
 }
