@@ -49,6 +49,10 @@ Python方法`load_model_memory_selected`与C# `LoadModelMemorySelected`复制接
 
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
+Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 `(bounds, confidence, keypoints)` 元组；随后可释放结果并继续读取复制值。原 `result.view` 为借用，释放后不可用。仅为本地未发布功能；其他任务及 C# 对应复制入口尚未完成。
+
+For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view. Other tasks and the C# equivalent are pending.
+
 旧 `amv_query_backends` 现只读本 context 的显式 CUDA probe 缓存；需要设备判定时先调用 `amv_probe_inference_hardware`。hw_detected=0 需结合 note 区分未知和已确认无设备。
 
 `amv_query_backends` now reads the context probe cache. Call `amv_probe_inference_hardware` first when device visibility is required; inspect note to distinguish unknown from confirmed absence.

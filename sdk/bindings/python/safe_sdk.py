@@ -284,9 +284,29 @@ class Result(Resource):
                      tuple(tensor.shape[:tensor.shape_len]), c.string_at(tensor.data, tensor.data_size))
                     for tensor in result.raw_outputs[:result.raw_output_count]]
 
+    def copy_pose(self):
+        """复制 Pose 检测框与关键点；结果关闭后独立值仍可使用。"""
+        with self._lock:
+            result = self._require().contents
+            if result.task != a.AM_TASK_POSE:
+                raise ValueError("Result is not a Pose result")
+            pose = result.pose
+            if pose.count > 300 or (pose.count and not pose.detections):
+                raise ValueError("Invalid Pose detections")
+            copied = []
+            for detection in pose.detections[:pose.count]:
+                if detection.kpt_count > 1024 or (detection.kpt_count and not detection.keypoints):
+                    raise ValueError("Invalid Pose keypoints")
+                keypoints = tuple((point.x, point.y, point.confidence)
+                                  for point in detection.keypoints[:detection.kpt_count])
+                copied.append((tuple(detection.bounds), detection.confidence, keypoints))
+            return tuple(copied)
+
     @property
     def view(self):
+        """低层借用视图；调用方须保证结果始终存活，关闭后不可读取。"""
         return self._require().contents
+
 
 
 class OwnedPixels:

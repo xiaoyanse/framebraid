@@ -15,6 +15,11 @@
 - **WHEN** 用户持有视图时请求结束或触发 GC
 - **THEN** 安全拥有者继续持有或明确拒绝操作，释放配对且无额外无界队列
 
+#### Scenario: Copy a pose result before releasing its owner
+
+- **WHEN** Python 调用方读取 Pose 检测并在返回后释放结果
+- **THEN** 框和关键点为独立复制值，复制期间关闭等待结果锁，关闭后再次调用明确拒绝；低层借用视图仍受原生所有者寿命限制
+
 ### Requirement: Versioned model profile diagnostics
 
 模型档案 SHALL 明确版本/权重摘要/导出配置和前后处理，形状或语义不兼容明确拒绝。
