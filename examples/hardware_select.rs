@@ -108,6 +108,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if is_hw || CREATES.load(Ordering::Relaxed) != 0 {
         return Err("SoftwareOnly touched hardware".into());
     }
+    if cpu["backend_support"].as_array().is_none_or(|items| {
+        items
+            .iter()
+            .any(|item| !item["compiled"].is_null() || !item["codec_configured"].is_null())
+    }) {
+        return Err("software policy must leave support unchecked".into());
+    }
     let failure = CpuDecoder::create_with_policy(
         injected.clone(),
         VideoCodec::H264,
@@ -179,6 +186,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if is_hw || hash != reference || CREATES.load(Ordering::Relaxed) != before {
         return Err("missing codec config initialized a device".into());
     }
+    if missing["backend_support"]
+        .as_array()
+        .is_none_or(|items| items.iter().any(|item| item["codec_configured"] != false))
+    {
+        return Err("missing codec configuration not reported".into());
+    }
     let mut uncompiled = FfmpegApi::load_from(runtime)?;
     uncompiled.av_hwdevice_iterate_types = no_device_types;
     uncompiled.av_hwdevice_ctx_create = fail_create;
@@ -198,6 +211,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .any(|item| item["error"]["Inventory"] == "NotCompiled")
     }) {
         return Err("uncompiled backend reason was lost".into());
+    }
+    if uncompiled["backend_support"]
+        .as_array()
+        .is_none_or(|items| items.iter().any(|item| item["compiled"] != false))
+    {
+        return Err("uncompiled support not reported".into());
+    }
+    if tiny_report["backend_support"]
+        .as_array()
+        .is_none_or(|items| items.iter().any(|item| !item["compiled"].is_null()))
+    {
+        return Err("exhausted budget must not claim support".into());
     }
     {
         let mut gate = GATE.0.lock().map_err(|_| "gate poisoned")?;

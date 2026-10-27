@@ -87,6 +87,8 @@
 - Add ABI1.1 r8 explicit inference-device probes and bounded cached JSON reports, with Python/C# helpers. Preserve all existing layouts, initialization and model-selection contracts; no ORT needed for device-only use. Local native C/C#/Python and shutdown/budget checks only; not accelerated inference or release acceptance.
 
 
+硬解报告增加后端编译与编码配置快照；Rust SelectionReport 结构字面量需补字段，C ABI 布局不变。[验证](docs/verification/sdk-r2-backend-support-20261027.md)
+
 R2 硬件自动选择保留编译、适配器和设备初始化失败原因；现有 JSON 的原因分类更精确，调用方须兼容未知分类。详见 [验证](docs/verification/sdk-r2-hardware-reasons-20261027.md)。
 - Add bounded Rust inference backend policies, explicit Windows CUDA driver inventory and owned session/Run diagnostics. Preserve legacy C selection behavior, shorten backend-state locks and isolate session EP/thread configuration. CPU native fallback/error and DLL regression verified locally; new C exports, accelerated runs and runtime recovery remain pending. / H5 Rust核心阶段，保留短测性能告警，未发布。
 

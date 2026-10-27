@@ -35,10 +35,17 @@ pub struct SelectedDevice {
     pub adapter: Adapter,
 }
 #[derive(Clone, Debug, Serialize)]
+pub struct BackendSupport {
+    pub backend: Backend,
+    pub compiled: Option<bool>,
+    pub codec_configured: Option<bool>,
+}
+#[derive(Clone, Debug, Serialize)]
 pub struct SelectionReport {
     pub policy: HardwarePolicy,
     pub selected: Option<SelectedDevice>,
     pub attempts: Vec<SelectionAttempt>,
+    pub backend_support: [BackendSupport; 2],
     pub fallback: Option<SelectionFailure>,
     pub elapsed_ms: u128,
 }
@@ -57,6 +64,26 @@ impl CpuDecoder {
         policy: HardwarePolicy,
         budget: Duration,
     ) -> Result<Selection> {
+        Self::create_with_adapter_source(
+            api,
+            codec,
+            extra,
+            max_pixels,
+            policy,
+            budget,
+            hardware::adapters,
+        )
+    }
+
+    fn create_with_adapter_source(
+        api: Arc<FfmpegApi>,
+        codec: VideoCodec,
+        extra: &[u8],
+        max_pixels: u64,
+        policy: HardwarePolicy,
+        budget: Duration,
+        adapters_source: impl FnOnce() -> std::result::Result<Vec<Adapter>, ProbeError>,
+    ) -> Result<Selection> {
         let start = Instant::now();
         // 先校验共同参数并准备CPU后备；尚未送包，不在此处分配解码参考帧。
         let cpu = Self::create(api.clone(), codec, extra, max_pixels)?;
@@ -64,6 +91,11 @@ impl CpuDecoder {
             policy,
             selected: None,
             attempts: Vec::new(),
+            backend_support: [Backend::D3d11va, Backend::Dxva2].map(|backend| BackendSupport {
+                backend,
+                compiled: None,
+                codec_configured: None,
+            }),
             fallback: None,
             elapsed_ms: 0,
         };
@@ -97,7 +129,29 @@ impl CpuDecoder {
                 start,
             ));
         }
-        let adapters = match hardware::adapters() {
+        let codec_ptr = unsafe { (api.avcodec_find_decoder_by_name)(codec.name().as_ptr()) };
+        for support in &mut report.backend_support {
+            if start.elapsed() >= budget {
+                return Ok(fallback(
+                    cpu,
+                    report,
+                    SelectionFailure::Inventory(ProbeError::BudgetExhausted),
+                    start,
+                ));
+            }
+            support.compiled = Some(hardware::compiled(&api, support.backend));
+            if start.elapsed() >= budget {
+                return Ok(fallback(
+                    cpu,
+                    report,
+                    SelectionFailure::Inventory(ProbeError::BudgetExhausted),
+                    start,
+                ));
+            }
+            support.codec_configured =
+                Some(unsafe { Binding::format(&api, codec_ptr, support.backend) }.is_some());
+        }
+        let adapters = match adapters_source() {
             Ok(adapters) => adapters,
             Err(error) => {
                 return Ok(fallback(
@@ -108,10 +162,10 @@ impl CpuDecoder {
                 ))
             }
         };
-        let codec_ptr = unsafe { (api.avcodec_find_decoder_by_name)(codec.name().as_ptr()) };
-        for backend in [Backend::D3d11va, Backend::Dxva2] {
-            let compiled = hardware::compiled(&api, backend);
-            let configured = unsafe { Binding::format(&api, codec_ptr, backend) }.is_some();
+        for support in &report.backend_support {
+            let backend = support.backend;
+            let compiled = support.compiled == Some(true);
+            let configured = support.codec_configured == Some(true);
             for adapter in adapters.iter().filter(|a| !a.software) {
                 if start.elapsed() >= budget {
                     return Ok(fallback(
@@ -209,6 +263,34 @@ fn fallback(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "需要显式FFmpeg运行库；模拟没有适配器"]
+    fn no_adapter_retains_real_library_capabilities() {
+        let path = std::env::var_os("AM_SDK_FFMPEG_DIR").unwrap();
+        let api = Arc::new(FfmpegApi::load_from(std::path::Path::new(&path)).unwrap());
+        let selection = CpuDecoder::create_with_adapter_source(
+            api,
+            VideoCodec::H264,
+            &[],
+            1920 * 1080,
+            HardwarePolicy::PreferHardware,
+            Duration::from_secs(5),
+            || Ok(Vec::new()),
+        )
+        .unwrap();
+        assert!(selection.report.attempts.is_empty());
+        assert!(matches!(
+            selection.report.fallback,
+            Some(SelectionFailure::NoCompatibleHardware)
+        ));
+        assert!(selection
+            .report
+            .backend_support
+            .iter()
+            .all(|support| support.compiled.is_some() && support.codec_configured.is_some()));
+        assert!(selection.report.selected.is_none());
+    }
 
     #[test]
     #[ignore = "需要显式FFmpeg运行库与本机D3D11适配器；只使用合成数据"]

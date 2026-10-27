@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "c78bf2733f6859d3667dc3fdc79a902a4968f01e",
+  "reviewBaseCommit": "00b6cc799aefba082eca279fea30ea88d74e6c70",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -66,8 +66,8 @@
     {
       "path": "crates/am-camera/src/media/codec/selection.rs",
       "previousSha256": null,
-      "sha256": "8d5af8cfa7e8507fb114f378f1e623c89c43d5e3bf9e030309f634d586c264a0",
-      "reason": "保留硬件自动选择的编译与设备初始化失败分类，定向验证，不改C ABI"
+      "sha256": "c4ee6dae5e8190eeab0aa561bb1366bcfae0298e626e7e6d32998db2532d744d",
+      "reason": "有界硬解后端支持状态，分离未检查和不支持，定向验证并记录 Rust 结构迁移"
     },
     {
       "path": "crates/am-camera/src/media/codec.rs",
@@ -906,8 +906,8 @@
     {
       "path": "crates/camera-ffi/src/hardware/tests.rs",
       "previousSha256": null,
-      "sha256": "ae6d454b6379031028373aaee7f4bccffa60a14f157855a957648a73234f6e1a",
-      "reason": "保留硬件自动选择的编译与设备初始化失败分类，定向验证，不改C ABI"
+      "sha256": "490c46c1718cde2b41b96d49c8c05e844d0b96c85734571ba80b5767fb075c4d",
+      "reason": "有界硬解后端支持状态，分离未检查和不支持，定向验证并记录 Rust 结构迁移"
     },
     {
       "path": "crates/vision/src/sdk/model/source.rs",

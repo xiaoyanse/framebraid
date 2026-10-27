@@ -15,6 +15,11 @@ SDK MUST 为直接解码和流式像素输出提供策略约束下的硬件探�
 - **WHEN** 存在显卡但依赖、初始化、编码/profile/位深或资源条件不满足
 - **THEN** 明确报告失败层次并遵循 SOFTWARE_ONLY/PREFER_HW 合同回退，未测不报成功，纯压缩直传不创建解码器
 
+#### Scenario: No compatible adapter is discovered
+
+- **WHEN** 显式硬件选择已获准检查运行库但没有可用硬件适配器
+- **THEN** 报告各候选后端的编译支持和目标解码器配置；未执行的检查为未知，不能将设备缺失解释为运行库未编译，也不能将配置存在解释为实际硬解成功
+
 ### Requirement: Bounded hardware decode recovery
 
 探测与恢复 SHALL 受时间、并发、内存和代次约束，瞬态负结果可重试，活帧在实际读取结束前不能释放或覆写。

@@ -1,7 +1,9 @@
 use super::*;
 use crate::frames::registry_tests::allocations;
 use am_camera_core::media::{
-    codec::selection::{SelectedDevice, SelectionAttempt, SelectionFailure, SelectionReport},
+    codec::selection::{
+        BackendSupport, SelectedDevice, SelectionAttempt, SelectionFailure, SelectionReport,
+    },
     hardware::{Adapter, Backend, ProbeError},
 };
 
@@ -56,6 +58,11 @@ fn worst_native_selection_fits_and_avoids_json_tree_allocations() {
                 ))),
             })
             .collect(),
+        backend_support: [Backend::D3d11va, Backend::Dxva2].map(|backend| BackendSupport {
+            backend,
+            compiled: Some(true),
+            codec_configured: Some(false),
+        }),
         fallback: Some(SelectionFailure::NoCompatibleHardware),
         elapsed_ms: u64::MAX as u128,
     };
@@ -92,6 +99,11 @@ fn report_keeps_hardware_failure_categories_and_native_code() {
             error: Some(SelectionFailure::Inventory(error)),
         })
         .collect(),
+        backend_support: [Backend::D3d11va, Backend::Dxva2].map(|backend| BackendSupport {
+            backend,
+            compiled: Some(true),
+            codec_configured: Some(false),
+        }),
         fallback: Some(SelectionFailure::NoCompatibleHardware),
         elapsed_ms: 1,
     };
@@ -103,6 +115,35 @@ fn report_keeps_hardware_failure_categories_and_native_code() {
     );
     assert_eq!(json["attempts"][2]["error"]["Inventory"]["DeviceInit"], -12);
 }
+#[test]
+fn no_adapter_report_keeps_backend_support_separate_from_device_failure() {
+    let report = SelectionReport {
+        policy: HardwarePolicy::PreferHardware,
+        selected: None,
+        attempts: Vec::new(),
+        backend_support: [
+            BackendSupport {
+                backend: Backend::D3d11va,
+                compiled: Some(true),
+                codec_configured: Some(true),
+            },
+            BackendSupport {
+                backend: Backend::Dxva2,
+                compiled: Some(false),
+                codec_configured: None,
+            },
+        ],
+        fallback: Some(SelectionFailure::NoCompatibleHardware),
+        elapsed_ms: 1,
+    };
+    let json: serde_json::Value = serde_json::from_slice(&serialize(&report).unwrap()).unwrap();
+    assert!(json["attempts"].as_array().unwrap().is_empty());
+    assert_eq!(json["backend_support"][0]["compiled"], true);
+    assert_eq!(json["backend_support"][1]["compiled"], false);
+    assert!(json["backend_support"][1]["codec_configured"].is_null());
+    assert!(json["selected"].is_null());
+}
+
 #[test]
 fn blocking_probe_rejects_callback_before_touching_handles_or_drivers() {
     let _callback = am_sdk_support::callbacks::Scope::enter();

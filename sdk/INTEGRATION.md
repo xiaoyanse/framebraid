@@ -49,6 +49,10 @@ Python方法`load_model_memory_selected`与C# `LoadModelMemorySelected`复制接
 
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
+硬解 selection 可返回 backend_support；compiled / codec_configured 为 null 时表示未检查，不等于不支持或实际硬解成功。Rust 手写 SelectionReport 字面量需增加该字段。
+
+Hardware selection may include backend_support; null means unchecked, not unsupported or verified decoding. Rust SelectionReport struct literals require the new field.
+
 硬解自动选择的 JSON 原因可能由通用解码错误细化为 Inventory 分类；调用方应允许未知原因及缺失项。无设备时选择报告不提供完整编译清单。
 
 Hardware selection can report more specific Inventory reasons; clients must tolerate unknown reasons and absent fields. No-device selection is not a complete backend build inventory.

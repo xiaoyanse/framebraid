@@ -120,6 +120,8 @@ AM_API am_status_t amc_source_set_decode_policy(amc_source_t* source, uint32_t p
 
 JSON必需字段schema、kind、state、selection、actual_backend、last_failure；context有探测完成的单调时钟completed_at_ms。selection沿用拥有的Rust选择报告，包含policy、selected（后端与设备）、attempts（初始化/目标配置/资源/预算/忙等原因）、fallback、elapsed_ms。selected只代表初始化选择，实际码流只能由decoder真实帧确定；probe报告actual_backend始终null，设备已释放。decoder的state区分initialized/verified/recovered_cpu/closed，实际值是最近观察结果，不表示关闭后仍持有设备；last_failure保留原生解码错误类别与可用的错误号。普通查询不会刷新设备列表，显式probe/reset才刷新。GPU标识无凭据、地址或运行库路径；LUID为无符号整数，调用方不得经浮点损失精度或与CUDA ordinal混同。
 
+未发布的R2兼容扩展：selection新增可选 `backend_support` 数组，依次报告 d3d11va 和 dxva2 的 `compiled` 与 `codec_configured`（布尔或 null）；null 表示未检查，false 表示明确不支持，设备未发现也不等同运行库未编译。SoftwareOnly、预算/准入未获时保持 null，检查并不创建设备，也不证明实际码流成功。现有客户端须忽略未知 JSON 字段；该 Rust 公开结构新增字段，使用结构字面量的调用方需补字段，不变更 C 结构布局或导出。
+
 探测按策略找到首个可初始化设备即停止，attempts仅表示已经尝试的候选，不是完整显卡清单或全部profile支持证明。该限制不取代后续完整设备/源策略任务；不得把一次成功泛化成所有GPU/码流兼容。
 
 探测缓存每context最多一份，探测阶段预留64KiB控制额度，完成后按缓冲capacity及拥有者开销收缩，许可覆盖缓存寿命；同context最多一轮，重叠调用返回tryAgain。显式新探测先撤销旧缓存，期间查询not_probed，失败不伪装成旧成功。查询decoder的序列化暂存预留32KiB控制额度；余额不足明确返回resourceExhausted，不为查询扩大默认控制预算。无持久化、后台探测线程或无界诊断历史。本扩展不承诺RTSP自动硬解已完成，也不把GPU冷启动当吞吐提升。

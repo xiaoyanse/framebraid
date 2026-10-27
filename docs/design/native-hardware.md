@@ -30,6 +30,8 @@ D3D11创建后从真实设备查询IDXGIAdapter LUID，与请求快照核对；�
 
 ### RTSP共享源策略与恢复（H2.3b 实施合同）
 
+selection.backend_support 独立标识两后端编译和目标编码配置，null 为未检查；无适配器不误认为未编译。Rust SelectionReport 字面量需补字段；具体范围见[验证](../verification/sdk-r2-backend-support-20261027.md)。
+
 自动选择现保留 Inventory 的 NotCompiled、AdapterIdentityMismatch 和 DeviceInit 原始分类；低层 create_on_device 仍沿用 DecodeError。无适配器时选择报告没有逐后端编译清单，H2.1 未关闭。详见 [验证](../verification/sdk-r2-hardware-reasons-20261027.md)。
 
 ABI 1.1本地下一快照新增`amc_source_set_decode_policy`，策略属于共享连接，默认PREFER_HW；只允许单一拥有者在首次像素订阅前改变，同值设置幂等。共享/已冻结时更改返回modeConflict，调用方用reuse=0建立独占源，不隐式影响其他拥有者。首次像素订阅发布与策略冻结同锁，失败的订阅不冻结策略；ISAPI源拒绝设置。
