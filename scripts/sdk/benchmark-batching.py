@@ -23,11 +23,13 @@ def run_round(enabled, items_total, per_submit, batch_items, wait_ms):
             check(bl.configure(model, items=batch_items, wait_ms=wait_ms, enabled=True))
         receipts, ids_all = [], []
         submitted_at = {}
+        rejected_count = 0
         for base_index in range(0, items_total, per_submit):
             items = [b.Item(base_index + i) for i in range(per_submit)]
-            start = time.perf_counter()
             receipt, ids, _ = b.submit(b.vision, model, items, mode=a.AM_BATCH_AUTO)
             now = time.perf_counter()
+            # 背压/校验拒绝如实计数：额度回收延迟时逐项回执为0，不算丢项。
+            rejected_count += sum(1 for rid in ids if not rid)
             for rid, i in zip(ids, range(base_index, base_index + per_submit)):
                 if rid:
                     submitted_at[rid] = now
@@ -55,6 +57,7 @@ def run_round(enabled, items_total, per_submit, batch_items, wait_ms):
         options, stats = bl.snapshot(model)
         return dict(
             enabled=enabled,
+            rejected=rejected_count,
             wall_s=latencies[-1] / 1000 if latencies else 0,
             items=len(latencies),
             p50=latencies[len(latencies) // 2],
@@ -78,10 +81,13 @@ def main(args):
     try:
         # 预热各一轮
         run_round(True, args.items, args.per_submit, args.batch_items, args.wait_ms)
+        time.sleep(1.0)  # 轮间等待额度/缓存回收，避免上轮残留导致逐项背压拒绝。
         run_round(False, args.items, args.per_submit, 0, 0)
+        time.sleep(1.0)
         order = [True, False]
         for round_index in range(args.rounds):
             for enabled in order if round_index % 2 == 0 else reversed(order):
+                time.sleep(1.0)
                 row = run_round(enabled, args.items, args.per_submit, args.batch_items, args.wait_ms)
                 row["round"] = round_index + 1
                 rows.append(row)
