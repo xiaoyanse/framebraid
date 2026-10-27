@@ -101,6 +101,8 @@ Python 新增拥有者锁保护的 Pose 框及关键点复制；结果释放后�
 
 最近邻平面缩放减少重复坐标和通道转换；像素逐字节对拍及限定局部量化见 [验证](docs/verification/sdk-r2-nearest-scale-20261027.md)。
 
+NV12 转换乘法预计算进进程级 RG 查表，1080p 每帧约 8.8→6.8ms（-23%）；定点/SIMD 重写因 256³ 色域存在精确半整数边界被穷举否决，RG 表与冻结 f64 参考逐位一致（256³ 穷举+200 万随机块对拍）。C# 跨语言共享帧搬运量化一并登记。[验证](docs/verification/sdk-r2-crosslang-simd-20261027.md)
+
 硬解报告增加后端编译与编码配置快照；Rust SelectionReport 结构字面量需补字段，C ABI 布局不变。[验证](docs/verification/sdk-r2-backend-support-20261027.md)
 
 R2 硬件自动选择保留编译、适配器和设备初始化失败原因；现有 JSON 的原因分类更精确，调用方须兼容未知分类。详见 [验证](docs/verification/sdk-r2-hardware-reasons-20261027.md)。
