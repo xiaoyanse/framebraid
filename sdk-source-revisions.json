@@ -932,6 +932,12 @@
       "previousSha256": "ba36722147e2c0fc2fc3fde42ca49ecfbff0341fbda370b3106e0101683b5a4d",
       "sha256": "8d350d1f90fba1e31be42cc7f8a6e25ede5939c15a6c2aa4e45e6448c8a4de59",
       "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
+    },
+    {
+      "path": "crates/am-camera/src/media/pixel_ops.rs",
+      "previousSha256": "11faf70d3c866bd357d11fd501943d0a7465c04e2b4e6d6ac3fb77df804e259e",
+      "sha256": "8d71366c21a5812dc280ab9bd430e8ac122d8d95dbf142dba1278ff9f3b690e7",
+      "reason": "R2 1.4 SIMD决策：定点重写被256^3穷举否决（半整数边界rgb(7,39,43)），保留f64路径改进程级RG表，逐位一致由穷举对拍保证"
     }
   ]
 }
