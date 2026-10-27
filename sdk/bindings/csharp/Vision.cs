@@ -174,10 +174,46 @@ namespace AmrtSdk {
         public readonly byte[] Data;
         internal TensorCopy(uint dtype, long[] shape, byte[] data) { DataType = dtype; Shape = shape; Data = data; }
     }
+    public sealed class PoseKeypointCopy {
+        public readonly float X, Y, Confidence;
+        internal PoseKeypointCopy(float x, float y, float confidence) { X = x; Y = y; Confidence = confidence; }
+    }
+    public sealed class PoseDetectionCopy {
+        public readonly float[] Bounds;
+        public readonly float Confidence;
+        public readonly PoseKeypointCopy[] Keypoints;
+        internal PoseDetectionCopy(float[] bounds, float confidence, PoseKeypointCopy[] points) {
+            Bounds = bounds; Confidence = confidence; Keypoints = points;
+        }
+    }
     public sealed class InferenceResult : OwnedResource {
         internal InferenceResult(VisionContext owner, IntPtr raw) : base(raw, owner, null, null, Native.amv_result_release) { }
+        internal InferenceResult(IntPtr raw, Native.ReleaseFunction release) : base(raw, null, null, null, release) { }
         // 结构化视图含借用指针，只能在本 result 存活期间读取；长期持有使用复制出口。
         public amv_result_t BorrowView() { lock (Gate) return Arena.Read<amv_result_t>(Raw); }
+        public PoseDetectionCopy[] CopyPose() {
+            lock (Gate) {
+                amv_result_t result = Arena.Read<amv_result_t>(Raw);
+                if (result.task != 1) throw new InvalidOperationException("Result is not a Pose result");
+                if (result.pose.count > 300 || (result.pose.count != 0 && result.pose.detections == IntPtr.Zero))
+                    throw new InvalidOperationException("Invalid Pose detections");
+                PoseDetectionCopy[] output = new PoseDetectionCopy[checked((int)result.pose.count)];
+                int rowSize = Marshal.SizeOf(typeof(am_pose_detection_t));
+                int pointSize = Marshal.SizeOf(typeof(am_keypoint_t));
+                for (int i = 0; i < output.Length; ++i) {
+                    am_pose_detection_t row = Arena.Read<am_pose_detection_t>(IntPtr.Add(result.pose.detections, checked(i * rowSize)));
+                    if (row.kpt_count > 1024 || (row.kpt_count != 0 && row.keypoints == IntPtr.Zero))
+                        throw new InvalidOperationException("Invalid Pose keypoints");
+                    PoseKeypointCopy[] points = new PoseKeypointCopy[checked((int)row.kpt_count)];
+                    for (int j = 0; j < points.Length; ++j) {
+                        am_keypoint_t p = Arena.Read<am_keypoint_t>(IntPtr.Add(row.keypoints, checked(j * pointSize)));
+                        points[j] = new PoseKeypointCopy(p.x, p.y, p.confidence);
+                    }
+                    output[i] = new PoseDetectionCopy(row.bounds, row.confidence, points);
+                }
+                return output;
+            }
+        }
         public Dictionary<string, TensorCopy> CopyRawOutputs() {
             lock (Gate) {
                 amv_result_t result = Arena.Read<amv_result_t>(Raw);

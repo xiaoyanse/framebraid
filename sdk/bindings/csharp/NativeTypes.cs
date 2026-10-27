@@ -161,6 +161,22 @@ namespace AmrtSdk {
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct am_pose_detection_t {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 4)]
+        public float[] @bounds;
+        public float @confidence;
+        public uint @kpt_count;
+        public IntPtr @keypoints;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_keypoint_t {
+        public float @x;
+        public float @y;
+        public float @confidence;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct am_request_snapshot_t {
         public uint @struct_size;
         public uint @state;
