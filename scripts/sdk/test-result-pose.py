@@ -2,6 +2,7 @@
 import argparse
 import ctypes as c
 import gc
+import struct
 from pathlib import Path
 import sys
 import threading
@@ -103,11 +104,43 @@ def real(args):
 
 
 def real_image(args):
+    from PIL import Image
+    with Image.open(args.image) as source:
+        width, height = source.size
     with VisionContext(args.dll, [args.runtime]) as vision, \
          vision.load_model(args.model, "pose-yolo26-e2e-coco17-v1") as model:
         request, result = model.infer_encoded(args.image.read_bytes())
         with result:
             snapshot = result.copy_pose()
+            tensors = result.raw_outputs()
+            assert len(tensors) == 1 and tensors[0][2] == (1, 300, 57)
+            values = struct.unpack("<17100f", tensors[0][3])
+            scale = min(640 / width, 640 / height)
+            left = (640 - round(width * scale)) // 2
+            top = (640 - round(height * scale)) // 2
+            reference = []
+            for offset in range(0, len(values), 57):
+                row = values[offset:offset + 57]
+                if row[4] < .25 or row[4] <= 0:
+                    continue
+                assert row[5] == 0
+                x = lambda value: (value - left) / scale / width
+                y = lambda value: (value - top) / scale / height
+                bounds = tuple(max(0., min(1., v)) for v in
+                               (x(row[0]), y(row[1]), x(row[2]), y(row[3])))
+                if bounds[2] <= bounds[0] or bounds[3] <= bounds[1]:
+                    continue
+                points = []
+                for i in range(6, 57, 3):
+                    px, py = x(row[i]), y(row[i + 1])
+                    points.append((px, py, row[i + 2] if 0 <= px <= 1 and 0 <= py <= 1 else 0.))
+                reference.append((bounds, row[4], points))
+            assert len(reference) == len(snapshot)
+            for actual, expected in zip(snapshot, reference):
+                assert all(abs(a - b) < 1e-5 for a, b in zip(actual[0], expected[0]))
+                assert abs(actual[1] - expected[1]) < 1e-5
+                assert all(abs(a - b) < 1e-5 for ap, ep in zip(actual[2], expected[2])
+                           for a, b in zip(ap, ep))
             raw = result.view
             assert raw.pose.count == len(snapshot) and len(snapshot) > 0
             for index, copied in enumerate(snapshot):
