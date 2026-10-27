@@ -8,12 +8,14 @@
 
 - [x] H2.0 完成显式Rust设备探测与硬解基础接线：有界枚举、D3D9/LUID映射、实际D3D11设备身份核对、硬件帧回读及失败保帧；修正新FFmpeg构建现代D3D11配置并在本机Intel/NVIDIA以合成H.264/H.265 Main实测。范围与未验项见`docs/verification/sdk-r2-hardware-foundation-20261026.md`，本项不代替H2.1～H2.4自动策略、C ABI与全局预算验收。
 
-- [ ] H2.1 审核现有硬解策略与查询合同，明确编译支持/设备发现/依赖/初始化/实际码流解码五层状态、适配器身份与失败原因；新增字段或策略先修合同和生成器，不覆盖旧冻结。
+- [x] H2.1 审核现有硬解策略与查询合同，明确编译支持/设备发现/依赖/初始化/实际码流解码五层状态、适配器身份与失败原因；新增字段或策略先修合同和生成器，不覆盖旧冻结。
   - ABI 1.1首组已交付显式probe、context/独立decoder报告及跨语言验证，见`docs/verification/sdk-r2-abi11-hardware-20261026.md`；r7已装配RTSP源策略/快照；全硬件矩阵非强制；具体策略/诊断/预算定向要求仍按H2.1～H2.4核验。
+  - 父项收口核对：五层状态、适配器身份与失败原因逐层对照合同与实现，引用 H2.0/1.1a/1.1b 既有实测；见[记录](../../../docs/verification/sdk-r2-h21-h22-closeout-20261027.md)。
 - [x] H2.0b 实现共用Rust SoftwareOnly/PreferHardware选择工厂，复用有界探测准入并返回拥有的选择/失败报告；真实帧验证、初始化失败、探测忙和无硬件回退定向测试后保存，不冒充DLL/RTSP与运行期恢复完成。证据见`docs/verification/sdk-r2-hardware-selection-20261026.md`。
 - [x] H2.1a 保留自动选择的设备初始化和编译支持失败分类，并核对本机 DLL 和 RTSP；无设备时逐后端完整清单仍待 H2.1。见 `docs/verification/sdk-r2-hardware-reasons-20261027.md`。
 - [x] H2.1b 无适配器时分别报告编译支持与目标编码配置，未知不冒充不支持；详见 `docs/verification/sdk-r2-backend-support-20261027.md`，H2.1 父项仍开放。
-- [ ] H2.2 实现 Windows H.264/H.265 原生硬解探测与自动选择：优先 D3D11VA，构建支持时尝试 DXVA2；枚举实际适配器并受初始化/探测并发预算限制，不只凭显卡名称或编译能力判可用。CUDA/QSV 专用视频后端后续，不与推理 CUDA 混同。
+- [x] H2.2 实现 Windows H.264/H.265 原生硬解探测与自动选择：优先 D3D11VA，构建支持时尝试 DXVA2；枚举实际适配器并受初始化/探测并发预算限制，不只凭显卡名称或编译能力判可用。CUDA/QSV 专用视频后端后续，不与推理 CUDA 混同。
+  - 父项收口核对：五要件（D3D11VA 优先序、DXVA2 双重检查、适配器枚举+预算准入、实际设备创建与 LUID 身份核对、不凭名称/编译能力臆断）逐项对应实现与实测；见[记录](../../../docs/verification/sdk-r2-h21-h22-closeout-20261027.md)。CUDA/QSV 按原文后续处理。
 - [x] H2.0c 在CPU回读分配前报告/校验保守字节预算，避免未计费的transfer pool残留；作用域释放或保留许可的单缓冲复用，验证预算不足、失败保帧、重试及关闭归还，两个复制入口共用全局Charge适配器。证据见`docs/verification/sdk-r2-readback-cache-20261026.md`；不等于自动硬解整链完成。
 - [x] H2.0d 参数重建引用已选设备，不重新探测/创建；独立上下文生命周期、失败保旧帧和实际验证状态清空；同进程交替量化设备重建与复用耗时。见`docs/verification/sdk-r2-device-reuse-20261026.md`，DLL/RTSP自动接线仍按H2.3推进。
 - [ ] H2.3 将选择接入直接解码和 RTSP 像素订阅两入口，遵循现有 SOFTWARE_ONLY/PREFER_HW；实际后端/适配器/失败原因可查询，纯压缩直传不启动解码器。缺设备/依赖或格式不支持时按合同回退 CPU，不修改浏览器播放器。
