@@ -1249,6 +1249,10 @@ R3共享执行器存储：现有64 MiB共享总额含执行器本体、固定Job
 
 R4 C# `InferenceResult.CopyPose()` returns owned deep copies under the result lock; it rejects closed results, non-Pose results and invalid counts or null pointers. Existing borrowed views and C ABI remain unchanged.
 
-R4 本地语言封装增量：Python `Result.copy_pose()` 在结果锁内复制 Pose 框及关键点到独立 Python 值，关闭后不可再调用；每个结果最多300框、每框最多1024关键点，非 Pose 明确拒绝。原 `Result.view` 仍为底层借用，结果释放后不可读取；复制不意味着 C ABI 或底层结果字段变化，其他结构化任务/C#另行完成。
+R4 本地语言封装增量：Python `Result.copy_pose()` 在结果锁内复制 Pose 框及关键点到独立 Python 值，关闭后不可再调用；每个结果最多300框、每框最多1024关键点，非 Pose 明确拒绝。原 `Result.view` 仍为底层借用，结果释放后不可读取；复制不意味着 C ABI 或底层结果字段变化。
 
-R4 本地 Python 结构化结果扩展：`copy_detect`、`copy_classify`、`copy_segment`、`copy_obb` 在结果锁内深拷贝原生字段，按任务类型校验，返回 tuple；类别名称可为 None。分类保留 logit、probability 与 has_probability 三项，不能将未知概率当0。分割位掩膜以原样 bytes 复制并保留宽、高、stride 和映射；LSB-first、图像坐标及旋转框语义沿用原ABI。检测/分割/旋转框最多300项、分类最多1000项，分割复制总量最多64 MiB；非法尺寸、步长、空指针拒绝。所有操作不改变 C ABI，旧借用视图仍需调用方保护；C#安全入口另行推进。
+R4 本地 Python 结构化结果扩展：`copy_detect`、`copy_classify`、`copy_segment`、`copy_obb` 在结果锁内深拷贝原生字段，按任务类型校验，返回 tuple；类别名称可为 None。分类保留 logit、probability 与 has_probability 三项，不能将未知概率当0。分割位掩膜以原样 bytes 复制并保留宽、高、stride 和映射；LSB-first、图像坐标及旋转框语义沿用原ABI。检测/分割/旋转框最多300项、分类最多1000项，分割复制总量最多64 MiB；非法尺寸、步长、空指针拒绝。所有操作不改变 C ABI，旧借用视图仍需调用方保护。
+
+# C# 结构化结果复制（未发布）
+
+C# `CopyDetect`、`CopyClassify`、`CopySegment`、`CopyObb` 在结果存活且持锁期间复制原生结果；返回数据独立，原借用接口语义不变。类型不匹配、数量超限或必需指针为空时拒绝；分割掩膜宽高 1–8192、步长不少于 ceil(width/8)，单次累计复制不超过 64 MiB。此为 C# 包装层新增，不改变 C ABI。类别名称由原生合同提供以 NUL 结尾的 UTF-8 字符串。

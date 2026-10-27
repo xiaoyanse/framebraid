@@ -186,7 +186,7 @@ namespace AmrtSdk {
             Bounds = bounds; Confidence = confidence; Keypoints = points;
         }
     }
-    public sealed class InferenceResult : OwnedResource {
+    public sealed partial class InferenceResult : OwnedResource {
         internal InferenceResult(VisionContext owner, IntPtr raw) : base(raw, owner, null, null, Native.amv_result_release) { }
         internal InferenceResult(IntPtr raw, Native.ReleaseFunction release) : base(raw, null, null, null, release) { }
         // 结构化视图含借用指针，只能在本 result 存活期间读取；长期持有使用复制出口。
