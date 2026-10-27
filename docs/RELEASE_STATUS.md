@@ -56,6 +56,8 @@ R2/H2.0已实测原生设备与显式硬解基础路径；自动选择/回退、
 
 R2/H2.0b adds a locally verified Rust initialization selector ([record](verification/sdk-r2-hardware-selection-20261026.md)); later H2.3a/b integrate direct/RTSP selection and recovery; complete pressure acceptance remains open. / Rust共用初始化选择与CPU回退已验，整包硬件能力仍未完成。
 
+本地未发布 C# 四类结构化结果复制和合成验证见[记录](verification/sdk-r4-csharp-structured-20261027.md)；不改变已发布制品。
+
 本地未发布 Rust 后端查询行为迁移见[记录](verification/sdk-h5-rust-query-20261027.md)，不改变已发布版本。
 
 本地未发布 C# Pose 结构化复制及限定验证见[记录](verification/sdk-r4-csharp-pose-copy-20261027.md)；不改变已发布包。

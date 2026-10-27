@@ -32,6 +32,8 @@ R3 1.1m推理请求表容量/增长重叠已纳入控制字节，真实低预算
 
 H2.0b的共用Rust初始化选择与回退见[本地记录](verification/sdk-r2-hardware-selection-20261026.md)；后续H2.3a/b已接直接DLL与RTSP，仍不作为整组完成。
 
+R4 C# 五类结果安全复制入口已覆盖，四类非 Pose 仅合成结构及生命周期验证，真实模型对拍仍待；见[记录](verification/sdk-r4-csharp-structured-20261027.md)。
+
 H5 Rust 旧矩阵查询改为显式 probe，迁移与限定验证见[记录](verification/sdk-h5-rust-query-20261027.md)；实际 CUDA 模型及整体 H5 仍待。
 
 R4 C# Pose 结构化复制已完成限定验证，其他 C# 类型及真实模型对拍继续；见[记录](verification/sdk-r4-csharp-pose-copy-20261027.md)。

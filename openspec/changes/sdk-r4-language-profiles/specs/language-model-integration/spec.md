@@ -25,6 +25,11 @@
 - **WHEN** Python 调用方复制检测、分类、分割或旋转框结果后释放拥有者
 - **THEN** 返回字段和掩膜是独立值，按原 ABI 保留概率、映射和角度语义；过量或无效掩膜明确拒绝，不能借用已释放指针
 
+#### Scenario: C# copies a structured result
+
+- **WHEN** C# 调用方复制检测、分类、分割或旋转框结果并释放拥有者
+- **THEN** 复制数据保持独立、非空指针与尺寸及掩膜累计预算先验证；错误任务或关闭后拒绝，保留原 ABI 坐标及掩膜约定
+
 ### Requirement: Versioned model profile diagnostics
 
 模型档案 SHALL 明确版本/权重摘要/导出配置和前后处理，形状或语义不兼容明确拒绝。
