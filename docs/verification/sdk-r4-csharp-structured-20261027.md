@@ -7,3 +7,5 @@ Windows x64 .NET Framework 编译器 /warnaserror 编译所有 C# 绑定并运�
 测试是模拟原生合法内存和本机布局，不证明不受信任的裸指针有效性、真实非空模型结果或所有硬件；四类真实模型对拍仍待验证。
 
 主线合入复核：主线全部 C# 绑定以 `/warnaserror` 重编译并运行同一合成结构/释放竞争测试通过；C# 类型生成器、ABI 生成/冻结和来源边界检查通过。接入说明合并冲突已保留主线 Rust 显式硬件探测迁移和四类复制说明。
+
+隔离工作树已在确认无链接、无活动进程并保留测试摘要后回收；语言布局结果归档 `.local/evidence/r4-csharp-structured-main-20261027/language-results.json`，SHA-256 `e8ecccc57aff17e40bad98ffb9e3d0a99e29f1807917bad3825d95ddcc2be1ce`，生成测试源一并保留。
