@@ -4,6 +4,7 @@ import ctypes as c
 import hashlib
 import importlib.util
 import json
+import subprocess
 import os
 from pathlib import Path
 import time
@@ -20,9 +21,9 @@ a = single.a
 sized, checked, close, Decoder = single.sized, single.checked, single.close, single.Decoder
 
 
-def run_dual_window(lib, args, streams, policies):
+def run_dual_window(lib, args, stream, packets, policies):
     """两路独立解码器同相位定拍；每路独立延迟分账，CPU/观察器为全进程合并。"""
-    assert len(streams) == 2 and len(policies) == 2
+    assert len(packets) == 2 and len(policies) == 2
     parallelism, parallelism_method = available_parallelism()
     sampler = ResourceSampler(enabled=args.observation_controls)
     decoders, pendings, received, samples, lateness = [], [], [], [], []
@@ -30,10 +31,10 @@ def run_dual_window(lib, args, streams, policies):
     hashes = []
     state = dict(before=None, measurement_end=None)
     observation = None
-    timebase_num, timebase_den = map(int, streams[0]["time_base"].split("/"))
+    timebase_num, timebase_den = map(int, stream["time_base"].split("/"))
     owners = [[(c.c_ubyte * len(row["data"])).from_buffer_copy(row["data"])
-               for row in stream["packets"]] for stream in streams]
-    for stream, policy in zip(streams, policies):
+               for row in lane_packets] for lane_packets in packets]
+    for policy in policies:
         decoders.append(Decoder(lib, args.runtime_dir, stream, policy))
         pendings.append({})
         received.append(set())
@@ -41,10 +42,10 @@ def run_dual_window(lib, args, streams, policies):
         lateness.append([])
         hashes.append([])
     try:
-        first_dts = min(row["dts"] for stream in streams for row in stream["packets"])
+        first_dts = min(row["dts"] for lane_packets in packets for row in lane_packets)
         timeline = []
-        for lane, stream in enumerate(streams):
-            for lane_index, row in enumerate(stream["packets"]):
+        for lane, lane_packets in enumerate(packets):
+            for lane_index, row in enumerate(lane_packets):
                 timeline.append((row["dts"] - first_dts, lane, lane_index, row))
         timeline.sort(key=lambda item: item[:3])
         warmup, window = args.warmup_s, args.window_s
@@ -101,9 +102,9 @@ def run_dual_window(lib, args, streams, policies):
                 lateness[lane].append(max(0, now - target))
                 window_counts[lane]["inputs"] += 1
             pendings[lane][row["pts"]] = now, phase
-            packet = sized(a.amc_decoder_input_t)
-            packet.data = owners[lane][lane_index]
-            packet.size, packet.flags = len(packet.data), a.AM_PKT_AU_COMPLETE
+            packet, owner = sized(a.am_decoder_input_t), owners[lane][lane_index]
+            packet.data, packet.size = owner, len(owner)
+            packet.flags = a.AM_PKT_AU_COMPLETE
             packet.pts, packet.dts = row["pts"], row["dts"]
             checked(lib.amc_decoder_submit(decoders[lane].decoder, c.byref(packet)))
             receive_all()
@@ -169,8 +170,7 @@ def main():
     args = parser.parse_args()
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
-    stream = load_packets(args.input)
-    validate_stream(stream)
+    stream, packets = load_packets(args.input)
     search = os.add_dll_directory(str(args.dll_dir.resolve()))
     results = []
     try:
@@ -179,7 +179,7 @@ def main():
         groups = [args.policies] if args.policies else [["cpu", "cpu"], ["hardware", "hardware"]]
         for policies in groups:
             for round_index in range(1, args.rounds + 1):
-                row = run_dual_window(lib, args, [stream, stream], policies)
+                row = run_dual_window(lib, args, stream, [packets, packets], policies)
                 name = f"dual-{'-'.join(policies)}-{round_index}.json"
                 (output / name).write_text(json.dumps(row, indent=1) + "\n", encoding="utf-8")
                 results.append(dict(file=name,
@@ -188,8 +188,16 @@ def main():
                                     lane_useful_fps=[round(lane["useful_before_end"] / row["cpu"]["wall_s"], 3)
                                                      for lane in row["lanes"]],
                                     backends=[lane["actual_backend"] for lane in row["lanes"]]))
-        identity = dict(dll=vars(dll_build_identity(args.dll_dir.resolve() / "am_camera.dll")),
-                        input_sha256=file_sha256(args.input), target_card_sha256=file_sha256(args.target_card),
+        dll = args.dll_dir.resolve() / "am_camera.dll"
+        version = sized(a.am_version_info_t)
+        checked(lib.amc_get_version_info(c.byref(version)))
+        build = dll_build_identity(dll, version.package_version_utf8.decode(), version.build_target_utf8.decode(),
+            version.runtime_notes_utf8.decode(), subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parents[2], text=True).strip(),
+            "dirty" if subprocess.check_output(["git", "status", "--porcelain"], cwd=Path(__file__).resolve().parents[2]) else "clean")
+        identity = dict(schema="framebraid.performance.met2-dual-stream/1", build=build,
+                        input_sha256=file_sha256(args.input), stream=stream,
+                        target_card_sha256=file_sha256(args.target_card),
+                        runtime_files={p.name: file_sha256(p) for p in sorted(args.runtime_dir.glob("*.dll"))},
                         scope="same-process dual decoder stream cadence; MET-2 observation; not field acceptance")
         (output / "identity.json").write_text(json.dumps(identity, indent=1) + "\n", encoding="utf-8")
         print(json.dumps(results, indent=1))
