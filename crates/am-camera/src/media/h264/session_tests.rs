@@ -113,6 +113,7 @@ async fn slow_client_overflow_resync_then_keyframe_resume() {
 /// 本地 MP4（AVCC）源真装配：订阅→配置帧→Annex B 包流（关键帧带 SPS/PPS、
 /// 序号单调、PTS 递增、访问单元边界=一包）。
 #[tokio::test]
+#[ignore = "需要显式FFmpeg运行库（AM_RT_FFMPEG_DIR）；CI无运行库环境跳过"]
 async fn hub_streams_local_h264_file_with_parameter_sets() {
     let sample = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src/media/testdata/probe_source.mp4");
@@ -197,6 +198,7 @@ async fn hub_streams_local_h264_file_with_parameter_sets() {
 
 /// EOF 重开：文件播完退避重连，成功再开递增源代次并广播新配置。
 #[tokio::test]
+#[ignore = "需要显式FFmpeg运行库（AM_RT_FFMPEG_DIR）；CI无运行库环境跳过"]
 async fn generation_increments_after_eof_reopen() {
     let sample = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src/media/testdata/probe_source.mp4");

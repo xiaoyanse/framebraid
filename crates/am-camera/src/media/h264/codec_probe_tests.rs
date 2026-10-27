@@ -43,6 +43,7 @@ fn classify_open_failure_branches() {
 
 /// 本地 H.264 真源：头直读命中（ffprobe 语义不拉全流），返回流参数。
 #[test]
+#[ignore = "需要显式FFmpeg运行库（AM_RT_FFMPEG_DIR）；CI无运行库环境跳过"]
 fn probe_h264_local_file_passes() {
     let sample = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src/media/testdata/probe_source.mp4");
@@ -61,6 +62,7 @@ fn probe_h264_local_file_passes() {
 
 /// 非 H.264（MJPEG）分支：返回 NotSupported+编码名（指引文案由端点组装）。
 #[test]
+#[ignore = "需要显式FFmpeg运行库（AM_RT_FFMPEG_DIR）；CI无运行库环境跳过"]
 fn probe_non_h264_reports_codec_name() {
     let Some(ffmpeg) = which_ffmpeg() else {
         eprintln!("[探测] 未找到 ffmpeg 命令，MJPEG 分支用例跳过");
@@ -103,6 +105,7 @@ fn probe_non_h264_reports_codec_name() {
 
 /// 不可达源分类：本机拒绝端口即拒绝连接（不产生长等待）。
 #[test]
+#[ignore = "需要显式FFmpeg运行库（AM_RT_FFMPEG_DIR）；CI无运行库环境跳过"]
 fn probe_refused_port_classified_unreachable() {
     let outcome = probe_once("rtsp://127.0.0.1:1/none");
     assert!(

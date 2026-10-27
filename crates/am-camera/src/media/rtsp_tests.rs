@@ -11,6 +11,7 @@ use super::testkit::{ensure_mediamtx, which_ffmpeg};
 /// 本地文件源：fmt 层四项（nobuffer/probesize/analyzeduration/max_delay）字段读回生效。
 /// open_input 内部验证失败会返回 Err，此处再独立读回快照断言并输出证据。
 #[test]
+#[ignore = "需要显式FFmpeg运行库（AM_RT_FFMPEG_DIR）；CI无运行库环境跳过"]
 fn open_options_applied_on_local_file() {
     let sample = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src/media/testdata/probe_source.mp4");
