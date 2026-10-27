@@ -645,6 +645,27 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
 - **批量回执状态与所有权**：`AM_OK`表示已生成完整逐项回执，可能`accepted_count=0`；接受项有非零ID且rejects[i]=AM_OK，其余ID=0并给具体原因，包括模式不兼容与固定尾项。顶层参数/回执资源失败才返回函数级错误并清空输出；已经接受的项不因后项失败回滚。ids/rejects为SDK拥有的只读数组（不能修改或自行free），可移动调用方回执头后调用`amv_receipt_release`；该函数清空回执头，重复释放报handleInvalid。释放回执不取消已接受请求，也不清除其结果。回执与快照共享控制类项/字节预算，持有期间ctx不进入CLOSED。
 - **物理批次与背压**：NATIVE按兼容的命名输入shape分组，固定N逐N项，动态组受公开64项包络。不得因临时队列/槽或字节不足，静默缩小原生组或改为SPLIT，否则可能改变跨batch运算结果；完整组只能接受、拒绝或限时等待。已接受离线项不被后来的实时请求替换；逐项取消不从正在运行的原生组移除输入，只改变该项终态，其余项保持同一原生运算。等待者域最多16且受ctx队列更小上限约束，wait=0不等，非零不超过配置/5s；截止后不得迟到接受，复制/保留引用后再次核对截止。调用方回调须及时返回，SDK不承诺抢占阻塞的外部回调；调用方还须使结果TTL覆盖其等待/取结果节奏。
 
+- **自适应攒批（未发布兼容扩展，R5-2.1）**：显式启用、可关闭、有界的跨请求自动聚合，仅两个新导出，不改既有结构与语义：
+  ```c
+  typedef struct am_batching_options_s {
+    uint32_t struct_size; uint32_t abi_minor;  /* 版本协商同全局规则 */
+    uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */
+    uint32_t max_wait_ms;                      /* 0..5000；0=凑满即发不等 */
+    uint32_t flags;                            /* AM_BATCHING_ENABLE=1 */
+  } am_batching_options_t;
+  AM_API am_status_t amv_model_configure_batching(amv_model_t* model, const am_batching_options_t* options);
+  AM_API am_status_t amv_model_get_batching(amv_model_t* model, am_batching_options_t* out, am_batching_stats_t* stats);
+  ```
+  `am_batching_stats_t { struct_size, abi_minor, formed_batches, batched_items, timeout_batches, rejected_items }` 为累计只读计数。语义边界：
+  - **默认关闭**：未 configure 或传 NULL 时，AUTO/NATIVE/SPLIT 全部维持现行逐次执行语义，零攒批；旧调用方零影响。
+  - **适用范围**：仅动态批量轴模型（native_batch=1 且动态上限≥2）接受启用；固定批量轴模型 configure 返回 `vision.batchUnsupported`，不填伪样本、不放宽尾项拒绝规则。
+  - **聚合条件**：同一模型实例、相同实际后端选择、逐项输入 shape 与前处理参数完全一致才同批；不一致项不等待、立即按现行规则执行/拒绝，不静默变形。
+  - **触发执行**：凑满 `max_batch_items`、或 `max_wait_ms` 窗口截止、或模型关闭排空时，按单一物理批次执行；窗口截止不足 2 项时不组批、逐项执行。
+  - **逐项语义不变**：每项独立 request_id/取消/TTL/回调与错误回执（B11）；已取消项不进入后续批次；批内部分项失败不回滚同批其余项。
+  - **资源与公平**：等待项计入模型既有请求队列与等待者上限，不新增无界队列；等待期不占推理线程；执行占用模型既有线程与控制额度，合并批次按"同源核心组批预算"计费。
+  - **运行期切换**：configure 可在任何时刻调用；切换只影响此后接受的新请求，已进入等待窗口的在途项按切换前配置走完（凑满/截止/排空三择一）后生效。查询在关闭状态返回全零计数与默认选项。
+  - 能力查询与实际支持一致：无动态批量能力的模型 get 返回 flags=0；绑定/生成器同步新导出与结构；本扩展不改变 batch_mode 既有三值语义——攒批只作用于 AUTO。
+
 ### 3.6 结果获取（B02 五类结构 / B03 快照闭环 / B08 所有权）
 
 ```c
