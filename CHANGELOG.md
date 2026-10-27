@@ -87,6 +87,8 @@
 - Add ABI1.1 r8 explicit inference-device probes and bounded cached JSON reports, with Python/C# helpers. Preserve all existing layouts, initialization and model-selection contracts; no ORT needed for device-only use. Local native C/C#/Python and shutdown/budget checks only; not accelerated inference or release acceptance.
 
 
+Rust 后端 query 不再隐式探测 CUDA；先显式 probe 再传递快照，行为迁移见[验证](docs/verification/sdk-h5-rust-query-20261027.md)。
+
 C# 新增 Pose 框和关键点安全复制；既有 BorrowView 保持借用，见[验证](docs/verification/sdk-r4-csharp-pose-copy-20261027.md)。
 
 Python 检测、分类、分割和旋转框结果支持有界深拷贝；[合成结构验证](docs/verification/sdk-r4-python-structured-copy-20261027.md)，真实模型对拍仍待。

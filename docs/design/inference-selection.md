@@ -31,3 +31,5 @@ R2已记录硬解到RGBA较慢，只是本机整段耗时事实，不单独认�
 后续r9已新增有序模型C入口与Python/C#封装，见[本轮记录](../verification/sdk-h5-ordered-selection-20261026.md)和ABI §3.2；下面H5.0b说明保留其历史边界。选择模型缓存8KiB、context最近尝试8KiB，纯读查询16KiB，默认control额度不足时拒绝而不扩额。context缓存随destroy释放，CLOSED查询只返回空状态，不把内部缓存当外部租约阻塞shutdown。硬件查询直接借用探测缓存并定容序列化，堆暂存按实际32KiB记账；一份设备缓存16KiB+context8KiB+单模型8KiB+硬件查询32KiB可同时在默认64KiB内。并发/更多模型仍可能明确resourceExhausted。
 
 新增C显式probe/get_report及Python/C#便捷方法，合同见ABI正文H5.0b；报告只含设备缓存和累计观察，不含模型策略/原生Run细节。旧query_backends迁移、模型C允许列表及恢复继续待办。缓存16KiB内部控制额度、查询48KiB（32KiB定容序列化），默认总64KiB，不把内部缓存当未归还租约阻塞关闭。最大16个设备/每名称原始256字节的上界有单测，不构建JSON Value副本。
+
+H5 Rust查询迁移（本地未发布）：`runtime::query(dirs)` 不再隐式加载或初始化 CUDA 驱动，返回未知设备状态并在 note 标识；需要设备状态时先显式调用 `runtime::devices::probe(budget)`，再以 `CudaSnapshot::from_probe(&report)` 传入 `query_snapshot`。驱动未加载、未初始化或设备数未取得为 Failed/未知，设备数0才是 Absent；每次由调用方传递快照，不设进程永久负缓存。旧调用方依赖 query 隐式探测的行为需迁移。C ABI不变；原生驱动调用软预算不能强杀。

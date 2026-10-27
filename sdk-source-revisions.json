@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
   "baseManifestSha256": "8da8fcac6097e12be235b88b9517dbd07a097bf889f28ba9dae38b43e1a50c33",
-  "reviewBaseCommit": "e8af4970cfa6a517e34ffffad9dcdcf09a53112f",
+  "reviewBaseCommit": "688bf762c26e75e5400979934954c379c5348aa1",
   "files": [
     {
       "path": "crates/sdk-support/src/common.rs",
@@ -270,8 +270,8 @@
     {
       "path": "crates/vision/src/sdk/runtime.rs",
       "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
-      "sha256": "a0053ef4bb08594e3123cbf7c190a28ee3846391d75b0f666b05ec820baca0f2",
-      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
+      "sha256": "18b14f81f9386ce0afc36730bdc8f4dd7a5b7976f88774661b5b47e898f274ff",
+      "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
     },
     {
       "path": "crates/vision/src/sdk/runtime/devices.rs",
@@ -318,8 +318,8 @@
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
       "previousSha256": null,
-      "sha256": "bf8100bb03540f54b6e10ff5da16527f41f65fb8e330471c9eb8fe2880214c2d",
-      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
+      "sha256": "ff4638f43af4d339442d43d86e48bc051dc49feb4a0d711850803f123e2ec290",
+      "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
     },
     {
       "path": "crates/vision/src/sdk/prepare.rs",
@@ -926,6 +926,12 @@
       "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
       "sha256": "40c5b97e072340608c7b54943b7142935f48daf332f15cbe87567574220c2a97",
       "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
+    },
+    {
+      "path": "crates/vision/src/sdk/runtime/windows.rs",
+      "previousSha256": "ba36722147e2c0fc2fc3fde42ca49ecfbff0341fbda370b3106e0101683b5a4d",
+      "sha256": "8d350d1f90fba1e31be42cc7f8a6e25ede5939c15a6c2aa4e45e6448c8a4de59",
+      "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
     }
   ]
 }

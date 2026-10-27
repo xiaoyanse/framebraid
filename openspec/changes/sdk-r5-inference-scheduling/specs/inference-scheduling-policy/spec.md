@@ -34,6 +34,11 @@ SDK MUST 区分硬件可见、依赖存在、provider 可加载、目标模型�
 - **WHEN** 调用方查询旧C后端矩阵而本context尚未探测、探测失败或正在刷新
 - **THEN** 查询不初始化 CUDA 驱动，硬件未知通过 note 显示且不能冒充已确定不存在；仅已得到设备数的显式探测快照可作为可见性依据
 
+#### Scenario: Rust caller requests backend state without probe
+
+- **WHEN** Rust 调用方只查询后端状态且未提供显式设备探测结果
+- **THEN** 不加载 CUDA 驱动并表示设备未知；显式探测结果经调用方传入后，只有已取得设备数才能报告存在或不存在
+
 ### Requirement: Bounded model selection and honest execution evidence
 
 选择 SHALL 仅尝试调用方允许的最多3个backend/device候选，严格模式只尝试首项，未列CPU不得隐式回退。模型/档案错误 MUST 停止选型；后端失败可按策略继续，保留有界阶段诊断。状态锁 MUST 不跨原生构造持有，旧公开可修改字段不得伪造执行成功。

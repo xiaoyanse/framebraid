@@ -104,39 +104,3 @@ pub fn check_loaded(path: &Path) -> Result<()> {
     let _ = path;
     Ok(())
 }
-pub fn cuda_hardware() -> bool {
-    #[cfg(windows)]
-    {
-        let Some(root) = std::env::var_os("SystemRoot") else {
-            return false;
-        };
-        let path = std::path::PathBuf::from(root).join("System32/nvcuda.dll");
-        let path = path
-            .as_os_str()
-            .to_string_lossy()
-            .encode_utf16()
-            .chain(Some(0))
-            .collect::<Vec<_>>();
-        let module = unsafe { LoadLibraryExW(path.as_ptr(), std::ptr::null_mut(), 0x800) };
-        if module.is_null() {
-            return false;
-        }
-        let init = unsafe { GetProcAddress(module, c"cuInit".as_ptr()) };
-        let count = unsafe { GetProcAddress(module, c"cuDeviceGetCount".as_ptr()) };
-        let result = if init.is_null() || count.is_null() {
-            false
-        } else {
-            let init: unsafe extern "system" fn(u32) -> i32 = unsafe { std::mem::transmute(init) };
-            let count: unsafe extern "system" fn(*mut i32) -> i32 =
-                unsafe { std::mem::transmute(count) };
-            let mut devices = 0;
-            unsafe { init(0) == 0 && count(&mut devices) == 0 && devices > 0 }
-        };
-        unsafe { FreeLibrary(module) };
-        result
-    }
-    #[cfg(not(windows))]
-    {
-        false
-    }
-}

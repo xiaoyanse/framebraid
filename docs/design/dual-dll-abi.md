@@ -138,7 +138,7 @@ probe只接受活动context，回调内拒绝；预算1..5000ms，最多16个CUD
 
 get只复制缓存设备报告及进程累计后端观察，schema=framebraid.inference-hardware/1，最大64KiB含NUL；NULL+0查长度，小缓冲写required、首字节清0并返回limitOutOfRange，缓冲与required不重叠；并发状态变化时按新required重试或直接分配64KiB。回调中允许只读查询。state为not_probed/probe_complete/closing/closed；completed_at_ms为单调完成时间，未探测为null。device_probe含CPU可用逻辑并行度、CUDA驱动/初始化/版本、可见数/最多16设备、stopped、elapsed_ms和soft_budget_exceeded；CPU并行度不是物理核心数，CUDA ordinal/UUID不得当DXGI标识。缺驱动不是已确认无GPU。observations字段accelerator_domain/loaded_mask/executed_mask只表示当前SDK域的历史观察，不是当前模型健康、全节点GPU放置或运行库依赖清单。runtime_initialized区分是否初始化ORT，不据显卡存在设provider成功。
 
-未发布的 H5 迁移：C 旧矩阵 `amv_query_backends` 不再自行加载 CUDA 驱动；仅读取同 context 最近的显式 probe 快照。尚未探测、探测失败而设备数未知时 CUDA 的 hw_detected 为0且 note 明确 unknown；已验证设备数为0时 note 明确 no-device，非零时为1。旧调用方若依赖一次查询立即探测，应先调用显式 probe 后查询或读取详细报告；旧 C 结构布局及字段值域不变。探测刷新期间旧快照撤销，不将上次成功误认为当前。Rust 独立 runtime::query 历史行为不因此改变，完整迁移须单独审计。
+未发布的 H5 迁移：C 旧矩阵 `amv_query_backends` 不再自行加载 CUDA 驱动；仅读取同 context 最近的显式 probe 快照。尚未探测、探测失败而设备数未知时 CUDA 的 hw_detected 为0且 note 明确 unknown；已验证设备数为0时 note 明确 no-device，非零时为1。旧调用方若依赖一次查询立即探测，应先调用显式 probe 后查询或读取详细报告；旧 C 结构布局及字段值域不变。探测刷新期间旧快照撤销，不将上次成功误认为当前。Rust 独立 runtime::query 现亦迁移为未知快照，详见 inference-selection.md；旧依赖隐式探测的 Rust 调用方需改用显式 probe。
 
 关闭中/完成后可查询空快照，隐藏设备与观察，绝不重新分配服务或访问驱动；destroy后句柄不得再用。缓存每context一份，probe预留16KiB内部控制额度（设备名称原始最多256字节，UTF8容错最多768字节），报告缓存不作为外部租约阻塞shutdown；查询临时预留48KiB（含32KiB定容序列化缓冲，无JSON树副本），余额不足resourceExhausted。该阶段当时不改旧query_backends；后续缓存迁移见上方H5迁移说明，模型策略和恢复仍按H5后续，不以两导出宣称全量完成。英文/中文接入说明与Python/C#便捷封装配套同提交DLL，旧开发r7不能加载新入口。旧1.0/1.1结构/枚举/导出全保留；r7冻结原件保留，新r8指纹绑定JSON最小合同。
 

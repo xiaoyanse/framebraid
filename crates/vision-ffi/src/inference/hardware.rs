@@ -67,11 +67,9 @@ fn cuda_from_slot(slot: &Slot) -> Result<runtime::CudaSnapshot> {
     Ok(cuda_from_report(cached.as_ref().map(|value| &value.report)))
 }
 fn cuda_from_report(report: Option<&devices::DeviceProbeReport>) -> runtime::CudaSnapshot {
-    match report.map(|value| value.cuda_visible_count) {
+    match report {
         None => runtime::CudaSnapshot::Unprobed,
-        Some(None) => runtime::CudaSnapshot::Failed,
-        Some(Some(0)) => runtime::CudaSnapshot::Absent,
-        Some(Some(_)) => runtime::CudaSnapshot::Present,
+        Some(value) => runtime::CudaSnapshot::from_probe(value),
     }
 }
 #[no_mangle]
@@ -258,6 +256,8 @@ mod tests {
             cuda_from_report(Some(&report)),
             runtime::CudaSnapshot::Failed
         );
+        report.cuda_driver_present = true;
+        report.cuda_initialized = true;
         report.cuda_visible_count = Some(0);
         assert_eq!(
             cuda_from_report(Some(&report)),

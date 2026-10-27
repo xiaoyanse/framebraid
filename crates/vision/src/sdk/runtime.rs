@@ -134,13 +134,23 @@ pub enum CudaSnapshot {
     Present,
 }
 
+impl CudaSnapshot {
+    /// 仅设备数明确取得时报告存在或不存在；其他探测终态为未知。
+    pub fn from_probe(report: &devices::DeviceProbeReport) -> Self {
+        if !report.cuda_driver_present || !report.cuda_initialized {
+            return Self::Failed;
+        }
+        match report.cuda_visible_count {
+            Some(0) => Self::Absent,
+            Some(_) => Self::Present,
+            None => Self::Failed,
+        }
+    }
+}
+
+/// 不进行驱动探测；如需设备判定，显式 probe 后使用 query_snapshot。
 pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
-    let cuda = if windows::cuda_hardware() {
-        CudaSnapshot::Present
-    } else {
-        CudaSnapshot::Absent
-    };
-    query_snapshot(dirs, cuda)
+    query_snapshot(dirs, CudaSnapshot::Unprobed)
 }
 
 /// 仅读取调用方提供的可见性快照，不调用原生硬件驱动。
@@ -220,6 +230,39 @@ pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<Backend
 #[cfg(test)]
 mod backend_tests {
     use super::*;
+    #[test]
+    fn rust_query_requires_explicit_probe_and_converts_report() {
+        let rows = query(&[]).unwrap();
+        assert!(!rows[2].hardware);
+        assert!(rows[2]
+            .note
+            .to_str()
+            .unwrap()
+            .contains("explicit-probe-required"));
+        let mut report = devices::DeviceProbeReport {
+            schema: "test",
+            cpu_logical_parallelism: 1,
+            cuda_driver_present: false,
+            cuda_initialized: false,
+            cuda_driver_version: None,
+            cuda_visible_count: None,
+            cuda_devices: Vec::new(),
+            limit_reached: false,
+            stopped: None,
+            elapsed_ms: 0,
+            soft_budget_exceeded: false,
+        };
+        assert_eq!(CudaSnapshot::from_probe(&report), CudaSnapshot::Failed);
+        report.cuda_visible_count = Some(2);
+        assert_eq!(CudaSnapshot::from_probe(&report), CudaSnapshot::Failed);
+        report.cuda_driver_present = true;
+        report.cuda_initialized = true;
+        report.cuda_visible_count = Some(0);
+        assert_eq!(CudaSnapshot::from_probe(&report), CudaSnapshot::Absent);
+        report.cuda_visible_count = Some(2);
+        assert_eq!(CudaSnapshot::from_probe(&report), CudaSnapshot::Present);
+        assert!(query_snapshot(&[], CudaSnapshot::from_probe(&report)).unwrap()[2].hardware);
+    }
     #[test]
     fn cached_cuda_unknown_and_absent_do_not_claim_hardware() {
         for (cuda, reason) in [
