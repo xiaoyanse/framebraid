@@ -2,6 +2,10 @@
 
 ## Unreleased / 未发布
 
+（无——v0.2.0 定版于 2026-10-28）
+
+## [0.2.0] - 2026-10-28
+
 - Add the unpublished adaptive batching compatible extension (R5-2.1): `amv_model_configure_batching`/`amv_model_get_batching` plus `am_batching_options_t`/`am_batching_stats_t`/`AM_BATCHING_ENABLE`, disabled by default and limited to dynamic-batch-axis models in AUTO semantics; windows fill, expire or drain as one physical batch with per-item request identity unchanged. / 合同见 dual-dll-abi §3.5 末；合成数据单测与生成器同步已验，真实模型组批实测待验，源码指纹修订待登记。
 
 - Add C# Detect, Classify, Segment and OBB owned result copies with a bounded mask budget. / [局部验证](docs/verification/sdk-r4-csharp-structured-20261027.md)，真实非空模型对拍待验，C ABI不变。

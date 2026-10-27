@@ -10,7 +10,7 @@ checksum = "320119579fcad9c21884f5c4861d16174d0e06250625266f50fe6898340abefa"
 
 [[package]]
 name = "am-camera"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
  "image",
@@ -28,7 +28,7 @@ dependencies = [
 
 [[package]]
 name = "am-camera-ffi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "am-camera",
  "am-sdk-support",
@@ -38,11 +38,11 @@ dependencies = [
 
 [[package]]
 name = "am-sdk-abi"
-version = "0.1.0"
+version = "0.2.0"
 
 [[package]]
 name = "am-sdk-support"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "am-sdk-abi",
  "windows-sys 0.61.2",
@@ -50,7 +50,7 @@ dependencies = [
 
 [[package]]
 name = "am-vision"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "am-vision-types",
  "image",
@@ -62,7 +62,7 @@ dependencies = [
 
 [[package]]
 name = "am-vision-ffi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "am-sdk-support",
  "am-vision",
@@ -72,7 +72,7 @@ dependencies = [
 
 [[package]]
 name = "am-vision-types"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "serde",
  "utoipa",
@@ -291,7 +291,7 @@ dependencies = [
 
 [[package]]
 name = "framebraid-sdk"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "am-camera",
  "am-sdk-abi",
