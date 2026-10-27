@@ -4,6 +4,8 @@
 
 [English](README.md) · [文档入口](docs/README.md) · [快速接入](docs/GETTING_STARTED.zh-CN.md) · [后续路线图](docs/ROADMAP.md)
 
+[![CI](https://github.com/xiaoyanse/framebraid/actions/workflows/ci.yml/badge.svg)](https://github.com/xiaoyanse/framebraid/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/xiaoyanse/framebraid)](https://github.com/xiaoyanse/framebraid/releases) [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 **可复用的相机接入、视频处理与 ONNX 推理基础组件。**
 
 FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入，一个仓库管理两个组件：
@@ -14,6 +16,41 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量及模型档案后处理 |
 
 **当前状态：v0.2.0 开发者预览版。**[下载源码与 Windows x64 二进制包](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0)。C ABI 1.1（对 1.0 的兼容新增）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+
+
+## 目录
+
+- [适用场景](#适用场景)
+- [Media SDK](#media-sdk)
+- [Vision SDK](#vision-sdk)
+- [实测亮点](#实测亮点)
+- [源码构建](#源码构建)
+- [语言接入](#语言接入)
+- [所有权、并发与故障](#所有权并发与故障)
+- [验证与边界](#验证与边界)
+- [测试观察](#测试观察)
+- [贡献与反馈](#贡献与反馈)
+- [许可](#许可)
+
+## 实测亮点
+
+以下数据均来自发布机可复现实测（Windows 11 x64、Intel Arc 140T + RTX 5060、CPU 版 ONNX Runtime），范围与原始记录见[交付状态](docs/RELEASE_STATUS.md)。
+
+| 领域 | 实测结果 |
+| --- | --- |
+| Rust 回归 | 384 项测试通过；clippy/fmt 零告警；CI 绿 |
+| 硬解矩阵 | H.264/H.265 360p～4K（含 Main10）全部 D3D11VA 实测通过并含软件对照 |
+| 关键帧重同步 | 丢弃 GOP 前缀后在下一个 IDR 精确恢复，双策略一致 |
+| RTSP 故障处理 | 断流恢复、在途关闭、有界排空 4/4 用例通过 |
+| NV12 转换（1080p） | 8.8 → 6.8 ms/帧（−23%），输出逐位一致（穷举对拍） |
+| 采样节拍 | 30 fps 输入有效交付 ≈ 29.5 fps（节拍修复前约 16） |
+| 张量直写 | 640×640 前处理每次省 4.9 MB 临时分配 |
+| 共享帧池 | 借用 P50 ≈ 22 µs、归还 ≈ 25 µs、发布 ≈ 1 ms（1080p） |
+| 显式复制（1080p） | C# P50 ≈ 1 ms；Python ≈ 2.5～3.8 ms |
+| 自适应攒批 | 真实 ORT 六场景通过；默认关闭 |
+| 包级验证 | 四语言示例从干净解压包真实运行通过 |
+
+负结论同样如实保留：CPU RGBA 回读交付合同下，硬解在本机 GPU 上未降低进程 CPU 时间（1/2/4 路一致）——选型前请查阅[交付状态](docs/RELEASE_STATUS.md)。
 
 ## 适用场景
 

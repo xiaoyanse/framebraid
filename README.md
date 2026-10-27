@@ -4,6 +4,8 @@
 
 [简体中文](README.zh-CN.md) · [Documentation](docs/README.md) · [Getting started](docs/GETTING_STARTED.md) · [Roadmap](docs/ROADMAP.md)
 
+[![CI](https://github.com/xiaoyanse/framebraid/actions/workflows/ci.yml/badge.svg)](https://github.com/xiaoyanse/framebraid/actions/workflows/ci.yml) [![Release](https://img.shields.io/github/v/release/xiaoyanse/framebraid)](https://github.com/xiaoyanse/framebraid/releases) [![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 **Reusable camera, video and ONNX inference building blocks for native applications.**
 
 FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repository contains two components:
@@ -14,6 +16,41 @@ FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repo
 | **FrameBraid Vision SDK** | ONNX execution, bounded asynchronous work, raw tensors and profile-based postprocessing |
 
 **Status: v0.2.0 developer preview.** [Download source and Windows x64 binaries](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0). C ABI 1.1 (compatible additions over 1.0); the validated target is **Windows x64 CPU + hardware-decode probing**; Linux/macOS/mobile binaries and GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
+
+
+## Contents
+
+- [Where it fits](#where-it-fits)
+- [Media SDK](#media-sdk)
+- [Vision SDK](#vision-sdk)
+- [Measured highlights](#measured-highlights)
+- [Build from source](#build-from-source)
+- [Language integration](#language-integration)
+- [Ownership, concurrency and failures](#ownership-concurrency-and-failures)
+- [Validation and boundaries](#validation-and-boundaries)
+- [Test observations](#test-observations)
+- [Contribute and report](#contribute-and-report)
+- [License](#license)
+
+## Measured highlights
+
+All figures come from recorded, reproducible runs on the release machine (Windows 11 x64, Intel Arc 140T + RTX 5060, CPU-only ONNX Runtime); see [validation status](docs/RELEASE_STATUS.md) for scope and links to raw records.
+
+| Area | Measured result |
+| --- | --- |
+| Rust regression | 384 tests passing; clippy/fmt clean; CI green |
+| Hardware decode matrix | H.264/H.265 360p–4K (incl. Main10) all D3D11VA-verified with software controls |
+| Keyframe resync | Dropping a GOP prefix resumes exactly at the next IDR under both policies |
+| RTSP fault handling | Stream-loss resume, in-flight close, bounded drain — 4/4 cases |
+| NV12 conversion (1080p) | 8.8 → 6.8 ms/frame (−23%) with bit-exact output (2⁴⁸² exhaustive parity) |
+| Sampling cadence | 30 fps input effective delivery ≈ 29.5 fps (was ~16 before cadence fix) |
+| Tensor direct write | −4.9 MB temporary allocation per 640×640 preprocess |
+| Shared-frame pool | borrow P50 ≈ 22 µs, return ≈ 25 µs, publish ≈ 1 ms at 1080p |
+| Explicit copy (1080p) | C# P50 ≈ 1 ms; Python ≈ 2.5–3.8 ms |
+| Adaptive batching | Six-scenario real-ORT suite passed; off by default |
+| Package validation | C/C++17/C#/Python examples run from the clean unpacked package |
+
+Honest negatives are kept too: under the CPU-RGBA readback contract, hardware decode did **not** reduce process CPU time on the test GPUs (1/2/4 lanes consistent) — see [validation](docs/RELEASE_STATUS.md) before choosing backends.
 
 ## Where it fits
 
