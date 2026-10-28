@@ -240,8 +240,8 @@
     {
       "path": "crates/sdk-abi/src/base.rs",
       "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-      "sha256": "50a71e687a3efedcb5f6d467a66e43d07de5ec376ecb18e810ad598b8433c220",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "1188202ad90e023665fedee987c581f304f801e01245328e4b0f2d532be26c8e",
+      "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition"
     },
     {
       "path": "crates/camera-ffi/src/sources/hardware.rs",
@@ -408,8 +408,8 @@
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "401fe2258a9a162e3e2547e7a69d7bb14fa44db827b3ecd58456e09914e1a318",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "3e2accb20b52ae2c2e0c97b1d378a8cd35e5674d189038681ce2baf2e03f5cfb",
+      "reason": "M2c am_stats_t tail fields (generator output, struct_size negotiated) + R7 enum; C ABI compatible"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
@@ -432,8 +432,8 @@
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "ee7ff91c5f0b05eb0d27d60036e9d54d641edb2560e5e391c019ddf7e8f6226a",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "823bb92628107194a69f023982b318f66ecad531e355789cb3b47849c291bab6",
+      "reason": "M2c am_stats_t tail fields (generator output, struct_size negotiated) + R7 enum; C ABI compatible"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
@@ -456,8 +456,8 @@
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "7e28cc0e13eb71604f1adf07e271ad0e3989ce5c02bc4c7f042b240d4b20c703",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "5b19058ddcbf7edf58670cd16d41d3b0fce29800464290204d42b7d5dc10cebf",
+      "reason": "M2c am_stats_t tail fields (generator output, struct_size negotiated) + R7 enum; C ABI compatible"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
@@ -1020,8 +1020,8 @@
     {
       "path": "crates/sdk-abi/src/defaults.rs",
       "previousSha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
-      "sha256": "19d85e919ee873337f4e9d127c378b1ebde9cb78a888614fed1a942589e68c61",
-      "reason": "Reviewed default frame budget raise 96->128MiB with cpu-frame scratch precision 8->7 B/px (2160p downstream feedback); workspace green; C ABI unchanged"
+      "sha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
+      "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition"
     },
     {
       "path": "crates/camera-ffi/src/captures/images.rs",
@@ -1032,8 +1032,8 @@
     {
       "path": "crates/am-camera/src/media/sdk_io/http.rs",
       "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
-      "sha256": "5841695be92b50a8a23f8d7a87e2007b4671983a3db1208346bbbb116179cc18",
-      "reason": "Reviewed JPEG decode round2: decode_into with capacity/set_len (drop 3.7-8MB zero-fill) and direct Vec output bypassing DynamicImage when no EXIF transform; tests green; C ABI unchanged"
+      "sha256": "2a221d466a794b941ae59cf67a0af104b69b803d27cc1e4986531d12ec460e45",
+      "reason": "R7 reviewed mjpeg stream reader helpers (authorized_retry/origin share, remaining/network pub) + R6 round2 decode_into path; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/Cargo.toml",
