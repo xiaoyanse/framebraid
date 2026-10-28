@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Decode JPEG straight to RGBA via zune-jpeg (dropping the DynamicImage RGB-to-RGBA full-image conversion): 720p 6.56->3.89 ms (-41%), 1080p 12.20->9.37 ms (-23%), now faster than the downstream OpenCV baseline. / JPEG 直解 RGBA（zune-jpeg，消除全图转换中转），720p/1080p 分别 -41%/-23%；EXIF 旋转语义不变，C ABI 不变。
+
 - Raise the default camera frame budget from 96 MiB to 128 MiB and tighten the cpu-frame capture scratch reservation from 8 to 7 bytes/pixel (RGB+RGBA peak), so 2160p RGBA frames (~93 MiB transient peak) no longer hit the ceiling. / 默认帧预算 96→128 MiB、抓图转换峰值预留 8→7 B/px，2160p 帧获取不再压线（下游实测反馈）；C ABI 不变，`amc_set_limits` 仍只能收紧。
 
 ## [0.2.0] - 2026-10-28

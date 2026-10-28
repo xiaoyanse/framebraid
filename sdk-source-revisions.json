@@ -1032,8 +1032,14 @@
     {
       "path": "crates/am-camera/src/media/sdk_io/http.rs",
       "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
-      "sha256": "9f4de2629f9803a363163a91f106f77d3b539f0f430c7c48459a5ee60b94f8d7",
-      "reason": "Reviewed digest challenge cache with 401 fallback refresh (single-transaction fast path per origin; no credentials stored); workspace green; C ABI unchanged"
+      "sha256": "895e38a0d3973c3d987ed05d9d2ef351573507145a0941824905cda350724e0c",
+      "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/Cargo.toml",
+      "previousSha256": "c49aef7faba6a39e41250fd91227ae9e9849714740e0f3b264abc9fd847fe6af",
+      "sha256": "cf6ac395b20cade41c473700199eb64101631d81cebd05fa52a14ffab648b7d0",
+      "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged"
     }
   ]
 }

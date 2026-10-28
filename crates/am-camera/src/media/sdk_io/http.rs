@@ -197,9 +197,27 @@ pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<I
         return Err(IoError::Resource);
     }
     let rgba = if decode {
-        let mut image = image::DynamicImage::from_decoder(decoder).map_err(image_error)?;
-        image.apply_orientation(orientation);
-        Some(image.into_rgba8().into_raw())
+        if format == image::ImageFormat::Jpeg {
+            // JPEG 快路径（R6）：zune-jpeg 直解 RGBA，消除 DynamicImage 中转的
+            // 全图 RGB→RGBA 转换（实测约 25% 耗时）；EXIF 方向用解码头结果。
+            drop(decoder);
+            let options = zune_jpeg::zune_core::options::DecoderOptions::default()
+                .jpeg_set_out_colorspace(zune_jpeg::zune_core::colorspace::ColorSpace::RGBA);
+            let mut jpeg = zune_jpeg::JpegDecoder::new_with_options(
+                zune_jpeg::zune_core::bytestream::ZCursor::new(&encoded[..]),
+                options,
+            );
+            let pixels = jpeg.decode().map_err(|_| IoError::Invalid)?;
+            let rgba_image =
+                image::RgbaImage::from_raw(width, height, pixels).ok_or(IoError::Resource)?;
+            let mut dynamic = image::DynamicImage::ImageRgba8(rgba_image);
+            dynamic.apply_orientation(orientation);
+            Some(dynamic.into_rgba8().into_raw())
+        } else {
+            let mut image = image::DynamicImage::from_decoder(decoder).map_err(image_error)?;
+            image.apply_orientation(orientation);
+            Some(image.into_rgba8().into_raw())
+        }
     } else {
         drop(decoder);
         None
