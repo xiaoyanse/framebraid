@@ -257,7 +257,7 @@ typedef struct amc_capability_s {
 
 ```c
 typedef enum am_source_kind_e { AM_SRC_RTSP_URL = 0, AM_SRC_ISAPI_URL = 1,
-                                AM_SRC_DEVICE_REF = 2 } am_source_kind_e;
+                                AM_SRC_DEVICE_REF = 2, AM_SRC_MJPEG_URL = 3 } am_source_kind_e;
 typedef struct am_source_desc_s {
   uint32_t struct_size, kind;      /* am_source_kind_e */
   const char* url_utf8;            /* RTSP/ISAPI 具体地址；DEVICE_REF 时=宿主已解析的具体流地址
@@ -929,6 +929,9 @@ typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文�
   uint64_t shared_mapped_bytes, shared_metadata_bytes; /* ctx累计共享映射与元数据，含未安全回收旧池 */
   uint32_t shared_pool_count, shared_outstanding_borrows; /* 不同池身份数与在借租约数 */
   uint32_t reserved[6];
+  uint64_t gpu_inputs, gpu_copies_per_frame; /* GPU 搬运审计（尾部追加，struct_size 判版）：
+                                               进程级上下文计数（非 per-model）；
+                                               inputs=GPU直传帧累计，copies=当前每帧GPU内拷贝次数 */
 } am_stats_t;
 ```
 
@@ -952,6 +955,7 @@ typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文�
 | 编码 | AM_CODEC_H264 / AM_CODEC_H265 / AM_CODEC_MJPEG | 0x1 / 0x2 / 0x4 |
 | 封装 | AM_BSF_ANNEXB / AM_BSF_LENGTH_PREFIX | 0 / 1（能力位声明支持集；首版候选仅 Annex B） |
 | 订阅模式 | AM_SUB_PUSH / AM_SUB_PULL | 0 / 1 |
+| 源类型 | AM_SRC_RTSP_URL / AM_SRC_ISAPI_URL / AM_SRC_DEVICE_REF / AM_SRC_MJPEG_URL | 0 / 1 / 2 / 3（R7） |
 | 图像输入 | AM_IMG_JPEG / AM_IMG_PNG / AM_IMG_PIXEL_VIEW / AM_IMG_GPU_FRAME | 0 / 1 / 2 / 3（M2b） |
 | 加载模式 | AM_LOAD_PROFILE / AM_LOAD_RAW | 0 / 1（B05） |
 | 抓图输出 | AM_CAP_ENCODED_JPEG / AM_CAP_CPU_FRAME | 0 / 1 |

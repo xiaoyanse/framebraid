@@ -283,6 +283,8 @@ AM_API am_status_t amc_probe_result_release(am_probe_result_t* result);
 
 **地址类型与 DEVICE_REF 解析口径（B04）**：`am_source_kind_e` 三值——`AM_SRC_RTSP_URL`（RTSP 地址直连）、`AM_SRC_ISAPI_URL`（ISAPI 抓图地址，与 RTSP 分开声明，不含内嵌凭据）、`AM_SRC_DEVICE_REF`。**DEVICE_REF 本版只接受"已解析描述"**：`url_utf8` 必须是宿主解析设备引用后得到的具体流地址（RTSP 或 ISAPI URL），SDK 不内建设备引用解析器；`stream_kind_utf8`（"main"/"sub"/"isapi"）仅为宿主提示的类型标注，SDK 按地址协议与流内容实际行为执行。设备三流地址生成、DPAPI 持久化等政策留宿主（camera spec「凭据注入」Requirement）。ISAPI 地址误用于 RTSP 订阅（或反之）按协议探测结果返回 `camera.codecUnsupported`/`camera.urlInvalid`，不猜测。
 
+**MJPEG 流源（R7，未发布兼容扩展）**：`AM_SRC_MJPEG_URL = 3`——HTTP `multipart/x-mixed-replace` MJPEG 流地址（不含内嵌凭据，凭据注入与 ISAPI 同套）。**流语义（boundary 分帧为唯一真相源）**：响应 `Content-Type` 的 `boundary` 参数（≤70B，支持引号包裹）决定分帧；`Content-Length` 不参与分帧，谎报仅计数。分帧仅在行首 `\r\n--boundary` 上下文（流首 boundary 允许无 CRLF 前缀），且 part 头 `Content-Type=image/jpeg` + JPEG SOI/EOI 魔数双校验；载荷内出现 boundary 字节序列不误切，无法区分的极端歧义降级为丢帧。**有界硬约束（防恶意流）**：boundary ≤70B / part 头 ≤64KB / 单帧 ≤8MB——超限丢帧+计数，连续 3 次超限断连进重连退避。**双超时**：无数据（对端黑洞）与无 boundary 进展（有数据但恶意无界流）分别判定，超时断连重连（复用既有指数退避）。JPEG 帧进入既有解码管线（含 EXIF 方向）与像素订阅/预算/统计语义，与 ISAPI 快照一致。
+
 ```c
 /* 开源：原子凭据见上；reuse 时复用键=源配置+凭据权限哈希（不同权限不复用）；
    满载 camera.sourceLimitReached */

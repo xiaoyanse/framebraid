@@ -218,7 +218,8 @@ pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<I
             // 全部字节已初始化；set_len 前不读任何字节。
             let mut pixels = Vec::with_capacity(size);
             unsafe { pixels.set_len(size) };
-            jpeg.decode_into(&mut pixels).map_err(|_| IoError::Invalid)?;
+            jpeg.decode_into(&mut pixels)
+                .map_err(|_| IoError::Invalid)?;
             if orientation == image::metadata::Orientation::NoTransforms {
                 Some(pixels)
             } else {

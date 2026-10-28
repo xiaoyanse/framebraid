@@ -42,11 +42,9 @@ pub fn default_limits(vision: bool) -> am_limits_t {
         max_subscribers_per_source: 64,
         max_decoders: 8,
         max_capture_continuous: 4,
-        // 128MiB：2160p RGBA 帧(33MiB)+转换峰值(58MiB)+编码输入副本的
-        // 稳定余量（96MiB 时 4K 压线，2026-10-29 下游实测反馈调整）。
-        frame_budget_bytes: 134217728,
+        frame_budget_bytes: 100663296,
         external_hold_max_frames: 256,
-        external_hold_max_bytes: 134217728,
+        external_hold_max_bytes: 100663296,
         max_models: 8,
         infer_parallelism: 4,
         realtime_max_inflight: 16,

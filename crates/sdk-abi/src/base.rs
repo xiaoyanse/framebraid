@@ -70,6 +70,7 @@ pub type am_source_kind_e = i32;
 pub const AM_SRC_RTSP_URL: am_source_kind_e = 0;
 pub const AM_SRC_ISAPI_URL: am_source_kind_e = 1;
 pub const AM_SRC_DEVICE_REF: am_source_kind_e = 2;
+pub const AM_SRC_MJPEG_URL: am_source_kind_e = 3;
 pub type am_source_state_e = i32;
 pub const AM_SRC_WAITING_CREDENTIALS: am_source_state_e = 0;
 pub const AM_SRC_CONNECTING: am_source_state_e = 1;

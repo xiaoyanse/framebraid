@@ -303,6 +303,7 @@ am_source_kind_e = c_int32
 AM_SRC_RTSP_URL = 0
 AM_SRC_ISAPI_URL = 1
 AM_SRC_DEVICE_REF = 2
+AM_SRC_MJPEG_URL = 3
 
 am_source_state_e = c_int32
 AM_SRC_WAITING_CREDENTIALS = 0

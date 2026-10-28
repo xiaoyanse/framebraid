@@ -477,7 +477,7 @@ typedef struct amc_capability_s {
 } amc_capability_t;
 
 typedef enum am_source_kind_e { AM_SRC_RTSP_URL = 0, AM_SRC_ISAPI_URL = 1,
-                                AM_SRC_DEVICE_REF = 2 } am_source_kind_e;
+                                AM_SRC_DEVICE_REF = 2, AM_SRC_MJPEG_URL = 3 } am_source_kind_e;
 typedef struct am_source_desc_s {
   uint32_t struct_size, kind;      /* am_source_kind_e */
   const char* url_utf8;            /* RTSP/ISAPI 具体地址；DEVICE_REF 时=宿主已解析的具体流地址
@@ -1095,6 +1095,9 @@ typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文�
   uint64_t shared_mapped_bytes, shared_metadata_bytes; /* ctx累计共享映射与元数据，含未安全回收旧池 */
   uint32_t shared_pool_count, shared_outstanding_borrows; /* 不同池身份数与在借租约数 */
   uint32_t reserved[6];
+  uint64_t gpu_inputs, gpu_copies_per_frame; /* GPU 搬运审计（尾部追加，struct_size 判版）：
+                                               进程级上下文计数（非 per-model）；
+                                               inputs=GPU直传帧累计，copies=当前每帧GPU内拷贝次数 */
 } am_stats_t;
 
 typedef struct am_pixel_view_s {
