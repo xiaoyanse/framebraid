@@ -198,8 +198,10 @@ pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<I
     }
     let rgba = if decode {
         if format == image::ImageFormat::Jpeg {
-            // JPEG 快路径（R6）：zune-jpeg 直解 RGBA，消除 DynamicImage 中转的
-            // 全图 RGB→RGBA 转换（实测约 25% 耗时）；EXIF 方向用解码头结果。
+            // JPEG 快路径（R6）：zune-jpeg 直解 RGBA。第二轮优化：decode_into +
+            // with_capacity/set_len 消除 3.7-8MB 的 vec![0] 零填充（decode_into
+            // 全量覆盖输出缓冲，写入前读取不可能）；EXIF 无变换时绕过
+            // DynamicImage/RgbaImage 构造链直出 Vec。
             drop(decoder);
             let options = zune_jpeg::zune_core::options::DecoderOptions::default()
                 .jpeg_set_out_colorspace(zune_jpeg::zune_core::colorspace::ColorSpace::RGBA);
@@ -207,12 +209,25 @@ pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<I
                 zune_jpeg::zune_core::bytestream::ZCursor::new(&encoded[..]),
                 options,
             );
-            let pixels = jpeg.decode().map_err(|_| IoError::Invalid)?;
-            let rgba_image =
-                image::RgbaImage::from_raw(width, height, pixels).ok_or(IoError::Resource)?;
-            let mut dynamic = image::DynamicImage::ImageRgba8(rgba_image);
-            dynamic.apply_orientation(orientation);
-            Some(dynamic.into_rgba8().into_raw())
+            jpeg.decode_headers().map_err(|_| IoError::Invalid)?;
+            let size = jpeg.output_buffer_size().ok_or(IoError::Resource)?;
+            if size as u64 > max_pixels.saturating_mul(4) {
+                return Err(IoError::Resource);
+            }
+            // SAFETY: decode_into 声明写满 [0..expected_size) 输出缓冲，返回后
+            // 全部字节已初始化；set_len 前不读任何字节。
+            let mut pixels = Vec::with_capacity(size);
+            unsafe { pixels.set_len(size) };
+            jpeg.decode_into(&mut pixels).map_err(|_| IoError::Invalid)?;
+            if orientation == image::metadata::Orientation::NoTransforms {
+                Some(pixels)
+            } else {
+                let rgba_image =
+                    image::RgbaImage::from_raw(width, height, pixels).ok_or(IoError::Resource)?;
+                let mut dynamic = image::DynamicImage::ImageRgba8(rgba_image);
+                dynamic.apply_orientation(orientation);
+                Some(dynamic.into_rgba8().into_raw())
+            }
         } else {
             let mut image = image::DynamicImage::from_decoder(decoder).map_err(image_error)?;
             image.apply_orientation(orientation);
