@@ -1,6 +1,6 @@
 //! SDK 网络原语：不依赖业务设备、凭据持久化或宿主全局运行库。
 mod digest;
-mod http;
+pub(crate) mod http;
 mod nal;
 mod quiet;
 mod rtsp;

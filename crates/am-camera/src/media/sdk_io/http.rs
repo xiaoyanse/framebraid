@@ -173,6 +173,58 @@ pub fn capture(
 }
 
 /// 与抓图共用方向、尺寸和分配限制，可直接解码 MJPEG 包。
+fn origin_key(parsed: &reqwest::Url) -> String {
+    match (parsed.scheme(), parsed.host_str(), parsed.port()) {
+        (scheme, Some(host), port) => format!(
+            "{scheme}://{host}{}",
+            port.map(|p| format!(":{p}")).unwrap_or_default()
+        ),
+        _ => String::new(),
+    }
+}
+
+/// 401 后的授权重试（供流式建连复用）：消费 401 响应的 challenge，
+/// 更新缓存并带 Authorization 重发。
+pub(crate) fn authorized_retry(
+    url: &str,
+    secret: &Secret,
+    client: &reqwest::blocking::Client,
+    unauthorized: reqwest::blocking::Response,
+    deadline: Instant,
+) -> Result<reqwest::blocking::Response, IoError> {
+    let parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
+    let mut uri = parsed.path().to_owned();
+    if let Some(query) = parsed.query() {
+        uri.push('?');
+        uri.push_str(query);
+    }
+    let cache_key = origin_key(&parsed);
+    let header = unauthorized
+        .headers()
+        .get_all(reqwest::header::WWW_AUTHENTICATE)
+        .iter()
+        .filter_map(|h| h.to_str().ok())
+        .find(|h| {
+            h.get(..7)
+                .is_some_and(|p| p.eq_ignore_ascii_case("digest "))
+        })
+        .ok_or(IoError::Unsupported)?
+        .to_owned();
+    if !cache_key.is_empty() {
+        if let Ok(mut cache) = challenge_cache().lock() {
+            cache.insert(cache_key, header.clone());
+        }
+    }
+    let authorization = super::digest::authorization(&header, secret, &uri)?;
+    drop(unauthorized);
+    client
+        .get(url)
+        .header(reqwest::header::AUTHORIZATION, authorization)
+        .timeout(remaining(deadline)?)
+        .send()
+        .map_err(network)
+}
+
 pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<Image, IoError> {
     if encoded.len() > 64 * 1024 * 1024 || max_pixels == 0 || max_pixels > 64 * 1024 * 1024 {
         return Err(IoError::Resource);
@@ -253,7 +305,7 @@ pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<I
     })
 }
 
-fn remaining(deadline: Instant) -> Result<Duration, IoError> {
+pub(crate) fn remaining(deadline: Instant) -> Result<Duration, IoError> {
     let remaining = deadline.saturating_duration_since(Instant::now());
     if remaining.is_zero() {
         Err(IoError::Timeout)
@@ -261,7 +313,7 @@ fn remaining(deadline: Instant) -> Result<Duration, IoError> {
         Ok(remaining)
     }
 }
-fn network(error: reqwest::Error) -> IoError {
+pub(crate) fn network(error: reqwest::Error) -> IoError {
     if error.is_timeout() {
         IoError::Timeout
     } else {
