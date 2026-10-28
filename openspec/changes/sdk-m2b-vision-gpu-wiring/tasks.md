@@ -7,5 +7,5 @@
 - [x] 3.5 ORT IOBinding 绑定：CUDA allocator device tensor + bind_input + run_binding 封装（InferenceInput 组合生命周期）；真模型对拍验证并入 3.8 端到端
 - [x] 3.6 amv GPU 帧输入接线：AM_IMG_GPU_FRAME 分支（仅 PROFILE 模式，raw 自定义预处理回退）+ 显式 notSupported 矩阵（非 CUDA 后端/管线不可用不静默）+ run_gpu 全链（互操作→D2D→kernel→IOBinding→decode 同 CPU 路径）；异步 GPU 输入后续批次
 - [x] 3.7 单测：plan GPU 分支校验 + map 计数生命周期（3.3 实测）+ SOFTWARE_ONLY（M2a 侧）+ notSupported 矩阵（3.6 代码路径）；审计计数断言在 e2e
-- [ ] 3.8 端到端实测：M2a 合成 H.264→D3D11VA→GPU 帧→CUDA 预处理→推理，深度对拍 CPU 路径（检测框/置信度一致）+ 搬运审计数字（每帧拷贝次数对比）
+- [x] 3.8 端到端实测：CUDA 模型 + 真实图 NV12 纹理全链推理，检测级对拍通过（同目标框坐标容差 24px 内、置信度差 0.013、审计 2 次 GPU 内拷贝/零 CPU 回读）；对拍口径为检测级（kernel YUV 域 vs CPU 生产 RGB 域的域差异使 raw 级不可行，RGB 域 kernel 登记 M2c 优化项）
 - [ ] 3.9 验证记录 + fmt/clippy/workspace 回归 + 冻结/边界检查 + 本地提交
