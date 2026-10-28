@@ -111,6 +111,45 @@ mod native {
         Ok(u64::from(value.luid_low) | ((value.luid_high as u32 as u64) << 32))
     }
 
+    /// ID3D11Texture2D::GetDesc 读取 DXGI 格式与共享句柄。
+    /// MISC_SHARED/MISC_SHARED_NTHANDLE 时 SharedHandle 非 NULL。
+    pub(super) unsafe fn texture_shared_info(texture: *mut c_void) -> (u32, u64) {
+        // ID3D11Texture2D vtable: GetDesc 是 slot 3
+        #[repr(C)]
+        struct TexDesc {
+            width: u32,
+            height: u32,
+            mip_level: u32,
+            array_size: u32,
+            format: u32,
+            sample_desc: (u32, u32),
+            usage: u32,
+            bind_flags: u32,
+            cpu_access_flags: u32,
+            misc_flags: u32,
+        }
+        let table = unsafe { *texture.cast::<*const *const c_void>() };
+        let get_desc: unsafe extern "system" fn(*mut c_void, *mut TexDesc) =
+            unsafe { transmute(*table.add(3)) };
+        let mut desc = TexDesc {
+            width: 0,
+            height: 0,
+            mip_level: 0,
+            array_size: 0,
+            format: 0,
+            sample_desc: (0, 0),
+            usage: 0,
+            bind_flags: 0,
+            cpu_access_flags: 0,
+            misc_flags: 0,
+        };
+        unsafe { get_desc(texture, &mut desc) };
+        let shared = (desc.misc_flags & 0x2 /* MISC_SHARED */ != 0
+            || desc.misc_flags & 0x8 /* MISC_SHARED_NTHANDLE */ != 0)
+            .then(|| texture as u64);
+        (desc.format, shared.unwrap_or(0))
+    }
+
     pub(super) fn adapters() -> Result<Vec<Adapter>, ProbeError> {
         const { assert!(size_of::<Description>() == 312) };
         let library = unsafe { system_library("dxgi.dll") }?;
@@ -246,4 +285,11 @@ pub(super) unsafe fn d3d11_luid(
 #[cfg(all(test, windows, target_arch = "x86_64"))]
 pub(super) fn verify_layout() {
     native::verify_layout()
+}
+
+#[cfg(all(windows, target_arch = "x86_64"))]
+pub(in crate::media) unsafe fn texture_shared_info_wrapper(
+    texture: *mut std::ffi::c_void,
+) -> (u32, u64) {
+    unsafe { native::texture_shared_info(texture) }
 }

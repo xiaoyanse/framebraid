@@ -255,3 +255,9 @@ mod tests {
         assert_eq!(adapters[0].dxva2_index, Some(0));
     }
 }
+
+/// D3D11 纹理格式与共享句柄转发（M2a GPU 帧元数据提取）。
+#[cfg(all(windows, target_arch = "x86_64"))]
+pub(in crate::media) unsafe fn texture_shared_info(texture: *mut std::ffi::c_void) -> (u32, u64) {
+    unsafe { windows::texture_shared_info_wrapper(texture) }
+}

@@ -2,8 +2,10 @@
 use super::{ffmpeg_lib::FfmpegApi, ffmpeg_sys::*};
 use std::{ptr, sync::Arc};
 mod convert;
+mod gpu_frame;
 mod hardware;
 mod readback;
+pub use gpu_frame::GpuFrameInfo;
 pub mod selection;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
