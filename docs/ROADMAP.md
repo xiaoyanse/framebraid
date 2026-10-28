@@ -1,5 +1,7 @@
 # FrameBraid 后续优化路线图
 
+- OpenVINO EP acceptance: blocked on Intel publishing a compatible provider/runtime wheel pair (symbol-level root cause: docs/verification/sdk-gpu-m1-openvino-blocker-20261028.md). DirectML enum extension is the evaluated fallback for Intel Arc GPUs.
+
 ## 下一轮方向 v0.3+（2026-10-28 负责人确认）
 
 已批准立即实施：
