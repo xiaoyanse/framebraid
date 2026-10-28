@@ -36,8 +36,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "37512189e6283239ad5a438ea9a537965b38570f84710a5f879c2f125e0a8878",
-      "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；攒批死锁修复：prune收口移出域锁（TickOutcome拆分），同构正常完成锁序"
+      "sha256": "e75bbc0e974c1bfdff0e58c6eaec6d0d8b68f7c0663d07638ffb544adb42f078",
+      "reason": "R5 reviewed adaptive batching scheduler TickOutcome lock-free pruning; live/benchmark verified; C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -54,14 +54,14 @@
     {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
       "previousSha256": null,
-      "sha256": "e74b10237071efbd971ac840dcd49b694069d8d1bde93ae54134bbcff683aef6",
-      "reason": "H2.0d reviewed independent codec contexts retain native device reference; synthetic native construction and ownership validation; unchanged C ABI"
+      "sha256": "b07ca7312cd6f39d617c4cc12ed18223ed0675e5471d2bb54827dfd6fb71c45b",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/hardware.rs",
       "previousSha256": null,
-      "sha256": "cbfea8ebc96a821b0061ed865942336bbe39b3459094d724ac8455eaf5d04173",
-      "reason": "保留硬件自动选择的编译与设备初始化失败分类，定向验证，不改C ABI"
+      "sha256": "2fa21cd48a0f3801be7373695c87a920e6f67988ab6815130294cc958164a4d4",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/codec/selection.rs",
@@ -72,8 +72,8 @@
     {
       "path": "crates/am-camera/src/media/codec.rs",
       "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "58aa9ada8ff6b4905e4285672c6d577916cef5bba9dae180f9da10f9bb44ba7e",
-      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+      "sha256": "6681ffa9ebb14c3831bb01a9c89a55511fe493644f34c384e3e3d0d6b2cd8d40",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/codec/convert.rs",
@@ -96,26 +96,26 @@
     {
       "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
       "previousSha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592",
-      "sha256": "d37a21783ef2c5eb01475b92242d3c18cbb3460e2791e6b1d80580878795f917",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "6224b9e8612747003e5c6710ce5da0f72e6d0aaa7216c401887a7a95f1aa1bde",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
       "previousSha256": "22eaeb29796bdb8268427a16fd4e363a2fcbab2a32da4a5a40c2b63de3015798",
-      "sha256": "d7019521db0a77e66dd21cfa04032dea145a0d4b829ed35992fe3d6c24ad1a38",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "a2b3b1566b85adf2367485be3d840bf728ac4639e781507e7f00f8a3bf523e85",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/hardware/windows.rs",
       "previousSha256": null,
-      "sha256": "26a070aad8054f4d59c29e0ef595e9e50676bcf29d0af135e303e84dcfd13d1a",
-      "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+      "sha256": "6be6d258b318ad50061bec33cfc7b9841590a33a1f671d56fdb5db005328e14b",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "0a41cfe88d078632ff78f231cbcf5064a1a89eaeecb32f15d60ce0609f6f3d47",
-      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+      "sha256": "5da224fe84bd6af61ff2ecce39b8accb2b1ec2b5760311ab81ee693f71ead581",
+      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/budget.rs",
@@ -210,8 +210,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "30de1f8522d72490d00be0aede4fe2e4643af6a50ebaf01d97ccaf56343fb8c9",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "233b2fa8f204bf3124b6d8dbbefc13063d7c4ede1f507de7c84d2777a193f7c2",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-support/src/context.rs",
@@ -240,8 +240,8 @@
     {
       "path": "crates/sdk-abi/src/base.rs",
       "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-      "sha256": "02e4d80bd48b55d369a4a0a26df79e291971932c156f51985851191e61bf806c",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending；E2 DirectML枚举值3经生成器同步（生成物非手改）"
+      "sha256": "50a71e687a3efedcb5f6d467a66e43d07de5ec376ecb18e810ad598b8433c220",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/sources/hardware.rs",
@@ -396,20 +396,20 @@
     {
       "path": "crates/sdk-abi/src/fields_5.rs",
       "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-      "sha256": "242042aecbcd5bcaa41c7103a6d75b746f3f6c92905abb8839858a56168e913f",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "19e8c8a97f721b8d3a7f35cf91c9506c2857796dd41a8a6a288cbe4aa2e8567a",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "a9497eac980cd4ef96b9558e55758ee57070093dbc6546be7593301a0527d815",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "33659b8a2b3d30f9c48cebffe6878fe2c5e97ead4c8085bbaad94c90df9f3281",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "123dc9adacd617ad321cc84a1c6cc6b043ad582d740489085623177b660f7718",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "b5ff45a278e3667fa497a4c6b56fb2963db8c0c4a6f2d93b0bd6c9530c1e9d48",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
@@ -420,20 +420,20 @@
     {
       "path": "crates/sdk-abi/src/layout_5.rs",
       "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-      "sha256": "6edff4c18cd1aafbdb0c4aaafcd4cf162b9066b474a98364eea9f93162d38258",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "05f587ee15fb34339bc31f944d1c128b31905eb3453f4f013c80aa2a759c962f",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "f82f0566906d5f9d6289b099d6d5a66af017d70d67f24087bef7fe33fcc28014",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "bd32ddda0ae0e722c34dcf2e66016e3e7d1353361404e961ee3db51685f34795",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "fa93cfb3882908f12883885f9592caee3d0f261a857b54c56248e62ba6d81bdb",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "77b9158d34e3a6c53d10e61f55de459a86c9a83683d5305584325f3565f47e11",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
@@ -444,20 +444,20 @@
     {
       "path": "crates/sdk-abi/src/types_5.rs",
       "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-      "sha256": "329b03db7ee5e0c2e71ad6b6bd7ef91a846315f92aac745146c785c4227f0c1e",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "426a2960c45312abb1c5170aa8df81d822b19a078294cef00e61b76f36bd1c5b",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "8631541be25e551345f3782df1b1e7aab0cb5773cd261b841ed9f496c4171b5a",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "8e91c0b3b48bca156d1a0bfbc2065f5a4230c98a8e32b9a881365a16c5729f82",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "ff6d9e05ef0f92a08b483834f7dc742c829a65e7f5151b0931c3f78752fb3868",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "1dea94c0be5256ccd8c137120fa4b839d404b4ecff5236f05fca70f649103099",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
@@ -980,6 +980,24 @@
       "previousSha256": "034454077caaa1098e33eabb804ed746be0441ac19fdd144c7e454934c43309d",
       "sha256": "b18625da0f49966d0c7de1aa9d56058a338dea7acc85af3da01a879385be7ee4",
       "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_2.rs",
+      "previousSha256": "186054fbc46c1ab5460b6c616d25be2c731c9ff098c8a395f1130ef6d9861786",
+      "sha256": "e09a97f2b6f165abd2b9f96d953c7121cf7bf3e7a7609f791dec7fa13efbbf69",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_2.rs",
+      "previousSha256": "16d44dc4cd219a590b0758d145807d22dfbb96aa6689ce67ce2fd6e0c1849c3f",
+      "sha256": "8dde66cadf79f7a3b956f80acdc39c6560b7ec2d9b324036ec4bee52a3b1cd7d",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_2.rs",
+      "previousSha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4",
+      "sha256": "cbf3aa43969519b5d953d67865cee198915d5371ee50c5299ba0674bc5bf96aa",
+      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
     }
   ]
 }

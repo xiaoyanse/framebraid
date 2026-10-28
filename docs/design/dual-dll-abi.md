@@ -365,8 +365,10 @@ typedef void (*am_frame_cb_fn)(amc_frame_sub_t* sub, amc_frame_t* frame, void* u
 像素订阅新增 `frame_kind`（尾部追加，struct_size 协商；默认 0=像素与既有行为完全一致）。
 
 **GPU 帧交付语义**：
-- `frame_kind=1` 时，硬解（PREFER_HW 实际激活）输出的 D3D11 纹理经共享 NT 句柄以 `am_gpu_frame_t` 不透明句柄交付；元数据（宽/高/DXGI 格式/子资源/关联身份）经 `amc_gpu_frame_desc` 查询
-- SOFTWARE_ONLY 策略下 GPU 订阅返回 `notSupported`（不静默降级为像素）；纹理缺共享标志时降级回读交付并标 `flags=1`（fallback），不失败
+- `frame_kind=1` 时，硬解（PREFER_HW 实际激活）输出的 D3D11 纹理以 `am_gpu_frame_t` 不透明句柄交付；元数据（宽/高/DXGI 格式/子资源/关联身份）经 `amc_gpu_frame_desc` 查询。**主交付物是纹理指针**（同进程 COM 对象，借用期内有效，CUDA interop / DirectML 互操作直接消费）；解码纹理池创建即带 MISC_SHARED 标志
+- `shared_nt_handle` 为可选字段（2026-10-29 实测修订）：尽力经 QI IDXGIResource::GetSharedHandle 提供；Win11 25H2 runtime 拒绝纹理 QI DXGI 接口（IUnknown 正常）时为 0。句柄不可得时标 `flags=1`（信息性标注，非回读判定），不失败
+- 真正的 CPU 回读降级由消费侧（M2b Vision 接线）能力协商决定，届时计入 `stats_cpu_fallbacks`；句柄缺失≠回读
+- SOFTWARE_ONLY 策略下 GPU 订阅返回 `notSupported`（不静默降级为像素）
 - GPU 帧借用/归还语义与共享帧池一致（租约、池满拒绝、关闭排空）
 
 **新导出**（池创建带显存上限，计费进既有 Charge 新类目 gpu_frame_bytes；统计含搬运审计计数器——M2c 验收主指标）：
@@ -383,7 +385,7 @@ AM_API am_status_t amc_gpu_frame_stats(const amc_gpu_frame_t* frame,
 
 **能力位**：`AMC_CAP_GPU_FRAMES`（编译编入+运行时可用的双条件）。
 
-**同进程约束**：`shared_nt_handle` 仅供同进程跨 DLL 消费（Vision 互操作）；跨进程共享后续。
+**同进程约束**：纹理指针与 `shared_nt_handle` 均仅供同进程跨 DLL 消费（Vision 互操作）；句柄为可选增强（平台/runtime 支持时提供），纹理指针为始终可用的交付物；跨进程共享后续。
 
 ### 2.7 抓图（ISAPI：单次同步/异步 + 连续订阅 N02；B03 闭环）
 

@@ -29,6 +29,13 @@ type AvHwdeviceCtxCreateFn = unsafe extern "C" fn(
 type AvHwframeTransferDataFn = unsafe extern "C" fn(*mut AVFrame, *const AVFrame, c_int) -> c_int;
 type AvHwframeTransferFormatsFn =
     unsafe extern "C" fn(*mut AVBufferRef, c_int, *mut *mut c_int, c_int) -> c_int;
+type AvHwframeCtxInitFn = unsafe extern "C" fn(*mut AVBufferRef) -> c_int;
+type AvcodecGetHwFramesParametersFn = unsafe extern "C" fn(
+    *mut AVCodecContext,
+    *mut AVBufferRef,
+    c_int,
+    *mut *mut AVBufferRef,
+) -> c_int;
 type AvFrameGetBufferFn = unsafe extern "C" fn(*mut AVFrame, c_int) -> c_int;
 type AvImageGetBufferSizeFn = unsafe extern "C" fn(c_int, c_int, c_int, c_int) -> c_int;
 type AvStrerrorFn = unsafe extern "C" fn(c_int, *mut core::ffi::c_char, usize) -> c_int;
@@ -150,6 +157,8 @@ pub struct FfmpegApi {
     pub av_hwdevice_ctx_create: AvHwdeviceCtxCreateFn,
     pub av_hwframe_transfer_data: AvHwframeTransferDataFn,
     pub av_hwframe_transfer_get_formats: AvHwframeTransferFormatsFn,
+    pub av_hwframe_ctx_init: AvHwframeCtxInitFn,
+    pub avcodec_get_hw_frames_parameters: AvcodecGetHwFramesParametersFn,
     pub av_frame_get_buffer: AvFrameGetBufferFn,
     pub av_frame_get_plane_buffer: unsafe extern "C" fn(*const AVFrame, c_int) -> *mut AVBufferRef,
     pub av_image_get_buffer_size: AvImageGetBufferSizeFn,
@@ -379,6 +388,11 @@ impl FfmpegApi {
                 av_hwframe_transfer_get_formats: get_fn(
                     avutil,
                     b"av_hwframe_transfer_get_formats\0",
+                )?,
+                av_hwframe_ctx_init: get_fn(avutil, b"av_hwframe_ctx_init\0")?,
+                avcodec_get_hw_frames_parameters: get_fn(
+                    avcodec,
+                    b"avcodec_get_hw_frames_parameters\0",
                 )?,
                 av_frame_get_buffer: get_fn(avutil, b"av_frame_get_buffer\0")?,
                 av_frame_get_plane_buffer: get_fn(avutil, b"av_frame_get_plane_buffer\0")?,

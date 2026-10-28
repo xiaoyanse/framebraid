@@ -114,7 +114,7 @@ mod native {
     /// ID3D11Texture2D::GetDesc 读取 DXGI 格式与共享句柄。
     /// MISC_SHARED/MISC_SHARED_NTHANDLE 时 SharedHandle 非 NULL。
     pub(super) unsafe fn texture_shared_info(texture: *mut c_void) -> (u32, u64) {
-        // ID3D11Texture2D vtable: GetDesc 是 slot 3
+        // ID3D11Texture2D vtable: IUnknown(0-2)+DeviceChild(3-6)+Resource(7-9)+GetDesc(10)
         #[repr(C)]
         struct TexDesc {
             width: u32,
@@ -130,7 +130,7 @@ mod native {
         }
         let table = unsafe { *texture.cast::<*const *const c_void>() };
         let get_desc: unsafe extern "system" fn(*mut c_void, *mut TexDesc) =
-            unsafe { transmute(*table.add(3)) };
+            unsafe { transmute(*table.add(10)) };
         let mut desc = TexDesc {
             width: 0,
             height: 0,
@@ -144,9 +144,40 @@ mod native {
             misc_flags: 0,
         };
         unsafe { get_desc(texture, &mut desc) };
-        let shared =
-            (desc.misc_flags & 0x2 != 0 || desc.misc_flags & 0x8 != 0).then_some(texture as u64);
-        (desc.format, shared.unwrap_or(0))
+        // 共享句柄仅在纹理创建即带 MISC_SHARED(0x2) 时可得；缺标志返回 0。
+        // Win11 25H2 实测：纹理 QI IDXGIResource/IDXGIResource1 均被 runtime 拒绝
+        // （IUnknown 正常），句柄尽力提供、不可得时为 0（消费方走纹理指针）。
+        let shared = if desc.misc_flags & 0x2 != 0 {
+            texture_shared_handle(texture).unwrap_or(0)
+        } else {
+            0
+        };
+        (desc.format, shared)
+    }
+
+    /// IDXGIResource::GetSharedHandle（vtable slot 8）：legacy 共享句柄，归资源
+    /// 自身管理（不 CloseHandle），同进程 ID3D11Device1::OpenSharedResource1 可
+    /// 重新打开。NT 句柄路径本机驱动拒绝创建（见 codec/hardware.rs 实测注释）。
+    unsafe fn texture_shared_handle(texture: *mut c_void) -> Option<u64> {
+        let table = unsafe { *texture.cast::<*const *const c_void>() };
+        let query: unsafe extern "system" fn(*mut c_void, *const Guid, *mut *mut c_void) -> i32 =
+            unsafe { transmute(*table) };
+        // IID_IDXGIResource = {035F3AB4-482E-4E50-B41F-8A7F8BD8960C}
+        let iid = Guid {
+            a: 0x035F_3AB4,
+            b: 0x482E,
+            c: 0x4E50,
+            d: [0xb4, 0x1f, 0x8a, 0x7f, 0x8b, 0xd8, 0x96, 0x0c],
+        };
+        let mut resource = Com(ptr::null_mut());
+        let rc = unsafe { query(texture, &iid, &mut resource.0) };
+        if rc < 0 || resource.0.is_null() {
+            return None;
+        }
+        let get_shared: unsafe extern "system" fn(*mut c_void) -> *mut c_void =
+            unsafe { transmute(resource.method(8)) };
+        let handle = unsafe { get_shared(resource.0) };
+        (!handle.is_null()).then_some(handle as u64)
     }
 
     pub(super) fn adapters() -> Result<Vec<Adapter>, ProbeError> {

@@ -200,6 +200,35 @@ pub struct AVCodecHWConfig {
     pub device_type: c_int,
 }
 
+/// AVHWFramesContext 前缀（libavutil/hwcontext.h，本运行库 61.16 字段序）：
+/// 仅访问到 hwctx；hwctx 指向 AVD3D11VAFramesContext。
+#[repr(C)]
+pub struct AVHWFramesContext {
+    pub av_class: *const c_void,
+    pub device_ref: *mut AVBufferRef,
+    pub device_ctx: *mut c_void,
+    pub hwctx: *mut c_void,
+    pub free: *mut c_void,
+    pub user_opaque: *mut c_void,
+    pub pool: *mut c_void,
+    pub initial_pool_size: c_int,
+    pub format: c_int,
+    pub sw_format: c_int,
+    pub width: c_int,
+    pub height: c_int,
+}
+const _: () = assert!(std::mem::offset_of!(AVHWFramesContext, hwctx) == 24);
+
+/// AVD3D11VAFramesContext（libavutil/hwcontext_d3d11va.h，本运行库 61.16 字段序）。
+#[repr(C)]
+pub struct AVD3D11VAFramesContext {
+    pub texture: *mut c_void,
+    pub bind_flags: c_uint,
+    pub misc_flags: c_uint,
+    pub texture_infos: *mut c_void,
+}
+const _: () = assert!(std::mem::offset_of!(AVD3D11VAFramesContext, misc_flags) == 12);
+
 /// AVCodecParameters 前缀（libavcodec/codec_par.h）。
 #[repr(C)]
 pub struct AVCodecParameters {

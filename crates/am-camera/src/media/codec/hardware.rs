@@ -1,10 +1,12 @@
 use super::*;
 use crate::media::hardware::{Adapter, Backend, Device, ProbeError};
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 pub(super) struct Binding {
     backend: Backend,
     format: i32,
+    api: Arc<FfmpegApi>,
     verified: AtomicBool,
 }
 impl Binding {
@@ -46,7 +48,7 @@ impl Binding {
         unsafe { Self::attach_reference(&api, ctx, codec, backend, device.pointer) }
     }
     pub(super) unsafe fn attach_reference(
-        api: &FfmpegApi,
+        api: &Arc<FfmpegApi>,
         ctx: *mut AVCodecContext,
         codec: *const core::ffi::c_void,
         backend: Backend,
@@ -60,6 +62,7 @@ impl Binding {
         let binding = Box::new(Self {
             backend,
             format,
+            api: api.clone(),
             verified: AtomicBool::new(false),
         });
         unsafe {
@@ -102,9 +105,58 @@ unsafe extern "C" fn select_format(ctx: *mut AVCodecContext, formats: *const i32
             break;
         }
         if binding.matches(format) {
+            if format == crate::media::ffmpeg_sys::AV_PIX_FMT_D3D11 {
+                unsafe { configure_shared_nt_frames(binding, ctx, format) };
+            }
             return format;
         }
     }
     // 显式硬件构造失败应报错，由上层策略重建CPU上下文，不悄悄选另一硬件格式。
     -1
+}
+
+/// D3D11 解码纹理池创建即须带共享标志，事后无法补；否则跨 DLL 零拷贝拿不到
+/// 共享句柄（GPU 帧只能降级回读）。用 legacy MISC_SHARED：本机实测矩阵
+/// （NVIDIA RTX 5060 + Intel Arc，2026-10-29）SHARED_NTCOMMIT 被全部适配器
+/// 拒绝（E_INVALIDARG），MISC_SHARED+NV12+DECODER 全通过；legacy 句柄同进程
+/// OpenSharedResource1 消费等效。失败时不清空既有 hw_frames_ctx，走 FFmpeg
+/// 默认池（无共享句柄，交付侧降级标注），不阻塞硬解本身。
+unsafe fn configure_shared_nt_frames(binding: &Binding, ctx: *mut AVCodecContext, format: i32) {
+    const D3D11_RESOURCE_MISC_SHARED: u32 = 0x2;
+    let api = &binding.api;
+    if !unsafe { (*ctx).hw_frames_ctx }.is_null() {
+        return;
+    }
+    let mut frames: *mut AVBufferRef = std::ptr::null_mut();
+    let rc = (api.avcodec_get_hw_frames_parameters)(
+        ctx,
+        unsafe { (*ctx).hw_device_ctx },
+        format,
+        &mut frames,
+    );
+    if rc < 0 || frames.is_null() {
+        return;
+    }
+    if let Some(hw_frames) = unsafe {
+        (*frames)
+            .data
+            .cast::<crate::media::ffmpeg_sys::AVHWFramesContext>()
+            .as_mut()
+    } {
+        if let Some(d3d) = unsafe {
+            hw_frames
+                .hwctx
+                .cast::<crate::media::ffmpeg_sys::AVD3D11VAFramesContext>()
+                .as_mut()
+        } {
+            d3d.misc_flags |= D3D11_RESOURCE_MISC_SHARED;
+            if (api.av_hwframe_ctx_init)(frames) >= 0 {
+                let owned = (api.av_buffer_ref)(frames);
+                if !owned.is_null() {
+                    unsafe { (*ctx).hw_frames_ctx = owned };
+                }
+            }
+        }
+    }
+    (api.av_buffer_unref)(&mut frames);
 }

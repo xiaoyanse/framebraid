@@ -663,10 +663,10 @@ typedef enum am_frame_kind_e { AM_FRAME_KIND_PIXELS = 0, AM_FRAME_KIND_GPU = 1 }
 typedef struct am_gpu_frame_desc_s {
   uint32_t struct_size;
   uint32_t width, height;
-  uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 87=NV12） */
+  uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 103=NV12） */
   uint32_t subresource;        /* 纹理子资源索引 */
-  uint64_t shared_nt_handle;   /* 跨 DLL 共享句柄（同进程）；0=不可共享 */
-  uint32_t flags;              /* 1=降级回读帧（fallback） */
+  uint64_t shared_nt_handle;   /* 跨 DLL 共享句柄（同进程，可选）；0=句柄不可得（纹理指针仍可用） */
+  uint32_t flags;              /* 1=共享句柄不可得（信息性标注，非回读判定） */
   am_frame_assoc_t assoc;      /* 帧身份（与像素帧一致） */
 } am_gpu_frame_desc_t;
 typedef struct am_gpu_frame_stats_s {

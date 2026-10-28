@@ -67,11 +67,10 @@ impl GpuFramePoolInner {
         self.bytes_in_use.fetch_add(bytes, Ordering::AcqRel);
         self.stats_delivered.fetch_add(1, Ordering::AcqRel);
         self.stats_bytes_est.fetch_add(bytes, Ordering::AcqRel);
-        let fallback = info.shared_nt_handle == 0;
-        if fallback {
-            // 缺共享标志：降级回读交付（不失败），计入降级计数（§2.6a）。
-            self.stats_cpu_fallbacks.fetch_add(1, Ordering::AcqRel);
-        }
+        // flags bit0：共享句柄不可得（信息性标注；纹理指针交付仍可用）。
+        // 真正的 CPU 回读降级由 M2b 消费侧协商决定，届时才计入
+        // stats_cpu_fallbacks——句柄缺失不等于回读。
+        let handle_missing = info.shared_nt_handle == 0;
         let desc = am_gpu_frame_desc_t {
             struct_size: std::mem::size_of::<am_gpu_frame_desc_t>() as u32,
             width: info.info.width,
@@ -79,7 +78,7 @@ impl GpuFramePoolInner {
             d3d_format: info.d3d_format,
             subresource: info.subresource,
             shared_nt_handle: info.shared_nt_handle,
-            flags: if fallback { 1 } else { 0 },
+            flags: if handle_missing { 1 } else { 0 },
             assoc: Default::default(),
         };
         Ok(GpuFrame {
