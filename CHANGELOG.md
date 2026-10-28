@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Expose GPU staging audit counters via context stats: `am_stats_t` gains tail-appended `gpu_inputs`/`gpu_copies_per_frame` (context-scoped, not per-model), filled from the vision-layer pipeline audit in `amv_get_stats`; layout 232→248 bytes with struct_size negotiation, header/Rust/Python generators synced. / GPU 搬运审计计数经上下文统计暴露：`am_stats_t` 尾部追加 `gpu_inputs`/`gpu_copies_per_frame`（上下文级，非 per-model），`amv_get_stats` 从 vision 层管线审计填充；布局 232→248 字节，struct_size 协商，三生成器同步。
+
 - Fix the continuous-capture beat: the in-flight acquisition fast path returned the shared-cache frame every other beat (duplicate frame-id dropped), halving the GET cadence; the fast path is now single-subscriber-transparent and the scheduler advances on a fixed grid so capture latency no longer defers the next beat. / 连续抓图节拍修复：在途获取内层缓存每逢下一拍命中旧帧（重复 frame_id 被丢弃）致 GET 频率减半；单订阅直取 + 固定栅格调度，抓取耗时不再推迟下一拍（服务器侧间隔实测 ≈ 目标间隔）。
 
 - Serve continuous-capture cache only when a source+cadence has multiple subscribers: single subscribers previously hit the shared-cache window every beat (duplicate frame dropped), doubling the effective GET interval. / 连续抓图共享缓存仅在多订阅时启用：单订阅曾因缓存窗与节拍相位叠而每拍取旧帧，实际抓取间隔翻倍；多订阅共享语义不变。

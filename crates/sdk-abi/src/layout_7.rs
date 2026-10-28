@@ -407,7 +407,7 @@ fn am_limits_t_matches_c() {
 }
 #[test]
 fn am_stats_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_stats_t>(), 232);
+    assert_eq!(core::mem::size_of::<am_stats_t>(), 248);
     assert_eq!(core::mem::align_of::<am_stats_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_stats_t, struct_size),
@@ -553,5 +553,15 @@ fn am_stats_t_matches_c() {
         core::mem::offset_of!(am_stats_t, reserved),
         208,
         "am_stats_t.reserved"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stats_t, gpu_inputs),
+        232,
+        "am_stats_t.gpu_inputs"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stats_t, gpu_copies_per_frame),
+        240,
+        "am_stats_t.gpu_copies_per_frame"
     );
 }

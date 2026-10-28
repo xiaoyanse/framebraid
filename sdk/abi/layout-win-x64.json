@@ -1029,7 +1029,7 @@
       }
     },
     "am_stats_t": {
-      "size": 232,
+      "size": 248,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -1060,7 +1060,9 @@
         "shared_metadata_bytes": 192,
         "shared_pool_count": 200,
         "shared_outstanding_borrows": 204,
-        "reserved": 208
+        "reserved": 208,
+        "gpu_inputs": 232,
+        "gpu_copies_per_frame": 240
       }
     },
     "am_pixel_view_t": {

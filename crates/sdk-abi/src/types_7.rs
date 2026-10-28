@@ -202,6 +202,8 @@ pub struct am_stats_t {
     pub shared_pool_count: u32,
     pub shared_outstanding_borrows: u32,
     pub reserved: [u32; 6],
+    pub gpu_inputs: u64,
+    pub gpu_copies_per_frame: u64,
 }
 impl Default for am_stats_t {
     fn default() -> Self {
@@ -235,6 +237,8 @@ impl Default for am_stats_t {
             shared_pool_count: Default::default(),
             shared_outstanding_borrows: Default::default(),
             reserved: [Default::default(); 6],
+            gpu_inputs: Default::default(),
+            gpu_copies_per_frame: Default::default(),
         }
     }
 }

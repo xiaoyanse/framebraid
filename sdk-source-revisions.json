@@ -48,8 +48,8 @@
     {
       "path": "crates/am-camera/src/media/mod.rs",
       "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
-      "sha256": "638c50d6c0611af8b988095ccc56b8434c6b867f4598fe5d7a5e8a76ea765a41",
-      "reason": "R2 reviewed explicit bounded hardware probe/decode; real Intel/NVIDIA synthetic H264/HEVC and fault tests; C ABI unchanged"
+      "sha256": "9815b5b73023a4d501225ad541864092df03fd6a32f73820e99f6cb83940ec60",
+      "reason": "R7 reviewed multipart module registration; C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
@@ -306,8 +306,8 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "3af6e55481f19c6bdb577f1c3aa96c280bc479bd54fa62b18ecb83752d6ece77",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "2490636a6c8bfdc4f12b01cdfefee11f762c7d621f375738984461b45f7c6f4b",
+      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；declare telemetry_tests module for GPU audit stats exposure tests"
     },
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
@@ -1040,6 +1040,18 @@
       "previousSha256": "c49aef7faba6a39e41250fd91227ae9e9849714740e0f3b264abc9fd847fe6af",
       "sha256": "cf6ac395b20cade41c473700199eb64101631d81cebd05fa52a14ffab648b7d0",
       "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/telemetry.rs",
+      "previousSha256": "b7a710d039ea04839abbfe4079bd8727936afc72da2763860d503d22c9836be9",
+      "sha256": "61e18d854364ecd0e80742d5a1190d134f173f9411a122c7eca108eea9b200e8",
+      "reason": "Expose GPU staging audit counters via context stats: amv_get_stats reads the vision-layer pipeline audit snapshot and fills tail-appended am_stats_t fields gpu_inputs/gpu_copies_per_frame (context-scoped); unit tests green; C ABI tail append negotiated by struct_size"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/telemetry_tests.rs",
+      "previousSha256": null,
+      "sha256": "c33db7e4d6e630a43bfbc50d64c394db90bbf19ad357ec9c969490876284b517",
+      "reason": "Add GPU audit stats exposure tests covering increment visibility and context-scoped snapshot agreement with struct_size negotiation check"
     }
   ]
 }

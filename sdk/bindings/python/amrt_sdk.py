@@ -790,6 +790,8 @@ am_stats_t._fields_ = [
     ("shared_pool_count", c_uint32),
     ("shared_outstanding_borrows", c_uint32),
     ("reserved", c_uint32 * 6),
+    ("gpu_inputs", c_uint64),
+    ("gpu_copies_per_frame", c_uint64),
 ]
 
 amc_init_params_t._fields_ = [

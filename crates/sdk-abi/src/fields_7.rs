@@ -520,5 +520,13 @@ impl AbiLayout for am_stats_t {
             core::mem::offset_of!(am_stats_t, reserved),
             core::mem::size_of::<[u32; 6]>(),
         ),
+        (
+            core::mem::offset_of!(am_stats_t, gpu_inputs),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_stats_t, gpu_copies_per_frame),
+            core::mem::size_of::<u64>(),
+        ),
     ];
 }

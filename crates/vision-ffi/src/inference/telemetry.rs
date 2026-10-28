@@ -76,6 +76,7 @@ pub unsafe extern "C" fn amv_get_stats(
         };
         #[cfg(not(all(windows, target_arch = "x86_64", feature = "shared-frames")))]
         let shared = (0, 0, 0, 0);
+        let (gpu_inputs, gpu_copies_per_frame) = am_vision_core::gpu::pipeline::audit::snapshot();
         let candidate = am_stats_t {
             scope_utf8: name.as_ptr(),
             queue_items: pending as u64 + cached as u64,
@@ -106,6 +107,8 @@ pub unsafe extern "C" fn amv_get_stats(
             shared_metadata_bytes: shared.1,
             shared_pool_count: shared.2,
             shared_outstanding_borrows: shared.3,
+            gpu_inputs,
+            gpu_copies_per_frame,
             ..Default::default()
         };
         let mut value = Box::new(am_stats_t::default());

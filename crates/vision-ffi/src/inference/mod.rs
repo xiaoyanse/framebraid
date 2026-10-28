@@ -17,6 +17,8 @@ mod selection_tests;
 mod state;
 mod submission;
 mod telemetry;
+#[cfg(test)]
+mod telemetry_tests;
 mod tensor_exports;
 mod tensors;
 
