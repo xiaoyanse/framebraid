@@ -1,6 +1,7 @@
 //! 视觉推理与后处理核心；无设备、数据库、任务或报警副作用。
 mod backend;
 mod decode;
+pub mod gpu;
 mod preprocess;
 /// 源码SDK的五类档案和后处理；宿主原有PoseModel入口保持兼容。
 pub mod profiles;

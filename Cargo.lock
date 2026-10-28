@@ -54,6 +54,7 @@ version = "0.2.0"
 dependencies = [
  "am-vision-types",
  "image",
+ "libloading",
  "ort",
  "serde",
  "serde_json",
