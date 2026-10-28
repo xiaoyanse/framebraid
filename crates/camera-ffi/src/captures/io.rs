@@ -48,7 +48,9 @@ pub fn continuous(
             return Ok(image.clone());
         }
     }
-    let image = acquire_for(state, source, timeout, Some((key, interval)))?;
+    // 单订阅传 freshness=None：acquire_for 内部同窗缓存会命中旧帧（frame_id
+    // 重复被外层去重丢弃），令 GET 频率减半（R2b 真因，本地夹具 0.57x 复现）。
+    let image = acquire_for(state, source, timeout, shared.then_some((key, interval)))?;
     if state.closed.load(Ordering::Acquire) || source.stop.load(Ordering::Acquire) {
         return Err(AM_ERR_SDK_HANDLE_CLOSED);
     }

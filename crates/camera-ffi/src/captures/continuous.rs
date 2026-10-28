@@ -329,15 +329,18 @@ fn launch(sub: Arc<Subscription>) -> Result<()> {
                 }
                 sub.changed.notify_all();
                 deliver(&sub);
+                // 固定栅格节拍（R2b 三修）：due 按 interval 栅格推进，抓取耗时
+                // 不推迟下一拍（串行重置语义曾令实际节奏= interval+耗时，
+                // 下游实测 GET 频率恒 ~1/2 目标）。落后时跳过错拍并计数，追上
+                // 最近未来栅格点——抓取快时节拍精确=target，慢时按能力满速。
                 due += interval;
                 if due < Instant::now() {
-                    let missed = (Instant::now().duration_since(due).as_millis()
-                        / interval.as_millis()) as u64
-                        + 1;
+                    let behind = Instant::now().duration_since(due);
+                    let missed = (behind.as_millis() / interval.as_millis()) as u64 + 1;
                     if let Ok(mut q) = sub.queue.lock() {
                         q.skipped = q.skipped.saturating_add(missed);
                     }
-                    due = Instant::now() + interval;
+                    due += interval * missed as u32;
                 }
             }
         })

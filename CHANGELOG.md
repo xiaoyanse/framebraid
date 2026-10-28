@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Fix the continuous-capture beat: the in-flight acquisition fast path returned the shared-cache frame every other beat (duplicate frame-id dropped), halving the GET cadence; the fast path is now single-subscriber-transparent and the scheduler advances on a fixed grid so capture latency no longer defers the next beat. / 连续抓图节拍修复：在途获取内层缓存每逢下一拍命中旧帧（重复 frame_id 被丢弃）致 GET 频率减半；单订阅直取 + 固定栅格调度，抓取耗时不再推迟下一拍（服务器侧间隔实测 ≈ 目标间隔）。
+
 - Serve continuous-capture cache only when a source+cadence has multiple subscribers: single subscribers previously hit the shared-cache window every beat (duplicate frame dropped), doubling the effective GET interval. / 连续抓图共享缓存仅在多订阅时启用：单订阅曾因缓存窗与节拍相位叠而每拍取旧帧，实际抓取间隔翻倍；多订阅共享语义不变。
 
 - Decode JPEG straight to RGBA via zune-jpeg (dropping the DynamicImage RGB-to-RGBA full-image conversion): 720p 6.56->3.89 ms (-41%), 1080p 12.20->9.37 ms (-23%), now faster than the downstream OpenCV baseline. / JPEG 直解 RGBA（zune-jpeg，消除全图转换中转），720p/1080p 分别 -41%/-23%；EXIF 旋转语义不变，C ABI 不变。
