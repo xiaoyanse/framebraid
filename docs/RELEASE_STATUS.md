@@ -1,7 +1,14 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.2.0**（2026-10-28 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.2.1**（2026-10-29 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
+
+## v0.2.1 验证状态快照
+
+v0.2.1 为兼容优化版（无 ABI 破坏）：R1 帧预算 96→128MiB、R2a/R2b Digest 缓存与
+订阅节拍修复、R6 JPEG 直解 RGBA（720p 下游判据达标 GAP 0.79ms，1080p 复测进行
+中）、M2c GPU 搬运审计计数。Rust 回归 387 项通过；R7（MJPEG 流源）与 GPU 零拷贝
+主线属未发布扩展，不随本版。构建指纹见包内 build-record.json 与 SHA256SUMS.txt。
 
 ## v0.2.0 验证状态快照
 
