@@ -26,7 +26,12 @@ pub fn continuous(
     timeout: Duration,
     interval: u32,
 ) -> Result<Arc<Raw>> {
-    {
+    let key = (source.source_id, interval);
+    // 缓存仅服务同源同频的多订阅共享（consumers>1）；单订阅直取——缓存窗
+    // 与订阅节拍相位叠时会令每拍命中旧帧（frame_id 重复被丢弃），GET 实际
+    // 间隔翻倍（R2b，2026-10-29 下游实测）。
+    let shared = lock(&state.consumers)?.get(&key).copied().unwrap_or(0) > 1;
+    if shared {
         let recent = lock(&state.recent)?;
         let candidate = recent
             .iter()
@@ -43,7 +48,6 @@ pub fn continuous(
             return Ok(image.clone());
         }
     }
-    let key = (source.source_id, interval);
     let image = acquire_for(state, source, timeout, Some((key, interval)))?;
     if state.closed.load(Ordering::Acquire) || source.stop.load(Ordering::Acquire) {
         return Err(AM_ERR_SDK_HANDLE_CLOSED);

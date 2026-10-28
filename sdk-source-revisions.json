@@ -552,8 +552,8 @@
     {
       "path": "crates/camera-ffi/src/captures/io.rs",
       "previousSha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18",
-      "sha256": "0e1b652626e77dbec81d2827710c9ec2e4956b654dc25bfe351dc063a2fb3f61",
-      "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+      "sha256": "3d2ede02ae46e2af2750415f9e0d0397d7e72e73e11d3f347a89de4fd142d67d",
+      "reason": "Reviewed continuous-capture cache gating to multi-subscriber only (single-subscriber beat phase made every beat hit the stale window, doubling GET interval); workspace green; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/io/tests.rs",
