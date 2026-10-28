@@ -313,6 +313,16 @@ impl Model {
             report: Box::new(selection),
         })
     }
+    /// 原生 ORT 会话引用（GPU 管线预处理与 IOBinding 用）。
+    pub fn ort_session(&self) -> &Session {
+        &self.session
+    }
+
+    /// 实际后端是否 CUDA（GPU 帧直传的前提；非 CUDA 显式报不支持）。
+    pub fn is_cuda(&self) -> bool {
+        self.actual_backend == 2
+    }
+
     pub fn validate_inputs(&self, inputs: &[TensorData]) -> Result<()> {
         validate_input_data(&self.inputs, inputs)?;
         super::batch::validate_count(
@@ -343,22 +353,58 @@ impl Model {
             .collect::<Result<Vec<_>>>()?;
         let result = match self.session.run(values) {
             Ok(result) => {
-                self.selection.native_runs = self.selection.native_runs.saturating_add(1);
-                self.selection.last_native_run_succeeded = Some(true);
-                // 原生执行观察独立于后续输出预算和交付成功。
-                super::runtime::executed(
-                    self.selection.selected.map_or(0, |target| target.backend),
-                );
+                Self::observe_ok(&mut self.selection);
                 result
             }
             Err(error) => {
-                self.selection.native_failures = self.selection.native_failures.saturating_add(1);
-                self.selection.last_native_run_succeeded = Some(false);
-                let code: ort::sys::OrtErrorCode = error.code().into();
-                self.selection.last_native_error_code = Some(code as i32);
+                Self::observe_err(&mut self.selection, &error);
                 return Err(Error("vision.inferenceFailed".into()));
             }
         };
+        Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)
+    }
+
+    /// GPU 直传推理（M2b §3.3a）：输入已绑定为 CUDA device tensor（预处理在
+    /// GPU 完成），经 IOBinding 执行；输出提取与 CPU 路径一致（回读结果张量
+    /// 是业务消费必需，不计入输入搬运）。输入形状按 self.inputs 校验。
+    pub fn run_gpu(
+        &mut self,
+        input: &crate::gpu::iobinding::InferenceInput,
+        output_budget: usize,
+    ) -> Result<Vec<TensorData>> {
+        let result = match self.session.run_binding(&input.binding) {
+            Ok(result) => {
+                Self::observe_ok(&mut self.selection);
+                result
+            }
+            Err(error) => {
+                Self::observe_err(&mut self.selection, &error);
+                return Err(Error("vision.inferenceFailed".into()));
+            }
+        };
+        Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)
+    }
+
+    fn observe_ok(selection: &mut super::selection::BackendSelectionReport) {
+        selection.native_runs = selection.native_runs.saturating_add(1);
+        selection.last_native_run_succeeded = Some(true);
+        // 原生执行观察独立于后续输出预算和交付成功。
+        super::runtime::executed(selection.selected.map_or(0, |target| target.backend));
+    }
+
+    fn observe_err(selection: &mut super::selection::BackendSelectionReport, error: &ort::Error) {
+        selection.native_failures = selection.native_failures.saturating_add(1);
+        selection.last_native_run_succeeded = Some(false);
+        let code: ort::sys::OrtErrorCode = error.code().into();
+        selection.last_native_error_code = Some(code as i32);
+    }
+
+    fn extract_outputs(
+        batch: u32,
+        selection: &mut super::selection::BackendSelectionReport,
+        result: ort::session::SessionOutputs<'_>,
+        output_budget: usize,
+    ) -> Result<Vec<TensorData>> {
         let mut remaining = output_budget;
         let mut output = Vec::new();
         for (name, value) in result.iter() {
@@ -379,14 +425,14 @@ impl Model {
             let raw = unsafe { std::slice::from_raw_parts(tensor.data_ptr().cast(), bytes) };
             output.push(TensorData::new(spec, raw)?);
         }
-        if self.batch != 0
+        if batch != 0
             && output
                 .iter()
-                .any(|v| v.info.shape.first() != inputs[0].info.shape.first())
+                .any(|v| v.info.shape.first().is_none_or(|b| *b != batch as i64))
         {
             return Err(Error("vision.batchUnsupported".into()));
         }
-        self.selection.delivered_runs = self.selection.delivered_runs.saturating_add(1);
+        selection.delivered_runs = selection.delivered_runs.saturating_add(1);
         Ok(output)
     }
 }

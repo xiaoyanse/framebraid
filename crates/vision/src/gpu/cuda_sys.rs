@@ -28,6 +28,17 @@ pub struct CudaApi {
         unsafe extern "C" fn(i32, *const GraphicsResource, *mut c_void) -> CudaResult,
     pub mapped_array:
         unsafe extern "C" fn(*mut CudaArray, GraphicsResource, u32, u32) -> CudaResult,
+    /// cudaMemcpy2DFromArray：mapped array → device buffer（M2b 搬运路径）。
+    pub memcpy2d_from_array: unsafe extern "C" fn(
+        *mut c_void, // dst（device）
+        usize,       // dpitch（目标行距字节）
+        CudaArray,   // src array
+        usize,       // woffset
+        usize,       // hoffset
+        usize,       // width（每行字节）
+        usize,       // height（行数）
+        i32,         // kind（0=DtoD 默认）
+    ) -> CudaResult,
 }
 
 impl CudaApi {
@@ -76,6 +87,7 @@ impl CudaApi {
             map_resources: cast!(b"cudaGraphicsMapResources"),
             unmap_resources: cast!(b"cudaGraphicsUnmapResources"),
             mapped_array: cast!(b"cudaGraphicsSubResourceGetMappedArray"),
+            memcpy2d_from_array: cast!(b"cudaMemcpy2DFromArray"),
         };
         // 库保活：泄漏一个持有句柄的 guard（进程生命周期，与 FFmpeg 运行库同策略）。
         std::mem::forget(library);

@@ -11,6 +11,8 @@ pub struct Plan {
     encoded: *const u8,
     encoded_size: usize,
     owner: Option<am_pixel_view_t>,
+    /// GPU 帧直传（M2b §3.3a）：元数据与纹理指针借用至同步返回/异步接受。
+    pub gpu: Option<am_gpu_frame_ref_t>,
     pub assoc: Option<am_frame_assoc_t>,
     pub preprocess: Preprocess,
     pub cost: usize,
@@ -21,6 +23,7 @@ pub struct Input {
     planes: Vec<Vec<u8>>,
     encoded: Vec<u8>,
     owner: Option<Owner>,
+    pub gpu: Option<am_gpu_frame_ref_t>,
     pub assoc: Option<am_frame_assoc_t>,
     pub preprocess: Preprocess,
 }
@@ -149,6 +152,7 @@ pub unsafe fn plan_item(
         encoded: std::ptr::null(),
         encoded_size: 0,
         owner: None,
+        gpu: None,
         assoc: None,
         preprocess,
         cost: 0,
@@ -194,6 +198,29 @@ pub unsafe fn plan_item(
         result.cost = bytes.len() + w as usize * h as usize * 8;
         result.encoded = input.encoded;
         result.encoded_size = bytes.len();
+    } else if input.kind == AM_IMG_GPU_FRAME {
+        // GPU 帧直传（M2b）：仅 PROFILE 模式（kernel 与 profile 预处理同规则：
+        // letterbox/114/RGB/NCHW//255）；raw 模式自定义预处理回退像素路径。
+        if model.info.mode != AM_LOAD_PROFILE {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        if input.flags != 0 || input.gpu.is_null() {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let gpu: am_gpu_frame_ref_t =
+            unsafe { args::read(input.gpu, size_of::<am_gpu_frame_ref_t>()) }?;
+        if gpu.d3d_format != 103
+            || gpu.texture.is_null()
+            || gpu.width == 0
+            || gpu.height == 0
+            || gpu.width > 8192
+            || gpu.height > 8192
+        {
+            return Err(AM_ERR_VISION_IMAGE_VIEW_INVALID);
+        }
+        source_assoc = gpu.assoc;
+        result.cost = gpu.width as usize * gpu.height as usize * 36;
+        result.gpu = Some(gpu);
     } else {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
@@ -264,6 +291,7 @@ impl Plan {
             planes: Vec::new(),
             encoded: Vec::new(),
             owner: None,
+            gpu: self.gpu,
             assoc: self.assoc,
             preprocess: self.preprocess,
         };

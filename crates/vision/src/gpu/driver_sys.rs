@@ -41,6 +41,7 @@ pub struct DriverApi {
     pub device_get: unsafe extern "C" fn(*mut i32, i32) -> CuResult,
     pub ctx_create: unsafe extern "C" fn(*mut *mut c_void, u32, i32) -> CuResult,
     pub ctx_set_current: unsafe extern "C" fn(*mut c_void) -> CuResult,
+    pub ctx_synchronize: unsafe extern "C" fn() -> CuResult,
     pub module_load_data: unsafe extern "C" fn(*mut *mut c_void, *const c_void) -> CuResult,
     pub module_get_function:
         unsafe extern "C" fn(*mut *mut c_void, *mut c_void, *const u8) -> CuResult,
@@ -100,6 +101,7 @@ impl DriverApi {
             device_get: cast!(b"cuDeviceGet\0"),
             ctx_create: cast!(b"cuCtxCreate\0"),
             ctx_set_current: cast!(b"cuCtxSetCurrent\0"),
+            ctx_synchronize: cast!(b"cuCtxSynchronize\0"),
             module_load_data: cast!(b"cuModuleLoadData\0"),
             module_get_function: cast!(b"cuModuleGetFunction\0"),
             launch_kernel: cast!(b"cuLaunchKernel\0"),

@@ -204,6 +204,176 @@ pub(super) fn finish(model: &ModelHandle, id: u64, result: Result<Arc<ResultBuff
     }
     state.changed.notify_all();
 }
+fn run_gpu(
+    model: &ModelHandle,
+    session: &mut am_vision_core::sdk::Model,
+    gpu_ref: am_gpu_frame_ref_t,
+    id: u64,
+    params: am_infer_params_t,
+) -> Result<Arc<ResultBuffer>> {
+    use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
+    if !session.is_cuda() || !GpuPipeline::available() {
+        return Err(AM_ERR_SDK_NOT_SUPPORTED);
+    }
+    let pipeline = GpuPipeline::global().map_err(error)?;
+    let name = session.inputs[0].name.clone();
+    let (input_w, input_h) = {
+        let shape = &session.inputs[0].shape;
+        let last = shape.len() - 1;
+        (shape[last] as u32, shape[last - 1] as u32)
+    };
+    let frame = GpuFrameData {
+        width: gpu_ref.width,
+        height: gpu_ref.height,
+        d3d_format: gpu_ref.d3d_format,
+        subresource: gpu_ref.subresource,
+        texture: gpu_ref.texture,
+    };
+    let (binding, transform) = pipeline
+        .preprocess_to_binding(&frame, session.ort_session(), &name, input_w, input_h)
+        .map_err(error)?;
+    let ctx = model.state.context()?;
+    let context = ctx.data::<Context>()?;
+    let limits = *lock(&context.limits)?;
+    let mapping = am_vision_core::sdk::ImageTransform {
+        width: transform.width,
+        height: transform.height,
+        dst_w: transform.dst_w,
+        dst_h: transform.dst_h,
+        scale_x: transform.scale_x,
+        scale_y: transform.scale_y,
+        crop_x: 0,
+        crop_y: 0,
+        left: transform.left,
+        top: transform.top,
+    };
+    let queue_bytes = lock(&context.queues)?[AM_Q_RESULTS as usize].max_bytes;
+    let available = limits
+        .result_budget_bytes
+        .min(queue_bytes)
+        .saturating_sub(model.state.usage.bytes.load(Ordering::Acquire) as u64)
+        as usize;
+    let raw_bytes = session
+        .outputs
+        .iter()
+        .try_fold(0usize, |n, s| {
+            let count = s.shape.iter().try_fold(1usize, |a, d| {
+                usize::try_from(*d).ok().and_then(|v| a.checked_mul(v))
+            });
+            count
+                .and_then(|v| {
+                    v.checked_mul(match s.dtype {
+                        1 => 2,
+                        2 => 8,
+                        4 => 1,
+                        _ => 4,
+                    })
+                })
+                .and_then(|v| n.checked_add(v))
+        })
+        .unwrap_or(available);
+    let max_det = if params.max_det == 0 {
+        300
+    } else {
+        params.max_det as usize
+    };
+    let mask_bytes = if session
+        .profile
+        .is_some_and(|p| p.task == profiles::Task::Segment)
+    {
+        (mapping.width as usize).div_ceil(8) * mapping.height as usize * max_det
+    } else {
+        0
+    };
+    let reserve = raw_bytes
+        .saturating_add(mask_bytes)
+        .saturating_add(512 * 1024)
+        .min(available);
+    if reserve == 0 || raw_bytes > reserve {
+        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    }
+    let charge = model.state.charge(reserve)?;
+    let start = am_sdk_support::clock::monotonic_ms();
+    let output = session.run_gpu(&binding, reserve);
+    model.refresh_selection(session);
+    let raw = output.map_err(error)?;
+    let prediction =
+        decode_prediction(session, &raw, &mapping, params, max_det, reserve, raw_bytes)?;
+    let end = am_sdk_support::clock::monotonic_ms();
+    ResultBuffer::build(
+        model,
+        id,
+        gpu_assoc(gpu_ref),
+        Some(mapping),
+        raw,
+        prediction,
+        start,
+        end,
+        charge,
+    )
+}
+
+fn gpu_assoc(gpu_ref: am_gpu_frame_ref_t) -> Option<am_frame_assoc_t> {
+    if gpu_ref.assoc.is_null() {
+        return None;
+    }
+    unsafe { am_sdk_support::args::read(gpu_ref.assoc, size_of::<am_frame_assoc_t>()) }.ok()
+}
+
+fn decode_prediction(
+    session: &am_vision_core::sdk::Model,
+    raw: &[am_vision_core::sdk::TensorData],
+    mapping: &am_vision_core::sdk::ImageTransform,
+    params: am_infer_params_t,
+    max_det: usize,
+    reserve: usize,
+    raw_bytes: usize,
+) -> Result<Option<profiles::Prediction>> {
+    let Some(profile) = session.profile else {
+        return Ok(None);
+    };
+    let shapes = raw
+        .iter()
+        .map(|r| r.info.shape.iter().map(|d| *d as usize).collect::<Vec<_>>())
+        .collect::<Vec<_>>();
+    let tensors = raw
+        .iter()
+        .zip(&shapes)
+        .map(|(r, s)| {
+            Ok(TensorView {
+                name: &r.info.name,
+                shape: s,
+                values: r.floats().map_err(error)?,
+            })
+        })
+        .collect::<Result<Vec<_>>>()?;
+    Ok(Some(
+        profiles::decode(
+            &profile.id,
+            &tensors,
+            ImageMapping {
+                width: mapping.width,
+                height: mapping.height,
+                scale: mapping.scale_x,
+                left: mapping.left,
+                top: mapping.top,
+            },
+            Options {
+                confidence: params.confidence_threshold,
+                nms_iou: if params.nms_iou_threshold == 0.0 {
+                    0.7
+                } else {
+                    params.nms_iou_threshold
+                },
+                max_detections: max_det,
+                mask_budget_bytes: reserve.saturating_sub(raw_bytes + 512 * 1024),
+                ..Options::default()
+            },
+        )
+        .map_err(error)?,
+    ))
+}
+
 fn run(
     model: &ModelHandle,
     input: &Input,
@@ -215,6 +385,13 @@ fn run(
     let limits = *lock(&context.limits)?;
     let mut session = lock(&model.session)?;
     let session = session.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+    // GPU 帧直传分派（M2b §3.3a）：显式输入不静默降级——非 CUDA 后端或管线
+    // 不可用报 notSupported（宿主按能力位选择输入 kind，像素路径永远可用）。
+    if let super::super::submission::Input::Image(image) = input {
+        if let Some(gpu_ref) = image.gpu {
+            return run_gpu(model, session, gpu_ref, id, params);
+        }
+    }
     let prepared = input.prepare(
         &session.inputs[0].name,
         limits.preprocess_budget_bytes as usize,

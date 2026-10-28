@@ -11,6 +11,7 @@ pub const AM_SUB_PULL: u32 = 1;
 pub const AM_IMG_JPEG: u32 = 0;
 pub const AM_IMG_PNG: u32 = 1;
 pub const AM_IMG_PIXEL_VIEW: u32 = 2;
+pub const AM_IMG_GPU_FRAME: u32 = 3;
 pub const AM_LOAD_PROFILE: u32 = 0;
 pub const AM_LOAD_RAW: u32 = 1;
 pub const AM_CAP_ENCODED_JPEG: u32 = 0;
