@@ -2,6 +2,8 @@
 
 ## Unreleased / 未发布
 
+- Raise the default camera frame budget from 96 MiB to 128 MiB and tighten the cpu-frame capture scratch reservation from 8 to 7 bytes/pixel (RGB+RGBA peak), so 2160p RGBA frames (~93 MiB transient peak) no longer hit the ceiling. / 默认帧预算 96→128 MiB、抓图转换峰值预留 8→7 B/px，2160p 帧获取不再压线（下游实测反馈）；C ABI 不变，`amc_set_limits` 仍只能收紧。
+
 ## [0.2.0] - 2026-10-28
 
 - Add the unpublished adaptive batching compatible extension (R5-2.1): `amv_model_configure_batching`/`amv_model_get_batching` plus `am_batching_options_t`/`am_batching_stats_t`/`AM_BATCHING_ENABLE`, disabled by default and limited to dynamic-batch-axis models in AUTO semantics; windows fill, expire or drain as one physical batch with per-item request identity unchanged. / 合同见 dual-dll-abi §3.5 末；合成数据单测与生成器同步已验，真实模型组批实测待验，源码指纹修订待登记。

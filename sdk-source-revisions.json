@@ -1016,6 +1016,18 @@
       "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
       "sha256": "66ac70c6e8d01131892bbc73ed4325e5f151dc784cc345038db4a7c95ce84fca",
       "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/defaults.rs",
+      "previousSha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
+      "sha256": "19d85e919ee873337f4e9d127c378b1ebde9cb78a888614fed1a942589e68c61",
+      "reason": "Reviewed default frame budget raise 96->128MiB with cpu-frame scratch precision 8->7 B/px (2160p downstream feedback); workspace green; C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/captures/images.rs",
+      "previousSha256": "6363e851b83c2b4ce3f1aa40c87200ebf552a5926c41182b919afaf035a4a504",
+      "sha256": "ea42751b434a616158c87a533aa20928b10a446d864a784c1c43f72b55fd8367",
+      "reason": "Reviewed default frame budget raise 96->128MiB with cpu-frame scratch precision 8->7 B/px (2160p downstream feedback); workspace green; C ABI unchanged"
     }
   ]
 }

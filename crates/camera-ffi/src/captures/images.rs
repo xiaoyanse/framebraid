@@ -21,8 +21,9 @@ impl Image {
         let (rgba, charge, width, height) = if kind == AM_CAP_CPU_FRAME {
             let bytes = raw.width as u64 * raw.height as u64 * 4;
             let charge = camera.charge(bytes, false)?;
-            // RGB解码、RGBA转换及EXIF旋转可能短暂共存，临时峰值单独预留。
-            let scratch = camera.charge(raw.width as u64 * raw.height as u64 * 8, false)?;
+            // RGB解码(3B/px)与RGBA转换(4B/px)短暂共存的峰值精确预留；EXIF
+            // 旋转复用同缓冲。4K 帧峰值 ≈ 4+7 B/px + encoded ≈ 93MiB。
+            let scratch = camera.charge(raw.width as u64 * raw.height as u64 * 7, false)?;
             // 解码器拥有输入Vec；这份临时复制亦先计费，峰值不会漏算。
             let copy = camera.charge(raw.encoded.len() as u64, false)?;
             let image =
