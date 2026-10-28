@@ -17,6 +17,7 @@ pub(crate) mod budget;
 mod buffers;
 pub(crate) mod config;
 mod diagnostics;
+mod gpu_pool;
 mod receive;
 mod recovery;
 mod retained;

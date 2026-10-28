@@ -653,6 +653,9 @@ typedef struct am_frame_assoc_s {   /* B12：可选输入关联元数据（图�
   uint32_t valid;                   /* AM_ASSOC_* 位集：哪些字段可信 */
 } am_frame_assoc_t;
 
+typedef struct amc_gpu_frame_pool_s amc_gpu_frame_pool_t;
+typedef struct amc_gpu_frame_s amc_gpu_frame_t;
+
 typedef enum am_frame_kind_e { AM_FRAME_KIND_PIXELS = 0, AM_FRAME_KIND_GPU = 1 } am_frame_kind_e;
 /* GPU 帧交付：硬解实际激活时返回 am_gpu_frame_t 句柄（不透明，宿主不可解析内里）；
    SOFTWARE_ONLY 下 GPU 订阅报 notSupported，不静默降级。 */

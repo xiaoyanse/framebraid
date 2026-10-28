@@ -43,6 +43,13 @@ AM_API am_status_t amc_frame_get_meta(const amc_frame_t* frame, am_frame_meta_t*
 AM_API am_status_t amc_frame_get_scaled(const amc_frame_t* frame, uint32_t target_w, uint32_t target_h,
                                         uint32_t method, amc_frame_t** out_scaled);
 AM_API am_status_t amc_frame_as_pixel_view(amc_frame_t* frame, am_pixel_view_t* out_view);
+AM_API am_status_t amc_gpu_frame_pool_create(amc_context_t* ctx,
+    const void* cfg, amc_gpu_frame_pool_t** out_pool);
+AM_API am_status_t amc_gpu_frame_borrow(const amc_gpu_frame_t* frame);
+AM_API am_status_t amc_gpu_frame_return(amc_gpu_frame_t* frame);
+AM_API am_status_t amc_gpu_frame_release(amc_gpu_frame_t* frame);
+AM_API am_status_t amc_gpu_frame_stats(const amc_gpu_frame_t* frame,
+    am_gpu_frame_stats_t* out);
 AM_API am_status_t amc_capture_sync(amc_source_t* src, const am_capture_request_t* req, am_captured_image_t** out_img);
 AM_API am_status_t amc_capture_async(amc_source_t* src, const am_capture_request_t* req, uint64_t* out_request_id);
 AM_API am_status_t amc_captured_image_fetch(amc_context_t* ctx, uint64_t request_id, am_captured_image_t** out_img);

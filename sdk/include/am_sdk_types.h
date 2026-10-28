@@ -94,6 +94,8 @@ typedef struct am_realtime_policy_s am_realtime_policy_t;
 typedef struct am_limits_s am_limits_t;
 typedef struct am_stats_s am_stats_t;
 typedef struct am_pixel_view_s am_pixel_view_t;
+typedef struct amc_gpu_frame_pool_s amc_gpu_frame_pool_t;
+typedef struct amc_gpu_frame_s amc_gpu_frame_t;
 typedef struct amc_context_s amc_context_t;
 typedef struct amc_source_s amc_source_t;
 typedef struct amv_context_s amv_context_t;
@@ -830,6 +832,9 @@ typedef struct am_frame_assoc_s {   /* B12：可选输入关联元数据（图�
   uint32_t clock_quality;           /* am_clock_quality_e（P5）：映射质量，见 §2.5 注 */
   uint32_t valid;                   /* AM_ASSOC_* 位集：哪些字段可信 */
 } am_frame_assoc_t;
+
+typedef struct amc_gpu_frame_pool_s amc_gpu_frame_pool_t;
+typedef struct amc_gpu_frame_s amc_gpu_frame_t;
 
 typedef enum am_frame_kind_e { AM_FRAME_KIND_PIXELS = 0, AM_FRAME_KIND_GPU = 1 } am_frame_kind_e;
 /* GPU 帧交付：硬解实际激活时返回 am_gpu_frame_t 句柄（不透明，宿主不可解析内里）；

@@ -144,9 +144,8 @@ mod native {
             misc_flags: 0,
         };
         unsafe { get_desc(texture, &mut desc) };
-        let shared = (desc.misc_flags & 0x2 /* MISC_SHARED */ != 0
-            || desc.misc_flags & 0x8 /* MISC_SHARED_NTHANDLE */ != 0)
-            .then(|| texture as u64);
+        let shared =
+            (desc.misc_flags & 0x2 != 0 || desc.misc_flags & 0x8 != 0).then_some(texture as u64);
         (desc.format, shared.unwrap_or(0))
     }
 

@@ -369,7 +369,17 @@ typedef void (*am_frame_cb_fn)(amc_frame_sub_t* sub, amc_frame_t* frame, void* u
 - SOFTWARE_ONLY 策略下 GPU 订阅返回 `notSupported`（不静默降级为像素）；纹理缺共享标志时降级回读交付并标 `flags=1`（fallback），不失败
 - GPU 帧借用/归还语义与共享帧池一致（租约、池满拒绝、关闭排空）
 
-**新导出**：`amc_gpu_frame_pool_create / amc_gpu_frame_borrow / amc_gpu_frame_return / amc_gpu_frame_release / amc_gpu_frame_stats`（池创建带显存上限，计费进既有 Charge 新类目 gpu_frame_bytes；统计含搬运审计计数器——M2c 验收主指标）。
+**新导出**（池创建带显存上限，计费进既有 Charge 新类目 gpu_frame_bytes；统计含搬运审计计数器——M2c 验收主指标）：
+
+```c
+AM_API am_status_t amc_gpu_frame_pool_create(amc_context_t* ctx,
+    const void* cfg, amc_gpu_frame_pool_t** out_pool);
+AM_API am_status_t amc_gpu_frame_borrow(const amc_gpu_frame_t* frame);
+AM_API am_status_t amc_gpu_frame_return(amc_gpu_frame_t* frame);
+AM_API am_status_t amc_gpu_frame_release(amc_gpu_frame_t* frame);
+AM_API am_status_t amc_gpu_frame_stats(const amc_gpu_frame_t* frame,
+    am_gpu_frame_stats_t* out);
+```
 
 **能力位**：`AMC_CAP_GPU_FRAMES`（编译编入+运行时可用的双条件）。
 

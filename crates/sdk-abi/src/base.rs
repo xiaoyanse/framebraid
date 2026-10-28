@@ -27,6 +27,14 @@ pub struct amc_frame_t {
     _opaque: [u8; 0],
 }
 #[repr(C)]
+pub struct amc_gpu_frame_pool_t {
+    _opaque: [u8; 0],
+}
+#[repr(C)]
+pub struct amc_gpu_frame_t {
+    _opaque: [u8; 0],
+}
+#[repr(C)]
 pub struct amc_capture_sub_t {
     _opaque: [u8; 0],
 }

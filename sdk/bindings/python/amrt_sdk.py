@@ -259,6 +259,12 @@ class amc_frame_sub_t(Structure):
 class amc_frame_t(Structure):
     pass
 
+class amc_gpu_frame_pool_t(Structure):
+    pass
+
+class amc_gpu_frame_t(Structure):
+    pass
+
 class amc_capture_sub_t(Structure):
     pass
 
@@ -1430,6 +1436,11 @@ FUNCTIONS = {
     "amc_frame_get_meta": (am_status_t, [POINTER(amc_frame_t), POINTER(am_frame_meta_t)]),
     "amc_frame_get_scaled": (am_status_t, [POINTER(amc_frame_t), c_uint32, c_uint32, c_uint32, POINTER(POINTER(amc_frame_t))]),
     "amc_frame_as_pixel_view": (am_status_t, [POINTER(amc_frame_t), POINTER(am_pixel_view_t)]),
+    "amc_gpu_frame_pool_create": (am_status_t, [POINTER(amc_context_t), c_void_p, POINTER(POINTER(amc_gpu_frame_pool_t))]),
+    "amc_gpu_frame_borrow": (am_status_t, [POINTER(amc_gpu_frame_t)]),
+    "amc_gpu_frame_return": (am_status_t, [POINTER(amc_gpu_frame_t)]),
+    "amc_gpu_frame_release": (am_status_t, [POINTER(amc_gpu_frame_t)]),
+    "amc_gpu_frame_stats": (am_status_t, [POINTER(amc_gpu_frame_t), POINTER(am_gpu_frame_stats_t)]),
     "amc_capture_sync": (am_status_t, [POINTER(amc_source_t), POINTER(am_capture_request_t), POINTER(POINTER(am_captured_image_t))]),
     "amc_capture_async": (am_status_t, [POINTER(amc_source_t), POINTER(am_capture_request_t), POINTER(c_uint64)]),
     "amc_captured_image_fetch": (am_status_t, [POINTER(amc_context_t), c_uint64, POINTER(POINTER(am_captured_image_t))]),
