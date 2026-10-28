@@ -2,9 +2,26 @@ use super::{digest, validate_url, Image, IoError};
 use crate::credentials::Secret;
 use image::ImageDecoder as _;
 use std::{
+    collections::HashMap,
     io::{Cursor, Read},
+    sync::{Mutex, OnceLock},
     time::{Duration, Instant},
 };
+
+/// 进程级 Digest challenge 缓存（origin → 最近 challenge）。容量上限防漂移；
+/// nonce 失效由 401 拒收回退刷新，不存凭据。
+static CHALLENGE_CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
+
+fn challenge_cache() -> &'static Mutex<HashMap<String, String>> {
+    CHALLENGE_CACHE.get_or_init(|| Mutex::new(HashMap::new()))
+}
+
+fn port_map(port: Option<u16>) -> String {
+    match port {
+        Some(p) => format!(":{p}"),
+        None => String::new(),
+    }
+}
 
 pub fn capture(
     url: &str,
@@ -32,18 +49,60 @@ pub fn capture(
         .timeout(timeout)
         .build()
         .map_err(network)?;
-    let mut response = client
-        .get(url)
-        .timeout(remaining(deadline)?)
-        .send()
-        .map_err(network)?;
-    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
-        let parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
-        let mut uri = parsed.path().to_owned();
-        if let Some(query) = parsed.query() {
-            uri.push('?');
-            uri.push_str(query);
+    // Digest challenge 缓存（2026-10-29，DEP-004 R2）：按源 origin 缓存最近一次
+    // challenge，命中时单事务直达（原实现每次先匿名探测 401，节拍恒 2 倍）。
+    // nonce 失效由服务器 401 拒收表达——快路径失败自动回退匿名探测并刷新缓存，
+    // 语义与逐次探测等价。跨源隔离按 origin（scheme+host+port）。
+    let parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
+    let cache_key = match (parsed.scheme(), parsed.host_str(), parsed.port()) {
+        (scheme, Some(host), port) => {
+            let port_suffix = port_map(port);
+            format!("{scheme}://{host}{port_suffix}")
         }
+        _ => String::new(),
+    };
+    let cached = if cache_key.is_empty() {
+        None
+    } else {
+        challenge_cache()
+            .lock()
+            .ok()
+            .and_then(|cache| cache.get(&cache_key).cloned())
+    };
+    let mut uri = parsed.path().to_owned();
+    if let Some(query) = parsed.query() {
+        uri.push('?');
+        uri.push_str(query);
+    }
+    let mut response = if let Some(header) = cached {
+        // 快路径：缓存 challenge 直接授权请求；拒收回退匿名重探。
+        let authorization = digest::authorization(&header, secret, &uri).ok();
+        match authorization
+            .and_then(|auth| {
+                client
+                    .get(url)
+                    .header(reqwest::header::AUTHORIZATION, auth)
+                    .timeout(remaining(deadline).ok()?)
+                    .send()
+                    .ok()
+            })
+            .filter(|response| response.status() != reqwest::StatusCode::UNAUTHORIZED)
+        {
+            Some(response) => response,
+            None => client
+                .get(url)
+                .timeout(remaining(deadline)?)
+                .send()
+                .map_err(network)?,
+        }
+    } else {
+        client
+            .get(url)
+            .timeout(remaining(deadline)?)
+            .send()
+            .map_err(network)?
+    };
+    if response.status() == reqwest::StatusCode::UNAUTHORIZED {
         let header = response
             .headers()
             .get_all(reqwest::header::WWW_AUTHENTICATE)
@@ -54,6 +113,11 @@ pub fn capture(
                     .is_some_and(|p| p.eq_ignore_ascii_case("digest "))
             })
             .ok_or(IoError::Unsupported)?;
+        if !cache_key.is_empty() {
+            if let Ok(mut cache) = challenge_cache().lock() {
+                cache.insert(cache_key, header.to_owned());
+            }
+        }
         let authorization = digest::authorization(header, secret, &uri)?;
         drop(response);
         response = client

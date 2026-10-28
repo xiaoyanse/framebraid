@@ -1028,6 +1028,12 @@
       "previousSha256": "6363e851b83c2b4ce3f1aa40c87200ebf552a5926c41182b919afaf035a4a504",
       "sha256": "ea42751b434a616158c87a533aa20928b10a446d864a784c1c43f72b55fd8367",
       "reason": "Reviewed default frame budget raise 96->128MiB with cpu-frame scratch precision 8->7 B/px (2160p downstream feedback); workspace green; C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/http.rs",
+      "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
+      "sha256": "9f4de2629f9803a363163a91f106f77d3b539f0f430c7c48459a5ee60b94f8d7",
+      "reason": "Reviewed digest challenge cache with 401 fallback refresh (single-transaction fast path per origin; no credentials stored); workspace green; C ABI unchanged"
     }
   ]
 }
