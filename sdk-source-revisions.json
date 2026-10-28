@@ -36,8 +36,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "e75bbc0e974c1bfdff0e58c6eaec6d0d8b68f7c0663d07638ffb544adb42f078",
-      "reason": "R5 reviewed adaptive batching scheduler TickOutcome lock-free pruning; live/benchmark verified; C ABI unchanged"
+      "sha256": "96fa6067e31481320fde10e61788df328095771ff299d6b8fe391ccef7b86fb1",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -210,8 +210,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "233b2fa8f204bf3124b6d8dbbefc13063d7c4ede1f507de7c84d2777a193f7c2",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "babcabc6f6268b25cc62c40fc81d7b95994971fa7468fc86a932206d51b42b41",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-support/src/context.rs",
@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "be8fbcc796c9d55d1cc5c7e13b6e87d9b5bbb48eb2566cbde9d3f4d824f19402",
-      "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
+      "sha256": "7c8bc7ba8f72af4cc70018e72ded21c7174f9b33f944d091101fdff488719022",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -396,20 +396,20 @@
     {
       "path": "crates/sdk-abi/src/fields_5.rs",
       "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-      "sha256": "19e8c8a97f721b8d3a7f35cf91c9506c2857796dd41a8a6a288cbe4aa2e8567a",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "6d61cbb7bccb4faba99665263b5b0e811a9efcabaa37abf1f8b4de02f6d8ab1a",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "33659b8a2b3d30f9c48cebffe6878fe2c5e97ead4c8085bbaad94c90df9f3281",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "e85e38855ed063ac860f20d0011e316ec6a9933d07cbb0baf807eb986ff2b2a7",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "b5ff45a278e3667fa497a4c6b56fb2963db8c0c4a6f2d93b0bd6c9530c1e9d48",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "401fe2258a9a162e3e2547e7a69d7bb14fa44db827b3ecd58456e09914e1a318",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
@@ -420,20 +420,20 @@
     {
       "path": "crates/sdk-abi/src/layout_5.rs",
       "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-      "sha256": "05f587ee15fb34339bc31f944d1c128b31905eb3453f4f013c80aa2a759c962f",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "96a981570f35539b5e10ad9007cae7fbead1e9aa33381d7d179c56da56034b76",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "bd32ddda0ae0e722c34dcf2e66016e3e7d1353361404e961ee3db51685f34795",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "0451f377bec3212d939ab9404fa67e3b00796fa91c4289753a3dc3561fd30342",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "77b9158d34e3a6c53d10e61f55de459a86c9a83683d5305584325f3565f47e11",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "ee7ff91c5f0b05eb0d27d60036e9d54d641edb2560e5e391c019ddf7e8f6226a",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
@@ -444,20 +444,20 @@
     {
       "path": "crates/sdk-abi/src/types_5.rs",
       "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-      "sha256": "426a2960c45312abb1c5170aa8df81d822b19a078294cef00e61b76f36bd1c5b",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "4245c0214379fe455e7679fdf92c51720b6481a40a812851079d8dc1047309f6",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "8e91c0b3b48bca156d1a0bfbc2065f5a4230c98a8e32b9a881365a16c5729f82",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "fa865a43811a867819c3baf26cc21d1c86a6a0a0facdd70418144ba516e1d77e",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "1dea94c0be5256ccd8c137120fa4b839d404b4ecff5236f05fca70f649103099",
-      "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+      "sha256": "7e28cc0e13eb71604f1adf07e271ad0e3989ce5c02bc4c7f042b240d4b20c703",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
@@ -960,8 +960,8 @@
     {
       "path": "crates/vision/src/lib.rs",
       "previousSha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1",
-      "sha256": "21f65a0832a5675d86fd23f20a9b6dc92f7edc529f0dceacbcfe7bcaf5c14600",
-      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+      "sha256": "ff1f82e2d66bd9065ab224e41f22713e0f73ceb7957c3178c2af651adecd6a2c",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/vision/src/backend.rs",
@@ -978,8 +978,8 @@
     {
       "path": "crates/vision/Cargo.toml",
       "previousSha256": "034454077caaa1098e33eabb804ed746be0441ac19fdd144c7e454934c43309d",
-      "sha256": "b18625da0f49966d0c7de1aa9d56058a338dea7acc85af3da01a879385be7ee4",
-      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+      "sha256": "f0c0cfc34542b2883869e716a0cf5bed3d86d880d8cf423de1fe28eb4a741c38",
+      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
     },
     {
       "path": "crates/sdk-abi/src/fields_2.rs",
@@ -998,6 +998,24 @@
       "previousSha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4",
       "sha256": "cbf3aa43969519b5d953d67865cee198915d5371ee50c5299ba0674bc5bf96aa",
       "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_tests.rs",
+      "previousSha256": "960b3f8654a66e4b75735436c1bab9919e8ef00297def9e2651ca8ea913247f4",
+      "sha256": "c9fd76a6ce2371fa0b7a6d1c5d0511549dcca9eb911227badaf9833d9cc79972",
+      "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/lib.rs",
+      "previousSha256": "5ae46b1dd32bc386bbc0e7b6d4e11d7ded4eee838ba9a811aaeaa2d2147a8db3",
+      "sha256": "86258c64d9de0b606555c5905a0f8bc2b140dbb02c5ed17fe6162b57d72e5213",
+      "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/input.rs",
+      "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
+      "sha256": "66ac70c6e8d01131892bbc73ed4325e5f151dc784cc345038db4a7c95ce84fca",
+      "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
     }
   ]
 }
