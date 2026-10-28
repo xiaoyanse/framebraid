@@ -22,6 +22,8 @@ pub(super) struct GpuFramePoolInner {
     pub stats_cpu_fallbacks: AtomicU64,
     pub stats_bytes_est: AtomicU64,
     pub stopping: AtomicBool,
+    /// SOFTWARE_ONLY 策略下 GPU 订阅返回 notSupported（§2.6a，不静默降级）。
+    pub software_only: bool,
 }
 
 /// GPU 帧对象：持有纹理引用与元数据，Drop 归还池计数。
@@ -52,12 +54,24 @@ impl GpuFramePoolInner {
         info: &GpuFrameInfo,
         texture: *mut c_void,
     ) -> Result<GpuFrame> {
+        if self.software_only {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        // 关闭排空：stopping 后拒绝新帧，语义与共享帧池关闭后 active() 拒绝一致。
+        if self.stopping.load(Ordering::Acquire) {
+            return Err(AM_ERR_SDK_HANDLE_CLOSED);
+        }
         let bytes = info.info.rgba_bytes as u64;
         self.try_admit(bytes)?;
         self.frames_in_use.fetch_add(1, Ordering::AcqRel);
         self.bytes_in_use.fetch_add(bytes, Ordering::AcqRel);
         self.stats_delivered.fetch_add(1, Ordering::AcqRel);
         self.stats_bytes_est.fetch_add(bytes, Ordering::AcqRel);
+        let fallback = info.shared_nt_handle == 0;
+        if fallback {
+            // 缺共享标志：降级回读交付（不失败），计入降级计数（§2.6a）。
+            self.stats_cpu_fallbacks.fetch_add(1, Ordering::AcqRel);
+        }
         let desc = am_gpu_frame_desc_t {
             struct_size: std::mem::size_of::<am_gpu_frame_desc_t>() as u32,
             width: info.info.width,
@@ -65,7 +79,7 @@ impl GpuFramePoolInner {
             d3d_format: info.d3d_format,
             subresource: info.subresource,
             shared_nt_handle: info.shared_nt_handle,
-            flags: if info.shared_nt_handle == 0 { 1 } else { 0 },
+            flags: if fallback { 1 } else { 0 },
             assoc: Default::default(),
         };
         Ok(GpuFrame {

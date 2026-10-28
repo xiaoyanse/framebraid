@@ -25,6 +25,8 @@ use config::{convert, runtime, Config, Gate};
 use receive::receive;
 use retained::{BudgetedGate, OwnedConfig};
 #[cfg(test)]
+mod gpu_pool_tests;
+#[cfg(test)]
 mod tests;
 
 struct Packet {
