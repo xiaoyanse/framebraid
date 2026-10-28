@@ -1,0 +1,214 @@
+//
+// Handwritten PTX 2026-10-29 (M2b 3.4): NV12 planes (global buffers) -> RGB NCHW f32
+// letterbox preprocess; mirrors CPU reference (preprocess.rs) coord rules:
+// scale=min(dst/src), round+clamp, floor-div letterbox pad 114/255, /255 normalize.
+// Color: BT.601 limited range (matches camera swscale NV12 path; parity-checked).
+// Y plane = src_w*src_h u8; UV plane = (src_w/2)*(src_h/2) interleaved u8.
+// Bilinear is hand-rolled (no tex object path: ptxas rejects register texref form;
+// revisit with texture objects as a later zero-copy optimization).
+//
+.version 8.7
+.target sm_120
+.address_size 64
+
+.visible .entry nv12_letterbox(
+	.param .u64 y_ptr,
+	.param .u64 uv_ptr,
+	.param .u32 src_w,
+	.param .u32 src_h,
+	.param .u32 dst_w,
+	.param .u32 dst_h,
+	.param .u32 rw,
+	.param .u32 rh,
+	.param .u64 out_ptr
+)
+{
+	.reg .pred p, q;
+	// %r1=x %r2=y %r3=dst_w %r4=dst_h %r5=rw %r6=rh %r7=left %r8=top
+	// %r9=dx %r10=dy %r11=tmp %r12=hw %r13=sx0 %r14=sy0 %r15=sx1 %r16=sy1
+	// %r17=wgridx %r18=wgridy %r19=uvsx0 %r20=uvsy0 %r21=uvsx1 %r22=uvsy1
+	.reg .b32 %r<23>;
+	// %f1..=coords/weights, %f10=Y %f11=U %f12=V
+	.reg .f32 %f<32>;
+	.reg .b64 %rd<12>;
+
+	ld.param.u64 %rd1, [y_ptr];
+	ld.param.u64 %rd2, [uv_ptr];
+	ld.param.u32 %r3, [dst_w];
+	ld.param.u32 %r4, [dst_h];
+	ld.param.u32 %r5, [rw];
+	ld.param.u32 %r6, [rh];
+	ld.param.u64 %rd3, [out_ptr];
+
+	// x/y = global thread coords
+	mov.u32 %r1, %ctaid.x;
+	mov.u32 %r11, %ntid.x;
+	mov.u32 %r12, %tid.x;
+	mad.lo.s32 %r1, %r1, %r11, %r12;
+	mov.u32 %r2, %ctaid.y;
+	mov.u32 %r11, %ntid.y;
+	mov.u32 %r12, %tid.y;
+	mad.lo.s32 %r2, %r2, %r11, %r12;
+
+	setp.ge.s32 p, %r1, %r3;
+	@p bra DONE;
+	setp.ge.s32 p, %r2, %r4;
+	@p bra DONE;
+
+	// left/top = (dst - r) >> 1
+	sub.s32 %r7, %r3, %r5;
+	shr.s32 %r7, %r7, 1;
+	sub.s32 %r8, %r4, %r6;
+	shr.s32 %r8, %r8, 1;
+
+	// channel addresses: R/G/B (NCHW)
+	mad.lo.s32 %r11, %r2, %r3, %r1;
+	mul.lo.s32 %r12, %r4, %r3;
+	cvta.to.global.u64 %rd3, %rd3;
+	mul.wide.s32 %rd4, %r11, 4;
+	add.s64 %rd4, %rd3, %rd4;
+	mul.wide.s32 %rd6, %r12, 4;
+	add.s64 %rd5, %rd4, %rd6;
+	add.s64 %rd6, %rd5, %rd6;
+
+	// dx/dy = x-left, y-top; pad check
+	sub.s32 %r9, %r1, %r7;
+	sub.s32 %r10, %r2, %r8;
+	setp.lt.s32 p, %r9, 0;
+	@p bra PAD;
+	setp.lt.s32 p, %r10, 0;
+	@p bra PAD;
+	setp.ge.s32 p, %r9, %r5;
+	@p bra PAD;
+	setp.ge.s32 p, %r10, %r6;
+	@p bra PAD;
+
+	// bilinear source coords: sx = (dx+0.5)*src/rw - 0.5
+	cvt.rn.f32.s32 %f1, %r9;
+	cvt.rn.f32.s32 %f2, %r10;
+	cvt.rn.f32.s32 %f3, %r5;
+	cvt.rn.f32.s32 %f4, %r6;
+	ld.param.u32 %r17, [src_w];
+	ld.param.u32 %r18, [src_h];
+	cvt.rn.f32.s32 %f5, %r17;
+	cvt.rn.f32.s32 %f6, %r18;
+	add.f32 %f1, %f1, 0f3F000000;
+	add.f32 %f2, %f2, 0f3F000000;
+	div.rn.f32 %f7, %f5, %f3;      // src_w/rw
+	div.rn.f32 %f8, %f6, %f4;      // src_h/rh
+	mul.f32 %f9, %f1, %f7;
+	sub.f32 %f9, %f9, 0f3F000000;  // sx
+	mul.f32 %f1, %f2, %f8;
+	sub.f32 %f1, %f1, 0f3F000000;  // sy
+
+	// integer neighbors (clamped)
+	cvt.rzi.s32.f32 %r13, %f9;     // sx0 = floor(sx)
+	cvt.rzi.s32.f32 %r14, %f1;     // sy0
+	cvt.rn.f32.s32 %f2, %r13;
+	sub.f32 %f10, %f9, %f2;        // fx
+	cvt.rn.f32.s32 %f2, %r14;
+	sub.f32 %f11, %f1, %f2;        // fy
+	add.s32 %r15, %r13, 1;         // sx1
+	add.s32 %r16, %r14, 1;         // sy1
+	max.s32 %r13, %r13, 0;
+	max.s32 %r14, %r14, 0;
+	min.s32 %r13, %r13, %r17;
+	min.s32 %r14, %r14, %r18;
+	sub.s32 %r11, %r17, 1;
+	min.s32 %r15, %r15, %r11;
+	sub.s32 %r11, %r18, 1;
+	min.s32 %r16, %r16, %r11;
+
+	// Y bilinear: base = y*src_w + x
+	mad.lo.s32 %r19, %r14, %r17, %r13;  // y00
+	mad.lo.s32 %r20, %r14, %r17, %r15;  // y01 (x+1)
+	mad.lo.s32 %r21, %r16, %r17, %r13;  // y10
+	mad.lo.s32 %r22, %r16, %r17, %r15;  // y11
+	cvta.to.global.u64 %rd7, %rd1;
+	mul.wide.s32 %rd8, %r19, 1;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u8 %r11, [%rd8];
+	mul.wide.s32 %rd8, %r20, 1;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u8 %r12, [%rd8];
+	mul.wide.s32 %rd8, %r21, 1;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u8 %r19, [%rd8];
+	mul.wide.s32 %rd8, %r22, 1;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u8 %r20, [%rd8];
+	cvt.rn.f32.u32 %f12, %r11;
+	cvt.rn.f32.u32 %f13, %r12;
+	cvt.rn.f32.u32 %f14, %r19;
+	cvt.rn.f32.u32 %f15, %r20;
+	sub.f32 %f13, %f13, %f12;      // v01-v00
+	mad.rn.f32 %f16, %f13, %f10, %f12; // top interp
+	sub.f32 %f15, %f15, %f14;
+	mad.rn.f32 %f17, %f15, %f10, %f14; // bottom interp
+	sub.f32 %f17, %f17, %f16;
+	mad.rn.f32 %f10, %f17, %f11, %f16; // Y final
+	mul.f32 %f10, %f10, 0f3B808081; // /255
+
+	// UV coords (half res): sxu = sx*0.5, neighbors clamped to (src_w>>1, src_h>>1)
+	mul.f32 %f9, %f9, 0f3F000000;
+	mul.f32 %f1, %f1, 0f3F000000;
+	cvt.rzi.s32.f32 %r19, %f9;
+	cvt.rzi.s32.f32 %r20, %f1;
+	shr.s32 %r21, %r17, 1;         // uv_w
+	shr.s32 %r22, %r18, 1;         // uv_h
+	max.s32 %r19, %r19, 0;
+	max.s32 %r20, %r20, 0;
+	sub.s32 %r11, %r21, 1;
+	min.s32 %r19, %r19, %r11;
+	sub.s32 %r11, %r22, 1;
+	min.s32 %r20, %r20, %r11;
+	// single-sample UV (nearest; chroma low-pass inherent in NV12)
+	mad.lo.s32 %r11, %r20, %r21, %r19;
+	cvta.to.global.u64 %rd9, %rd2;
+	// UV interleaved 2 bytes per texel: offset*2, u at +0, v at +1
+	shl.b32 %r11, %r11, 1;
+	mul.wide.s32 %rd8, %r11, 1;
+	add.s64 %rd8, %rd9, %rd8;
+	ld.global.u8 %r11, [%rd8];
+	add.s64 %rd10, %rd8, 1;
+	ld.global.u8 %r12, [%rd10];
+	cvt.rn.f32.u32 %f11, %r11;
+	mul.f32 %f11, %f11, 0f3B808081; // U /255
+	cvt.rn.f32.u32 %f12, %r12;
+	mul.f32 %f12, %f12, 0f3B808081; // V /255
+
+	// BT.601 limited
+	add.f32 %f13, %f10, 0fBD800000;
+	add.f32 %f14, %f11, 0fBF000000;
+	add.f32 %f15, %f12, 0fBF000000;
+	mul.f32 %f16, %f13, 0f3F950A3D;
+	mul.f32 %f17, %f15, 0f3FCBF5BB;
+	add.f32 %f17, %f16, %f17;      // R
+	mul.f32 %f18, %f14, 0fBEC82F5B;
+	add.f32 %f19, %f16, %f18;      // G partial
+	mul.f32 %f20, %f15, 0fBF50095D;
+	add.f32 %f19, %f19, %f20;      // G
+	mul.f32 %f21, %f14, 0f4001699A;
+	add.f32 %f22, %f16, %f21;      // B
+
+	// clamp [0,1] and store
+	max.f32 %f17, %f17, 0f00000000;
+	min.f32 %f17, %f17, 0f3F800000;
+	max.f32 %f19, %f19, 0f00000000;
+	min.f32 %f19, %f19, 0f3F800000;
+	max.f32 %f22, %f22, 0f00000000;
+	min.f32 %f22, %f22, 0f3F800000;
+	st.global.f32 [%rd4], %f17;
+	st.global.f32 [%rd5], %f19;
+	st.global.f32 [%rd6], %f22;
+	bra DONE;
+
+PAD:
+	mov.f32 %f17, 0f3EE4E4E5;      // 114/255
+	st.global.f32 [%rd4], %f17;
+	st.global.f32 [%rd5], %f17;
+	st.global.f32 [%rd6], %f17;
+
+DONE:
+	ret;
+}
