@@ -75,19 +75,19 @@ pub fn capture(
         uri.push_str(query);
     }
     let mut response = if let Some(header) = cached {
-        // 快路径：缓存 challenge 直接授权请求；拒收回退匿名重探。
+        // 快路径：缓存 challenge 直接授权请求。nonce 一次性/轮换的服务器以 401
+        // 拒收并附新 challenge——该响应直接进入下方统一分支消费新 challenge
+        // 重授权（无匿名回退）：任何 nonce 语义下每拍 ≤2 事务，可复用 nonce
+        // 的服务器 1 事务。
         let authorization = digest::authorization(&header, secret, &uri).ok();
-        match authorization
-            .and_then(|auth| {
-                client
-                    .get(url)
-                    .header(reqwest::header::AUTHORIZATION, auth)
-                    .timeout(remaining(deadline).ok()?)
-                    .send()
-                    .ok()
-            })
-            .filter(|response| response.status() != reqwest::StatusCode::UNAUTHORIZED)
-        {
+        match authorization.and_then(|auth| {
+            client
+                .get(url)
+                .header(reqwest::header::AUTHORIZATION, auth)
+                .timeout(remaining(deadline).ok()?)
+                .send()
+                .ok()
+        }) {
             Some(response) => response,
             None => client
                 .get(url)
