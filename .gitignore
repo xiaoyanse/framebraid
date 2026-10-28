@@ -11,5 +11,6 @@
 *.key
 *.pfx
 *.sqlite*
-.omc/.pm/
-*/.omc/
+.omc/
+.pm/
+**/.omc/
