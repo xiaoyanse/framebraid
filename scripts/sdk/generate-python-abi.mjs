@@ -50,7 +50,24 @@ export async function generatePython({ check = false } = {}) {
       `\n${name} = c_int32\n` + values.map((v) => `${v.name} = ${v.value}`).join('\n') + '\n';
   result +=
     '\n' + model.callbacks.map((c) => `${c.name} = ${pythonType(c.type)}`).join('\n') + '\n';
-  for (const s of model.structures)
+  // ctypes 限制：字段引用过的 Structure 后不能再设 _fields_，按依赖拓扑序输出。
+  const known = new Set(model.structures.map((s) => s.name));
+  const remaining = [...model.structures];
+  const ordered = [];
+  while (remaining.length) {
+    let progressed = false;
+    for (let i = 0; i < remaining.length; i++) {
+      const deps = remaining[i].fields
+        .map((f) => f.type.match(/^\*?(?:const |mut )?(am_\w+_t)$/)?.[1])
+        .filter((d) => d && known.has(d));
+      if (deps.every((d) => ordered.some((s) => s.name === d))) {
+        ordered.push(remaining.splice(i, 1)[0]);
+        progressed = true;
+      }
+    }
+    if (!progressed) throw new Error('结构体循环依赖或未知类型');
+  }
+  for (const s of ordered)
     result += `\n${s.name}._fields_ = [\n${s.fields.map((f) => `    ("${f.name}", ${pythonType(f.type)}),`).join('\n')}\n]\n`;
   const constants = {
     ...config.constants,

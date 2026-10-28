@@ -377,6 +377,7 @@ namespace AmrtSdk {
         public uint @mode;
         public uint @queue_max_items;
         public ulong @queue_max_bytes;
+        public uint @frame_kind;
     }
 
     [StructLayout(LayoutKind.Sequential)]

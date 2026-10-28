@@ -360,6 +360,21 @@ typedef void (*am_frame_cb_fn)(amc_frame_sub_t* sub, amc_frame_t* frame, void* u
 - 像素格式首版集合（§9-O4 候选）：RGBA8/RGB8/BGR8/NV12；plane 有效长度经 `am_frame_view_t.plane_size_bytes[4]` 与 `strides[4]` 显式表达（P5：不假设行紧密，也不按 stride×height 猜测平面长度，遍历/拷贝以 plane_size_bytes 为准）；**色彩矩阵（BT.601/709/2020NCL）与色彩范围（LIMITED/FULL）经视图 `color_matrix`/`color_range` 字段每帧显式声明**（P5：NV12 必填有效值，RGB 格式忽略；YUV→RGB 换算按声明执行，不内定系数）。
 - **时间原点与映射质量（P5）**：全部 `*_at_ms` 时间戳原点=进程单调钟（Windows QueryPerformanceCounter / Unix CLOCK_MONOTONIC，即 STEADY/MONO 语义，不受系统改时影响）；跨 DLL/跨库传值不改原点，未知=INT64_MIN。`captured_at_ms` 为设备时钟映射到本地单调钟的结果，映射质量经 `clock_quality`（am_clock_quality_e：UNKNOWN / LOCAL_RECEIPT 仅本地接收 / DEVICE_SYNCED 设备同步 / EXTRAPOLATED 外推）声明，不把外推冒充同步。
 
+### 2.6a GPU 帧订阅与显存帧池（M2a，未发布兼容扩展）
+
+像素订阅新增 `frame_kind`（尾部追加，struct_size 协商；默认 0=像素与既有行为完全一致）。
+
+**GPU 帧交付语义**：
+- `frame_kind=1` 时，硬解（PREFER_HW 实际激活）输出的 D3D11 纹理经共享 NT 句柄以 `am_gpu_frame_t` 不透明句柄交付；元数据（宽/高/DXGI 格式/子资源/关联身份）经 `amc_gpu_frame_desc` 查询
+- SOFTWARE_ONLY 策略下 GPU 订阅返回 `notSupported`（不静默降级为像素）；纹理缺共享标志时降级回读交付并标 `flags=1`（fallback），不失败
+- GPU 帧借用/归还语义与共享帧池一致（租约、池满拒绝、关闭排空）
+
+**新导出**：`amc_gpu_frame_pool_create / amc_gpu_frame_borrow / amc_gpu_frame_return / amc_gpu_frame_release / amc_gpu_frame_stats`（池创建带显存上限，计费进既有 Charge 新类目 gpu_frame_bytes；统计含搬运审计计数器——M2c 验收主指标）。
+
+**能力位**：`AMC_CAP_GPU_FRAMES`（编译编入+运行时可用的双条件）。
+
+**同进程约束**：`shared_nt_handle` 仅供同进程跨 DLL 消费（Vision 互操作）；跨进程共享后续。
+
 ### 2.7 抓图（ISAPI：单次同步/异步 + 连续订阅 N02；B03 闭环）
 
 **单次抓图（同步/异步）+ 异步取回闭环（B03）**：
