@@ -127,6 +127,11 @@ impl MultipartParser {
         self.discarded
     }
 
+    /// Content-Length 谎报计数（诊断用；分帧不依赖该头）。
+    pub fn false_content_length(&self) -> u64 {
+        self.false_content_length
+    }
+
     /// 无 boundary 进展累计字节量（IO 层与时间窗配合判定恶意无界流）。
     pub fn bytes_without_progress(&self) -> usize {
         self.bytes_since_progress
@@ -367,7 +372,7 @@ impl MultipartParser {
 
     fn find_header_end(&self) -> Option<usize> {
         let data: Vec<u8> = self.buffer.iter().copied().collect();
-        find_subsequence(&data, b"\r\n\r\n").map(|at| at)
+        find_subsequence(&data, b"\r\n\r\n")
     }
 }
 
