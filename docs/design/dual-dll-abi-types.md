@@ -531,7 +531,10 @@ typedef struct amv_capability_s {
                                   尾部追加字段，旧消费者按 struct_size 忽略） */
 } amv_capability_t;
 
-typedef enum am_backend_e { AM_BACKEND_CPU = 0, AM_BACKEND_OPENVINO = 1, AM_BACKEND_CUDA = 2 } am_backend_e;
+typedef enum am_backend_e { AM_BACKEND_CPU = 0, AM_BACKEND_OPENVINO = 1, AM_BACKEND_CUDA = 2,
+  AM_BACKEND_DIRECTML = 3 } am_backend_e;
+/* DIRECTML（未发布本地扩展，E2）：Windows DirectML 执行后端。值追加不重排；device_id 忽略
+   （DirectML EP 自行选择适配器）；矩阵行与探测/回退语义同其他后端。 */
 /* 首版后端枚举=CPU/OpenVINO/CUDA，无 TensorRT（P9：描述与枚举对齐——TRT 列后续候选，经能力位+
    小版本演进；不描述未列枚举的降级链） */
 typedef struct am_backend_row_s {

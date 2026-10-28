@@ -10,6 +10,7 @@ pub fn backend_key(backend: InferenceBackend) -> &'static str {
         InferenceBackend::Cpu => "cpu",
         InferenceBackend::OpenVINO => "openvino",
         InferenceBackend::Cuda => "cuda",
+        InferenceBackend::DirectML => "directml",
     }
 }
 /// 解析后端字符串；未知值报错，禁止静默映射到任一后端。
@@ -18,6 +19,7 @@ pub fn parse_backend(value: &str) -> Result<InferenceBackend, Error> {
         "cpu" => Ok(InferenceBackend::Cpu),
         "openvino" => Ok(InferenceBackend::OpenVINO),
         "cuda" => Ok(InferenceBackend::Cuda),
+        "directml" => Ok(InferenceBackend::DirectML),
         _ => Err(Error("vision.backendUnsupported".into())),
     }
 }
@@ -338,4 +340,13 @@ mod tests {
         assert!(resolve_runtime(vec![absent_file, dir.clone()], library_name()).is_none());
         let _ = std::fs::remove_dir_all(dir);
     }
+}
+
+#[test]
+fn directml_key_round_trip() {
+    assert_eq!(backend_key(InferenceBackend::DirectML), "directml");
+    assert!(matches!(
+        parse_backend("directml"),
+        Ok(InferenceBackend::DirectML)
+    ));
 }

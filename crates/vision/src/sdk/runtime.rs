@@ -78,7 +78,7 @@ pub(super) fn claim_backend(backend: u32) -> Result<()> {
 }
 impl Backends {
     fn claim(&mut self, backend: u32) -> Result<()> {
-        if backend > 2 {
+        if backend > 3 {
             return Err(Error("sdk.invalidArgument".into()));
         }
         if backend != 0 {
@@ -157,7 +157,7 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
 pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<BackendStatus>> {
     let state = observations()?;
     let ready = initialized();
-    Ok((0..3)
+    Ok((0..4)
         .map(|backend| {
             let dependencies = dirs.iter().any(|d| {
                 let d = Path::new(d);
@@ -166,6 +166,11 @@ pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<Backend
                 }
                 match backend {
                     0 => true,
+                    3 => {
+                        // DirectML（E2）：运行库目录自含 DirectML.dll 或系统可解析。
+                        d.join(if cfg!(windows) { "DirectML.dll" } else { "libdirectml.so" })
+                            .is_file()
+                    }
                     1 => {
                         d.join(if cfg!(windows) {
                             "onnxruntime_providers_openvino.dll"

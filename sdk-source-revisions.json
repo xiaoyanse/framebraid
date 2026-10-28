@@ -240,8 +240,8 @@
     {
       "path": "crates/sdk-abi/src/base.rs",
       "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-      "sha256": "310b210748f66fd790c15b7afb650449d6d827432d0cfac4b6850719eb3a266e",
-      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending"
+      "sha256": "02e4d80bd48b55d369a4a0a26df79e291971932c156f51985851191e61bf806c",
+      "reason": "Reviewed local RTSP native selection/policy/report and isolated pixel recovery; preserve ABI layouts and compressed stream epochs; explicit hardware/software/language tests; full pressure/performance acceptance pending；E2 DirectML枚举值3经生成器同步（生成物非手改）"
     },
     {
       "path": "crates/camera-ffi/src/sources/hardware.rs",
@@ -270,8 +270,8 @@
     {
       "path": "crates/vision/src/sdk/runtime.rs",
       "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
-      "sha256": "18b14f81f9386ce0afc36730bdc8f4dd7a5b7976f88774661b5b47e898f274ff",
-      "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
+      "sha256": "d6cd1657d81d94f5172892e2e5e390d3319d3a8b9a582f319f993f6ebec94324",
+      "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数；E2 DirectML后端枚举扩展（第四推理路径）"
     },
     {
       "path": "crates/vision/src/sdk/runtime/devices.rs",
@@ -282,8 +282,8 @@
     {
       "path": "crates/vision/src/sdk/selection.rs",
       "previousSha256": null,
-      "sha256": "2f2d5c43e0ac4760ef80d15baed5694cdeda168cfe1692dc84bfb1f8ef2db9fe",
-      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI"
+      "sha256": "09b04b4af4938ce30afcd9e90c8bbfb41ab019858c7309fa9e41bbb97bca18cf",
+      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI；E2 DirectML后端枚举扩展（第四推理路径）"
     },
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
@@ -294,8 +294,8 @@
     {
       "path": "crates/vision/src/sdk/session.rs",
       "previousSha256": null,
-      "sha256": "c5d637f90fdcb7912d25dddc62071d9211289621d5c83d3dfc9326effee072b0",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+      "sha256": "dc26268694a44926b6a0499e3fece03a5e5a6f4d983bdad0a44af524e3c0c8d4",
+      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；E2 DirectML后端枚举扩展（第四推理路径）"
     },
     {
       "path": "crates/vision-ffi/Cargo.toml",
@@ -463,7 +463,7 @@
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
       "sha256": "ebc88f0e006564b167ec6544cfa19445f0af3b10aebb2411766a0fae1b5a051d",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；E2 DirectML后端枚举扩展（第四推理路径）"
     },
     {
       "path": "crates/vision-ffi/src/inference/results.rs",
@@ -534,8 +534,8 @@
     {
       "path": "crates/am-camera/src/media/h264/session_tests.rs",
       "previousSha256": "d8268827e64df362ad31d296425d7e644a8a5c8f8c2f23f41c1d84e3f1fa8ad4",
-      "sha256": "1eb0270083a9e2fd716327ddf24dc608087654b1bad50262a9b15001a43f978a",
-      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+      "sha256": "d18a42ac1b0f27405f2fa55d7b91c7478600b6977136b1389f7e4cb5253c2b55",
+      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged；CI环境跳过标注补登；FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
     },
     {
       "path": "crates/camera-ffi/src/captures/state.rs",
@@ -918,8 +918,8 @@
     {
       "path": "crates/vision-ffi/src/inference/backends.rs",
       "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
-      "sha256": "40c5b97e072340608c7b54943b7142935f48daf332f15cbe87567574220c2a97",
-      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证"
+      "sha256": "f99db0986ba2a46eea9e9606fd808367e5022767f1e9181c00eabd23143ee942",
+      "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证；E2 DirectML后端枚举扩展（第四推理路径）"
     },
     {
       "path": "crates/vision/src/sdk/runtime/windows.rs",
@@ -944,6 +944,42 @@
       "previousSha256": "13de2cdb439cdcf8b2ce2df3553db2834b68c30028cc537cfed9cfd60ef3fee8",
       "sha256": "399f419aecbb2dca9a29326953381a03988d01dc08cd2943ae0fcb169e35e306",
       "reason": "自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/codec_probe_tests.rs",
+      "previousSha256": "75e5b9af10fe151d4f223b4e3d2435745ebdc64a9b3c542d88562e7b4a1c6fc9",
+      "sha256": "543c11c84889d15661d6458440ca6c2e36c7238b393eaf657f8be86484454367",
+      "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+    },
+    {
+      "path": "crates/am-camera/src/media/rtsp_tests.rs",
+      "previousSha256": "95612225fa8ea084f57daf874a6b8772baddab37be8e3d3eb36ab4fb08310978",
+      "sha256": "7527551cd579c642820054f85f162d6888a946f61a9ab9486d4bfb94e719df54",
+      "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+    },
+    {
+      "path": "crates/vision/src/lib.rs",
+      "previousSha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1",
+      "sha256": "21f65a0832a5675d86fd23f20a9b6dc92f7edc529f0dceacbcfe7bcaf5c14600",
+      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+    },
+    {
+      "path": "crates/vision/src/backend.rs",
+      "previousSha256": "2a547cf15326cd01e70a96633cd80e0705070de034a58128c5380c571708d348",
+      "sha256": "21862eca35ad850cfc4302fb5840c5eab00e185e7e9147f9668020f3f9dce024",
+      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+    },
+    {
+      "path": "crates/vision-types/src/lib.rs",
+      "previousSha256": "c98be30689144e0ac32b46e9417ffc202c27904e048c6bff90be02a19dbebc31",
+      "sha256": "5838d5aa88dcf761157305d72ef78d237c25e1d94d51c8bf4f4c518da8785f6c",
+      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+    },
+    {
+      "path": "crates/vision/Cargo.toml",
+      "previousSha256": "034454077caaa1098e33eabb804ed746be0441ac19fdd144c7e454934c43309d",
+      "sha256": "b18625da0f49966d0c7de1aa9d56058a338dea7acc85af3da01a879385be7ee4",
+      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
     }
   ]
 }

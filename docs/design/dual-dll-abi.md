@@ -666,6 +666,8 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
   - **运行期切换**：configure 可在任何时刻调用；切换只影响此后接受的新请求，已进入等待窗口的在途项按切换前配置走完（凑满/截止/排空三择一）后生效。查询在关闭状态返回全零计数与默认选项。
   - 能力查询与实际支持一致：无动态批量能力的模型 get 返回 flags=0；绑定/生成器同步新导出与结构；本扩展不改变 batch_mode 既有三值语义——攒批只作用于 AUTO。
 
+- **DirectML 后端（未发布兼容扩展，E2）**：`AM_BACKEND_DIRECTML=3` 作为第四推理路径（Windows 任意 GPU：Intel/AMD/NVIDIA）。矩阵第四行字段语义同其他后端（hw=运行库目录或系统含 DirectML.dll 且枚举到适配器；deps=d3d11+DirectML 运行库；loadable=ORT 会话以 DmlExecutionProvider 创建成功；verified=真实推理成功一次）。候选元组 device_id 忽略（EP 内部选卡，合同固定）；策略回退语义与其他后端一致。显式探测报告新增 directml 段（available；不承诺具体适配器型号）。不支持该值的旧绑定将收到 invalidArgument 而非未知崩溃。
+
 ### 3.6 结果获取（B02 五类结构 / B03 快照闭环 / B08 所有权）
 
 ```c

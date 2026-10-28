@@ -119,6 +119,7 @@ pub type am_backend_e = i32;
 pub const AM_BACKEND_CPU: am_backend_e = 0;
 pub const AM_BACKEND_OPENVINO: am_backend_e = 1;
 pub const AM_BACKEND_CUDA: am_backend_e = 2;
+pub const AM_BACKEND_DIRECTML: am_backend_e = 3;
 pub type am_dtype_e = i32;
 pub const AM_DTYPE_F32: am_dtype_e = 0;
 pub const AM_DTYPE_F16: am_dtype_e = 1;

@@ -24,7 +24,7 @@ impl BackendSelectionPolicy {
             return Err(Error("sdk.invalidArgument".into()));
         }
         for (i, target) in self.priority.iter().enumerate() {
-            if target.backend > 2
+            if target.backend > 3
                 || target.device_id > i32::MAX as u32
                 || target.backend != 2 && target.device_id != 0
                 || self.priority[..i].contains(target)
@@ -171,6 +171,27 @@ mod tests {
             budget_ms: 1000,
         }
     }
+    #[test]
+    fn directml_backend_value_accepted_with_zero_device() {
+        // E2：backend=3 合法；device_id 非 0 拒绝（合同：DirectML 忽略 device_id）。
+        let mut p = policy();
+        p.priority[0] = BackendTarget {
+            backend: 3,
+            device_id: 0,
+        };
+        assert!(p.validate().is_ok());
+        p.priority[0] = BackendTarget {
+            backend: 3,
+            device_id: 1,
+        };
+        assert!(p.validate().is_err());
+        p.priority[0] = BackendTarget {
+            backend: 4,
+            device_id: 0,
+        };
+        assert!(p.validate().is_err());
+    }
+
     #[test]
     fn allowlist_strict_errors_and_legacy_conflicts_are_distinct() {
         let mut p = policy();

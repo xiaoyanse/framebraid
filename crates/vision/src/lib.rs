@@ -32,6 +32,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 fn runtime_for(backend: InferenceBackend) -> Result<()> {
     static CPU: OnceLock<std::result::Result<(), String>> = OnceLock::new();
     static GPU: OnceLock<std::result::Result<(), String>> = OnceLock::new();
+    // DirectML 用 CPU 线：directml wheel 是单目录包（onnxruntime.dll+DirectML.dll），
+    // 无独立 GPU 目录语义，与 CPU 包互斥同线加载。
     let cell = match backend {
         InferenceBackend::Cuda => &GPU,
         _ => &CPU,
@@ -74,6 +76,9 @@ impl PoseModel {
             InferenceBackend::Cpu => Self::load_with(path, cpu_execution(), None),
             InferenceBackend::OpenVINO => {
                 Self::load_or_fallback(path, "OpenVINO", openvino_execution(), openvino_ep())
+            }
+            InferenceBackend::DirectML => {
+                Self::load_or_fallback(path, "DirectML", directml_execution(), directml_ep())
             }
             InferenceBackend::Cuda => {
                 // 真逐级 TRT→CUDA→CPU：TRT 失败必须先试 CUDA，禁止跳级落 CPU（DEL-16）；
@@ -285,6 +290,19 @@ fn openvino_execution() -> ExecutionInfo {
         fallback_reason: None,
     }
 }
+/// DirectML EP（E2）：运行库目录自含 DirectML.dll；注册失败按策略回退。
+fn directml_ep() -> ort::ep::ExecutionProviderDispatch {
+    ort::ep::DirectML::default().build()
+}
+
+fn directml_execution() -> ExecutionInfo {
+    ExecutionInfo {
+        backend: InferenceBackend::DirectML,
+        device: "DirectML".into(),
+        fallback_reason: None,
+    }
+}
+
 fn cuda_execution() -> ExecutionInfo {
     ExecutionInfo {
         backend: InferenceBackend::Cuda,

@@ -356,6 +356,7 @@ am_backend_e = c_int32
 AM_BACKEND_CPU = 0
 AM_BACKEND_OPENVINO = 1
 AM_BACKEND_CUDA = 2
+AM_BACKEND_DIRECTML = 3
 
 am_dtype_e = c_int32
 AM_DTYPE_F32 = 0

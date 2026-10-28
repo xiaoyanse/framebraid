@@ -11,10 +11,10 @@ use am_vision_core::sdk::runtime;
 use std::{path::Path, sync::Mutex};
 
 static INITIALIZATION: Mutex<Option<i32>> = Mutex::new(None);
-pub struct Rows(pub Box<[am_backend_row_t; 3]>);
+pub struct Rows(pub Box<[am_backend_row_t; 4]>);
 impl Default for Rows {
     fn default() -> Self {
-        Self(Box::new([am_backend_row_t::default(); 3]))
+        Self(Box::new([am_backend_row_t::default(); 4]))
     }
 }
 // note仅指向静态字符串；同ctx下一次查询是公布的有效期终点。
@@ -107,7 +107,7 @@ pub unsafe extern "C" fn amv_query_backends(
         args::write(
             out,
             am_backend_matrix_t {
-                row_count: 3,
+                row_count: 4,
                 rows: rows.0.as_ptr(),
                 ..Default::default()
             },

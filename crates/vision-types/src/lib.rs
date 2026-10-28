@@ -1,7 +1,7 @@
 //! SDK 推理值类型；无模型运行库、宿主服务或业务副作用。
 use serde::{Deserialize, Serialize};
 
-/// 推理后端（P09）：CPU / OpenVINO 执行提供器 / CUDA（GPU 包按需安装）。
+/// 推理后端（P09）：CPU / OpenVINO 执行提供器 / CUDA（GPU 包按需安装）/ DirectML（E2）。
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, Default, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(utoipa::ToSchema))]
 #[serde(rename_all = "lowercase")]
@@ -10,6 +10,7 @@ pub enum InferenceBackend {
     Cpu,
     OpenVINO,
     Cuda,
+    DirectML,
 }
 
 /// 实际执行路径：请求后端、实际设备与回退原因（试推理展示用）。

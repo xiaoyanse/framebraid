@@ -17,6 +17,7 @@ pub(super) fn create(
     let supported = match target.backend {
         0 => ort::ep::CPU::default().is_available(),
         1 => ort::ep::OpenVINO::default().is_available(),
+        3 => ort::ep::DirectML::default().is_available(),
         _ => ort::ep::CUDA::default().is_available(),
     }
     .map_err(|e| AttemptError::native(e, "vision.backendStrictUnavailable", "compiled_provider"))?;
@@ -40,6 +41,7 @@ pub(super) fn create(
             .with_num_threads(threads)
             .build()
             .error_on_failure(),
+        3 => ort::ep::DirectML::default().build(),
         _ => ort::ep::CUDA::default()
             .with_device_id(target.device_id as i32)
             .build()
