@@ -67,6 +67,7 @@ typedef struct am_model_info_s am_model_info_t;
 typedef struct am_frame_assoc_s am_frame_assoc_t;
 typedef struct am_gpu_frame_desc_s am_gpu_frame_desc_t;
 typedef struct am_gpu_frame_stats_s am_gpu_frame_stats_t;
+typedef struct am_gpu_frame_ref_s am_gpu_frame_ref_t;
 typedef struct am_image_input_s am_image_input_t;
 typedef struct am_infer_params_s am_infer_params_t;
 typedef struct am_tensor_in_s am_tensor_in_t;
@@ -712,7 +713,8 @@ typedef struct amv_capability_s {
   uint32_t struct_size, abi_minor;
   uint32_t feature_bits;   /* AMV_CAP_IMAGE_INPUT|TENSOR_INPUT|RAW_MODEL|MEMORY_MODEL(P1)|
                               IMAGE_PREPROCESS_RAW|BATCH|RESULT_RAW_TENSOR|PUSH_NOTIFY|
-                              SHARED_FRAME_POOL（SDK-DEC-07 消费侧） */
+                              SHARED_FRAME_POOL（SDK-DEC-07 消费侧）|
+                              GPU_FRAME_INPUT（M2b bit10） */
   uint32_t dtype_bits;     /* AM_DTYPE_* 位集（§6；首版 F32/F16/I64/I32/U8，§9-O5） */
   uint32_t max_batch_items, max_models, infer_parallelism;
   uint64_t result_retention_default_ms;
@@ -856,15 +858,29 @@ typedef struct am_gpu_frame_stats_s {
   uint64_t bytes_transferred_est; /* 搬运审计估算（M2c 验收主指标） */
 } am_gpu_frame_stats_t;
 
+typedef struct am_gpu_frame_ref_s {
+  uint32_t struct_size;
+  uint32_t width, height;
+  uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 103=NV12） */
+  uint32_t subresource;        /* 纹理子资源索引 */
+  uint64_t shared_nt_handle;   /* 可选共享句柄；0=句柄不可得（纹理指针仍可用） */
+  void* texture;               /* 同进程纹理指针（租约借用期内有效；M2b 主交付物） */
+  uint32_t flags;              /* 保留=0 */
+  uint32_t reserved;
+  const am_frame_assoc_t* assoc; /* 可选关联（与像素输入同语义） */
+} am_gpu_frame_ref_t;
+
 typedef struct am_image_input_s {
   uint32_t struct_size;
-  uint32_t kind;               /* AM_IMG_JPEG / AM_IMG_PNG / AM_IMG_PIXEL_VIEW */
+  uint32_t kind;               /* AM_IMG_JPEG / AM_IMG_PNG / AM_IMG_PIXEL_VIEW / AM_IMG_GPU_FRAME */
   const uint8_t* encoded;      /* kind=JPEG/PNG：借用至同步返回/异步接受复制 */
   uint64_t encoded_size;
   const am_pixel_view_t* view; /* kind=PIXEL_VIEW：跨 DLL 视图（主文件 §5.6）或调用方自建视图；
                                  视图自带 assoc 时优先，除非本结构显式提供 */
   const am_frame_assoc_t* assoc;   /* B12：可选关联（NULL=无）；结果原样回填 */
   uint32_t flags;              /* AM_INPUT_BORROW_RETAINED：仅异步，显式保留拥有者 */
+  const am_gpu_frame_ref_t* gpu;   /* kind=GPU_FRAME（M2b）：同进程 GPU 帧直传，
+                                     借用至同步返回/异步接受（预处理在接受段完成） */
 } am_image_input_t;
 typedef struct am_infer_params_s {
   uint32_t struct_size;

@@ -15,3 +15,5 @@ mod group_5;
 mod group_6;
 #[path = "layout_7.rs"]
 mod group_7;
+#[path = "layout_8.rs"]
+mod group_8;

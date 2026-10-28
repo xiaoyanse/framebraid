@@ -21,9 +21,29 @@ function format(text) {
   });
 }
 
+/// 布局基线复用（2026-10-29）：基线条目含 offsets 且字段集与模型一致时复用，
+/// 仅新增/变更结构经 gcc 探针实测。基线全覆盖时零 gcc 调用——本机 gcc 工具链
+/// 因系统更新间歇不可用（cc1 加载失败）时生成器仍可运行；新结构在 gcc 不可用
+/// 时允许手工登记基线（须与 Rust layout_tests 单测交叉验证）。
 async function measure(model) {
   if (process.platform !== 'win32' || process.arch !== 'x64')
     throw new Error('布局基线仅允许Windows x64编译器生成');
+  const baselineFile = path.join(root, 'sdk/abi/layout-win-x64.json');
+  const baseline = JSON.parse(await fs.readFile(baselineFile, 'utf8')).structures ?? {};
+  const reusable = {};
+  const pending = [];
+  for (const structure of model.structures) {
+    const entry = baseline[structure.name];
+    const fieldNames = structure.fields.map((f) => f.name);
+    if (
+      entry?.offsets &&
+      Object.keys(entry.offsets).length === fieldNames.length &&
+      fieldNames.every((name, i) => entry.offsets[name] !== undefined)
+    ) {
+      reusable[structure.name] = entry;
+    } else pending.push(structure);
+  }
+  if (pending.length === 0) return reusable;
   const scratch = path.join(root, '.local/tests/abi-layout');
   for (const relative of ['.local', '.local/tests', '.local/tests/abi-layout']) {
     const stat = await fs.lstat(path.join(root, relative)).catch((e) => { if (e.code === 'ENOENT') return null; throw e; });
@@ -34,7 +54,7 @@ async function measure(model) {
   const source = path.join(directory, 'probe.c');
   const executable = path.join(directory, 'probe.exe');
   try {
-    await fs.writeFile(source, cLayoutProbe(model));
+    await fs.writeFile(source, cLayoutProbe({ ...model, structures: pending }));
     execFileSync('gcc', [
       '-std=c11',
       '-Wall',
@@ -46,7 +66,11 @@ async function measure(model) {
       '-o',
       executable,
     ]);
-    return parseLayout(execFileSync(executable, [], { encoding: 'utf8' }), model);
+    const measured = parseLayout(
+      execFileSync(executable, [], { encoding: 'utf8' }),
+      { ...model, structures: pending },
+    );
+    return { ...reusable, ...measured };
   } finally {
     // 探针目录只含本次两个普通文件，逐个删除，避免递归越过目录链接。
     for (const file of [source, executable])
@@ -129,7 +153,10 @@ export async function generateRustAbi({ check = false } = {}) {
     } else await fs.writeFile(target, generated);
   }
   const baseline = Object.fromEntries(
-    Object.entries(measured).map(([name, l]) => [name, { size: l.size, align: l.align }]),
+    Object.entries(measured).map(([name, l]) => [
+      name,
+      { size: l.size, align: l.align, offsets: l.offsets },
+    ]),
   );
   const layoutFile = path.join(root, 'sdk/abi/layout-win-x64.json');
   const json =

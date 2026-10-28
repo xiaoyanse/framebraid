@@ -160,6 +160,9 @@ class am_gpu_frame_desc_t(Structure):
 class am_gpu_frame_stats_t(Structure):
     pass
 
+class am_gpu_frame_ref_t(Structure):
+    pass
+
 class am_image_input_t(Structure):
     pass
 
@@ -1092,6 +1095,19 @@ am_model_memory_desc_t._fields_ = [
     ("backend", POINTER(am_backend_policy_t)),
 ]
 
+am_gpu_frame_ref_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("width", c_uint32),
+    ("height", c_uint32),
+    ("d3d_format", c_uint32),
+    ("subresource", c_uint32),
+    ("shared_nt_handle", c_uint64),
+    ("texture", c_void_p),
+    ("flags", c_uint32),
+    ("reserved", c_uint32),
+    ("assoc", POINTER(am_frame_assoc_t)),
+]
+
 am_batching_stats_t._fields_ = [
     ("struct_size", c_uint32),
     ("abi_minor", c_uint32),
@@ -1228,6 +1244,7 @@ am_image_input_t._fields_ = [
     ("view", POINTER(am_pixel_view_t)),
     ("assoc", POINTER(am_frame_assoc_t)),
     ("flags", c_uint32),
+    ("gpu", POINTER(am_gpu_frame_ref_t)),
 ]
 
 am_batch_item_t._fields_ = [
@@ -1441,6 +1458,8 @@ FUNCTIONS = {
     "amc_gpu_frame_return": (am_status_t, [POINTER(amc_gpu_frame_t)]),
     "amc_gpu_frame_release": (am_status_t, [POINTER(amc_gpu_frame_t)]),
     "amc_gpu_frame_stats": (am_status_t, [POINTER(amc_gpu_frame_t), POINTER(am_gpu_frame_stats_t)]),
+    "amc_gpu_frame_desc": (am_status_t, [POINTER(amc_gpu_frame_t), POINTER(am_gpu_frame_desc_t)]),
+    "amc_gpu_frame_texture": (am_status_t, [POINTER(amc_gpu_frame_t), POINTER(c_void_p)]),
     "amc_capture_sync": (am_status_t, [POINTER(amc_source_t), POINTER(am_capture_request_t), POINTER(POINTER(am_captured_image_t))]),
     "amc_capture_async": (am_status_t, [POINTER(amc_source_t), POINTER(am_capture_request_t), POINTER(c_uint64)]),
     "amc_captured_image_fetch": (am_status_t, [POINTER(amc_context_t), c_uint64, POINTER(POINTER(am_captured_image_t))]),

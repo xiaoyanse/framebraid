@@ -1,6 +1,36 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_batching_options_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_batching_options_t>(), 20);
+    assert_eq!(core::mem::align_of::<am_batching_options_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, struct_size),
+        0,
+        "am_batching_options_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, abi_minor),
+        4,
+        "am_batching_options_t.abi_minor"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, max_batch_items),
+        8,
+        "am_batching_options_t.max_batch_items"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, max_wait_ms),
+        12,
+        "am_batching_options_t.max_wait_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_options_t, flags),
+        16,
+        "am_batching_options_t.flags"
+    );
+}
+#[test]
 fn am_batching_stats_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_batching_stats_t>(), 40);
     assert_eq!(core::mem::align_of::<am_batching_stats_t>(), 8);
@@ -268,20 +298,5 @@ fn am_classify_entry_t_matches_c() {
         core::mem::offset_of!(am_classify_entry_t, has_probability),
         24,
         "am_classify_entry_t.has_probability"
-    );
-}
-#[test]
-fn am_classify_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_classify_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_classify_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_classify_result_t, count),
-        0,
-        "am_classify_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_result_t, entries),
-        8,
-        "am_classify_result_t.entries"
     );
 }

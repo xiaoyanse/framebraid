@@ -3,323 +3,1078 @@
   "structures": {
     "am_version_info_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "abi_major": 4,
+        "abi_minor": 8,
+        "package_version_utf8": 16,
+        "build_target_utf8": 24,
+        "runtime_notes_utf8": 32
+      }
     },
     "amc_init_params_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "abi_version": 4,
+        "runtime_dirs_utf8": 8,
+        "runtime_dir_count": 16,
+        "reserved": 20,
+        "feature_flags": 40
+      }
     },
     "amv_init_params_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "abi_version": 4,
+        "runtime_dirs_utf8": 8,
+        "runtime_dir_count": 16,
+        "infer_threads": 20,
+        "domain_infer_slots": 24,
+        "total_thread_budget": 32,
+        "reserved": 36,
+        "feature_flags": 48
+      }
     },
     "am_error_info_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "code": 4,
+        "message_utf8": 8,
+        "source_utf8": 16,
+        "retryable": 24,
+        "fault_class": 28,
+        "reserved": 32
+      }
     },
     "am_init_error_t": {
       "size": 288,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "code": 4,
+        "message": 8,
+        "source_utf8": 264,
+        "failed_at_ms": 272,
+        "attempt_seq": 280
+      }
     },
     "am_request_snapshot_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "state": 4,
+        "terminal": 8,
+        "error": 16,
+        "created_at_ms": 24,
+        "finished_at_ms": 32,
+        "reserved": 40
+      }
     },
     "am_queue_policy_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "max_items": 4,
+        "max_bytes": 8,
+        "max_waiters": 16,
+        "wait_deadline_ms": 20,
+        "ttl_ms": 24,
+        "reserved": 28
+      }
     },
     "am_credential_data_t": {
       "size": 24,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "username_utf8": 8,
+        "password_utf8": 16
+      }
     },
     "am_credential_provider_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "fetch": 8,
+        "on_drop": 16,
+        "user_data": 24,
+        "fetch_timeout_ms": 32
+      }
     },
     "am_shared_frame_desc_t": {
       "size": 184,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "protocol_version": 0,
+        "pixel_format": 4,
+        "width": 8,
+        "height": 12,
+        "plane_count": 16,
+        "stride_bytes": 20,
+        "offset_bytes": 36,
+        "plane_valid_bytes": 52,
+        "color_matrix": 68,
+        "color_range": 72,
+        "publication_id": 80,
+        "frame_id": 88,
+        "source_id": 96,
+        "source_generation": 104,
+        "config_generation": 108,
+        "assoc_valid": 112,
+        "pool_generation": 116,
+        "time_flags": 120,
+        "pts": 128,
+        "time_base_num": 136,
+        "time_base_den": 140,
+        "captured_at_ms": 144,
+        "received_at_ms": 152,
+        "clock_quality": 160,
+        "reserved": 164
+      }
     },
     "am_shared_pool_config_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "slot_count": 4,
+        "max_frame_bytes": 8,
+        "total_bytes": 16,
+        "max_consumers": 24,
+        "max_outstanding_borrows": 28,
+        "drop_policy": 32,
+        "publish_wait_ms": 36,
+        "reserved": 40
+      }
     },
     "am_shared_pool_attach_desc_t": {
       "size": 72,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "protocol_version": 4,
+        "pool_id": 8,
+        "owner_pid": 16,
+        "owner_started_at_100ns": 24,
+        "pool_generation": 32,
+        "identity_tag": 36
+      }
     },
     "am_shared_frame_view_t": {
       "size": 232,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "desc": 8,
+        "plane_data": 192,
+        "borrow_id": 224
+      }
     },
     "am_shared_pool_stats_t": {
       "size": 88,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "published": 8,
+        "dropped_stale": 16,
+        "dropped_full": 24,
+        "wait_timeouts": 32,
+        "slots_in_use": 40,
+        "slots_borrowed": 44,
+        "outstanding_borrows": 48,
+        "consumers_attached": 52,
+        "bytes_in_use": 56,
+        "metadata_bytes": 64,
+        "reserved": 72
+      }
     },
     "amc_capability_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "abi_minor": 4,
+        "feature_bits": 8,
+        "pixel_formats": 12,
+        "max_sources": 16,
+        "max_decoders": 20,
+        "max_subscribers_per_source": 24,
+        "frame_budget_bytes": 32,
+        "shared_pool_state": 40
+      }
     },
     "am_source_desc_t": {
       "size": 64,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "kind": 4,
+        "url_utf8": 8,
+        "stream_kind_utf8": 16,
+        "creds": 24,
+        "provider": 32,
+        "reuse": 40,
+        "reserved": 44
+      }
     },
     "am_source_status_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "state": 4,
+        "source_id": 8,
+        "generation": 16,
+        "config_generation": 20,
+        "fault_class": 24,
+        "reconnect_attempts": 28,
+        "last_frame_at_ms": 32
+      }
     },
     "am_reconnect_policy_t": {
       "size": 20,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "initial_backoff_ms": 4,
+        "max_backoff_ms": 8,
+        "jitter_ms": 12,
+        "max_attempts": 16
+      }
     },
     "am_probe_candidate_t": {
       "size": 64,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "reference_utf8": 8,
+        "status": 16,
+        "codec_utf8": 24,
+        "width": 32,
+        "height": 36,
+        "fps": 40,
+        "observed_at_ms": 48,
+        "valid_until_ms": 56
+      }
     },
     "am_probe_request_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "candidate_count": 4,
+        "references_utf8": 8,
+        "creds": 16,
+        "force_refresh": 24,
+        "timeout_ms": 28
+      }
     },
     "am_probe_result_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "candidate_count": 4,
+        "candidates": 8
+      }
     },
     "am_encoded_packet_t": {
       "size": 80,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "codec": 4,
+        "bitstream_format": 8,
+        "flags": 12,
+        "config_generation": 16,
+        "source_generation": 20,
+        "source_id": 24,
+        "seq": 32,
+        "pts": 40,
+        "dts": 48,
+        "time_base_num": 56,
+        "time_base_den": 60,
+        "data": 64,
+        "size": 72
+      }
     },
     "am_encoded_sub_desc_t": {
       "size": 24,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "codec_mask": 4,
+        "mode": 8,
+        "queue_max_items": 12,
+        "queue_max_bytes": 16
+      }
     },
     "am_frame_view_t": {
       "size": 112,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "width": 4,
+        "height": 8,
+        "format": 12,
+        "plane_count": 16,
+        "planes": 24,
+        "strides": 56,
+        "plane_size_bytes": 72,
+        "color_matrix": 104,
+        "color_range": 108
+      }
     },
     "am_spatial_transform_t": {
       "size": 24,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "scale_x": 0,
+        "scale_y": 4,
+        "offset_x": 8,
+        "offset_y": 12,
+        "rotation": 16,
+        "valid": 20
+      }
     },
     "am_frame_meta_t": {
       "size": 104,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "source_id": 8,
+        "frame_id": 16,
+        "seq": 24,
+        "source_generation": 32,
+        "config_generation": 36,
+        "pts": 40,
+        "time_base_num": 48,
+        "time_base_den": 52,
+        "received_at_ms": 56,
+        "captured_at_ms": 64,
+        "clock_mask": 72,
+        "clock_quality": 76,
+        "transform": 80
+      }
     },
     "am_scale_preset_t": {
       "size": 8,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "width": 0,
+        "height": 4
+      }
     },
     "am_frame_sub_desc_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "pixel_format": 4,
+        "sampling_max_fps": 8,
+        "preset_count": 12,
+        "presets": 16,
+        "mode": 24,
+        "queue_max_items": 28,
+        "queue_max_bytes": 32,
+        "frame_kind": 40
+      }
     },
     "am_decoder_config_t": {
       "size": 80,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "codec": 4,
+        "bitstream_format": 8,
+        "output_pixel_format": 12,
+        "hw_policy": 16,
+        "extradata": 24,
+        "extradata_size": 32,
+        "time_base_num": 40,
+        "time_base_den": 44,
+        "queue_max_items": 48,
+        "queue_max_bytes": 56,
+        "reserved": 64
+      }
     },
     "am_decoder_input_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "flags": 4,
+        "size": 8,
+        "data": 16,
+        "pts": 24,
+        "dts": 32
+      }
     },
     "am_decoder_status_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "state": 4,
+        "decoder_generation": 8,
+        "config_generation": 12,
+        "queue_items": 16,
+        "queue_bytes": 24
+      }
     },
     "am_decoder_info_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "codec": 4,
+        "bitstream_format": 8,
+        "output_pixel_format": 12,
+        "hw_policy": 16,
+        "hw_accelerated": 20,
+        "backend_name_utf8": 24,
+        "config_generation": 32
+      }
     },
     "am_capture_request_t": {
       "size": 28,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "output_kind": 4,
+        "deadline_ms": 8,
+        "reserved": 12
+      }
     },
     "am_captured_image_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "request_id": 8,
+        "output_kind": 16,
+        "encoded": 24,
+        "encoded_size": 32,
+        "view": 40,
+        "meta": 48
+      }
     },
     "am_capture_continuous_desc_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "target_interval_ms": 4,
+        "max_inflight": 8,
+        "request_timeout_ms": 12,
+        "output_kind": 16,
+        "mode": 20,
+        "queue_max_items": 24,
+        "queue_max_bytes": 32,
+        "reserved": 40
+      }
     },
     "am_capture_stats_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "actual_fps": 8,
+        "last_received_at_ms": 16,
+        "consecutive_failures": 24,
+        "newest_age_ms": 32,
+        "skipped_beats": 40,
+        "shared_consumers": 48
+      }
     },
     "am_event_detail_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "generation": 4,
+        "scope": 8,
+        "affected_handle": 16,
+        "fault_class": 24,
+        "reason_utf8": 32
+      }
     },
     "amv_capability_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "abi_minor": 4,
+        "feature_bits": 8,
+        "dtype_bits": 12,
+        "max_batch_items": 16,
+        "max_models": 20,
+        "infer_parallelism": 24,
+        "result_retention_default_ms": 32,
+        "shared_pool_state": 40
+      }
     },
     "am_backend_row_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "backend": 0,
+        "hw_detected": 4,
+        "deps_present": 8,
+        "provider_loadable": 12,
+        "verified": 16,
+        "note_utf8": 24
+      }
     },
     "am_backend_matrix_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "row_count": 4,
+        "rows": 8
+      }
     },
     "am_backend_candidate_t": {
       "size": 8,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "backend": 0,
+        "device_id": 4
+      }
     },
     "am_backend_selection_t": {
       "size": 24,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "candidate_count": 4,
+        "candidates": 8,
+        "allow_fallback": 16,
+        "budget_ms": 20
+      }
     },
     "am_backend_policy_t": {
       "size": 12,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "requested": 4,
+        "strict": 8
+      }
     },
     "am_raw_preprocess_t": {
       "size": 56,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "resize": 4,
+        "target_w": 8,
+        "target_h": 12,
+        "fill_value": 16,
+        "color_order": 20,
+        "normalize": 24,
+        "mean": 28,
+        "std": 40,
+        "layout": 52
+      }
     },
     "am_model_desc_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "path_utf8": 8,
+        "load_mode": 16,
+        "profile_id": 24,
+        "backend": 32,
+        "intra_threads": 40
+      }
     },
     "am_model_memory_desc_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "bytes": 8,
+        "size": 16,
+        "load_mode": 24,
+        "profile_id": 32,
+        "backend": 40
+      }
     },
     "am_io_spec_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "name": 8,
+        "dtype": 16,
+        "shape": 24,
+        "shape_len": 32,
+        "dyn_min": 40,
+        "dyn_max": 48
+      }
     },
     "am_backend_actual_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "actual": 0,
+        "device_utf8": 8,
+        "subgraph_cpu_nodes": 16,
+        "fallback_reason_utf8": 24
+      }
     },
     "am_model_identity_t": {
       "size": 24,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "model_uid": 0,
+        "model_version": 8,
+        "profile_id": 16
+      }
     },
     "am_model_info_t": {
       "size": 104,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "identity": 8,
+        "load_mode": 32,
+        "input_count": 36,
+        "output_count": 40,
+        "inputs": 48,
+        "outputs": 56,
+        "native_batch": 64,
+        "execution": 72
+      }
     },
     "am_frame_assoc_t": {
       "size": 80,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "source_id": 8,
+        "frame_id": 16,
+        "source_generation": 24,
+        "config_generation": 28,
+        "pts": 32,
+        "time_base_num": 40,
+        "time_base_den": 44,
+        "captured_at_ms": 48,
+        "received_at_ms": 56,
+        "clock_mask": 64,
+        "clock_quality": 68,
+        "valid": 72
+      }
     },
     "am_gpu_frame_desc_t": {
       "size": 120,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "width": 4,
+        "height": 8,
+        "d3d_format": 12,
+        "subresource": 16,
+        "shared_nt_handle": 24,
+        "flags": 32,
+        "assoc": 40
+      }
     },
     "am_gpu_frame_stats_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "gpu_frames_delivered": 8,
+        "cpu_fallbacks": 16,
+        "bytes_transferred_est": 24
+      }
+    },
+    "am_gpu_frame_ref_t": {
+      "size": 56,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "width": 4,
+        "height": 8,
+        "d3d_format": 12,
+        "subresource": 16,
+        "shared_nt_handle": 24,
+        "texture": 32,
+        "flags": 40,
+        "reserved": 44,
+        "assoc": 48
+      }
     },
     "am_image_input_t": {
-      "size": 48,
-      "align": 8
+      "size": 56,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "kind": 4,
+        "encoded": 8,
+        "encoded_size": 16,
+        "view": 24,
+        "assoc": 32,
+        "flags": 40,
+        "gpu": 48
+      }
     },
     "am_infer_params_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "confidence_threshold": 4,
+        "nms_iou_threshold": 8,
+        "max_det": 12,
+        "sync_deadline_ms": 16,
+        "slot_key": 24,
+        "raw_preprocess": 32,
+        "reserved": 40
+      }
     },
     "am_tensor_in_t": {
       "size": 64,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "name": 0,
+        "dtype": 8,
+        "shape": 16,
+        "shape_len": 24,
+        "data": 32,
+        "data_size": 40,
+        "flags": 48,
+        "assoc": 56
+      }
     },
     "am_batch_item_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "image": 8,
+        "tensor_count": 16,
+        "tensors": 24,
+        "slot_key": 32,
+        "raw_preprocess": 40
+      }
     },
     "am_batch_options_t": {
       "size": 12,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "batch_mode": 4,
+        "wait_deadline_ms": 8
+      }
     },
     "am_batch_receipt_t": {
       "size": 24,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "accepted_count": 4,
+        "request_ids": 8,
+        "rejects": 16
+      }
     },
     "am_batching_options_t": {
       "size": 20,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "abi_minor": 4,
+        "max_batch_items": 8,
+        "max_wait_ms": 12,
+        "flags": 16
+      }
     },
     "am_batching_stats_t": {
       "size": 40,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "abi_minor": 4,
+        "formed_batches": 8,
+        "batched_items": 16,
+        "timeout_batches": 24,
+        "rejected_items": 32
+      }
     },
     "am_preprocess_meta_t": {
       "size": 48,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "src_w": 4,
+        "src_h": 8,
+        "dst_w": 12,
+        "dst_h": 16,
+        "scale_x": 20,
+        "scale_y": 24,
+        "crop_x": 28,
+        "crop_y": 32,
+        "pad_left": 36,
+        "pad_top": 40,
+        "valid": 44
+      }
     },
     "am_tensor_out_t": {
       "size": 56,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "name": 0,
+        "dtype": 8,
+        "shape": 16,
+        "shape_len": 24,
+        "data": 32,
+        "data_size": 40,
+        "is_contiguous": 48
+      }
     },
     "am_keypoint_t": {
       "size": 12,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "x": 0,
+        "y": 4,
+        "confidence": 8
+      }
     },
     "am_pose_detection_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "bounds": 0,
+        "confidence": 16,
+        "kpt_count": 20,
+        "keypoints": 24
+      }
     },
     "am_pose_result_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "count": 0,
+        "detections": 8
+      }
     },
     "am_detect_box_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "bounds": 0,
+        "confidence": 16,
+        "class_id": 20,
+        "class_name_utf8": 24
+      }
     },
     "am_detect_result_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "count": 0,
+        "boxes": 8
+      }
     },
     "am_classify_entry_t": {
       "size": 32,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "class_id": 0,
+        "class_name_utf8": 8,
+        "logit": 16,
+        "probability": 20,
+        "has_probability": 24
+      }
     },
     "am_classify_result_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "count": 0,
+        "entries": 8
+      }
     },
     "am_roi_map_t": {
       "size": 20,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "scale_x": 0,
+        "scale_y": 4,
+        "offset_x": 8,
+        "offset_y": 12,
+        "valid": 16
+      }
     },
     "am_segment_instance_t": {
       "size": 72,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "bounds": 0,
+        "confidence": 16,
+        "class_id": 20,
+        "mask_width": 24,
+        "mask_height": 28,
+        "mask_stride_bytes": 32,
+        "mask_bits": 40,
+        "roi_map": 48
+      }
     },
     "am_segment_result_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "count": 0,
+        "instances": 8
+      }
     },
     "am_obb_instance_t": {
       "size": 64,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "vertices_xy": 0,
+        "center_x": 32,
+        "center_y": 36,
+        "width": 40,
+        "height": 44,
+        "angle": 48,
+        "confidence": 52,
+        "class_id": 56,
+        "angle_normalized": 60
+      }
     },
     "am_obb_result_t": {
       "size": 16,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "count": 0,
+        "instances": 8
+      }
     },
     "amv_result_t": {
       "size": 208,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "request_id": 8,
+        "task": 16,
+        "frame": 24,
+        "model": 32,
+        "execution": 56,
+        "transform": 88,
+        "pose": 96,
+        "detect": 112,
+        "classify": 128,
+        "segment": 144,
+        "obb": 160,
+        "raw_output_count": 176,
+        "raw_outputs": 184,
+        "infer_start_ms": 192,
+        "infer_end_ms": 200
+      }
     },
     "am_realtime_policy_t": {
       "size": 20,
-      "align": 4
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "max_inflight": 4,
+        "replace_oldest": 8,
+        "slot_count": 12,
+        "fair_round_robin": 16
+      }
     },
     "am_limits_t": {
       "size": 160,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "max_sources": 4,
+        "max_subscribers_per_source": 8,
+        "max_decoders": 12,
+        "max_capture_continuous": 16,
+        "frame_budget_bytes": 24,
+        "external_hold_max_frames": 32,
+        "external_hold_max_bytes": 40,
+        "max_models": 48,
+        "infer_parallelism": 52,
+        "realtime_max_inflight": 56,
+        "result_budget_bytes": 64,
+        "result_max_items": 72,
+        "control_max_items": 76,
+        "preprocess_budget_bytes": 80,
+        "shared_pool_max_slots": 88,
+        "shared_pool_max_frame_bytes": 92,
+        "shared_pool_max_total_bytes": 96,
+        "shared_pool_max_consumers": 104,
+        "shared_pool_max_outstanding_borrows": 108,
+        "shared_pool_max_pools": 112,
+        "shared_pool_metadata_bytes": 120,
+        "reserved": 128
+      }
     },
     "am_stats_t": {
       "size": 232,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "scope_utf8": 8,
+        "queue_items": 16,
+        "queue_bytes": 24,
+        "external_held_items": 32,
+        "external_held_bytes": 40,
+        "accepted": 48,
+        "rejected_backpressure": 56,
+        "replaced": 64,
+        "expired": 72,
+        "dropped": 80,
+        "frames_decoded": 88,
+        "frames_dropped": 96,
+        "newest_frame_age_ms": 104,
+        "reconnect_count": 112,
+        "resync_count": 120,
+        "infer_executed": 128,
+        "infer_failed": 136,
+        "infer_queue_wait_avg_ms": 144,
+        "infer_exec_avg_ms": 152,
+        "actual_capture_fps": 160,
+        "native_rss_estimate_bytes": 168,
+        "threads_active": 176,
+        "threads_peak": 180,
+        "shared_mapped_bytes": 184,
+        "shared_metadata_bytes": 192,
+        "shared_pool_count": 200,
+        "shared_outstanding_borrows": 204,
+        "reserved": 208
+      }
     },
     "am_pixel_view_t": {
       "size": 48,
-      "align": 8
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "magic": 4,
+        "owner_handle": 8,
+        "retain_owner": 16,
+        "release_owner": 24,
+        "view": 32,
+        "assoc": 40
+      }
     }
   }
 }

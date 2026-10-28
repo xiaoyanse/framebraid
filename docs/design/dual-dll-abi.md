@@ -381,7 +381,14 @@ AM_API am_status_t amc_gpu_frame_return(amc_gpu_frame_t* frame);
 AM_API am_status_t amc_gpu_frame_release(amc_gpu_frame_t* frame);
 AM_API am_status_t amc_gpu_frame_stats(const amc_gpu_frame_t* frame,
     am_gpu_frame_stats_t* out);
+AM_API am_status_t amc_gpu_frame_desc(const amc_gpu_frame_t* frame,
+    am_gpu_frame_desc_t* out_desc);
+AM_API am_status_t amc_gpu_frame_texture(const amc_gpu_frame_t* frame,
+    void** out_texture);
 ```
+
+`amc_gpu_frame_desc`/`amc_gpu_frame_texture`（M2b 补，跨 DLL 消费查询）：宿主经它们组装
+`am_gpu_frame_ref_t` 传给 Vision（§3.3a）；`texture` 借用期内有效，查询不转移所有权。
 
 **能力位**：`AMC_CAP_GPU_FRAMES`（编译编入+运行时可用的双条件）。
 
@@ -623,6 +630,37 @@ AM_API am_status_t amv_infer_image_async(amv_model_t* model, const am_image_inpu
 
 - `am_image_input_t`（附录 §3.3）：kind（JPEG/PNG/PIXEL_VIEW）/encoded+size/view/flags，新增**可选关联元数据 `assoc`**（`am_frame_assoc_t*`，NULL=无；B12：外部图像可携带 source_id/frame_id/代次/PTS/时间基/采集时间，P5 补接收时间 received_at_ms 与 clock_quality；PIXEL_VIEW 模式下若未提供则取视图自带 frame_id/代次），结果原样回填（`amv_result_t.frame`，指针），供多模型/多源结果关联。
 - `am_infer_params_t`（附录 §3.3）：confidence_threshold（档案默认外覆盖）/sync_deadline_ms/slot_key（B11）/assoc 透传/raw_preprocess（RAW 模型）/flags。
+
+### 3.3a GPU 帧输入（M2b，未发布兼容扩展）
+
+图像推理输入新增 GPU 帧直传模式：`am_image_input_t.kind=AM_IMG_GPU_FRAME` + 尾部字段
+`const am_gpu_frame_ref_t* gpu`（struct_size 协商；旧调用方零感知）。
+
+**跨 DLL 帧引用（`am_gpu_frame_ref_t`，值结构）**：宿主经 camera 侧查询导出组装——
+`amc_gpu_frame_desc`（元数据）+ `amc_gpu_frame_texture`（同进程纹理指针，借用期内有效，
+签名见 §2.6a 导出清单）；纹理指针为主交付物（M2a 2026-10-29 实测修订：Win11 25H2
+runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力提供、可为 0）。
+
+**语义**：
+- 同进程约束：`texture` 指针仅在 GPU 帧租约借用期内有效（vision 侧消费完毕前宿主不得
+  归还/释放帧）；同步调用借用至返回，异步借用至请求**接受**（GPU 预处理在接受段同步
+  完成，纹理不跨异步生命周期——与 encoded 输入同借用语义）
+- 预处理在 GPU 完成（CUDA kernel：NV12 采样→模型输入格式 resize/letterbox/normalize，
+  按档案输入形状），经 IOBinding 直达 CUDA EP 输入张量；全程零 CPU 回读
+- **显式输入不静默降级**：kind=GPU_FRAME 而模型会话不支持（非 CUDA EP/互操作不可用/
+  输入格式不支持）返回 `notSupported`；回退是宿主决策（能力查询后改用 PIXEL_VIEW——
+  像素路径永远可用，构成自然回退），SDK 内部不做隐式转换（隐式转换需回读，正是本
+  扩展要消灭的路径）
+- 引擎适配位：首版实现 ORT CUDA EP（IOBinding）；OpenVINO 原生引擎（E1）落定后按本
+  输入合同适配，接口不变
+- 互操作生命周期：纹理注册/map/unmap 全程发生在借用窗口内，不跨租约持有（M2a 租约
+  语义不变）
+- 搬运审计（模型级可查，M2c 验收主指标）：`gpu_inputs`（GPU 直传帧数）、
+  `input_copies_per_frame`（GPU 路径每帧 GPU 内拷贝次数）、`input_cpu_fallbacks`
+  （宿主显式改用像素路径不计入——此计数器只记 SDK 内部实际发生的回退性搬运）
+
+**能力位**：`AMV_CAP_GPU_FRAME_INPUT`（编译编入 + 当前运行库 CUDA 互操作入口可用的
+双条件；查询不触发 CUDA 初始化）。
 
 ### 3.4 张量推理（命名多输入多输出；不隐式前处理；B06/B12）
 

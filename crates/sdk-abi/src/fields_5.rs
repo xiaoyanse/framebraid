@@ -173,6 +173,50 @@ impl AbiLayout for am_gpu_frame_stats_t {
         ),
     ];
 }
+impl AbiLayout for am_gpu_frame_ref_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, width),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, height),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, d3d_format),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, subresource),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, shared_nt_handle),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, texture),
+            core::mem::size_of::<*mut c_void>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, flags),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, reserved),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_ref_t, assoc),
+            core::mem::size_of::<*const am_frame_assoc_t>(),
+        ),
+    ];
+}
 impl AbiLayout for am_image_input_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -202,6 +246,10 @@ impl AbiLayout for am_image_input_t {
         (
             core::mem::offset_of!(am_image_input_t, flags),
             core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_image_input_t, gpu),
+            core::mem::size_of::<*const am_gpu_frame_ref_t>(),
         ),
     ];
 }
@@ -338,30 +386,6 @@ impl AbiLayout for am_batch_receipt_t {
         (
             core::mem::offset_of!(am_batch_receipt_t, rejects),
             core::mem::size_of::<*const am_status_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_batching_options_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_batching_options_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, abi_minor),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, max_batch_items),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, max_wait_ms),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, flags),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

@@ -20,6 +20,8 @@ mod fields_6;
 
 mod fields_7;
 
+mod fields_8;
+
 mod types_0;
 pub use types_0::*;
 mod types_1;
@@ -36,6 +38,8 @@ mod types_6;
 pub use types_6::*;
 mod types_7;
 pub use types_7::*;
+mod types_8;
+pub use types_8::*;
 mod defaults;
 pub use defaults::*;
 mod constants;

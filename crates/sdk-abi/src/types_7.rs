@@ -2,6 +2,12 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_classify_result_t {
+    pub count: u32,
+    pub entries: *const am_classify_entry_t,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_roi_map_t {
     pub scale_x: f32,
     pub scale_y: f32,
@@ -229,30 +235,6 @@ impl Default for am_stats_t {
             shared_pool_count: Default::default(),
             shared_outstanding_borrows: Default::default(),
             reserved: [Default::default(); 6],
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_pixel_view_t {
-    pub struct_size: u32,
-    pub magic: u32,
-    pub owner_handle: *mut c_void,
-    pub retain_owner: Option<unsafe extern "C" fn(*mut c_void)>,
-    pub release_owner: Option<unsafe extern "C" fn(*mut c_void)>,
-    pub view: *const am_frame_view_t,
-    pub assoc: *const am_frame_assoc_t,
-}
-impl Default for am_pixel_view_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            magic: Default::default(),
-            owner_handle: Default::default(),
-            retain_owner: Default::default(),
-            release_owner: Default::default(),
-            view: Default::default(),
-            assoc: Default::default(),
         }
     }
 }

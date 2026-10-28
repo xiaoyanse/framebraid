@@ -82,6 +82,36 @@ impl Default for am_gpu_frame_stats_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_gpu_frame_ref_t {
+    pub struct_size: u32,
+    pub width: u32,
+    pub height: u32,
+    pub d3d_format: u32,
+    pub subresource: u32,
+    pub shared_nt_handle: u64,
+    pub texture: *mut c_void,
+    pub flags: u32,
+    pub reserved: u32,
+    pub assoc: *const am_frame_assoc_t,
+}
+impl Default for am_gpu_frame_ref_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            width: Default::default(),
+            height: Default::default(),
+            d3d_format: Default::default(),
+            subresource: Default::default(),
+            shared_nt_handle: Default::default(),
+            texture: Default::default(),
+            flags: Default::default(),
+            reserved: Default::default(),
+            assoc: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_image_input_t {
     pub struct_size: u32,
     pub kind: u32,
@@ -90,6 +120,7 @@ pub struct am_image_input_t {
     pub view: *const am_pixel_view_t,
     pub assoc: *const am_frame_assoc_t,
     pub flags: u32,
+    pub gpu: *const am_gpu_frame_ref_t,
 }
 impl Default for am_image_input_t {
     fn default() -> Self {
@@ -101,6 +132,7 @@ impl Default for am_image_input_t {
             view: Default::default(),
             assoc: Default::default(),
             flags: Default::default(),
+            gpu: Default::default(),
         }
     }
 }
@@ -195,26 +227,6 @@ impl Default for am_batch_receipt_t {
             accepted_count: Default::default(),
             request_ids: Default::default(),
             rejects: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_batching_options_t {
-    pub struct_size: u32,
-    pub abi_minor: u32,
-    pub max_batch_items: u32,
-    pub max_wait_ms: u32,
-    pub flags: u32,
-}
-impl Default for am_batching_options_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            abi_minor: Default::default(),
-            max_batch_items: Default::default(),
-            max_wait_ms: Default::default(),
-            flags: Default::default(),
         }
     }
 }

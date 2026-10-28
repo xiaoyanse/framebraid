@@ -141,8 +141,63 @@ fn am_gpu_frame_stats_t_matches_c() {
     );
 }
 #[test]
+fn am_gpu_frame_ref_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_gpu_frame_ref_t>(), 56);
+    assert_eq!(core::mem::align_of::<am_gpu_frame_ref_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, struct_size),
+        0,
+        "am_gpu_frame_ref_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, width),
+        4,
+        "am_gpu_frame_ref_t.width"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, height),
+        8,
+        "am_gpu_frame_ref_t.height"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, d3d_format),
+        12,
+        "am_gpu_frame_ref_t.d3d_format"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, subresource),
+        16,
+        "am_gpu_frame_ref_t.subresource"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, shared_nt_handle),
+        24,
+        "am_gpu_frame_ref_t.shared_nt_handle"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, texture),
+        32,
+        "am_gpu_frame_ref_t.texture"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, flags),
+        40,
+        "am_gpu_frame_ref_t.flags"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, reserved),
+        44,
+        "am_gpu_frame_ref_t.reserved"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_gpu_frame_ref_t, assoc),
+        48,
+        "am_gpu_frame_ref_t.assoc"
+    );
+}
+#[test]
 fn am_image_input_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_image_input_t>(), 48);
+    assert_eq!(core::mem::size_of::<am_image_input_t>(), 56);
     assert_eq!(core::mem::align_of::<am_image_input_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_image_input_t, struct_size),
@@ -178,6 +233,11 @@ fn am_image_input_t_matches_c() {
         core::mem::offset_of!(am_image_input_t, flags),
         40,
         "am_image_input_t.flags"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_image_input_t, gpu),
+        48,
+        "am_image_input_t.gpu"
     );
 }
 #[test]
@@ -348,35 +408,5 @@ fn am_batch_receipt_t_matches_c() {
         core::mem::offset_of!(am_batch_receipt_t, rejects),
         16,
         "am_batch_receipt_t.rejects"
-    );
-}
-#[test]
-fn am_batching_options_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_batching_options_t>(), 20);
-    assert_eq!(core::mem::align_of::<am_batching_options_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, struct_size),
-        0,
-        "am_batching_options_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, abi_minor),
-        4,
-        "am_batching_options_t.abi_minor"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, max_batch_items),
-        8,
-        "am_batching_options_t.max_batch_items"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, max_wait_ms),
-        12,
-        "am_batching_options_t.max_wait_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, flags),
-        16,
-        "am_batching_options_t.flags"
     );
 }

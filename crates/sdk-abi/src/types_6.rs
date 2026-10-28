@@ -2,6 +2,26 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_batching_options_t {
+    pub struct_size: u32,
+    pub abi_minor: u32,
+    pub max_batch_items: u32,
+    pub max_wait_ms: u32,
+    pub flags: u32,
+}
+impl Default for am_batching_options_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            abi_minor: Default::default(),
+            max_batch_items: Default::default(),
+            max_wait_ms: Default::default(),
+            flags: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_batching_stats_t {
     pub struct_size: u32,
     pub abi_minor: u32,
@@ -110,10 +130,4 @@ pub struct am_classify_entry_t {
     pub logit: f32,
     pub probability: f32,
     pub has_probability: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_classify_result_t {
-    pub count: u32,
-    pub entries: *const am_classify_entry_t,
 }
