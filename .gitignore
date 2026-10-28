@@ -12,3 +12,4 @@
 *.pfx
 *.sqlite*
 .omc/.pm/
+*/.omc/
