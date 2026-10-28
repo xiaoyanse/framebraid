@@ -35,6 +35,14 @@ impl InferenceInput {
         binding
             .bind_input(input_name, &tensor)
             .map_err(|e| Error(format!("GPU 输入绑定失败|{e}")))?;
+        // run_binding 要求至少一个输出绑定（ORT："At least one output should be
+        // requested"）；输出绑定到 CPU（提取路径与 CPU 推理一致）。
+        let cpu = MemoryInfo::default();
+        for output in session.outputs() {
+            binding
+                .bind_output_to_device(output.name(), &cpu)
+                .map_err(|e| Error(format!("GPU 输出绑定失败|{e}")))?;
+        }
         Ok(Self { binding, tensor })
     }
 

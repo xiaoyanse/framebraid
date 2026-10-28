@@ -2,6 +2,8 @@
 //! E1 引擎适配位见合同 §3.3a。
 pub mod cuda_sys;
 pub mod driver_sys;
+#[cfg(test)]
+mod e2e_tests;
 pub mod interop;
 #[cfg(test)]
 mod interop_tests;

@@ -53,12 +53,13 @@ fn reference_nchw(nv12: &[u8], src_w: usize, src_h: usize, dst: usize) -> Vec<f3
         for dx in 0..rw {
             let sx = (dx as f32 + 0.5) * src_w as f32 / rw as f32 - 0.5;
             let sy = (dy as f32 + 0.5) * src_h as f32 / rh as f32 - 0.5;
+            // 边缘钳制：fx 先于钳制计算（负 sx 时 fx=sx-floor(sx)∈[0,1)，邻居钳到 0）
+            let fx = sx - sx.floor();
+            let fy = sy - sy.floor();
             let sx0 = sx.floor().max(0.0) as usize;
             let sy0 = sy.floor().max(0.0) as usize;
             let sx1 = (sx0 + 1).min(src_w - 1);
             let sy1 = (sy0 + 1).min(src_h - 1);
-            let fx = sx - sx.floor().max(0.0);
-            let fy = sy - sy.floor().max(0.0);
             let idx = (dy + top) * dst + dx + left;
             for ch in 0..3 {
                 let v00 = rgb[(sy0 * src_w + sx0) * 3 + ch];
@@ -78,8 +79,7 @@ fn reference_nchw(nv12: &[u8], src_w: usize, src_h: usize, dst: usize) -> Vec<f3
 #[ignore = "需要真实 NVIDIA GPU（AM_SDK_ORT_DIR 提供 cudart）"]
 fn nv12_kernel_matches_cpu_reference() {
     let driver = DriverApi::load().expect("加载 nvcuda");
-    let _context = driver.establish_context().expect("driver 上下文");
-    // 纯 driver 路径（与 python 探针一致）：本测试不涉及 runtime/互操作。
+    let _context = driver.establish_context_driver().expect("driver 上下文");
     let kernel = KernelModule::load_nv12_letterbox(driver.clone()).expect("kernel JIT");
 
     let (src_w, src_h, dst) = (320usize, 240usize, 64usize);

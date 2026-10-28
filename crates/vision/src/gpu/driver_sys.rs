@@ -38,6 +38,8 @@ impl KernelParams {
 
 pub struct DriverApi {
     pub cu_init: unsafe extern "C" fn(u32) -> CuResult,
+    pub ctx_get_current: unsafe extern "C" fn(*mut *mut c_void) -> CuResult,
+    pub primary_ctx_retain: unsafe extern "C" fn(i32, *mut *mut c_void) -> CuResult,
     pub device_get: unsafe extern "C" fn(*mut i32, i32) -> CuResult,
     pub ctx_create: unsafe extern "C" fn(*mut *mut c_void, u32, i32) -> CuResult,
     pub ctx_set_current: unsafe extern "C" fn(*mut c_void) -> CuResult,
@@ -65,9 +67,30 @@ pub struct DriverApi {
 }
 
 impl DriverApi {
-    /// 初始化并建立（或复位）driver 当前上下文；后续 driver 调用须同线程或显式
-    /// 重新 set。与 python 探针验证路径一致：cuInit → cuCtxCreate。
+    /// 建立 GPU 管线上下文：**primary context**（与 runtime API 互操作注册/拷贝、
+    /// ORT CUDA EP 同一 primary）。路径：cuInit → runtime cudaSetDevice 激活
+    /// primary → cuCtxGetCurrent 取句柄（本机 cuDevicePrimaryCtxRetain 直调
+    /// 报 INVALID_DEVICE 的驱动行为，2026-10-29 实测；runtime 激活等价）。
+    /// 上下文生命周期由 primary 引用计数管理，不显式销毁。
     pub fn establish_context(self: &Arc<Self>) -> Result<*mut c_void, crate::Error> {
+        // primary 版：与 runtime API / ORT CUDA EP 同一 primary（管线用）
+        self.check(unsafe { (self.cu_init)(0) }, "cuInit")?;
+        let runtime =
+            super::cuda_sys::CudaApi::load().map_err(|_| crate::Error("cudart 不可用".into()))?;
+        self.check(unsafe { (runtime.set_device)(0) }, "runtime设备激活")?;
+        let mut context: *mut c_void = std::ptr::null_mut();
+        let code = unsafe { (self.ctx_get_current)(&mut context) };
+        if code != 0 || context.is_null() {
+            return Err(crate::Error(
+                "primary上下文获取失败（runtime 激活后 current 为空）".into(),
+            ));
+        }
+        Ok(context)
+    }
+
+    /// 自建 driver 上下文（纯 driver 路径：kernel 对拍测试用；与 runtime/ORT
+    /// 混用时自建 ctx 的 cuMemAlloc 会报 INVALID_CONTEXT，见 establish_context）。
+    pub fn establish_context_driver(self: &Arc<Self>) -> Result<*mut c_void, crate::Error> {
         self.check(unsafe { (self.cu_init)(0) }, "cuInit")?;
         let mut device: i32 = 0;
         self.check(unsafe { (self.device_get)(&mut device, 0) }, "cuDeviceGet")?;
@@ -98,6 +121,8 @@ impl DriverApi {
         }
         let api = Self {
             cu_init: cast!(b"cuInit\0"),
+            ctx_get_current: cast!(b"cuCtxGetCurrent\0"),
+            primary_ctx_retain: cast!(b"cuDevicePrimaryCtxRetain\0"),
             device_get: cast!(b"cuDeviceGet\0"),
             ctx_create: cast!(b"cuCtxCreate\0"),
             ctx_set_current: cast!(b"cuCtxSetCurrent\0"),

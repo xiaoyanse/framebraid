@@ -149,11 +149,10 @@
 	mad.rn.f32 %f10, %f17, %f11, %f16; // Y final
 	mul.f32 %f10, %f10, 0f3B808081; // /255
 
-	// UV coords (half res): sxu = sx*0.5, neighbors clamped to (src_w>>1, src_h>>1)
-	mul.f32 %f9, %f9, 0f3F000000;
-	mul.f32 %f1, %f1, 0f3F000000;
-	cvt.rzi.s32.f32 %r19, %f9;
-	cvt.rzi.s32.f32 %r20, %f1;
+	// UV coords (half res): integer-pixel phase sxu = sx0>>1 (matches CPU x/2;
+	// float nearest caused 0.5-texel chroma phase drift, 2026-10-29 e2e parity)
+	shr.s32 %r19, %r13, 1;         // sxu from luma sx0
+	shr.s32 %r20, %r14, 1;         // syu from luma sy0
 	shr.s32 %r21, %r17, 1;         // uv_w
 	shr.s32 %r22, %r18, 1;         // uv_h
 	max.s32 %r19, %r19, 0;

@@ -26,16 +26,19 @@ pub struct GpuPipeline {
     pub runtime: Arc<CudaApi>,
     pub driver: Arc<DriverApi>,
     kernel: KernelModule,
+    /// 建立时的上下文句柄：每次管线操作前显式设为当前（runtime/ORT 调用
+    /// 可能扰动线程 current，不依赖隐式延续）。
+    context: *mut std::ffi::c_void,
 }
 
 impl GpuPipeline {
     /// 惰性初始化：CUDA 不可用时报错（能力位查询用 available()，不触发初始化）。
     pub fn global() -> Result<&'static GpuPipeline, Error> {
-        static PIPELINE: OnceLock<Option<GpuPipeline>> = OnceLock::new();
-        let cached = PIPELINE.get_or_init(|| GpuPipeline::new().ok());
+        static PIPELINE: OnceLock<Result<GpuPipeline, String>> = OnceLock::new();
+        let cached = PIPELINE.get_or_init(|| GpuPipeline::new().map_err(|e| e.0));
         cached
             .as_ref()
-            .ok_or_else(|| Error("vision.gpuUnavailable".into()))
+            .map_err(|e| Error(format!("vision.gpuUnavailable|{e}")))
     }
 
     /// 环境探测（能力位用；不建立上下文，只验证运行库可加载）。
@@ -47,12 +50,13 @@ impl GpuPipeline {
     fn new() -> Result<Self, Error> {
         let runtime = CudaApi::load().map_err(|e| Error(format!("cudart 加载失败|{e}")))?;
         let driver = DriverApi::load().map_err(|e| Error(format!("nvcuda 加载失败|{e}")))?;
-        driver.establish_context()?;
         let kernel = KernelModule::load_nv12_letterbox(driver.clone())?;
+        let context = driver.establish_context()?;
         Ok(Self {
             runtime,
             driver,
             kernel,
+            context,
         })
     }
 
@@ -67,6 +71,10 @@ impl GpuPipeline {
         dst_w: u32,
         dst_h: u32,
     ) -> Result<(InferenceInput, crate::sdk::ImageTransform), Error> {
+        self.driver.check(
+            unsafe { (self.driver.ctx_set_current)(self.context) },
+            "上下文设置",
+        )?;
         if frame.d3d_format != 103 {
             // DXGI_FORMAT_NV12=103；首版仅 NV12（解码默认输出），其余格式回退像素路径。
             return Err(crate::Error("vision.gpuFormatUnsupported".into()));
@@ -88,19 +96,19 @@ impl GpuPipeline {
             let mut y_buf: *mut c_void = std::ptr::null_mut();
             let mut uv_buf: *mut c_void = std::ptr::null_mut();
             self.driver.check(
-                unsafe { (self.driver.mem_alloc)(&mut y_buf, y_bytes) },
+                unsafe { (self.runtime.malloc)(&mut y_buf, y_bytes) },
                 "Y缓冲分配",
             )?;
             self.driver.check(
-                unsafe { (self.driver.mem_alloc)(&mut uv_buf, uv_bytes) },
+                unsafe { (self.runtime.malloc)(&mut uv_buf, uv_bytes) },
                 "UV缓冲分配",
             )?;
             let result = self.copy_and_launch(
                 y_buf, uv_buf, y_array, uv_array, frame, dst_w, dst_h, session, input_name, y_bytes,
             );
             unsafe {
-                (self.driver.mem_free)(y_buf);
-                (self.driver.mem_free)(uv_buf);
+                (self.runtime.free)(y_buf);
+                (self.runtime.free)(uv_buf);
             }
             result
         }

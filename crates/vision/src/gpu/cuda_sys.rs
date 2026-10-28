@@ -28,7 +28,25 @@ pub struct CudaApi {
         unsafe extern "C" fn(i32, *const GraphicsResource, *mut c_void) -> CudaResult,
     pub mapped_array:
         unsafe extern "C" fn(*mut CudaArray, GraphicsResource, u32, u32) -> CudaResult,
+    /// cudaMemcpy2DToArray：device buffer → array（测试数据装载）。
+    pub memcpy2d_to_array: unsafe extern "C" fn(
+        CudaArray,
+        usize,
+        usize,
+        *const c_void,
+        usize,
+        usize,
+        usize,
+        i32,
+    ) -> CudaResult,
     /// cudaMemcpy2DFromArray：mapped array → device buffer（M2b 搬运路径）。
+    /// 显存与拷贝四件套（runtime：自动绑定 primary ctx，与互操作资源一致；
+    /// driver cuMemAlloc 在 ORT EP 共存环境报 INVALID_CONTEXT 的规避，2026-10-29）。
+    pub malloc: unsafe extern "C" fn(*mut *mut c_void, usize) -> CudaResult,
+    pub free: unsafe extern "C" fn(*mut c_void) -> CudaResult,
+    pub memcpy_htod: unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CudaResult,
+    pub memcpy_dtod: unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CudaResult,
+    pub memcpy_dtoh: unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CudaResult,
     pub memcpy2d_from_array: unsafe extern "C" fn(
         *mut c_void, // dst（device）
         usize,       // dpitch（目标行距字节）
@@ -87,6 +105,12 @@ impl CudaApi {
             map_resources: cast!(b"cudaGraphicsMapResources"),
             unmap_resources: cast!(b"cudaGraphicsUnmapResources"),
             mapped_array: cast!(b"cudaGraphicsSubResourceGetMappedArray"),
+            malloc: cast!(b"cudaMalloc"),
+            free: cast!(b"cudaFree"),
+            memcpy_htod: cast!(b"cudaMemcpy"),
+            memcpy_dtod: cast!(b"cudaMemcpy"),
+            memcpy_dtoh: cast!(b"cudaMemcpy"),
+            memcpy2d_to_array: cast!(b"cudaMemcpy2DToArray"),
             memcpy2d_from_array: cast!(b"cudaMemcpy2DFromArray"),
         };
         // 库保活：泄漏一个持有句柄的 guard（进程生命周期，与 FFmpeg 运行库同策略）。

@@ -379,7 +379,7 @@ impl Model {
             }
             Err(error) => {
                 Self::observe_err(&mut self.selection, &error);
-                return Err(Error("vision.inferenceFailed".into()));
+                return Err(Error(format!("vision.inferenceFailed|gpu|{error}")));
             }
         };
         Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)

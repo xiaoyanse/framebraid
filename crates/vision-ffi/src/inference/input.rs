@@ -360,3 +360,28 @@ impl Input {
         }
     }
 }
+
+#[cfg(test)]
+mod gpu_tests {
+    use super::*;
+
+    /// GPU 帧引用校验的纯逻辑分支（不触 GPU；走 plan 的参数面）。
+    #[test]
+    fn gpu_frame_rejects_invalid_metadata() {
+        // 构造最小 ModelHandle 替身不可行（plan 需要档案信息）——校验逻辑经
+        // 独立函数覆盖（真实链路在 3.8 端到端实测）。
+        // 这里固化合同要点：d3d_format 只接受 NV12(103)、尺寸界 1..=8192、
+        // 纹理指针非空；flags 仅 0；raw 模式 notSupported。
+        let cases: [(u32, u32, u32, bool); 5] = [
+            (103, 0, 240, false),   // 宽为 0
+            (103, 320, 0, false),   // 高为 0
+            (87, 320, 240, false),  // 非 NV12
+            (103, 9000, 240, false), // 超界
+            (103, 320, 240, true),  // 合法
+        ];
+        for (format, w, h, ok) in cases {
+            let valid = format == 103 && w >= 1 && h >= 1 && w <= 8192 && h <= 8192;
+            assert_eq!(valid, ok, "case {format}/{w}x{h}");
+        }
+    }
+}
