@@ -2,6 +2,27 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_roi_map_t {
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub offset_x: f32,
+    pub offset_y: f32,
+    pub valid: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_segment_instance_t {
+    pub bounds: [f32; 4],
+    pub confidence: f32,
+    pub class_id: i32,
+    pub mask_width: u32,
+    pub mask_height: u32,
+    pub mask_stride_bytes: u32,
+    pub mask_bits: *const u8,
+    pub roi_map: am_roi_map_t,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_segment_result_t {
     pub count: u32,
     pub instances: *const am_segment_instance_t,

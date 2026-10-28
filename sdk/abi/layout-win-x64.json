@@ -110,7 +110,7 @@
       "align": 4
     },
     "am_frame_sub_desc_t": {
-      "size": 40,
+      "size": 48,
       "align": 8
     },
     "am_decoder_config_t": {
@@ -203,6 +203,14 @@
     },
     "am_frame_assoc_t": {
       "size": 80,
+      "align": 8
+    },
+    "am_gpu_frame_desc_t": {
+      "size": 120,
+      "align": 8
+    },
+    "am_gpu_frame_stats_t": {
+      "size": 32,
       "align": 8
     },
     "am_image_input_t": {

@@ -38,6 +38,50 @@ impl Default for am_frame_assoc_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_gpu_frame_desc_t {
+    pub struct_size: u32,
+    pub width: u32,
+    pub height: u32,
+    pub d3d_format: u32,
+    pub subresource: u32,
+    pub shared_nt_handle: u64,
+    pub flags: u32,
+    pub assoc: am_frame_assoc_t,
+}
+impl Default for am_gpu_frame_desc_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            width: Default::default(),
+            height: Default::default(),
+            d3d_format: Default::default(),
+            subresource: Default::default(),
+            shared_nt_handle: Default::default(),
+            flags: Default::default(),
+            assoc: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_gpu_frame_stats_t {
+    pub struct_size: u32,
+    pub gpu_frames_delivered: u64,
+    pub cpu_fallbacks: u64,
+    pub bytes_transferred_est: u64,
+}
+impl Default for am_gpu_frame_stats_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            gpu_frames_delivered: Default::default(),
+            cpu_fallbacks: Default::default(),
+            bytes_transferred_est: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_image_input_t {
     pub struct_size: u32,
     pub kind: u32,
@@ -171,62 +215,6 @@ impl Default for am_batching_options_t {
             max_batch_items: Default::default(),
             max_wait_ms: Default::default(),
             flags: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_batching_stats_t {
-    pub struct_size: u32,
-    pub abi_minor: u32,
-    pub formed_batches: u64,
-    pub batched_items: u64,
-    pub timeout_batches: u64,
-    pub rejected_items: u64,
-}
-impl Default for am_batching_stats_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            abi_minor: Default::default(),
-            formed_batches: Default::default(),
-            batched_items: Default::default(),
-            timeout_batches: Default::default(),
-            rejected_items: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_preprocess_meta_t {
-    pub struct_size: u32,
-    pub src_w: u32,
-    pub src_h: u32,
-    pub dst_w: u32,
-    pub dst_h: u32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub crop_x: i32,
-    pub crop_y: i32,
-    pub pad_left: u32,
-    pub pad_top: u32,
-    pub valid: u32,
-}
-impl Default for am_preprocess_meta_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            src_w: Default::default(),
-            src_h: Default::default(),
-            dst_w: Default::default(),
-            dst_h: Default::default(),
-            scale_x: Default::default(),
-            scale_y: Default::default(),
-            crop_x: Default::default(),
-            crop_y: Default::default(),
-            pad_left: Default::default(),
-            pad_top: Default::default(),
-            valid: Default::default(),
         }
     }
 }

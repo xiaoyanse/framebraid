@@ -304,6 +304,10 @@ impl AbiLayout for am_frame_sub_desc_t {
             core::mem::offset_of!(am_frame_sub_desc_t, queue_max_bytes),
             core::mem::size_of::<u64>(),
         ),
+        (
+            core::mem::offset_of!(am_frame_sub_desc_t, frame_kind),
+            core::mem::size_of::<u32>(),
+        ),
     ];
 }
 impl AbiLayout for am_decoder_config_t {

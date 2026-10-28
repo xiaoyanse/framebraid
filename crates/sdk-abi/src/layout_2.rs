@@ -307,7 +307,7 @@ fn am_scale_preset_t_matches_c() {
 }
 #[test]
 fn am_frame_sub_desc_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_frame_sub_desc_t>(), 40);
+    assert_eq!(core::mem::size_of::<am_frame_sub_desc_t>(), 48);
     assert_eq!(core::mem::align_of::<am_frame_sub_desc_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_frame_sub_desc_t, struct_size),
@@ -348,6 +348,11 @@ fn am_frame_sub_desc_t_matches_c() {
         core::mem::offset_of!(am_frame_sub_desc_t, queue_max_bytes),
         32,
         "am_frame_sub_desc_t.queue_max_bytes"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_sub_desc_t, frame_kind),
+        40,
+        "am_frame_sub_desc_t.frame_kind"
     );
 }
 #[test]

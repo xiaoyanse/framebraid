@@ -66,6 +66,7 @@ pub const AMC_CAP_BSF_ANNEXB: u64 = 1 << 12;
 pub const AMC_CAP_BSF_LENGTH_PREFIX: u64 = 1 << 13;
 pub const AMC_CAP_SHARED_FRAME_POOL: u64 = 1 << 14;
 pub const AMC_CAP_WORKER_BUDGET: u64 = 1 << 15;
+pub const AMC_CAP_GPU_FRAMES: u64 = 1 << 16;
 pub const AMV_CAP_IMAGE_INPUT: u64 = 1 << 0;
 pub const AMV_CAP_TENSOR_INPUT: u64 = 1 << 1;
 pub const AMV_CAP_RAW_MODEL: u64 = 1 << 2;

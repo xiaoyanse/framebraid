@@ -407,25 +407,6 @@ typedef struct am_frame_sub_desc_s {
   uint64_t queue_max_bytes;
   uint32_t frame_kind;         /* M2a：0=像素（默认/兼容），1=GPU帧；struct_size 版本协商 */
 } am_frame_sub_desc_t;
-typedef enum am_frame_kind_e { AM_FRAME_KIND_PIXELS = 0, AM_FRAME_KIND_GPU = 1 } am_frame_kind_e;
-/* GPU 帧交付：硬解实际激活时返回 am_gpu_frame_t 句柄（不透明，宿主不可解析内里）；
-   SOFTWARE_ONLY 下 GPU 订阅报 notSupported，不静默降级。 */
-
-typedef struct am_gpu_frame_desc_s {
-  uint32_t struct_size;
-  uint32_t width, height;
-  uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 87=NV12） */
-  uint32_t subresource;        /* 纹理子资源索引 */
-  uint64_t shared_nt_handle;   /* 跨 DLL 共享句柄（同进程）；0=不可共享 */
-  uint32_t flags;              /* 1=降级回读帧（fallback） */
-  am_frame_assoc_t assoc;      /* 帧身份（与像素帧一致） */
-} am_gpu_frame_desc_t;
-typedef struct am_gpu_frame_stats_s {
-  uint32_t struct_size;
-  uint64_t gpu_frames_delivered;
-  uint64_t cpu_fallbacks;
-  uint64_t bytes_transferred_est; /* 搬运审计估算（M2c 验收主指标） */
-} am_gpu_frame_stats_t;
 ```
 
 ### 2.6 独立解码器（N01）
@@ -671,6 +652,27 @@ typedef struct am_frame_assoc_s {   /* B12：可选输入关联元数据（图�
   uint32_t clock_quality;           /* am_clock_quality_e（P5）：映射质量，见 §2.5 注 */
   uint32_t valid;                   /* AM_ASSOC_* 位集：哪些字段可信 */
 } am_frame_assoc_t;
+
+typedef enum am_frame_kind_e { AM_FRAME_KIND_PIXELS = 0, AM_FRAME_KIND_GPU = 1 } am_frame_kind_e;
+/* GPU 帧交付：硬解实际激活时返回 am_gpu_frame_t 句柄（不透明，宿主不可解析内里）；
+   SOFTWARE_ONLY 下 GPU 订阅报 notSupported，不静默降级。 */
+
+typedef struct am_gpu_frame_desc_s {
+  uint32_t struct_size;
+  uint32_t width, height;
+  uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 87=NV12） */
+  uint32_t subresource;        /* 纹理子资源索引 */
+  uint64_t shared_nt_handle;   /* 跨 DLL 共享句柄（同进程）；0=不可共享 */
+  uint32_t flags;              /* 1=降级回读帧（fallback） */
+  am_frame_assoc_t assoc;      /* 帧身份（与像素帧一致） */
+} am_gpu_frame_desc_t;
+typedef struct am_gpu_frame_stats_s {
+  uint32_t struct_size;
+  uint64_t gpu_frames_delivered;
+  uint64_t cpu_fallbacks;
+  uint64_t bytes_transferred_est; /* 搬运审计估算（M2c 验收主指标） */
+} am_gpu_frame_stats_t;
+
 typedef struct am_image_input_s {
   uint32_t struct_size;
   uint32_t kind;               /* AM_IMG_JPEG / AM_IMG_PNG / AM_IMG_PIXEL_VIEW */

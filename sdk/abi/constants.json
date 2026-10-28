@@ -85,7 +85,8 @@
     "BSF_ANNEXB",
     "BSF_LENGTH_PREFIX",
     "SHARED_FRAME_POOL",
-    "WORKER_BUDGET"
+    "WORKER_BUDGET",
+    "GPU_FRAMES"
   ],
   "visionCapabilities": [
     "IMAGE_INPUT",

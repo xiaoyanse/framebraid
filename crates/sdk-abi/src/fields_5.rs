@@ -56,6 +56,123 @@ impl AbiLayout for am_frame_assoc_t {
         ),
     ];
 }
+impl AbiLayout for am_gpu_frame_desc_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, width),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, height),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, d3d_format),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, subresource),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, shared_nt_handle),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, flags),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, source_id),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, frame_id),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, source_generation),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, config_generation),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, pts),
+            core::mem::size_of::<i64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, time_base_num),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, time_base_den),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, captured_at_ms),
+            core::mem::size_of::<i64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, received_at_ms),
+            core::mem::size_of::<i64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, clock_mask),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, clock_quality),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_desc_t, assoc)
+                + core::mem::offset_of!(am_frame_assoc_t, valid),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
+impl AbiLayout for am_gpu_frame_stats_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_gpu_frame_stats_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_stats_t, gpu_frames_delivered),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_stats_t, cpu_fallbacks),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_gpu_frame_stats_t, bytes_transferred_est),
+            core::mem::size_of::<u64>(),
+        ),
+    ];
+}
 impl AbiLayout for am_image_input_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -244,86 +361,6 @@ impl AbiLayout for am_batching_options_t {
         ),
         (
             core::mem::offset_of!(am_batching_options_t, flags),
-            core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_batching_stats_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_batching_stats_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, abi_minor),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, formed_batches),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, batched_items),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, timeout_batches),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, rejected_items),
-            core::mem::size_of::<u64>(),
-        ),
-    ];
-}
-impl AbiLayout for am_preprocess_meta_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, src_w),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, src_h),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, dst_w),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, dst_h),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, scale_x),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, scale_y),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, crop_x),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, crop_y),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, pad_left),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, pad_top),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, valid),
             core::mem::size_of::<u32>(),
         ),
     ];

@@ -169,6 +169,7 @@ pub struct am_frame_sub_desc_t {
     pub mode: u32,
     pub queue_max_items: u32,
     pub queue_max_bytes: u64,
+    pub frame_kind: u32,
 }
 impl Default for am_frame_sub_desc_t {
     fn default() -> Self {
@@ -181,6 +182,7 @@ impl Default for am_frame_sub_desc_t {
             mode: Default::default(),
             queue_max_items: Default::default(),
             queue_max_bytes: Default::default(),
+            frame_kind: Default::default(),
         }
     }
 }
