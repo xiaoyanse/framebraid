@@ -217,8 +217,11 @@ pub fn decode_image(encoded: Vec<u8>, max_pixels: u64, decode: bool) -> Result<I
             // SAFETY: decode_into 声明写满 [0..expected_size) 输出缓冲，返回后
             // 全部字节已初始化；set_len 前不读任何字节（zune API 契约）。
             #[allow(clippy::uninit_vec)]
-            let mut pixels = Vec::with_capacity(size);
-            unsafe { pixels.set_len(size) };
+            let mut pixels = {
+                let mut v = Vec::with_capacity(size);
+                unsafe { v.set_len(size) };
+                v
+            };
             jpeg.decode_into(&mut pixels)
                 .map_err(|_| IoError::Invalid)?;
             if orientation == image::metadata::Orientation::NoTransforms {

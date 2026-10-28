@@ -475,7 +475,7 @@ mod tests {
             let mut over = Vec::new();
             over.extend_from_slice(b"--b\r\nContent-Type: image/jpeg\r\n\r\n");
             over.extend_from_slice(&JPEG_SOI);
-            over.extend(std::iter::repeat(b'a').take(FRAME_MAX_BYTES + 16));
+            over.extend(std::iter::repeat_n(b'a', FRAME_MAX_BYTES + 16));
             over.extend_from_slice(b"\r\n");
             parser.feed(&over);
         }
