@@ -222,7 +222,7 @@ unsafe fn load_inner(
     } else {
         unsafe { args::read(backend, std::mem::size_of::<am_backend_policy_t>()) }?
     };
-    if policy.requested > 2 || policy.strict > 1 {
+    if policy.requested > 4 || policy.strict > 1 {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
     let runtime = context

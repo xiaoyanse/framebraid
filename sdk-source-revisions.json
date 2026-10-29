@@ -462,8 +462,8 @@
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "e6ad13eded0c978a64a9e92058b35488d6117e2fa4ad647820d598b6245b7512",
-      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+      "sha256": "f18e8166bc8bda97646a038b44d88188cf9d89d361f05af03ee7983b7d70f2c2",
+      "reason": "Fix backend policy bound 2->4 (E1/E2 backends were unreachable via amv_model_load public entry; caught by pre-integration comparison testing); workspace 408 green"
     },
     {
       "path": "crates/vision-ffi/src/inference/results.rs",
