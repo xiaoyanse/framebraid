@@ -1055,7 +1055,7 @@
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg.rs",
-      "previousSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "previousSha256": null,
       "sha256": "08db0ce428591f68a53e56e0c469a8c10ce9c44ab74665248c2a16678912e4d7",
       "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     },
