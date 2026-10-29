@@ -1064,6 +1064,144 @@
       "previousSha256": null,
       "sha256": "83f669b722388db7788cc793376842c3d0169dc3618a292a83b057fef6c3adb6",
       "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+    },
+    {
+      "path": "crates/am-camera/src/media/multipart.rs",
+      "previousSha256": null,
+      "sha256": "aadaf2063faee67e285bbc06c3ac7e7ce7eaf163af3bd9479ffbde480a5ec870",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/codec/gpu_frame.rs",
+      "previousSha256": null,
+      "sha256": "25c2337672a276af0ea8e44132c3d24bbe3c0459690f649e43991eb5de2983c7",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/mod.rs",
+      "previousSha256": "9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4",
+      "sha256": "69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/am-camera/tests/jpeg_bench.rs",
+      "previousSha256": null,
+      "sha256": "84a3b03db3b576c7948d0ffec34fbaff0c71cafcdd1f9c2fd3f0ed19b8d607d4",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/gpu_pool.rs",
+      "previousSha256": null,
+      "sha256": "0b75333699d5a8286a709b2734613de2c690c8f4197b5f70f1a62738abf3576a",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/decoder/gpu_pool_tests.rs",
+      "previousSha256": null,
+      "sha256": "f164364bf3f77e74e71c62464533b988a95a6e0462788ff9178e2d81ae7eded7",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/fields_8.rs",
+      "previousSha256": null,
+      "sha256": "69f0b7fe5c4f0ee62cd7c33e338908d71f9383f9754b78a100eb9b9432b64e6b",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/layout_8.rs",
+      "previousSha256": null,
+      "sha256": "88380a9e6bce5cbf25cbd2a2bfad2ccbfe4ba84a8c75eacc17e1e080e0d8e997",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/sdk-abi/src/types_8.rs",
+      "previousSha256": null,
+      "sha256": "c42c93da2e9383036a3fec3199a1608ec31ad869ff2c86ed4ac4e7d1934a07ca",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/cuda_sys.rs",
+      "previousSha256": null,
+      "sha256": "77f5c7c1b2b91968701b439546bc62a202b3a55764a6a1d2e72b9d69fbbc9bc7",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/driver_sys.rs",
+      "previousSha256": null,
+      "sha256": "bda36828194f69a2af27d8320e6d342b8041656a6d266ff3a2d662914551373e",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/e2e_tests.rs",
+      "previousSha256": null,
+      "sha256": "07c8417264aead102f042e8db17d9950b9b4e613f5951bd8e5e3baeb42b28f5b",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/interop.rs",
+      "previousSha256": null,
+      "sha256": "97ae0ade19f8f6a9907c197dd10c7041861a9e8f29075b43b261067ae4419321",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/interop_tests.rs",
+      "previousSha256": null,
+      "sha256": "225e040f6ff48ff1238312f200980783bd6fb52a69addf11da5bb023f8df1eec",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/iobinding.rs",
+      "previousSha256": null,
+      "sha256": "2a116e8645daef9db7bc28c692876b862115eeaadc2e46aac4dbb77f2dbc11b9",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/mod.rs",
+      "previousSha256": null,
+      "sha256": "4256510443363bdb4daf2aac2af61ce42b1b25730d28cd658f0a7680023a22d8",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/pipeline.rs",
+      "previousSha256": null,
+      "sha256": "4ee029ae7f6cf0ee1fec59022400e86e11563d267a58e78e36c6a465c540be0c",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/gpu/preprocess_tests.rs",
+      "previousSha256": null,
+      "sha256": "20aa89af7fcf9b365e246a0eaf498908545cd78e85f8e0fb4a4c85a2cf8ba29d",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/sdk/batching.rs",
+      "previousSha256": null,
+      "sha256": "9a45fa9c21a071939ad2d4bed1696dae0b993c27060859881d58ddac38635da0",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision/src/sdk/batching_tests.rs",
+      "previousSha256": null,
+      "sha256": "e59fb02120c10c2b0ef18bf9b642d5e0d87e55713f50a1757e4164df3891592f",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/batching_exports.rs",
+      "previousSha256": null,
+      "sha256": "0bbef4354646b946143331ac3614d5bbfe419036f410e3a6da79cce2a88a1f44",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
+      "previousSha256": null,
+      "sha256": "16f60032c6a53b7d86a423eab0a440994e07695e7b7963e7dca3ec80bb2f8a50",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
+      "previousSha256": null,
+      "sha256": "9862b532b45757fe814f3079d0475668722694e97cd26a0b516216f3e4dc1510",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
     }
   ]
 }
