@@ -126,6 +126,24 @@ impl SessionCore {
     }
 }
 
+fn header_is_usable(codec_id: i32, width: i32, height: i32) -> bool {
+    codec_id != 0 && (codec_id != AV_CODEC_ID_H264 || (width > 0 && height > 0))
+}
+
+#[cfg(test)]
+mod header_tests {
+    use super::header_is_usable;
+
+    #[test]
+    fn codec_classification_does_not_require_dimensions() {
+        assert!(header_is_usable(7, 0, 0));
+        assert!(header_is_usable(173, 0, 0));
+        assert!(!header_is_usable(0, 0, 0));
+        assert!(!header_is_usable(27, 0, 0));
+        assert!(header_is_usable(27, 640, 360));
+    }
+}
+
 /// 拉流线程主循环：解析凭据 URL → 打开（不解码）→ 编码核验 → 读包分发；
 /// 失败退避重连（每次成功打开递增代次）；stop 即退出并自清。
 fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
@@ -170,9 +188,13 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
             .probe_streams_header()
             .into_iter()
             .next()
-            .filter(|video| video.width > 0 && video.height > 0)
-            .or_else(|| input.probe_video().ok())
-        {
+            .filter(|video| header_is_usable(video.codec_id, video.width, video.height))
+            .or_else(|| {
+                input
+                    .probe_video()
+                    .ok()
+                    .filter(|video| header_is_usable(video.codec_id, video.width, video.height))
+            }) {
             Some(video) => video,
             None => {
                 drop(input);

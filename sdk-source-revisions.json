@@ -1238,6 +1238,18 @@
       "previousSha256": null,
       "sha256": "2cf48ebe2c0a3f80ff1b52d36db0a4893fd72731acf418fbd8ab44ca08eb8219",
       "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/codec_probe.rs",
+      "previousSha256": "e99211213a5743e53a1b437216b62fe3ea8c1d7458310907db449a23b9935ff6",
+      "sha256": "c7a961840da79fe16035465db872b0587129b7d1af44d6be29c60873848bc295",
+      "reason": "有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
+    },
+    {
+      "path": "crates/am-camera/src/media/rtsp.rs",
+      "previousSha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f",
+      "sha256": "c72e028406dec497b7099e4d42bc92a49e9e87af0f638f5cd78e041cb796d6fd",
+      "reason": "有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
     }
   ]
 }

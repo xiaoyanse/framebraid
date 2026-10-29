@@ -123,7 +123,11 @@ fn full_valid_seed_and_tiny_gop_both_respect_item_budget() {
     assert_eq!(gop.snapshot().len(), 35);
     let fan = ClientFan::new();
     fan.seed(&config(), gop.snapshot());
-    assert_eq!(fan.queue.lock().len(), 36);
+    assert_eq!(fan.queue.lock().len(), 1);
+    let mut fitting = gop.snapshot();
+    fitting.pop();
+    fan.seed(&config(), fitting);
+    assert_eq!(fan.queue.lock().len(), CLIENT_QUEUE_MAX - 1);
     let mut overflow = packet(36, 1);
     Arc::get_mut(&mut overflow).unwrap().keyframe = false;
     gop.push(&overflow);
@@ -168,18 +172,83 @@ async fn slow_subscriber_stops_without_starving_fast_subscriber_or_old_owner() {
 }
 
 #[test]
-fn overlays_are_latest_only_and_yield_to_video_without_resync() {
+fn overlays_are_latest_only_and_stay_within_reserved_budget() {
     let fan = ClientFan::new();
-    fan.deliver(H264Message::Packet(packet(1, EXPECTED_BYTES - 2)));
+    fan.deliver(H264Message::Packet(packet(
+        1,
+        EXPECTED_BYTES - OVERLAY_MAX_BYTES,
+    )));
     for _ in 0..100 {
         fan.deliver_overlay(Arc::from("xy"));
     }
     assert_eq!(fan.queue.lock().len(), 2);
-    fan.deliver(H264Message::Packet(packet(2, 2)));
     let q = fan.queue.lock();
-    assert_eq!(payload(&q), EXPECTED_BYTES);
+    assert!(payload(&q) <= EXPECTED_BYTES);
     assert_eq!(q.len(), 2);
-    assert!(q.iter().all(|m| matches!(m, H264Message::Packet(_))));
+    assert!(q.iter().any(|m| matches!(m, H264Message::Overlay(_))));
+}
+
+#[tokio::test]
+async fn full_video_queue_delivers_latest_overlay_without_starving_video() {
+    let fan = ClientFan::new();
+    for seq in 0..CLIENT_QUEUE_MAX - 1 {
+        fan.deliver(H264Message::Packet(packet(seq as u64, 1)));
+    }
+    fan.deliver_overlay(Arc::from("old"));
+    fan.deliver_overlay(Arc::from("new"));
+    assert!(matches!(fan.queue.recv().await, Some(H264Message::Overlay(s)) if s.as_ref() == "new"));
+    fan.deliver_overlay(Arc::from("newer"));
+    assert!(matches!(
+        fan.queue.recv().await,
+        Some(H264Message::Packet(_))
+    ));
+    assert!(
+        matches!(fan.queue.recv().await, Some(H264Message::Overlay(s)) if s.as_ref() == "newer")
+    );
+    assert!(fan.queue.lock().len() <= CLIENT_QUEUE_MAX);
+}
+
+#[tokio::test]
+async fn oversized_overlay_and_generation_changes_are_bounded() {
+    let fan = ClientFan::new();
+    fan.deliver_overlay(Arc::from("x".repeat(OVERLAY_MAX_BYTES)));
+    assert!(
+        matches!(fan.queue.recv().await, Some(H264Message::Overlay(s)) if s.len() == OVERLAY_MAX_BYTES)
+    );
+    fan.deliver_overlay(Arc::from("x".repeat(OVERLAY_MAX_BYTES + 1)));
+    assert!(fan.queue.lock().is_empty());
+    fan.deliver_overlay(Arc::from("old"));
+    fan.deliver_config(config());
+    fan.deliver_overlay(Arc::from("new"));
+    assert!(matches!(
+        fan.queue.recv().await,
+        Some(H264Message::Config(_))
+    ));
+    assert!(matches!(fan.queue.recv().await, Some(H264Message::Overlay(s)) if s.as_ref() == "new"));
+    fan.queue
+        .close(H264Message::Closed(1000, Arc::from("closed")));
+    fan.deliver_overlay(Arc::from("late"));
+    assert!(matches!(
+        fan.queue.recv().await,
+        Some(H264Message::Closed(_, _))
+    ));
+}
+
+#[tokio::test]
+async fn resync_clears_old_overlay_and_precedes_new_overlay() {
+    let fan = ClientFan::new();
+    fan.deliver_overlay(Arc::from("old"));
+    for seq in 0..CLIENT_QUEUE_MAX {
+        let mut frame = packet(seq as u64, 1);
+        Arc::get_mut(&mut frame).unwrap().keyframe = false;
+        fan.deliver(H264Message::Packet(frame));
+    }
+    fan.deliver_overlay(Arc::from("new"));
+    assert!(matches!(
+        fan.queue.recv().await,
+        Some(H264Message::ResyncRequired { generation: 1, .. })
+    ));
+    assert!(matches!(fan.queue.recv().await, Some(H264Message::Overlay(s)) if s.as_ref() == "new"));
 }
 
 #[tokio::test]

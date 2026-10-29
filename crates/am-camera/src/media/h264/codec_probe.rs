@@ -87,6 +87,7 @@ pub fn probe_once(url: &str) -> ProbeOutcome {
         .probe_streams_header()
         .into_iter()
         .next()
+        .filter(|video| video.codec_id != 0)
         .map(|video| ProbedStream {
             codec_id: video.codec_id,
             width: video.width,
@@ -95,12 +96,16 @@ pub fn probe_once(url: &str) -> ProbeOutcome {
         })
         .or_else(|| {
             // 头直读无视频流（无 SDP 源）：退回有界流信息探测（probesize/analyzeduration 已收敛）
-            input.probe_video().ok().map(|video| ProbedStream {
-                codec_id: video.codec_id,
-                width: video.width,
-                height: video.height,
-                fps: video.fps,
-            })
+            input
+                .probe_video()
+                .ok()
+                .filter(|video| video.codec_id != 0)
+                .map(|video| ProbedStream {
+                    codec_id: video.codec_id,
+                    width: video.width,
+                    height: video.height,
+                    fps: video.fps,
+                })
         });
     match probed {
         Some(stream) if stream.codec_id == AV_CODEC_ID_H264 => ProbeOutcome::H264 {
