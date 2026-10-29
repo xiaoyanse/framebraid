@@ -48,8 +48,8 @@
     {
       "path": "crates/am-camera/src/media/mod.rs",
       "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
-      "sha256": "9815b5b73023a4d501225ad541864092df03fd6a32f73820e99f6cb83940ec60",
-      "reason": "R7 reviewed multipart module registration; C ABI unchanged"
+      "sha256": "195bef634f1be2e185d14a48772277b4cdfe41605d55ce5b708278e28b9863ca",
+      "reason": "R7 reviewed multipart module registration; C ABI unchanged；修复源指纹登记：原登记 9815b5b73023a4d501225ad541864092df03fd6a32f73820e99f6cb83940ec60，656c8ac 实际 195bef634f1be2e185d14a48772277b4cdfe41605d55ce5b708278e28b9863ca，源码最后变更 fb254bf72799904a498dd78ead4aa4b1421149b2（R7），已核对固定基线原始 blob"
     },
     {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
@@ -786,8 +786,8 @@
     {
       "path": "crates/am-camera/src/media/h264/session.rs",
       "previousSha256": "f2d5ad0b3a6992502c3ff8c5d35d4fd9702211a4ac171e015b2f6f97b46506dd",
-      "sha256": "3e4b7cb269e697e9c81ae0a0d4a3505baa37f24cc0d9c62bd9f69ce14295b32c",
-      "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
+      "sha256": "a2fcd2f85461d375c3c1b39c47dfabd35ef4dc7506c291409def9fe1d406fdbb",
+      "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证；有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
     },
     {
       "path": "crates/am-camera/src/media/h264/session/budget_tests.rs",
@@ -954,8 +954,8 @@
     {
       "path": "crates/am-camera/src/media/rtsp_tests.rs",
       "previousSha256": "95612225fa8ea084f57daf874a6b8772baddab37be8e3d3eb36ab4fb08310978",
-      "sha256": "7527551cd579c642820054f85f162d6888a946f61a9ab9486d4bfb94e719df54",
-      "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+      "sha256": "bdf319483cfec1d0381fdbfc1752308222a0607f9d7dbb27809ce399e6262da7",
+      "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线；本地RTSP无尺寸MJPEG和停止信号验证"
     },
     {
       "path": "crates/vision/src/lib.rs",
@@ -1032,8 +1032,8 @@
     {
       "path": "crates/am-camera/src/media/sdk_io/http.rs",
       "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
-      "sha256": "2a221d466a794b941ae59cf67a0af104b69b803d27cc1e4986531d12ec460e45",
-      "reason": "R7 reviewed mjpeg stream reader helpers (authorized_retry/origin share, remaining/network pub) + R6 round2 decode_into path; C ABI unchanged"
+      "sha256": "74543d5e7daa9401c3aa0cb9c4ff6fc9f9a75b364ec08c42ced31c32bf70aa96",
+      "reason": "R7 reviewed mjpeg stream reader helpers (authorized_retry/origin share, remaining/network pub) + R6 round2 decode_into path; C ABI unchanged；修复源指纹登记：原登记 2a221d466a794b941ae59cf67a0af104b69b803d27cc1e4986531d12ec460e45，656c8ac 实际 74543d5e7daa9401c3aa0cb9c4ff6fc9f9a75b364ec08c42ced31c32bf70aa96，源码最后变更 fb254bf72799904a498dd78ead4aa4b1421149b2（R7），已核对固定基线原始 blob；不明旧登记，父版为 c7d15c65a6ab947953ba12173ab9795930eb6018b22b105d33596c0b225178de，已核固定基线实际 blob 及 R7 变动"
     },
     {
       "path": "crates/am-camera/Cargo.toml",
@@ -1052,6 +1052,24 @@
       "previousSha256": null,
       "sha256": "c33db7e4d6e630a43bfbc50d64c394db90bbf19ad357ec9c969490876284b517",
       "reason": "Add GPU audit stats exposure tests covering increment visibility and context-scoped snapshot agreement with struct_size negotiation check"
+    },
+    {
+      "path": "crates/am-camera/src/media/h264/codec_probe.rs",
+      "previousSha256": "e99211213a5743e53a1b437216b62fe3ea8c1d7458310907db449a23b9935ff6",
+      "sha256": "c7a961840da79fe16035465db872b0587129b7d1af44d6be29c60873848bc295",
+      "reason": "有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
+    },
+    {
+      "path": "crates/am-camera/src/media/rtsp.rs",
+      "previousSha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f",
+      "sha256": "c72e028406dec497b7099e4d42bc92a49e9e87af0f638f5cd78e041cb796d6fd",
+      "reason": "有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
+    },
+    {
+      "path": "crates/am-camera/src/media/sdk_io/mod.rs",
+      "previousSha256": "9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4",
+      "sha256": "69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30",
+      "reason": "修复源指纹登记：原登记 9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4，656c8ac 实际 69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30，源码最后变更 fb254bf72799904a498dd78ead4aa4b1421149b2（R7），已核对固定基线原始 blob"
     }
   ]
 }

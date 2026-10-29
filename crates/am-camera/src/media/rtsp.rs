@@ -342,8 +342,19 @@ impl InputGuard {
     pub fn probe_video(&self) -> Result<VideoStream, String> {
         let lib = api().map_err(|c| c.to_string())?;
         self.refresh_deadline();
-        // SAFETY：fmt 有效。
+        // 仅回退探测期间扩展预算，完成后恢复低延迟参数。
+        // SAFETY：fmt 由本守卫独占，探测同步执行。
+        let (old_size, old_duration) = unsafe {
+            let old = ((*self.fmt).probesize, (*self.fmt).max_analyze_duration);
+            (*self.fmt).probesize = 262_144;
+            (*self.fmt).max_analyze_duration = 500_000;
+            old
+        };
         let rc = unsafe { (lib.avformat_find_stream_info)(self.fmt, std::ptr::null_mut()) };
+        unsafe {
+            (*self.fmt).probesize = old_size;
+            (*self.fmt).max_analyze_duration = old_duration;
+        }
         if rc != 0 {
             return Err(format!("流信息探测失败: {}", lib.errstr(rc)));
         }

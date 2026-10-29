@@ -122,3 +122,73 @@ fn decoder_low_latency_applied() {
         (lib.avcodec_free_context)(&mut { ctx });
     }
 }
+
+/// 本地 SDP 不含尺寸，验证已知 MJPEG 编码和探测中的停止信号。
+#[test]
+#[ignore = "需要显式 FFmpeg 运行库"]
+fn rtsp_mjpeg_header_and_probe_cancellation() {
+    use std::io::{Read, Write};
+    use std::net::TcpListener;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Arc;
+    use std::time::{Duration, Instant};
+
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let addr = listener.local_addr().unwrap();
+    let server = std::thread::spawn(move || {
+        let (mut socket, _) = listener.accept().unwrap();
+        socket
+            .set_read_timeout(Some(Duration::from_secs(8)))
+            .unwrap();
+        let mut pending = Vec::new();
+        let mut bytes = [0u8; 2048];
+        while let Ok(n) = socket.read(&mut bytes) {
+            if n == 0 {
+                break;
+            }
+            pending.extend_from_slice(&bytes[..n]);
+            while let Some(end) = pending.windows(4).position(|w| w == b"\r\n\r\n") {
+                let request = String::from_utf8_lossy(&pending[..end + 4]);
+                let seq = request
+                    .lines()
+                    .find_map(|line| line.strip_prefix("CSeq: "))
+                    .unwrap_or("1");
+                let method = request.split_whitespace().next().unwrap_or("");
+                let sdp = "v=0\r\no=- 0 0 IN IP4 127.0.0.1\r\ns=fixture\r\nt=0 0\r\nm=video 0 RTP/AVP 26\r\na=control:track1\r\na=rtpmap:26 JPEG/90000\r\n";
+                let extra = match method {
+                    "DESCRIBE" => format!("Content-Type: application/sdp\r\nContent-Base: rtsp://{addr}/fixture/\r\nContent-Length: {}\r\n\r\n{sdp}", sdp.len()),
+                    "SETUP" => "Session: fixture\r\nTransport: RTP/AVP/TCP;unicast;interleaved=0-1\r\n\r\n".to_string(),
+                    "PLAY" => "Session: fixture\r\n\r\n".to_string(),
+                    _ => "Public: OPTIONS, DESCRIBE, SETUP, PLAY, TEARDOWN\r\n\r\n".to_string(),
+                };
+                let response = format!("RTSP/1.0 200 OK\r\nCSeq: {seq}\r\n{extra}");
+                if socket.write_all(response.as_bytes()).is_err() {
+                    return;
+                }
+                pending.drain(..end + 4);
+            }
+        }
+    });
+    let stop = Arc::new(AtomicBool::new(false));
+    let input = open_input(&format!("rtsp://{addr}/fixture"), Arc::as_ptr(&stop)).unwrap();
+    let header = input.probe_streams_header();
+    assert_eq!(header.len(), 1);
+    assert_eq!(
+        (header[0].codec_id, header[0].width, header[0].height),
+        (7, 0, 0)
+    );
+    let signal = Arc::clone(&stop);
+    let stopper = std::thread::spawn(move || {
+        std::thread::sleep(Duration::from_millis(250));
+        signal.store(true, Ordering::Relaxed);
+    });
+    let start = Instant::now();
+    let _ = input.probe_video();
+    assert!(
+        start.elapsed() < Duration::from_secs(3),
+        "探测未及时响应停止信号"
+    );
+    stopper.join().unwrap();
+    drop(input);
+    server.join().unwrap();
+}

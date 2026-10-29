@@ -1,5 +1,9 @@
 # Changelog / 变更记录
 
+## Unreleased
+
+- Identify known non-H.264 stream codecs without requiring dimensions; use a temporary bounded stream-info probe when header data is insufficient. / 已知非 H.264 编码无需尺寸即可识别；头信息不足时临时采用有界流信息探测。
+
 ## [0.2.1] - 2026-10-29
 
 - Expose GPU staging audit counters via context stats: `am_stats_t` gains tail-appended `gpu_inputs`/`gpu_copies_per_frame` (context-scoped, not per-model), filled from the vision-layer pipeline audit in `amv_get_stats`; layout 232→248 bytes with struct_size negotiation, header/Rust/Python generators synced. / GPU 搬运审计计数经上下文统计暴露：`am_stats_t` 尾部追加 `gpu_inputs`/`gpu_copies_per_frame`（上下文级，非 per-model），`amv_get_stats` 从 vision 层管线审计填充；布局 232→248 字节，struct_size 协商，三生成器同步。
