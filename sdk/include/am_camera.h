@@ -84,6 +84,22 @@ AM_API am_status_t amc_get_stats(amc_context_t* ctx, const char* scope_utf8, am_
 AM_API am_status_t amc_stats_release(am_stats_t* stats);
 AM_API am_status_t amc_get_last_error(const void* any_handle, am_error_info_t* out_info);
 AM_API const char* amc_status_name(am_status_t status);
+AM_API am_status_t amc_encoder_create(amc_context_t* ctx, const am_encoder_config_t* cfg,
+    amc_encoder_t** out_enc);
+AM_API am_status_t amc_encoder_encode(amc_encoder_t* enc, const am_pixel_view_t* frame);
+AM_API am_status_t amc_encoder_drain(amc_encoder_t* enc);
+AM_API am_status_t amc_encoder_close(amc_encoder_t* enc, uint32_t timeout_ms,
+    am_lifecycle_state_t* out_state);
+AM_API am_status_t amc_archive_open(amc_context_t* ctx, const char* path_utf8,
+    const am_encoder_config_t* enc_cfg, uint32_t segment_frames, amc_archive_t** out);
+AM_API am_status_t amc_archive_write(amc_archive_t* arch, const am_pixel_view_t* frame);
+AM_API am_status_t amc_archive_close(amc_archive_t* arch, uint32_t timeout_ms,
+    am_lifecycle_state_t* out_state);
+AM_API am_status_t amc_stream_open(amc_context_t* ctx, const char* rtmp_url_utf8,
+    const am_encoder_config_t* enc_cfg, amc_stream_t** out);
+AM_API am_status_t amc_stream_write(amc_stream_t* stream, const am_pixel_view_t* frame);
+AM_API am_status_t amc_stream_close(amc_stream_t* stream, uint32_t timeout_ms,
+    am_lifecycle_state_t* out_state);
 AM_API am_status_t amc_object_query_state(const void* any_object_handle, am_lifecycle_state_t* out_state);
 AM_API am_status_t amc_object_request_close(const void* any_object_handle);
 AM_API am_status_t amc_object_destroy(void* any_object_handle);

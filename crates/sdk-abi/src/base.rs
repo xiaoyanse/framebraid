@@ -43,6 +43,18 @@ pub struct amc_decoder_t {
     _opaque: [u8; 0],
 }
 #[repr(C)]
+pub struct amc_encoder_t {
+    _opaque: [u8; 0],
+}
+#[repr(C)]
+pub struct amc_archive_t {
+    _opaque: [u8; 0],
+}
+#[repr(C)]
+pub struct amc_stream_t {
+    _opaque: [u8; 0],
+}
+#[repr(C)]
 pub struct amv_model_t {
     _opaque: [u8; 0],
 }

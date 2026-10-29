@@ -1,5 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_model_identity_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_model_identity_t, model_uid),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_identity_t, model_version),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_identity_t, profile_id),
+            core::mem::size_of::<*const c_char>(),
+        ),
+    ];
+}
 impl AbiLayout for am_model_info_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -417,22 +433,6 @@ impl AbiLayout for am_batch_item_t {
         (
             core::mem::offset_of!(am_batch_item_t, raw_preprocess),
             core::mem::size_of::<*const am_raw_preprocess_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_batch_options_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_batch_options_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_options_t, batch_mode),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_options_t, wait_deadline_ms),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

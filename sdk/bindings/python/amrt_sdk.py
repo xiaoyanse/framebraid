@@ -139,6 +139,9 @@ class am_model_desc_t(Structure):
 class am_model_memory_desc_t(Structure):
     pass
 
+class am_encoder_config_t(Structure):
+    pass
+
 class am_model_swap_desc_t(Structure):
     pass
 
@@ -275,6 +278,15 @@ class amc_capture_sub_t(Structure):
     pass
 
 class amc_decoder_t(Structure):
+    pass
+
+class amc_encoder_t(Structure):
+    pass
+
+class amc_archive_t(Structure):
+    pass
+
+class amc_stream_t(Structure):
     pass
 
 class amv_model_t(Structure):
@@ -636,18 +648,32 @@ am_model_desc_t._fields_ = [
     ("intra_threads", c_uint32),
 ]
 
-am_model_swap_desc_t._fields_ = [
+am_encoder_config_t._fields_ = [
     ("struct_size", c_uint32),
-    ("slot_key", c_uint64),
-    ("flags", c_uint32),
-    ("reserved", c_uint32),
+    ("width", c_uint32),
+    ("height", c_uint32),
+    ("bitrate_kbps", c_uint32),
+    ("gop_size", c_uint32),
+    ("fps_num", c_uint32),
+    ("fps_den", c_uint32),
+    ("queue_max_items", c_uint32),
+    ("queue_max_bytes", c_uint32),
 ]
 
-am_backend_actual_t._fields_ = [
-    ("actual", c_uint32),
-    ("device_utf8", c_char_p),
-    ("subgraph_cpu_nodes", c_int32),
-    ("fallback_reason_utf8", c_char_p),
+am_io_spec_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("name", c_char_p),
+    ("dtype", c_uint32),
+    ("shape", POINTER(c_int64)),
+    ("shape_len", c_uint32),
+    ("dyn_min", POINTER(c_int64)),
+    ("dyn_max", POINTER(c_int64)),
+]
+
+am_model_identity_t._fields_ = [
+    ("model_uid", c_uint64),
+    ("model_version", c_uint32),
+    ("profile_id", c_char_p),
 ]
 
 am_frame_assoc_t._fields_ = [
@@ -913,14 +939,11 @@ am_raw_preprocess_t._fields_ = [
     ("layout", c_uint32),
 ]
 
-am_io_spec_t._fields_ = [
+am_model_swap_desc_t._fields_ = [
     ("struct_size", c_uint32),
-    ("name", c_char_p),
-    ("dtype", c_uint32),
-    ("shape", POINTER(c_int64)),
-    ("shape_len", c_uint32),
-    ("dyn_min", POINTER(c_int64)),
-    ("dyn_max", POINTER(c_int64)),
+    ("slot_key", c_uint64),
+    ("flags", c_uint32),
+    ("reserved", c_uint32),
 ]
 
 am_gpu_frame_desc_t._fields_ = [
@@ -1169,10 +1192,11 @@ am_captured_image_t._fields_ = [
     ("meta", POINTER(am_frame_meta_t)),
 ]
 
-am_model_identity_t._fields_ = [
-    ("model_uid", c_uint64),
-    ("model_version", c_uint32),
-    ("profile_id", c_char_p),
+am_backend_actual_t._fields_ = [
+    ("actual", c_uint32),
+    ("device_utf8", c_char_p),
+    ("subgraph_cpu_nodes", c_int32),
+    ("fallback_reason_utf8", c_char_p),
 ]
 
 am_image_input_t._fields_ = [
@@ -1505,6 +1529,16 @@ FUNCTIONS = {
     "amc_stats_release": (am_status_t, [POINTER(am_stats_t)]),
     "amc_get_last_error": (am_status_t, [c_void_p, POINTER(am_error_info_t)]),
     "amc_status_name": (c_char_p, [am_status_t]),
+    "amc_encoder_create": (am_status_t, [POINTER(amc_context_t), POINTER(am_encoder_config_t), POINTER(POINTER(amc_encoder_t))]),
+    "amc_encoder_encode": (am_status_t, [POINTER(amc_encoder_t), POINTER(am_pixel_view_t)]),
+    "amc_encoder_drain": (am_status_t, [POINTER(amc_encoder_t)]),
+    "amc_encoder_close": (am_status_t, [POINTER(amc_encoder_t), c_uint32, POINTER(am_lifecycle_state_t)]),
+    "amc_archive_open": (am_status_t, [POINTER(amc_context_t), c_char_p, POINTER(am_encoder_config_t), c_uint32, POINTER(POINTER(amc_archive_t))]),
+    "amc_archive_write": (am_status_t, [POINTER(amc_archive_t), POINTER(am_pixel_view_t)]),
+    "amc_archive_close": (am_status_t, [POINTER(amc_archive_t), c_uint32, POINTER(am_lifecycle_state_t)]),
+    "amc_stream_open": (am_status_t, [POINTER(amc_context_t), c_char_p, POINTER(am_encoder_config_t), POINTER(POINTER(amc_stream_t))]),
+    "amc_stream_write": (am_status_t, [POINTER(amc_stream_t), POINTER(am_pixel_view_t)]),
+    "amc_stream_close": (am_status_t, [POINTER(amc_stream_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amv_query_capability": (am_status_t, [POINTER(amv_context_t), POINTER(amv_capability_t)]),
     "amv_query_backends": (am_status_t, [POINTER(amv_context_t), POINTER(am_backend_matrix_t)]),
     "amv_backend_retry": (am_status_t, [POINTER(amv_init_params_t)]),

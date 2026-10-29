@@ -1,6 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_detect_result_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_detect_result_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_detect_result_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_detect_result_t, count),
+        0,
+        "am_detect_result_t.count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_detect_result_t, boxes),
+        8,
+        "am_detect_result_t.boxes"
+    );
+}
+#[test]
 fn am_classify_entry_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_classify_entry_t>(), 32);
     assert_eq!(core::mem::align_of::<am_classify_entry_t>(), 8);
@@ -313,125 +328,5 @@ fn am_realtime_policy_t_matches_c() {
         core::mem::offset_of!(am_realtime_policy_t, fair_round_robin),
         16,
         "am_realtime_policy_t.fair_round_robin"
-    );
-}
-#[test]
-fn am_limits_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_limits_t>(), 160);
-    assert_eq!(core::mem::align_of::<am_limits_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, struct_size),
-        0,
-        "am_limits_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, max_sources),
-        4,
-        "am_limits_t.max_sources"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, max_subscribers_per_source),
-        8,
-        "am_limits_t.max_subscribers_per_source"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, max_decoders),
-        12,
-        "am_limits_t.max_decoders"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, max_capture_continuous),
-        16,
-        "am_limits_t.max_capture_continuous"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, frame_budget_bytes),
-        24,
-        "am_limits_t.frame_budget_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, external_hold_max_frames),
-        32,
-        "am_limits_t.external_hold_max_frames"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, external_hold_max_bytes),
-        40,
-        "am_limits_t.external_hold_max_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, max_models),
-        48,
-        "am_limits_t.max_models"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, infer_parallelism),
-        52,
-        "am_limits_t.infer_parallelism"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, realtime_max_inflight),
-        56,
-        "am_limits_t.realtime_max_inflight"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, result_budget_bytes),
-        64,
-        "am_limits_t.result_budget_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, result_max_items),
-        72,
-        "am_limits_t.result_max_items"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, control_max_items),
-        76,
-        "am_limits_t.control_max_items"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, preprocess_budget_bytes),
-        80,
-        "am_limits_t.preprocess_budget_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_max_slots),
-        88,
-        "am_limits_t.shared_pool_max_slots"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_max_frame_bytes),
-        92,
-        "am_limits_t.shared_pool_max_frame_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_max_total_bytes),
-        96,
-        "am_limits_t.shared_pool_max_total_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_max_consumers),
-        104,
-        "am_limits_t.shared_pool_max_consumers"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_max_outstanding_borrows),
-        108,
-        "am_limits_t.shared_pool_max_outstanding_borrows"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_max_pools),
-        112,
-        "am_limits_t.shared_pool_max_pools"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, shared_pool_metadata_bytes),
-        120,
-        "am_limits_t.shared_pool_metadata_bytes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_limits_t, reserved),
-        128,
-        "am_limits_t.reserved"
     );
 }

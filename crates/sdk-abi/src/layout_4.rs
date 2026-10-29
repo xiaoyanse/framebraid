@@ -191,6 +191,56 @@ fn am_model_memory_desc_t_matches_c() {
     );
 }
 #[test]
+fn am_encoder_config_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_encoder_config_t>(), 36);
+    assert_eq!(core::mem::align_of::<am_encoder_config_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, struct_size),
+        0,
+        "am_encoder_config_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, width),
+        4,
+        "am_encoder_config_t.width"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, height),
+        8,
+        "am_encoder_config_t.height"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, bitrate_kbps),
+        12,
+        "am_encoder_config_t.bitrate_kbps"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, gop_size),
+        16,
+        "am_encoder_config_t.gop_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, fps_num),
+        20,
+        "am_encoder_config_t.fps_num"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, fps_den),
+        24,
+        "am_encoder_config_t.fps_den"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, queue_max_items),
+        28,
+        "am_encoder_config_t.queue_max_items"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_encoder_config_t, queue_max_bytes),
+        32,
+        "am_encoder_config_t.queue_max_bytes"
+    );
+}
+#[test]
 fn am_model_swap_desc_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_model_swap_desc_t>(), 24);
     assert_eq!(core::mem::align_of::<am_model_swap_desc_t>(), 8);
@@ -278,25 +328,5 @@ fn am_backend_actual_t_matches_c() {
         core::mem::offset_of!(am_backend_actual_t, fallback_reason_utf8),
         24,
         "am_backend_actual_t.fallback_reason_utf8"
-    );
-}
-#[test]
-fn am_model_identity_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_model_identity_t>(), 24);
-    assert_eq!(core::mem::align_of::<am_model_identity_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_model_identity_t, model_uid),
-        0,
-        "am_model_identity_t.model_uid"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_identity_t, model_version),
-        8,
-        "am_model_identity_t.model_version"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_identity_t, profile_id),
-        16,
-        "am_model_identity_t.profile_id"
     );
 }

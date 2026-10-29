@@ -1,6 +1,26 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_batch_options_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_batch_options_t>(), 12);
+    assert_eq!(core::mem::align_of::<am_batch_options_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_batch_options_t, struct_size),
+        0,
+        "am_batch_options_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batch_options_t, batch_mode),
+        4,
+        "am_batch_options_t.batch_mode"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batch_options_t, wait_deadline_ms),
+        8,
+        "am_batch_options_t.wait_deadline_ms"
+    );
+}
+#[test]
 fn am_batch_receipt_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_batch_receipt_t>(), 24);
     assert_eq!(core::mem::align_of::<am_batch_receipt_t>(), 8);
@@ -278,20 +298,5 @@ fn am_detect_box_t_matches_c() {
         core::mem::offset_of!(am_detect_box_t, class_name_utf8),
         24,
         "am_detect_box_t.class_name_utf8"
-    );
-}
-#[test]
-fn am_detect_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_detect_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_detect_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_detect_result_t, count),
-        0,
-        "am_detect_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_detect_result_t, boxes),
-        8,
-        "am_detect_result_t.boxes"
     );
 }

@@ -152,6 +152,46 @@ impl AbiLayout for am_model_memory_desc_t {
         ),
     ];
 }
+impl AbiLayout for am_encoder_config_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_encoder_config_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, width),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, height),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, bitrate_kbps),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, gop_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, fps_num),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, fps_den),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, queue_max_items),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_encoder_config_t, queue_max_bytes),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_model_swap_desc_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -220,22 +260,6 @@ impl AbiLayout for am_backend_actual_t {
         ),
         (
             core::mem::offset_of!(am_backend_actual_t, fallback_reason_utf8),
-            core::mem::size_of::<*const c_char>(),
-        ),
-    ];
-}
-impl AbiLayout for am_model_identity_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_model_identity_t, model_uid),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_identity_t, model_version),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_identity_t, profile_id),
             core::mem::size_of::<*const c_char>(),
         ),
     ];

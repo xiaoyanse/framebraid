@@ -1,5 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_batch_options_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_batch_options_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batch_options_t, batch_mode),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batch_options_t, wait_deadline_ms),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_batch_receipt_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -221,18 +237,6 @@ impl AbiLayout for am_detect_box_t {
         (
             core::mem::offset_of!(am_detect_box_t, class_name_utf8),
             core::mem::size_of::<*const c_char>(),
-        ),
-    ];
-}
-impl AbiLayout for am_detect_result_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_detect_result_t, count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_detect_result_t, boxes),
-            core::mem::size_of::<*const am_detect_box_t>(),
         ),
     ];
 }

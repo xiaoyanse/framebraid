@@ -604,6 +604,15 @@ typedef struct am_model_memory_desc_s {
   const am_backend_policy_t* backend;   /* P2 指针化：可演进结构不按值嵌入 */
 } am_model_memory_desc_t;
 
+typedef struct am_encoder_config_s {
+  uint32_t struct_size;
+  uint32_t width, height;       /* 16..8192 */
+  uint32_t bitrate_kbps;        /* 0=2500 默认 */
+  uint32_t gop_size;            /* 0=60 默认 */
+  uint32_t fps_num, fps_den;    /* 时间基 */
+  uint32_t queue_max_items, queue_max_bytes;  /* 输出包队列预算 */
+} am_encoder_config_t;
+
 typedef struct am_model_swap_desc_s {   /* M5：原子热切换描述 */
   uint32_t struct_size;
   uint64_t slot_key;        /* B11 槽位；0=全局单槽（既有 load 语义的槽） */

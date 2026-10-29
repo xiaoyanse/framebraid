@@ -539,6 +539,57 @@ R3独立解码提交计数修复：有效解码句柄的每次`amc_decoder_submi
 
 Media订阅的对象、队列引用槽和缩放预设容量属于控制元数据，构造前占用`AM_Q_CONTROL`字节/项额度，直到对象最后引用释放才归还；队列的图片/包载荷继续按原数据额度计费，不重复把引用槽当载荷。低控制预算下可明确ResourceExhausted，即使该订阅的载荷预算尚有余量；关闭不能提前释放仍被对象持有的元数据额度。
 
+### 2.10 帧编码输出与存档/推流会话（⑤，未发布兼容扩展）
+
+**编码器**（FFmpeg avcodec；运行库重建为含 libx264——2026-10-29 用户裁决接受 GPL，
+分发随附 x264 GPL 许可文本）：像素帧（RGBA8，来自帧订阅或解码会话）→ H.264 编码。
+首版 `libx264` CPU 软编（NVENC 硬编为后续增强，GPU 帧直通同批）。
+
+**编码会话**（三段式生命周期，与解码器同族）：
+
+```c
+typedef struct am_encoder_config_s {
+  uint32_t struct_size;
+  uint32_t width, height;       /* 输入帧尺寸（编码目标） */
+  uint32_t bitrate_kbps;        /* 目标码率；0=默认 2500 */
+  uint32_t gop_size;            /* 关键帧间隔；0=默认 60 */
+  uint32_t fps_num, fps_den;    /* 时间基（帧率） */
+  uint32_t queue_max_items, queue_max_bytes;  /* 输出包队列（同订阅预算语义） */
+} am_encoder_config_t;
+AM_API am_status_t amc_encoder_create(amc_context_t* ctx, const am_encoder_config_t* cfg,
+    amc_encoder_t** out_enc);
+AM_API am_status_t amc_encoder_encode(amc_encoder_t* enc, const am_pixel_view_t* frame);
+AM_API am_status_t amc_encoder_drain(amc_encoder_t* enc);       /* 冲刷尾包 */
+AM_API am_status_t amc_encoder_close(amc_encoder_t* enc, uint32_t timeout_ms,
+    am_lifecycle_state_t* out_state);
+```
+
+- `encode` 接受像素视图（借用至返回）；输出包经 `amc_encoder_receive` 拉取（TRY_AGAIN
+  语义同解码器 receive）
+- 编码包语义对齐既有 `am_encoded_packet_t`（引用计数 retain/release）
+- 配置校验：宽高界 16..8192、码率界、fps 界——越界 invalidArgument
+
+**存档/推流会话**（消费编码包；同一会话抽象两种 sink）：
+
+```c
+AM_API am_status_t amc_archive_open(amc_context_t* ctx, const char* path_utf8,
+    const am_encoder_config_t* enc_cfg, uint32_t segment_frames, amc_archive_t** out);
+AM_API am_status_t amc_archive_write(amc_archive_t* arch, const am_pixel_view_t* frame);
+AM_API am_status_t amc_archive_close(amc_archive_t* arch, uint32_t timeout_ms,
+    am_lifecycle_state_t* out_state);
+AM_API am_status_t amc_stream_open(amc_context_t* ctx, const char* rtmp_url_utf8,
+    const am_encoder_config_t* enc_cfg, amc_stream_t** out);
+AM_API am_status_t amc_stream_write(amc_stream_t* stream, const am_pixel_view_t* frame);
+AM_API am_status_t amc_stream_close(amc_stream_t* stream, uint32_t timeout_ms,
+    am_lifecycle_state_t* out_state);
+```
+
+- 存档：avformat mp4 muxer；`segment_frames`>0 时按帧数分段（多文件，路径模板含
+  `%d` 序号）；close 冲刷 trailer 保证文件可播放
+- 推流：avformat flv/rtmp muxer；断线按既有重连退避（1s×2^n 封顶 30s）重试，
+  故障状态经源状态通道语义可观测（RECONNECT_WAIT + fault）
+- 两会话内部各持一个编码器；预算按编码器+会话元数据计费（§6 语义）
+
 ## 3. am_vision.dll 函数清单
 
 ### 3.1 能力与后端矩阵（B14：单一 ORT 运行库 + 四层后端报告）

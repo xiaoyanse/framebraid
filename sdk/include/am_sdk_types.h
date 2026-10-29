@@ -60,6 +60,7 @@ typedef struct am_backend_policy_s am_backend_policy_t;
 typedef struct am_raw_preprocess_s am_raw_preprocess_t;
 typedef struct am_model_desc_s am_model_desc_t;
 typedef struct am_model_memory_desc_s am_model_memory_desc_t;
+typedef struct am_encoder_config_s am_encoder_config_t;
 typedef struct am_model_swap_desc_s am_model_swap_desc_t;
 typedef struct am_io_spec_s am_io_spec_t;
 typedef struct am_backend_actual_s am_backend_actual_t;
@@ -106,6 +107,9 @@ typedef struct amc_frame_sub_s amc_frame_sub_t;
 typedef struct amc_frame_s amc_frame_t;
 typedef struct amc_capture_sub_s amc_capture_sub_t;
 typedef struct amc_decoder_s amc_decoder_t;
+typedef struct amc_encoder_s amc_encoder_t;
+typedef struct amc_archive_s amc_archive_t;
+typedef struct amc_stream_s amc_stream_t;
 typedef struct amv_model_s amv_model_t;
 typedef struct amc_shared_pool_s amc_shared_pool_t;
 typedef struct amv_shared_pool_s amv_shared_pool_t;
@@ -791,6 +795,15 @@ typedef struct am_model_memory_desc_s {
   const char* profile_id;
   const am_backend_policy_t* backend;   /* P2 指针化：可演进结构不按值嵌入 */
 } am_model_memory_desc_t;
+
+typedef struct am_encoder_config_s {
+  uint32_t struct_size;
+  uint32_t width, height;       /* 16..8192 */
+  uint32_t bitrate_kbps;        /* 0=2500 默认 */
+  uint32_t gop_size;            /* 0=60 默认 */
+  uint32_t fps_num, fps_den;    /* 时间基 */
+  uint32_t queue_max_items, queue_max_bytes;  /* 输出包队列预算 */
+} am_encoder_config_t;
 
 typedef struct am_model_swap_desc_s {   /* M5：原子热切换描述 */
   uint32_t struct_size;

@@ -2,6 +2,12 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_detect_result_t {
+    pub count: u32,
+    pub boxes: *const am_detect_box_t,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_classify_entry_t {
     pub class_id: i32,
     pub class_name_utf8: *const c_char,
@@ -120,62 +126,6 @@ impl Default for am_realtime_policy_t {
             replace_oldest: Default::default(),
             slot_count: Default::default(),
             fair_round_robin: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_limits_t {
-    pub struct_size: u32,
-    pub max_sources: u32,
-    pub max_subscribers_per_source: u32,
-    pub max_decoders: u32,
-    pub max_capture_continuous: u32,
-    pub frame_budget_bytes: u64,
-    pub external_hold_max_frames: u32,
-    pub external_hold_max_bytes: u64,
-    pub max_models: u32,
-    pub infer_parallelism: u32,
-    pub realtime_max_inflight: u32,
-    pub result_budget_bytes: u64,
-    pub result_max_items: u32,
-    pub control_max_items: u32,
-    pub preprocess_budget_bytes: u64,
-    pub shared_pool_max_slots: u32,
-    pub shared_pool_max_frame_bytes: u32,
-    pub shared_pool_max_total_bytes: u64,
-    pub shared_pool_max_consumers: u32,
-    pub shared_pool_max_outstanding_borrows: u32,
-    pub shared_pool_max_pools: u32,
-    pub shared_pool_metadata_bytes: u64,
-    pub reserved: [u32; 8],
-}
-impl Default for am_limits_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            max_sources: Default::default(),
-            max_subscribers_per_source: Default::default(),
-            max_decoders: Default::default(),
-            max_capture_continuous: Default::default(),
-            frame_budget_bytes: Default::default(),
-            external_hold_max_frames: Default::default(),
-            external_hold_max_bytes: Default::default(),
-            max_models: Default::default(),
-            infer_parallelism: Default::default(),
-            realtime_max_inflight: Default::default(),
-            result_budget_bytes: Default::default(),
-            result_max_items: Default::default(),
-            control_max_items: Default::default(),
-            preprocess_budget_bytes: Default::default(),
-            shared_pool_max_slots: Default::default(),
-            shared_pool_max_frame_bytes: Default::default(),
-            shared_pool_max_total_bytes: Default::default(),
-            shared_pool_max_consumers: Default::default(),
-            shared_pool_max_outstanding_borrows: Default::default(),
-            shared_pool_max_pools: Default::default(),
-            shared_pool_metadata_bytes: Default::default(),
-            reserved: [Default::default(); 8],
         }
     }
 }

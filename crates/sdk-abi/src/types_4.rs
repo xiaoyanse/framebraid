@@ -118,6 +118,34 @@ impl Default for am_model_memory_desc_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_encoder_config_t {
+    pub struct_size: u32,
+    pub width: u32,
+    pub height: u32,
+    pub bitrate_kbps: u32,
+    pub gop_size: u32,
+    pub fps_num: u32,
+    pub fps_den: u32,
+    pub queue_max_items: u32,
+    pub queue_max_bytes: u32,
+}
+impl Default for am_encoder_config_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            width: Default::default(),
+            height: Default::default(),
+            bitrate_kbps: Default::default(),
+            gop_size: Default::default(),
+            fps_num: Default::default(),
+            fps_den: Default::default(),
+            queue_max_items: Default::default(),
+            queue_max_bytes: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_model_swap_desc_t {
     pub struct_size: u32,
     pub slot_key: u64,
@@ -165,11 +193,4 @@ pub struct am_backend_actual_t {
     pub device_utf8: *const c_char,
     pub subgraph_cpu_nodes: i32,
     pub fallback_reason_utf8: *const c_char,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_model_identity_t {
-    pub model_uid: u64,
-    pub model_version: u32,
-    pub profile_id: *const c_char,
 }

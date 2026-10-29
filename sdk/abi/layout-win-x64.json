@@ -613,6 +613,21 @@
         "backend": 40
       }
     },
+    "am_encoder_config_t": {
+      "size": 36,
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "width": 4,
+        "height": 8,
+        "bitrate_kbps": 12,
+        "gop_size": 16,
+        "fps_num": 20,
+        "fps_den": 24,
+        "queue_max_items": 28,
+        "queue_max_bytes": 32
+      }
+    },
     "am_model_swap_desc_t": {
       "size": 24,
       "align": 8,

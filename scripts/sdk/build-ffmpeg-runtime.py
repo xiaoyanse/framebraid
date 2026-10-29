@@ -46,15 +46,20 @@ def configure_args(prefix):
     return [
         "--prefix=" + prefix, "--target-os=mingw32", "--arch=x86_64",
         "--enable-shared", "--disable-static", "--disable-autodetect",
-        "--disable-gpl", "--disable-nonfree", "--disable-version3",
+        # ⑤ 编码推流（2026-10-29 用户裁决）：启用 libx264（GPL）。运行库整体
+        # 变 GPL 组件——分发时必须随附 x264 GPL 许可文本（materials 体系登记）。
+        "--enable-gpl", "--disable-nonfree", "--disable-version3",
         "--disable-programs", "--disable-doc", "--disable-avdevice",
         "--disable-avfilter", "--disable-debug", "--enable-w32threads",
         "--disable-pthreads", "--enable-schannel", "--extra-ldflags=-static-libgcc",
         "--disable-everything", "--enable-avcodec", "--enable-avformat",
         "--enable-avutil", "--enable-swscale", "--enable-swresample", "--enable-network",
+        "--enable-libx264",
         "--enable-decoder=h264,hevc,mjpeg", "--enable-parser=h264,hevc,mjpeg",
+        "--enable-encoder=libx264,aac",
+        "--enable-muxer=mp4,mov,flv,rtmp",
         "--enable-demuxer=h264,hevc,mjpeg,rtsp,rtp,sdp,mov,matroska,mpegts",
-        "--enable-protocol=file,tcp,udp,rtp,http,https,tls",
+        "--enable-protocol=file,tcp,udp,rtp,http,https,tls,rtmp",
         "--enable-bsf=h264_mp4toannexb,hevc_mp4toannexb,extract_extradata,filter_units",
         "--enable-d3d11va", "--enable-dxva2",
         # d3d11va是旧AD_HOC接口；AVHWDeviceContext路径必须同时启用d3d11va2。
@@ -124,6 +129,7 @@ def main():
     make = msys_path(tools / "usr/bin/make.exe")
     script = "\n".join([
         "#!/usr/bin/env bash", "set -euo pipefail", "export PATH=" + shlex.quote(tool_path),
+        "export PKG_CONFIG_PATH=/mingw64/lib/pkgconfig",
         "export TMPDIR=" + shlex.quote(msys_path(root / "tmp")),
         "cd " + shlex.quote(msys_path(build)),
         (":" if resume else shlex.quote(msys_path(source_dir / "configure")) + " "

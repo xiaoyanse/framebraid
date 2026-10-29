@@ -1,6 +1,13 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_model_identity_t {
+    pub model_uid: u64,
+    pub model_version: u32,
+    pub profile_id: *const c_char,
+}
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct am_model_info_t {
     pub struct_size: u32,
@@ -221,22 +228,6 @@ impl Default for am_batch_item_t {
             tensors: Default::default(),
             slot_key: Default::default(),
             raw_preprocess: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_batch_options_t {
-    pub struct_size: u32,
-    pub batch_mode: u32,
-    pub wait_deadline_ms: u32,
-}
-impl Default for am_batch_options_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            batch_mode: Default::default(),
-            wait_deadline_ms: Default::default(),
         }
     }
 }
