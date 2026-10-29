@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "scope": "Windows x64 CPU base package; OpenVINO/CUDA provider binaries excluded",
+  "scope": "Windows x64 CPU base package + encode (libx264 GPL per owner decision 2026-10-29); OpenVINO/CUDA provider binaries excluded",
   "artifacts": [
     {
       "id": "ort-wheel",
@@ -69,38 +69,44 @@
     {
       "group": "ffmpeg",
       "file": "avcodec-63.dll",
-      "sha256": "e10e95f0446308e649c67ece7d4e3d29f61227d9f4c7ccbff9271b2dd983cec9",
-      "artifact": "ffmpeg-distribution"
+      "sha256": "d88503190ff00e66288b4941bcc0ed7bd31dc445077a8bafbfe0417b2c3521e5",
+      "artifact": "ffmpeg-encode-gpl-build"
     },
     {
       "group": "ffmpeg",
       "file": "avformat-63.dll",
-      "sha256": "41bd9c75dab9c28f740d3bbd6d453d3d3f2986ea7b44f1ecb580252634342a55",
-      "artifact": "ffmpeg-distribution"
+      "sha256": "81a35c8262cba94cf330943aa19754ef39865f7a6e32299c5ccf6a560fce95a6",
+      "artifact": "ffmpeg-encode-gpl-build"
     },
     {
       "group": "ffmpeg",
       "file": "avutil-61.dll",
-      "sha256": "20dc2312c46fe3298d2f9c0bd1801ab8e7416c36a1399242b3b46182e1dfcfc2",
-      "artifact": "ffmpeg-distribution"
+      "sha256": "dbad7b693f514af6490b6c20b69e2df3f7f83dcc8d216d8e087c19276073d47e",
+      "artifact": "ffmpeg-encode-gpl-build"
     },
     {
       "group": "ffmpeg",
       "file": "swscale-10.dll",
-      "sha256": "8d0ee018d93c444fe1a0a5bb35479285c584843ba233e5ebb57bb7b1a9526a72",
-      "artifact": "ffmpeg-distribution"
+      "sha256": "929012a0a4866aa1b703e6fb809ca033b003929ea512a46832b125098ce4fa2b",
+      "artifact": "ffmpeg-encode-gpl-build"
     },
     {
       "group": "ffmpeg",
       "file": "swresample-7.dll",
-      "sha256": "facc154cfaee211987c4563ce5f0b8250e6edb49d5b59e11dc628c341268e7b3",
-      "artifact": "ffmpeg-distribution"
+      "sha256": "2550145ba1389c427430ac9e2c182dd495fd9c31b0ccf3c439bf7456b6af4bb5",
+      "artifact": "ffmpeg-encode-gpl-build"
     },
     {
       "group": "onnxruntime-cpu",
       "file": "onnxruntime.dll",
       "sha256": "66e62f7bebf65b048ff1a93c40a73df93c36f93ce5bb085076de92b1a1e754fd",
       "artifact": "ort-wheel"
+    },
+    {
+      "group": "ffmpeg",
+      "file": "libx264-165.dll",
+      "sha256": "3cda80e1c872fe1aae0bc8cd62cec6bb729a0bac6365697488783ab48e7651d7",
+      "artifact": "ffmpeg-encode-gpl-build"
     }
   ],
   "sourceClosure": {

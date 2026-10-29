@@ -13,6 +13,8 @@ const ffmpegNames = [
   'avutil-61.dll',
   'swresample-7.dll',
   'swscale-10.dll',
+  // ⑤ GPL 编码构建闭包（2026-10-29 决策）：
+  'libx264-165.dll',
 ];
 const usage = `本地 Windows x64 SDK 交付包（不上传、不发布）
 node scripts/sdk/package-delivery.mjs --output "${path.join(repo, '.local/releases/new-package')}" \\
