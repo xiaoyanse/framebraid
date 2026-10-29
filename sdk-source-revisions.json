@@ -264,8 +264,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "7c8bc7ba8f72af4cc70018e72ded21c7174f9b33f944d091101fdff488719022",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "c6471dd66954bc66c0f59355e00ddcdbab0ea26814377c99819bd5a1f08b46c0",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
@@ -282,8 +282,8 @@
     {
       "path": "crates/vision/src/sdk/selection.rs",
       "previousSha256": null,
-      "sha256": "09b04b4af4938ce30afcd9e90c8bbfb41ab019858c7309fa9e41bbb97bca18cf",
-      "reason": "Per-candidate inference thread admission, bounded fallback and explicit failure/rebuild controls; preserves legacy loading and C ABI；E2 DirectML后端枚举扩展（第四推理路径）"
+      "sha256": "db05dc3ecfa8c223f3ff427dbe86b83bdc245b3320f1c2838428cb5619c31395",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
     },
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
@@ -960,8 +960,8 @@
     {
       "path": "crates/vision/src/lib.rs",
       "previousSha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1",
-      "sha256": "ff1f82e2d66bd9065ab224e41f22713e0f73ceb7957c3178c2af651adecd6a2c",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "25bbad0d888988d49d63b88269057480c1562783e93d88489d8e12eb4bcd739b",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
     },
     {
       "path": "crates/vision/src/backend.rs",
@@ -1208,6 +1208,24 @@
       "previousSha256": null,
       "sha256": "dee79e1d5ca1e2429dfa29fed423488eabedac04d890dba8e1b9608410ebc0b8",
       "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
+    },
+    {
+      "path": "crates/vision/src/engine/ov_sys.rs",
+      "previousSha256": null,
+      "sha256": "d348c12cf248e7f788fe0cc64f43f4b85161d0230f4f6479de951eeb7a071b75",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+    },
+    {
+      "path": "crates/vision/src/engine/openvino.rs",
+      "previousSha256": null,
+      "sha256": "51b5b70e8dbb19cf6ba6ab788b47308a784db8304b9e1ed4e4cb4977ca380a55",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+    },
+    {
+      "path": "crates/vision/src/engine/mod.rs",
+      "previousSha256": null,
+      "sha256": "aadb67004958f905e019f84390f4f428cd954375f59167f02e081f6795ecfd01",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
     }
   ]
 }

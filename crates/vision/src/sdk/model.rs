@@ -1,3 +1,4 @@
+use crate::engine::ModelEngine;
 use crate::{profiles, Error, Result};
 use ort::{
     memory::Allocator,
@@ -163,7 +164,7 @@ pub enum ModelSource<'a> {
     Memory(&'a [u8]),
 }
 pub struct Model {
-    session: Session,
+    engine: ModelEngine,
     pub inputs: Vec<TensorInfo>,
     pub outputs: Vec<TensorInfo>,
     pub profile: Option<&'static profiles::Profile>,
@@ -248,33 +249,28 @@ impl Model {
                     _ => None,
                 },
             )?;
-            let session = selection::choose(policy, legacy, &mut selection, |target| {
+            let engine = selection::choose(policy, legacy, &mut selection, |target| {
                 admit(target).map_err(|error| selection::AttemptError {
                     error,
                     stage: "resource_admission",
                     native_code: None,
                 })?;
-                super::session::create(source, &bytes, target, threads)
+                Ok(match target.backend {
+                    4 => ModelEngine::Ov(crate::engine::openvino::create(&bytes).map_err(
+                        |failure| selection::AttemptError {
+                            error: failure.error,
+                            stage: failure.stage,
+                            native_code: failure.native_code,
+                        },
+                    )?),
+                    _ => ModelEngine::Ort(super::session::create(source, &bytes, target, threads)?),
+                })
             })?;
             let actual_backend = selection.selected.map_or(0, |target| target.backend);
-            // 先拒绝超出SDK合同的数量，再复制名称与形状；原生会话内存另计。
-            if session.inputs().is_empty()
-                || session.outputs().is_empty()
-                || session.inputs().len() > 32
-                || session.outputs().len() > 32
-            {
-                return Err(Error("vision.ioUnsupported".into()));
-            }
-            let inputs = session
-                .inputs()
-                .iter()
-                .map(|v| info(v.name(), v.dtype()))
-                .collect::<Result<Vec<_>>>()?;
-            let outputs = session
-                .outputs()
-                .iter()
-                .map(|v| info(v.name(), v.dtype()))
-                .collect::<Result<Vec<_>>>()?;
+            let (inputs, outputs, batch) = match &engine {
+                ModelEngine::Ort(session) => ort_io_and_batch(session)?,
+                ModelEngine::Ov(engine) => (engine.inputs.clone(), engine.outputs.clone(), 0),
+            };
             if let Some(profile) = p {
                 let matches = |actual: &[TensorInfo], expected: &[profiles::TensorSpec]| {
                     actual.len() == expected.len()
@@ -295,10 +291,9 @@ impl Model {
                     return Err(Error("vision.formatIncompatible".into()));
                 }
             }
-            let batch = super::batch::from_session(&session, &inputs, &outputs)?;
             selection.model_accepted = true;
             Ok(Self {
-                session,
+                engine,
                 inputs,
                 outputs,
                 profile: p,
@@ -315,7 +310,11 @@ impl Model {
     }
     /// 原生 ORT 会话引用（GPU 管线预处理与 IOBinding 用）。
     pub fn ort_session(&self) -> &Session {
-        &self.session
+        match &self.engine {
+            ModelEngine::Ort(session) => session,
+            // GPU 直传入口由 is_cuda() 门控；OpenVINO 引擎不持 ORT 会话。
+            ModelEngine::Ov(_) => panic!("ort_session 仅在 ORT 后端可用"),
+        }
     }
 
     /// 实际后端是否 CUDA（GPU 帧直传的前提；非 CUDA 显式报不支持）。
@@ -331,6 +330,9 @@ impl Model {
         )
     }
     pub fn run(&mut self, inputs: &[TensorData], output_budget: usize) -> Result<Vec<TensorData>> {
+        if matches!(&self.engine, ModelEngine::Ov(_)) {
+            return self.run_openvino(inputs, output_budget);
+        }
         self.validate_inputs(inputs)?;
         let values = inputs
             .iter()
@@ -351,7 +353,11 @@ impl Model {
                 Ok((v.info.name.as_str(), tensor.into_dyn()))
             })
             .collect::<Result<Vec<_>>>()?;
-        let result = match self.session.run(values) {
+        let session = match &mut self.engine {
+            ModelEngine::Ort(session) => session,
+            ModelEngine::Ov(_) => unreachable!("run 仅在 Ort 分支进入"),
+        };
+        let result = match session.run(values) {
             Ok(result) => {
                 Self::observe_ok(&mut self.selection);
                 result
@@ -364,6 +370,47 @@ impl Model {
         Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)
     }
 
+    /// OpenVINO 路径：校验 → 引擎推理 → 批检查 → 观察计数，语义对齐 ORT run。
+    fn run_openvino(
+        &mut self,
+        inputs: &[TensorData],
+        output_budget: usize,
+    ) -> Result<Vec<TensorData>> {
+        self.validate_inputs(inputs)?;
+        let engine = match &self.engine {
+            ModelEngine::Ov(engine) => engine,
+            ModelEngine::Ort(_) => unreachable!("run_openvino 仅在 Ov 分支进入"),
+        };
+        let outputs = match engine.infer(inputs, output_budget) {
+            Ok(outputs) => outputs,
+            Err(failure) => {
+                if failure.native_ok {
+                    Self::observe_ok(&mut self.selection);
+                }
+                if let Some(code) = failure.native_code {
+                    self.selection.native_failures =
+                        self.selection.native_failures.saturating_add(1);
+                    self.selection.last_native_run_succeeded = Some(false);
+                    self.selection.last_native_error_code = Some(code);
+                }
+                return Err(failure.error);
+            }
+        };
+        Self::observe_ok(&mut self.selection);
+        if self.batch != 0
+            && outputs.iter().any(|v| {
+                v.info
+                    .shape
+                    .first()
+                    .is_none_or(|b| *b != i64::from(self.batch))
+            })
+        {
+            return Err(Error("vision.batchUnsupported".into()));
+        }
+        self.selection.delivered_runs = self.selection.delivered_runs.saturating_add(1);
+        Ok(outputs)
+    }
+
     /// GPU 直传推理（M2b §3.3a）：输入已绑定为 CUDA device tensor（预处理在
     /// GPU 完成），经 IOBinding 执行；输出提取与 CPU 路径一致（回读结果张量
     /// 是业务消费必需，不计入输入搬运）。输入形状按 self.inputs 校验。
@@ -372,7 +419,10 @@ impl Model {
         input: &crate::gpu::iobinding::InferenceInput,
         output_budget: usize,
     ) -> Result<Vec<TensorData>> {
-        let result = match self.session.run_binding(&input.binding) {
+        let ModelEngine::Ort(session) = &mut self.engine else {
+            return Err(Error("vision.ioUnsupported".into()));
+        };
+        let result = match session.run_binding(&input.binding) {
             Ok(result) => {
                 Self::observe_ok(&mut self.selection);
                 result
@@ -435,6 +485,29 @@ impl Model {
         selection.delivered_runs = selection.delivered_runs.saturating_add(1);
         Ok(output)
     }
+}
+
+/// ORT 候选的 IO 规格提取：先拒绝超出SDK合同的数量，再复制名称与形状；原生会话内存另计。
+fn ort_io_and_batch(session: &Session) -> Result<(Vec<TensorInfo>, Vec<TensorInfo>, u32)> {
+    if session.inputs().is_empty()
+        || session.outputs().is_empty()
+        || session.inputs().len() > 32
+        || session.outputs().len() > 32
+    {
+        return Err(Error("vision.ioUnsupported".into()));
+    }
+    let inputs = session
+        .inputs()
+        .iter()
+        .map(|v| info(v.name(), v.dtype()))
+        .collect::<Result<Vec<_>>>()?;
+    let outputs = session
+        .outputs()
+        .iter()
+        .map(|v| info(v.name(), v.dtype()))
+        .collect::<Result<Vec<_>>>()?;
+    let batch = super::batch::from_session(session, &inputs, &outputs)?;
+    Ok((inputs, outputs, batch))
 }
 
 #[cfg(test)]

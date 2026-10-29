@@ -24,7 +24,7 @@ impl BackendSelectionPolicy {
             return Err(Error("sdk.invalidArgument".into()));
         }
         for (i, target) in self.priority.iter().enumerate() {
-            if target.backend > 3
+            if target.backend > 4
                 || target.device_id > i32::MAX as u32
                 || target.backend != 2 && target.device_id != 0
                 || self.priority[..i].contains(target)
@@ -189,6 +189,11 @@ mod tests {
             backend: 4,
             device_id: 0,
         };
+        assert!(p.validate().is_ok());
+        p.priority[0] = BackendTarget {
+            backend: 4,
+            device_id: 1,
+        };
         assert!(p.validate().is_err());
     }
 
@@ -241,6 +246,38 @@ mod tests {
         .is_err());
         assert!(r.attempts.iter().all(|a| a.target.backend != 0));
     }
+    #[test]
+    fn openvino_candidate_failure_falls_through_to_next_priority() {
+        // E1：backend=4 原生构造失败（缺运行库/模型不支持）按候选语义落下一优先级。
+        let mut p = policy();
+        p.priority[0] = BackendTarget {
+            backend: 4,
+            device_id: 0,
+        };
+        let mut r = report(&p, false);
+        let value = choose(&p, false, &mut r, |target| {
+            if target.backend == 4 {
+                Err(AttemptError::key(
+                    "vision.backendStrictUnavailable",
+                    "runtime",
+                ))
+            } else {
+                Ok(42)
+            }
+        })
+        .unwrap();
+        assert_eq!(value, 42);
+        assert_eq!(
+            r.selected,
+            Some(BackendTarget {
+                backend: 0,
+                device_id: 0,
+            })
+        );
+        assert_eq!(r.attempts.len(), 2);
+        assert_eq!(r.attempts[0].stage, "runtime");
+    }
+
     #[test]
     fn only_candidate_admission_exhaustion_can_fall_through_resource_errors() {
         let mut p = policy();
