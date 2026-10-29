@@ -19,3 +19,4 @@ am-camera-core = { package = "am-camera", path = "../am-camera", default-feature
 
 [dev-dependencies]
 image = { version = "0.25", default-features = false, features = ["jpeg"] }
+tempfile = "3"

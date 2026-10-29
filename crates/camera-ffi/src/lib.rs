@@ -1,14 +1,17 @@
 #![allow(clippy::missing_safety_doc)]
 //! 对外C入口遵循公开头文件的指针寿命约定；不复制业务服务层。
 use am_sdk_support::{abi::*, common, context, status};
+mod archive;
 mod captures;
 mod decoder;
+mod encode;
 mod frames;
 mod hardware;
 mod probe;
 mod reader;
 mod shared;
 mod sources;
+mod stream;
 mod subscriptions;
 mod telemetry;
 mod threads;

@@ -299,13 +299,29 @@ pub struct AVFormatContext {
     pub interrupt_callback: AVIOInterruptCB,
 }
 
-/// AVStream 前缀（libavformat/avformat.h）。
+/// AVStream 前缀（libavformat/avformat.h）：输出 muxing 需读 time_base。
 #[repr(C)]
 pub struct AVStream {
     pub av_class: *const c_void,
     pub index: c_int,
     pub id: c_int,
     pub codecpar: *mut AVCodecParameters,
+    pub priv_data: *mut c_void,
+    pub time_base: AVRational,
+}
+
+/// AVOutputFormat 前缀（libavformat/avformat.h，本运行库无 av_class 首字段）：
+/// 仅读 flags 判定 AVFMT_GLOBALHEADER。
+#[repr(C)]
+pub struct AVOutputFormat {
+    pub name: *const c_char,
+    pub long_name: *const c_char,
+    pub mime_type: *const c_char,
+    pub extensions: *const c_char,
+    pub audio_codec: c_int,
+    pub video_codec: c_int,
+    pub subtitle_codec: c_int,
+    pub flags: c_int,
 }
 
 /// AVBufferRef（libavutil/buffer.h）；用于核对实际CPU回读分配大小。
@@ -365,6 +381,12 @@ pub const AVMEDIA_TYPE_VIDEO: c_int = 0;
 pub const AVFMT_FLAG_NOBUFFER: c_int = 0x0040;
 // AV_CODEC_FLAG_LOW_DELAY（libavcodec/avcodec.h）：解码器低延迟模式
 pub const AV_CODEC_FLAG_LOW_DELAY: c_int = 0x0008_0000;
+// AV_CODEC_FLAG_GLOBAL_HEADER（1<<22）：编码器把参数集存 extradata 供 muxer 写头
+pub const AV_CODEC_FLAG_GLOBAL_HEADER: c_int = 1 << 22;
+// AVFMT_GLOBALHEADER（avformat.h）：该输出格式要求全局头
+pub const AVFMT_GLOBALHEADER: c_int = 0x0040;
+// AVIO_FLAG_WRITE（libavformat/avio.h）：avio_open 写模式
+pub const AVIO_FLAG_WRITE: c_int = 2;
 // SWS_AREA（libswscale/swscale.h）：面积平均下采样，即参考项目 INTER_AREA 同算法
 pub const SWS_AREA: c_int = 0x0020;
 

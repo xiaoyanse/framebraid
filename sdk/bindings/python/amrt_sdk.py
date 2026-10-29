@@ -1531,6 +1531,7 @@ FUNCTIONS = {
     "amc_status_name": (c_char_p, [am_status_t]),
     "amc_encoder_create": (am_status_t, [POINTER(amc_context_t), POINTER(am_encoder_config_t), POINTER(POINTER(amc_encoder_t))]),
     "amc_encoder_encode": (am_status_t, [POINTER(amc_encoder_t), POINTER(am_pixel_view_t)]),
+    "amc_encoder_receive": (am_status_t, [POINTER(amc_encoder_t), c_uint32, POINTER(POINTER(am_encoded_packet_t))]),
     "amc_encoder_drain": (am_status_t, [POINTER(amc_encoder_t)]),
     "amc_encoder_close": (am_status_t, [POINTER(amc_encoder_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amc_archive_open": (am_status_t, [POINTER(amc_context_t), c_char_p, POINTER(am_encoder_config_t), c_uint32, POINTER(POINTER(amc_archive_t))]),

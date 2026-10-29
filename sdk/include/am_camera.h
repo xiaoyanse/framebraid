@@ -87,6 +87,8 @@ AM_API const char* amc_status_name(am_status_t status);
 AM_API am_status_t amc_encoder_create(amc_context_t* ctx, const am_encoder_config_t* cfg,
     amc_encoder_t** out_enc);
 AM_API am_status_t amc_encoder_encode(amc_encoder_t* enc, const am_pixel_view_t* frame);
+AM_API am_status_t amc_encoder_receive(amc_encoder_t* enc, uint32_t timeout_ms,
+    am_encoded_packet_t** out_pkt);
 AM_API am_status_t amc_encoder_drain(amc_encoder_t* enc);
 AM_API am_status_t amc_encoder_close(amc_encoder_t* enc, uint32_t timeout_ms,
     am_lifecycle_state_t* out_state);

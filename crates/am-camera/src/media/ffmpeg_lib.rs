@@ -52,6 +52,37 @@ type AvcodecOpen2Fn = unsafe extern "C" fn(
 ) -> c_int;
 type AvcodecSendPacketFn = unsafe extern "C" fn(*mut AVCodecContext, *const AVPacket) -> c_int;
 type AvcodecReceiveFrameFn = unsafe extern "C" fn(*mut AVCodecContext, *mut AVFrame) -> c_int;
+type AvcodecFindEncoderByNameFn =
+    unsafe extern "C" fn(*const core::ffi::c_char) -> *const core::ffi::c_void;
+type AvcodecSendFrameFn = unsafe extern "C" fn(*mut AVCodecContext, *const AVFrame) -> c_int;
+type AvcodecReceivePacketFn = unsafe extern "C" fn(*mut AVCodecContext, *mut AVPacket) -> c_int;
+type AvcodecFlushBuffersFn = unsafe extern "C" fn(*mut AVCodecContext);
+type AvPacketRescaleTsFn = unsafe extern "C" fn(*mut AVPacket, AVRational, AVRational);
+type AvFrameMakeWritableFn = unsafe extern "C" fn(*mut AVFrame) -> c_int;
+type AvOptSetFn = unsafe extern "C" fn(
+    *mut core::ffi::c_void,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+    c_int,
+) -> c_int;
+type AvformatAllocOutputContext2Fn = unsafe extern "C" fn(
+    *mut *mut AVFormatContext,
+    *const core::ffi::c_void,
+    *const core::ffi::c_char,
+    *const core::ffi::c_char,
+) -> c_int;
+type AvformatNewStreamFn =
+    unsafe extern "C" fn(*mut AVFormatContext, *const core::ffi::c_void) -> *mut AVStream;
+type AvcodecParametersFromContextFn =
+    unsafe extern "C" fn(*mut AVCodecParameters, *const AVCodecContext) -> c_int;
+type AvformatWriteHeaderFn =
+    unsafe extern "C" fn(*mut AVFormatContext, *mut *mut AVDictionary) -> c_int;
+type AvInterleavedWriteFrameFn = unsafe extern "C" fn(*mut AVFormatContext, *mut AVPacket) -> c_int;
+type AvWriteTrailerFn = unsafe extern "C" fn(*mut AVFormatContext) -> c_int;
+type AvioOpenFn =
+    unsafe extern "C" fn(*mut *mut core::ffi::c_void, *const core::ffi::c_char, c_int) -> c_int;
+type AvioClosepFn = unsafe extern "C" fn(*mut *mut core::ffi::c_void) -> c_int;
+type AvformatFreeContextFn = unsafe extern "C" fn(*mut AVFormatContext);
 type AvcodecParametersToContextFn =
     unsafe extern "C" fn(*mut AVCodecContext, *const AVCodecParameters) -> c_int;
 type AvcodecGetHwConfigFn =
@@ -178,6 +209,23 @@ pub struct FfmpegApi {
     pub avcodec_receive_frame: AvcodecReceiveFrameFn,
     pub avcodec_parameters_to_context: AvcodecParametersToContextFn,
     pub avcodec_get_hw_config: AvcodecGetHwConfigFn,
+    // 编码/封装符号（S5）：libx264 编码、RGBA 转换、mp4/flv 输出与 avio
+    pub avcodec_find_encoder_by_name: AvcodecFindEncoderByNameFn,
+    pub avcodec_send_frame: AvcodecSendFrameFn,
+    pub avcodec_receive_packet: AvcodecReceivePacketFn,
+    pub avcodec_flush_buffers: AvcodecFlushBuffersFn,
+    pub av_packet_rescale_ts: AvPacketRescaleTsFn,
+    pub av_frame_make_writable: AvFrameMakeWritableFn,
+    pub av_opt_set: AvOptSetFn,
+    pub avformat_alloc_output_context2: AvformatAllocOutputContext2Fn,
+    pub avformat_new_stream: AvformatNewStreamFn,
+    pub avcodec_parameters_from_context: AvcodecParametersFromContextFn,
+    pub avformat_write_header: AvformatWriteHeaderFn,
+    pub av_interleaved_write_frame: AvInterleavedWriteFrameFn,
+    pub av_write_trailer: AvWriteTrailerFn,
+    pub avio_open: AvioOpenFn,
+    pub avio_closep: AvioClosepFn,
+    pub avformat_free_context: AvformatFreeContextFn,
     // avformat
     pub avformat_network_init: AvformatNetworkInitFn,
     pub avformat_alloc_context: AvformatAllocContextFn,
@@ -412,6 +460,28 @@ impl FfmpegApi {
                 avcodec_receive_frame: get_fn(avcodec, b"avcodec_receive_frame\0")?,
                 avcodec_parameters_to_context: get_fn(avcodec, b"avcodec_parameters_to_context\0")?,
                 avcodec_get_hw_config: get_fn(avcodec, b"avcodec_get_hw_config\0")?,
+                avcodec_find_encoder_by_name: get_fn(avcodec, b"avcodec_find_encoder_by_name\0")?,
+                avcodec_send_frame: get_fn(avcodec, b"avcodec_send_frame\0")?,
+                avcodec_receive_packet: get_fn(avcodec, b"avcodec_receive_packet\0")?,
+                avcodec_flush_buffers: get_fn(avcodec, b"avcodec_flush_buffers\0")?,
+                av_packet_rescale_ts: get_fn(avcodec, b"av_packet_rescale_ts\0")?,
+                av_frame_make_writable: get_fn(avutil, b"av_frame_make_writable\0")?,
+                av_opt_set: get_fn(avutil, b"av_opt_set\0")?,
+                avformat_alloc_output_context2: get_fn(
+                    avformat,
+                    b"avformat_alloc_output_context2\0",
+                )?,
+                avformat_new_stream: get_fn(avformat, b"avformat_new_stream\0")?,
+                avcodec_parameters_from_context: get_fn(
+                    avcodec,
+                    b"avcodec_parameters_from_context\0",
+                )?,
+                avformat_write_header: get_fn(avformat, b"avformat_write_header\0")?,
+                av_interleaved_write_frame: get_fn(avformat, b"av_interleaved_write_frame\0")?,
+                av_write_trailer: get_fn(avformat, b"av_write_trailer\0")?,
+                avio_open: get_fn(avformat, b"avio_open\0")?,
+                avio_closep: get_fn(avformat, b"avio_closep\0")?,
+                avformat_free_context: get_fn(avformat, b"avformat_free_context\0")?,
                 avformat_network_init: get_fn(avformat, b"avformat_network_init\0")?,
                 avformat_alloc_context: get_fn(avformat, b"avformat_alloc_context\0")?,
                 avformat_open_input: get_fn(avformat, b"avformat_open_input\0")?,

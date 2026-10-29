@@ -48,8 +48,8 @@
     {
       "path": "crates/am-camera/src/media/mod.rs",
       "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
-      "sha256": "195bef634f1be2e185d14a48772277b4cdfe41605d55ce5b708278e28b9863ca",
-      "reason": "R7 mjpeg/multipart module registrations (pub mod lines); C ABI unchanged"
+      "sha256": "4aaf3593252d67ff8cc1636b5ada079c477d6e479a4bc2e281b37af8cd528cfe",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
@@ -96,14 +96,14 @@
     {
       "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
       "previousSha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592",
-      "sha256": "6224b9e8612747003e5c6710ce5da0f72e6d0aaa7216c401887a7a95f1aa1bde",
-      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+      "sha256": "f7e785a2ac8e601829fb0649e266a1655263876e3a0e1a0ed5796265045223ec",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
       "previousSha256": "22eaeb29796bdb8268427a16fd4e363a2fcbab2a32da4a5a40c2b63de3015798",
-      "sha256": "a2b3b1566b85adf2367485be3d840bf728ac4639e781507e7f00f8a3bf523e85",
-      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+      "sha256": "3bae3d226db609e0d04c3c0254168c3dcc422846500a4f347d6a8269dc406c4a",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/am-camera/src/media/hardware/windows.rs",
@@ -198,14 +198,14 @@
     {
       "path": "crates/camera-ffi/Cargo.toml",
       "previousSha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b",
-      "sha256": "7ad460b0420e0a798c97e5cd89f0003efd7dc98ae16b38d71d4123ead4d53422",
-      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+      "sha256": "a3a66a15e9b1459e43f0323bccbafd4ce13c1d5f7f430bbcc0c7de07629cc7ce",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/camera-ffi/src/lib.rs",
       "previousSha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82",
-      "sha256": "999e8a336bf450535aba82d33508d47b2940727c0e6c2a2f6441b7e6911b281c",
-      "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+      "sha256": "cef8be44b3575debcb1882eedb16cee729d24f58e81de196330b4f5936695f33",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/constants.rs",
@@ -234,14 +234,14 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/mod.rs",
       "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
-      "sha256": "02f2c6dea533e383f56f2730e20ef3cd9426c6ceff3b529d5fd297f03acb4cfe",
-      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+      "sha256": "cf2eefb52fc92fff21f20f059819593708c6dca4b80765ef576df48435c77afb",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/base.rs",
       "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-      "sha256": "fc755528b373ad8577cad848128bcb815005f68af636edb339974ef248002735",
-      "reason": "E1 AM_BACKEND_OPENVINO_NATIVE=4 enum constant (generator-synced); C ABI compatible addition"
+      "sha256": "ed745163f8eca8d05480d57b490dd0afb4954f84b1429bc9d73e051f075c977c",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/camera-ffi/src/sources/hardware.rs",
@@ -390,74 +390,74 @@
     {
       "path": "crates/sdk-abi/src/fields_4.rs",
       "previousSha256": "264a66eedc78912e040c20c5df24d9a03387273120f1a3e46c202b1a053ab556",
-      "sha256": "70359c278d0e76c38e56fbce465846daf5c952c21a7c0a3c010a8d934a236fe3",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "28d17523160abbc2cee41a1ac3f9cd311f314ab30b84710742934f31c3d9150b",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/fields_5.rs",
       "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-      "sha256": "4ed9595106c3d1d22647f9686aa4347c458af11f565d3e3fc4ff81a3b784f7bc",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "757461b5e9e14d047177158f382561af7eb1b6d2b9bb63dc651cb7f214f4cfde",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "770322904822dc49a5fe1422cd273434527291eacaa9d2a284c2fdd38d1f2883",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "0ab9b8485c1d62e07c726b71ac4b47fd3f7432593e5fcba12928f6c1d103db39",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "170c82661df2aea0abdf062d1c26a2ddd08bb065d17066cd6744433056742284",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "5c9a846a944e202920f57d2853010e41343691c04744153d28dddda0cb2e4480",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
       "previousSha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36",
-      "sha256": "3416f9129ae1040e60c0765a8f25b739490615817ebdbbcbb12aff2efcce5d8e",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "a0ed43b04687515c76252ae02057b32b4379492f97f1ea2099256b843dc5283e",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/layout_5.rs",
       "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-      "sha256": "ec093435ebaa736c3af09d7ce0a694059ed891685ce84c3850a6134df7262d74",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "39b16ff02cca085c0d3ffd6e2b595f3e558017cf76ee090334bebf6770da1921",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "160827308706415eb321583c39c749a2f077a76a9f60a620b9be0da9ff6fa3ea",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "27a4a0290ef005fcc677b0f91c197b504a8a6117ba7191f65657c4562ed2c513",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "7fc37c32032774401132a903824d339cab83f8dfdc16fb21436ffa81a7a17060",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "d56443bb96c63f556ba69e723dc9b52d5295a027857b3cd09510cd25f8143371",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
       "previousSha256": "941040d1aaae58ec6e04e58aad256d3b80608e27ec6f7051992a2ffcb2146d36",
-      "sha256": "316d790c5bae02506d8f6ad945bb37499058421ad3629f603e2ef2ef0f1ab888",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "bfeffd0ec12748dbe4b3860f574d61b1382b009a10d491ed003bf1485deea630",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/types_5.rs",
       "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-      "sha256": "f5971dd31198396682d71c635363bbd1acb5a238ebe9ad1e3fa5ffd009dddd30",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "f2e18b4b719fbd21c788591bbd629374b50479ee009876d8805009f07bb1be26",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "648d00acae88e810e4082f8dd7f2e440901cdcd5c8f0f661883fe52d29e31bfe",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "e6f801fe0da9111e8073c063600db9de841c222f7f341323742e2b5ffddf367e",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "4bfacede0e165dcb1e7283ae8e413765d5f4c8857893c4fa867f8bc92e8054c4",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "222c711ccd6129103da9c9fcd52afe0592cb64a254ef99ca8741436947c26b0f",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
@@ -1104,20 +1104,20 @@
     {
       "path": "crates/sdk-abi/src/fields_8.rs",
       "previousSha256": null,
-      "sha256": "822a79dfcd73384271141c8e814c4244271ed9694cf2b657fd52ab40bb008847",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "c2bd93f7a4ea04aafa075cda6ca4e3f71bc4fc63b1c98aed6842155cec9ed69e",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/layout_8.rs",
       "previousSha256": null,
-      "sha256": "10b56146b7723293329a05cc95e515911d3687709c8711ced1a2fad13d8ed1e7",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "0c580a60f6c8566c80242fd70e868d665d4feca225d13154abf3b8947f4d3db9",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/sdk-abi/src/types_8.rs",
       "previousSha256": null,
-      "sha256": "0003c6139d53c0fc5865a5bf6c1e0f544cf05d0dae3492eafb0d28e246901850",
-      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+      "sha256": "30c5d3cd4eb42dc6d7b8c81e3581684f2a7687f81c8748d12e0b16612c9ea50a",
+      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
     },
     {
       "path": "crates/vision/src/gpu/cuda_sys.rs",

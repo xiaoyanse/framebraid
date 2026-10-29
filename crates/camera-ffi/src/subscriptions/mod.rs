@@ -17,7 +17,7 @@ use std::{
 };
 mod hub;
 mod pixels;
-mod queue;
+pub(crate) mod queue;
 pub use hub::Hub;
 use queue::{Callback, Item, Kind, Subscription};
 pub(crate) fn lock<T>(m: &Mutex<T>) -> Result<MutexGuard<'_, T>> {
