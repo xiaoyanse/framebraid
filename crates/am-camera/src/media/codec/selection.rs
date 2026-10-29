@@ -328,4 +328,187 @@ mod tests {
             ))
         ));
     }
+
+    fn intel_adapter() -> Adapter {
+        hardware::adapters()
+            .expect("枚举适配器")
+            .into_iter()
+            .find(|adapter| !adapter.software && adapter.vendor_id == 0x8086)
+            .expect("本机需要Intel核显（vendor 0x8086）")
+    }
+
+    fn intel_forced_leg(
+        api: &Arc<FfmpegApi>,
+        codec: VideoCodec,
+        sample: &std::path::Path,
+        max_pixels: u64,
+    ) {
+        let intel = intel_adapter();
+        let selection = CpuDecoder::create_with_adapter_source(
+            api.clone(),
+            codec,
+            &[],
+            max_pixels,
+            HardwarePolicy::PreferHardware,
+            Duration::from_secs(5),
+            || Ok(vec![intel.clone()]),
+        )
+        .expect("Intel 注入适配器源注入选择应成功");
+        let selected = selection
+            .report
+            .selected
+            .as_ref()
+            .expect("Intel 适配器硬解初始化应成功");
+        assert_eq!(selected.backend, Backend::D3d11va);
+        assert_eq!(selected.adapter.vendor_id, 0x8086);
+        assert_eq!(selected.adapter.luid, intel.luid);
+        let mut decoder = selection.decoder;
+        let data = std::fs::read(sample).expect("读取样本");
+        decoder.send(&data, 90000, 90000).expect("送入码流");
+        if decoder.peek().unwrap().is_none() {
+            decoder.drain().unwrap();
+        }
+        let info = decoder.peek().unwrap().unwrap();
+        let backend = decoder.hardware_backend().expect("实际后端已确定");
+        assert_eq!(backend, Backend::D3d11va);
+        let gpu = decoder.gpu_frame_info(info).expect("GPU 帧元数据提取");
+        assert!(!decoder.gpu_texture().expect("纹理指针").is_null());
+        println!(
+            "m3.1 intel {codec:?} {}x{} -> backend={backend:?} fmt={} subresource={} handle={} select_ms={} attempts={}",
+            gpu.info.width,
+            gpu.info.height,
+            gpu.d3d_format,
+            gpu.subresource,
+            gpu.shared_nt_handle,
+            selection.report.elapsed_ms,
+            selection.report.attempts.len(),
+        );
+    }
+
+    #[test]
+    #[ignore = "需要AM_SDK_FFMPEG_DIR、AM_SDK_CODEC_SAMPLES与本机Intel核显（vendor 0x8086）"]
+    fn intel_igpu_d3d11va_decode_and_fallback_measured() {
+        let runtime = std::env::var_os("AM_SDK_FFMPEG_DIR").expect("缺少隔离运行库目录");
+        let samples = std::path::PathBuf::from(
+            std::env::var_os("AM_SDK_CODEC_SAMPLES").expect("缺少合成样本目录"),
+        );
+        let api = Arc::new(
+            FfmpegApi::load_from(std::path::Path::new(&runtime)).expect("加载隔离FFmpeg运行库"),
+        );
+        let intel = intel_adapter();
+        println!(
+            "m3.1 intel adapter: index={} name={} luid={:#x} dedicated_video_bytes={}",
+            intel.index, intel.name, intel.luid, intel.dedicated_video_bytes
+        );
+        for adapter in hardware::adapters().expect("枚举适配器") {
+            println!(
+                "m3.1 inventory: index={} vendor={:#06x} name={} software={} video_bytes={}",
+                adapter.index,
+                adapter.vendor_id,
+                adapter.name,
+                adapter.software,
+                adapter.dedicated_video_bytes
+            );
+        }
+
+        let auto = CpuDecoder::create_with_policy(
+            api.clone(),
+            VideoCodec::H264,
+            &[],
+            512 * 288,
+            HardwarePolicy::PreferHardware,
+            Duration::from_secs(5),
+        )
+        .expect("默认策略选择");
+        let picked = auto
+            .report
+            .selected
+            .as_ref()
+            .expect("本机存在可用硬解适配器");
+        println!(
+            "m3.1 default policy picks: index={} vendor={:#06x} name={} select_ms={} attempts={}",
+            picked.adapter.index,
+            picked.adapter.vendor_id,
+            picked.adapter.name,
+            auto.report.elapsed_ms,
+            auto.report.attempts.len()
+        );
+
+        intel_forced_leg(&api, VideoCodec::H264, &samples.join("one.h264"), 512 * 288);
+        intel_forced_leg(
+            &api,
+            VideoCodec::H264,
+            &samples.join("blue-1080.h264"),
+            1920 * 1088,
+        );
+        intel_forced_leg(
+            &api,
+            VideoCodec::H265,
+            &samples.join("one.hevc"),
+            1920 * 1088,
+        );
+
+        let ghost = Adapter {
+            index: hardware::MAX_ADAPTERS,
+            name: String::from("intel-ghost"),
+            vendor_id: 0x8086,
+            device_id: 0,
+            luid: intel.luid ^ 1,
+            software: false,
+            dedicated_video_bytes: 0,
+            dxva2_index: None,
+            dxva2_mapping_error: None,
+        };
+        let ghost_selection = CpuDecoder::create_with_adapter_source(
+            api,
+            VideoCodec::H264,
+            &[],
+            512 * 288,
+            HardwarePolicy::PreferHardware,
+            Duration::from_secs(5),
+            || Ok(vec![ghost]),
+        )
+        .expect("故障注入仍应返回CPU解码器");
+        assert!(ghost_selection.report.selected.is_none());
+        assert!(matches!(
+            ghost_selection.report.fallback,
+            Some(SelectionFailure::NoCompatibleHardware)
+        ));
+        assert!(ghost_selection
+            .report
+            .attempts
+            .iter()
+            .all(|attempt| attempt.error.is_some()));
+        let mut fallback_decoder = ghost_selection.decoder;
+        let data = std::fs::read(samples.join("one.h264")).expect("读取样本");
+        fallback_decoder
+            .send(&data, 90000, 90000)
+            .expect("送入码流");
+        if fallback_decoder.peek().unwrap().is_none() {
+            fallback_decoder.drain().unwrap();
+        }
+        let info = fallback_decoder.peek().unwrap().unwrap();
+        assert!(
+            fallback_decoder.hardware_backend().is_none(),
+            "故障注入路径应回软解"
+        );
+        assert!(info.width > 0);
+        println!(
+            "m3.1 ghost adapter (index={}) -> fallback=NoCompatibleHardware attempts={} errors={} decoded_cpu={}x{}",
+            hardware::MAX_ADAPTERS,
+            ghost_selection.report.attempts.len(),
+            ghost_selection
+                .report
+                .attempts
+                .iter()
+                .map(|a| a
+                    .error
+                    .as_ref()
+                    .map_or_else(String::new, |e| format!("{e:?}")))
+                .collect::<Vec<_>>()
+                .join(" | "),
+            info.width,
+            info.height,
+        );
+    }
 }

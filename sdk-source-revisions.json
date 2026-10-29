@@ -66,8 +66,8 @@
     {
       "path": "crates/am-camera/src/media/codec/selection.rs",
       "previousSha256": null,
-      "sha256": "c4ee6dae5e8190eeab0aa561bb1366bcfae0298e626e7e6d32998db2532d744d",
-      "reason": "有界硬解后端支持状态，分离未检查和不支持，定向验证并记录 Rust 结构迁移"
+      "sha256": "d1050db70f95541b80a10d9c32d1829d9621a16576010f9f6dc1681c1acacd8a",
+      "reason": "M3 reviewed Intel iGPU path measurements (Arc 140T D3D11VA H264/H265 verified via driver log, ghost-adapter fault injection, fallback matrix recheck); adapter-targeting gap honestly recorded; workspace 404 green"
     },
     {
       "path": "crates/am-camera/src/media/codec.rs",
