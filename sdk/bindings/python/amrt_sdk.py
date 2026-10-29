@@ -139,6 +139,9 @@ class am_model_desc_t(Structure):
 class am_model_memory_desc_t(Structure):
     pass
 
+class am_model_swap_desc_t(Structure):
+    pass
+
 class am_io_spec_t(Structure):
     pass
 
@@ -633,20 +636,18 @@ am_model_desc_t._fields_ = [
     ("intra_threads", c_uint32),
 ]
 
-am_io_spec_t._fields_ = [
+am_model_swap_desc_t._fields_ = [
     ("struct_size", c_uint32),
-    ("name", c_char_p),
-    ("dtype", c_uint32),
-    ("shape", POINTER(c_int64)),
-    ("shape_len", c_uint32),
-    ("dyn_min", POINTER(c_int64)),
-    ("dyn_max", POINTER(c_int64)),
+    ("slot_key", c_uint64),
+    ("flags", c_uint32),
+    ("reserved", c_uint32),
 ]
 
-am_model_identity_t._fields_ = [
-    ("model_uid", c_uint64),
-    ("model_version", c_uint32),
-    ("profile_id", c_char_p),
+am_backend_actual_t._fields_ = [
+    ("actual", c_uint32),
+    ("device_utf8", c_char_p),
+    ("subgraph_cpu_nodes", c_int32),
+    ("fallback_reason_utf8", c_char_p),
 ]
 
 am_frame_assoc_t._fields_ = [
@@ -912,11 +913,14 @@ am_raw_preprocess_t._fields_ = [
     ("layout", c_uint32),
 ]
 
-am_backend_actual_t._fields_ = [
-    ("actual", c_uint32),
-    ("device_utf8", c_char_p),
-    ("subgraph_cpu_nodes", c_int32),
-    ("fallback_reason_utf8", c_char_p),
+am_io_spec_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("name", c_char_p),
+    ("dtype", c_uint32),
+    ("shape", POINTER(c_int64)),
+    ("shape_len", c_uint32),
+    ("dyn_min", POINTER(c_int64)),
+    ("dyn_max", POINTER(c_int64)),
 ]
 
 am_gpu_frame_desc_t._fields_ = [
@@ -1165,16 +1169,21 @@ am_captured_image_t._fields_ = [
     ("meta", POINTER(am_frame_meta_t)),
 ]
 
-am_model_info_t._fields_ = [
+am_model_identity_t._fields_ = [
+    ("model_uid", c_uint64),
+    ("model_version", c_uint32),
+    ("profile_id", c_char_p),
+]
+
+am_image_input_t._fields_ = [
     ("struct_size", c_uint32),
-    ("identity", am_model_identity_t),
-    ("load_mode", c_uint32),
-    ("input_count", c_uint32),
-    ("output_count", c_uint32),
-    ("inputs", POINTER(am_io_spec_t)),
-    ("outputs", POINTER(am_io_spec_t)),
-    ("native_batch", c_uint32),
-    ("execution", am_backend_actual_t),
+    ("kind", c_uint32),
+    ("encoded", POINTER(c_uint8)),
+    ("encoded_size", c_uint64),
+    ("view", POINTER(am_pixel_view_t)),
+    ("assoc", POINTER(am_frame_assoc_t)),
+    ("flags", c_uint32),
+    ("gpu", POINTER(am_gpu_frame_ref_t)),
 ]
 
 am_pose_detection_t._fields_ = [
@@ -1204,9 +1213,13 @@ am_backend_selection_t._fields_ = [
     ("budget_ms", c_uint32),
 ]
 
-am_pose_result_t._fields_ = [
-    ("count", c_uint32),
-    ("detections", POINTER(am_pose_detection_t)),
+am_batch_item_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("image", POINTER(am_image_input_t)),
+    ("tensor_count", c_uint32),
+    ("tensors", POINTER(am_tensor_in_t)),
+    ("slot_key", c_uint64),
+    ("raw_preprocess", POINTER(am_raw_preprocess_t)),
 ]
 
 am_frame_sub_desc_t._fields_ = [
@@ -1219,6 +1232,23 @@ am_frame_sub_desc_t._fields_ = [
     ("queue_max_items", c_uint32),
     ("queue_max_bytes", c_uint64),
     ("frame_kind", c_uint32),
+]
+
+am_pose_result_t._fields_ = [
+    ("count", c_uint32),
+    ("detections", POINTER(am_pose_detection_t)),
+]
+
+am_model_info_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("identity", am_model_identity_t),
+    ("load_mode", c_uint32),
+    ("input_count", c_uint32),
+    ("output_count", c_uint32),
+    ("inputs", POINTER(am_io_spec_t)),
+    ("outputs", POINTER(am_io_spec_t)),
+    ("native_batch", c_uint32),
+    ("execution", am_backend_actual_t),
 ]
 
 amv_result_t._fields_ = [
@@ -1238,26 +1268,6 @@ amv_result_t._fields_ = [
     ("raw_outputs", POINTER(am_tensor_out_t)),
     ("infer_start_ms", c_int64),
     ("infer_end_ms", c_int64),
-]
-
-am_image_input_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("kind", c_uint32),
-    ("encoded", POINTER(c_uint8)),
-    ("encoded_size", c_uint64),
-    ("view", POINTER(am_pixel_view_t)),
-    ("assoc", POINTER(am_frame_assoc_t)),
-    ("flags", c_uint32),
-    ("gpu", POINTER(am_gpu_frame_ref_t)),
-]
-
-am_batch_item_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("image", POINTER(am_image_input_t)),
-    ("tensor_count", c_uint32),
-    ("tensors", POINTER(am_tensor_in_t)),
-    ("slot_key", c_uint64),
-    ("raw_preprocess", POINTER(am_raw_preprocess_t)),
 ]
 
 AM_ABI_VERSION = 65537
@@ -1501,6 +1511,7 @@ FUNCTIONS = {
     "amv_model_load_memory": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_memory_desc_t), POINTER(POINTER(amv_model_t))]),
     "amv_model_load_selected": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_desc_t), POINTER(am_backend_selection_t), POINTER(POINTER(amv_model_t)), POINTER(c_uint64)]),
     "amv_model_load_memory_selected": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_memory_desc_t), POINTER(am_backend_selection_t), c_uint32, POINTER(POINTER(amv_model_t)), POINTER(c_uint64)]),
+    "amv_model_swap": (am_status_t, [POINTER(amv_context_t), POINTER(am_model_swap_desc_t), POINTER(am_model_desc_t), POINTER(POINTER(amv_model_t)), POINTER(c_uint64)]),
     "amv_get_model_selection_report": (am_status_t, [POINTER(amv_model_t), c_char_p, c_uint64, POINTER(c_uint64)]),
     "amv_get_selection_attempt_report": (am_status_t, [POINTER(amv_context_t), c_uint64, c_char_p, c_uint64, POINTER(c_uint64)]),
     "amv_model_close": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_lifecycle_state_t)]),

@@ -613,6 +613,16 @@
         "backend": 40
       }
     },
+    "am_model_swap_desc_t": {
+      "size": 24,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "slot_key": 8,
+        "flags": 16,
+        "reserved": 20
+      }
+    },
     "am_io_spec_t": {
       "size": 56,
       "align": 8,

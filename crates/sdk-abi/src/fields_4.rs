@@ -152,6 +152,26 @@ impl AbiLayout for am_model_memory_desc_t {
         ),
     ];
 }
+impl AbiLayout for am_model_swap_desc_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, slot_key),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, flags),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, reserved),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_io_spec_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -216,73 +236,6 @@ impl AbiLayout for am_model_identity_t {
         ),
         (
             core::mem::offset_of!(am_model_identity_t, profile_id),
-            core::mem::size_of::<*const c_char>(),
-        ),
-    ];
-}
-impl AbiLayout for am_model_info_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_model_info_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, identity)
-                + core::mem::offset_of!(am_model_identity_t, model_uid),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, identity)
-                + core::mem::offset_of!(am_model_identity_t, model_version),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, identity)
-                + core::mem::offset_of!(am_model_identity_t, profile_id),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, load_mode),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, input_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, output_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, inputs),
-            core::mem::size_of::<*const am_io_spec_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, outputs),
-            core::mem::size_of::<*const am_io_spec_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, native_batch),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, execution)
-                + core::mem::offset_of!(am_backend_actual_t, actual),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, execution)
-                + core::mem::offset_of!(am_backend_actual_t, device_utf8),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, execution)
-                + core::mem::offset_of!(am_backend_actual_t, subgraph_cpu_nodes),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_model_info_t, execution)
-                + core::mem::offset_of!(am_backend_actual_t, fallback_reason_utf8),
             core::mem::size_of::<*const c_char>(),
         ),
     ];

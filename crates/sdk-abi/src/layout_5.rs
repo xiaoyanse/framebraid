@@ -1,6 +1,56 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_model_info_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_model_info_t>(), 104);
+    assert_eq!(core::mem::align_of::<am_model_info_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, struct_size),
+        0,
+        "am_model_info_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, identity),
+        8,
+        "am_model_info_t.identity"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, load_mode),
+        32,
+        "am_model_info_t.load_mode"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, input_count),
+        36,
+        "am_model_info_t.input_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, output_count),
+        40,
+        "am_model_info_t.output_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, inputs),
+        48,
+        "am_model_info_t.inputs"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, outputs),
+        56,
+        "am_model_info_t.outputs"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, native_batch),
+        64,
+        "am_model_info_t.native_batch"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_info_t, execution),
+        72,
+        "am_model_info_t.execution"
+    );
+}
+#[test]
 fn am_frame_assoc_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_frame_assoc_t>(), 80);
     assert_eq!(core::mem::align_of::<am_frame_assoc_t>(), 8);
@@ -383,30 +433,5 @@ fn am_batch_options_t_matches_c() {
         core::mem::offset_of!(am_batch_options_t, wait_deadline_ms),
         8,
         "am_batch_options_t.wait_deadline_ms"
-    );
-}
-#[test]
-fn am_batch_receipt_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_batch_receipt_t>(), 24);
-    assert_eq!(core::mem::align_of::<am_batch_receipt_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_batch_receipt_t, struct_size),
-        0,
-        "am_batch_receipt_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_receipt_t, accepted_count),
-        4,
-        "am_batch_receipt_t.accepted_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_receipt_t, request_ids),
-        8,
-        "am_batch_receipt_t.request_ids"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_receipt_t, rejects),
-        16,
-        "am_batch_receipt_t.rejects"
     );
 }

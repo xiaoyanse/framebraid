@@ -2,6 +2,34 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_model_info_t {
+    pub struct_size: u32,
+    pub identity: am_model_identity_t,
+    pub load_mode: u32,
+    pub input_count: u32,
+    pub output_count: u32,
+    pub inputs: *const am_io_spec_t,
+    pub outputs: *const am_io_spec_t,
+    pub native_batch: u32,
+    pub execution: am_backend_actual_t,
+}
+impl Default for am_model_info_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            identity: Default::default(),
+            load_mode: Default::default(),
+            input_count: Default::default(),
+            output_count: Default::default(),
+            inputs: Default::default(),
+            outputs: Default::default(),
+            native_batch: Default::default(),
+            execution: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_frame_assoc_t {
     pub struct_size: u32,
     pub source_id: u64,
@@ -209,24 +237,6 @@ impl Default for am_batch_options_t {
             struct_size: core::mem::size_of::<Self>() as u32,
             batch_mode: Default::default(),
             wait_deadline_ms: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_batch_receipt_t {
-    pub struct_size: u32,
-    pub accepted_count: u32,
-    pub request_ids: *mut u64,
-    pub rejects: *const am_status_t,
-}
-impl Default for am_batch_receipt_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            accepted_count: Default::default(),
-            request_ids: Default::default(),
-            rejects: Default::default(),
         }
     }
 }

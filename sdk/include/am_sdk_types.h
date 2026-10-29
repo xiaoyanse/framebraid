@@ -60,6 +60,7 @@ typedef struct am_backend_policy_s am_backend_policy_t;
 typedef struct am_raw_preprocess_s am_raw_preprocess_t;
 typedef struct am_model_desc_s am_model_desc_t;
 typedef struct am_model_memory_desc_s am_model_memory_desc_t;
+typedef struct am_model_swap_desc_s am_model_swap_desc_t;
 typedef struct am_io_spec_s am_io_spec_t;
 typedef struct am_backend_actual_s am_backend_actual_t;
 typedef struct am_model_identity_s am_model_identity_t;
@@ -789,6 +790,15 @@ typedef struct am_model_memory_desc_s {
   const char* profile_id;
   const am_backend_policy_t* backend;   /* P2 指针化：可演进结构不按值嵌入 */
 } am_model_memory_desc_t;
+
+typedef struct am_model_swap_desc_s {   /* M5：原子热切换描述 */
+  uint32_t struct_size;
+  uint64_t slot_key;        /* B11 槽位；0=全局单槽（既有 load 语义的槽） */
+  uint32_t flags;           /* AM_SWAP_DETACH=1：换出模型立即排空释放；
+                              0=调用方后续以 out_old_model_id close */
+  uint32_t reserved;
+} am_model_swap_desc_t;
+
 typedef struct am_io_spec_s {       /* 命名输入/输出规格 */
   uint32_t struct_size;
   const char* name;

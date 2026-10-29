@@ -586,6 +586,11 @@ AM_API am_status_t amv_model_load_selected(amv_context_t* ctx, const am_model_de
 AM_API am_status_t amv_model_load_memory_selected(amv_context_t* ctx, const am_model_memory_desc_t* desc,
     const am_backend_selection_t* selection, uint32_t intra_threads,
     amv_model_t** out_model, uint64_t* out_attempt_id);
+
+/* M5：原子热切换（槽位寻址；详见 §3.7 模型换代扩展段） */
+AM_API am_status_t amv_model_swap(amv_context_t* ctx,
+    const am_model_swap_desc_t* swap_desc, const am_model_desc_t* new_desc,
+    amv_model_t** out_model, uint64_t* out_old_model_id);
 /* UTF-8 JSON+NUL；required含NUL，0容量只测长；上限8192字节，短缓冲不截断JSON。
    读缓存，不探测/建Session、不等待正在运行的ORT。关闭态只返回空状态。 */
 AM_API am_status_t amv_get_model_selection_report(const amv_model_t* model, char* buffer, uint64_t capacity, uint64_t* required);
@@ -829,6 +834,8 @@ AM_API am_status_t amv_set_realtime_policy(amv_model_t* model, const am_realtime
 2026-10-26 R5本地实现补充：未执行且整项已取消/被替换的排队输入可独立归还准入，不必等待同模型活请求完成；清理不重置活请求的busy/running。原生批次仍有有效项、或实际读取未结束时保持整批输入，cancel不是强杀。此内部优化不新增ABI或自动组批，证据见`docs/verification/sdk-r5-priority-20261026.md`。
 
 模型换代（首版语义）：热切换 = `amv_model_load` 新句柄 + 旧句柄 `amv_model_close` 排干在途；新旧结果各自携带 `am_model_identity_t` 不串版；旧句柄结果保留预算独立清退。原子无缝热切换属 6.5 后续候选，首版不承诺。
+
+**原子热切换（M5，未发布兼容扩展）**：`amv_model_swap(ctx, slot_key, desc, out_model, out_old_model_id)` 将槽位（B11 slot_key；0=全局单槽）当前模型原子替换为新模型——单调用内完成"新模型就绪 + 槽位切换"，无两步窗口。**在途请求语义**：swap 时已提交的请求由旧模型完成且结果不丢（executor 持模型引用自然续命），swap 后新请求即时路由新模型；被换出模型进入排空态（in-flight 归零后可释放）。**释放路径**：调用方持 out_old_model_id 可后续 `amv_model_close`（常规排空语义），或 desc 置 `AM_SWAP_DETACH` 标志由 swap 调用内触发立即排空。**身份与槽位**：槽位身份延续（消费方句柄/订阅不换），新模型身份独立（B14）；旧模型入口 selection 置 legacy_model（既有语义复用）。**兼容**：既有 load+close 两步路径语义不变（并存）；swap 失败（新模型加载失败/槽位不存在）槽位保持原模型不变，错误码与 load 一致。五引擎统一（E1 ModelEngine 抽象），无 per-engine 分支。
 
 ### 3.8 诊断统计与资源限额（推理侧；B10）
 

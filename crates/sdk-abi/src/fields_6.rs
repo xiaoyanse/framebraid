@@ -1,5 +1,25 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_batch_receipt_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_batch_receipt_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batch_receipt_t, accepted_count),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batch_receipt_t, request_ids),
+            core::mem::size_of::<*mut u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batch_receipt_t, rejects),
+            core::mem::size_of::<*const am_status_t>(),
+        ),
+    ];
+}
 impl AbiLayout for am_batching_options_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -213,30 +233,6 @@ impl AbiLayout for am_detect_result_t {
         (
             core::mem::offset_of!(am_detect_result_t, boxes),
             core::mem::size_of::<*const am_detect_box_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_classify_entry_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_classify_entry_t, class_id),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, class_name_utf8),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, logit),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, probability),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, has_probability),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

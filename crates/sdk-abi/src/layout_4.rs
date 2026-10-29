@@ -191,6 +191,31 @@ fn am_model_memory_desc_t_matches_c() {
     );
 }
 #[test]
+fn am_model_swap_desc_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_model_swap_desc_t>(), 24);
+    assert_eq!(core::mem::align_of::<am_model_swap_desc_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, struct_size),
+        0,
+        "am_model_swap_desc_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, slot_key),
+        8,
+        "am_model_swap_desc_t.slot_key"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, flags),
+        16,
+        "am_model_swap_desc_t.flags"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, reserved),
+        20,
+        "am_model_swap_desc_t.reserved"
+    );
+}
+#[test]
 fn am_io_spec_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_io_spec_t>(), 56);
     assert_eq!(core::mem::align_of::<am_io_spec_t>(), 8);
@@ -273,55 +298,5 @@ fn am_model_identity_t_matches_c() {
         core::mem::offset_of!(am_model_identity_t, profile_id),
         16,
         "am_model_identity_t.profile_id"
-    );
-}
-#[test]
-fn am_model_info_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_model_info_t>(), 104);
-    assert_eq!(core::mem::align_of::<am_model_info_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, struct_size),
-        0,
-        "am_model_info_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, identity),
-        8,
-        "am_model_info_t.identity"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, load_mode),
-        32,
-        "am_model_info_t.load_mode"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, input_count),
-        36,
-        "am_model_info_t.input_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, output_count),
-        40,
-        "am_model_info_t.output_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, inputs),
-        48,
-        "am_model_info_t.inputs"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, outputs),
-        56,
-        "am_model_info_t.outputs"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, native_batch),
-        64,
-        "am_model_info_t.native_batch"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_info_t, execution),
-        72,
-        "am_model_info_t.execution"
     );
 }

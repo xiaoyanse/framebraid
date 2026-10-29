@@ -24,6 +24,9 @@ AM_API am_status_t amv_model_load_selected(amv_context_t* ctx, const am_model_de
 AM_API am_status_t amv_model_load_memory_selected(amv_context_t* ctx, const am_model_memory_desc_t* desc,
     const am_backend_selection_t* selection, uint32_t intra_threads,
     amv_model_t** out_model, uint64_t* out_attempt_id);
+AM_API am_status_t amv_model_swap(amv_context_t* ctx,
+    const am_model_swap_desc_t* swap_desc, const am_model_desc_t* new_desc,
+    amv_model_t** out_model, uint64_t* out_old_model_id);
 AM_API am_status_t amv_get_model_selection_report(const amv_model_t* model, char* buffer, uint64_t capacity, uint64_t* required);
 AM_API am_status_t amv_get_selection_attempt_report(amv_context_t* ctx, uint64_t attempt_id, char* buffer, uint64_t capacity, uint64_t* required);
 AM_API am_status_t amv_model_close(amv_model_t* model, uint32_t timeout_ms, am_lifecycle_state_t* out_state);

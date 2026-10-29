@@ -118,6 +118,24 @@ impl Default for am_model_memory_desc_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_model_swap_desc_t {
+    pub struct_size: u32,
+    pub slot_key: u64,
+    pub flags: u32,
+    pub reserved: u32,
+}
+impl Default for am_model_swap_desc_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            slot_key: Default::default(),
+            flags: Default::default(),
+            reserved: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_io_spec_t {
     pub struct_size: u32,
     pub name: *const c_char,
@@ -154,32 +172,4 @@ pub struct am_model_identity_t {
     pub model_uid: u64,
     pub model_version: u32,
     pub profile_id: *const c_char,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_model_info_t {
-    pub struct_size: u32,
-    pub identity: am_model_identity_t,
-    pub load_mode: u32,
-    pub input_count: u32,
-    pub output_count: u32,
-    pub inputs: *const am_io_spec_t,
-    pub outputs: *const am_io_spec_t,
-    pub native_batch: u32,
-    pub execution: am_backend_actual_t,
-}
-impl Default for am_model_info_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            identity: Default::default(),
-            load_mode: Default::default(),
-            input_count: Default::default(),
-            output_count: Default::default(),
-            inputs: Default::default(),
-            outputs: Default::default(),
-            native_batch: Default::default(),
-            execution: Default::default(),
-        }
-    }
 }

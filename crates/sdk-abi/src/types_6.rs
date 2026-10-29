@@ -2,6 +2,24 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_batch_receipt_t {
+    pub struct_size: u32,
+    pub accepted_count: u32,
+    pub request_ids: *mut u64,
+    pub rejects: *const am_status_t,
+}
+impl Default for am_batch_receipt_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            accepted_count: Default::default(),
+            request_ids: Default::default(),
+            rejects: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_batching_options_t {
     pub struct_size: u32,
     pub abi_minor: u32,
@@ -121,13 +139,4 @@ pub struct am_detect_box_t {
 pub struct am_detect_result_t {
     pub count: u32,
     pub boxes: *const am_detect_box_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_classify_entry_t {
-    pub class_id: i32,
-    pub class_name_utf8: *const c_char,
-    pub logit: f32,
-    pub probability: f32,
-    pub has_probability: u32,
 }

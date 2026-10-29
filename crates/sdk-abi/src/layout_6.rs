@@ -1,6 +1,31 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_batch_receipt_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_batch_receipt_t>(), 24);
+    assert_eq!(core::mem::align_of::<am_batch_receipt_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_batch_receipt_t, struct_size),
+        0,
+        "am_batch_receipt_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batch_receipt_t, accepted_count),
+        4,
+        "am_batch_receipt_t.accepted_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batch_receipt_t, request_ids),
+        8,
+        "am_batch_receipt_t.request_ids"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batch_receipt_t, rejects),
+        16,
+        "am_batch_receipt_t.rejects"
+    );
+}
+#[test]
 fn am_batching_options_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_batching_options_t>(), 20);
     assert_eq!(core::mem::align_of::<am_batching_options_t>(), 4);
@@ -268,35 +293,5 @@ fn am_detect_result_t_matches_c() {
         core::mem::offset_of!(am_detect_result_t, boxes),
         8,
         "am_detect_result_t.boxes"
-    );
-}
-#[test]
-fn am_classify_entry_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_classify_entry_t>(), 32);
-    assert_eq!(core::mem::align_of::<am_classify_entry_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, class_id),
-        0,
-        "am_classify_entry_t.class_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, class_name_utf8),
-        8,
-        "am_classify_entry_t.class_name_utf8"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, logit),
-        16,
-        "am_classify_entry_t.logit"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, probability),
-        20,
-        "am_classify_entry_t.probability"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, has_probability),
-        24,
-        "am_classify_entry_t.has_probability"
     );
 }
