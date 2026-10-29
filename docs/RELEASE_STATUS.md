@@ -1,7 +1,15 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.2.1**（2026-10-29 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.3.0**（2026-10-30 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
+
+## v0.3.0 验证状态快照
+
+GPU 零拷贝主线全通（M2a/M2b/M2c/M3：每帧 2 次 GPU 内拷贝/0 CPU 回读，真机检测级对拍）；
+五推理引擎（E1 OpenVINO 原生对拍 matched max_rel 3.15e-4+回退矩阵三档）；M5 热切换 8 线程
+零失败；S5 编码推流 MP4 可播放验证（RTMP 真机待环境如实登记）；R 系列 7 项闭环；V1 消费方
+验证体系（基线门禁+场景库+画像过堂）。Rust 回归 408 项通过。FFmpeg 运行库自本版起为 GPL
+构建（libx264，用户 2026-10-29 裁决；x264 许可文本随包分发）。
 
 ## v0.2.1 验证状态快照
 
