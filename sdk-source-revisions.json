@@ -210,8 +210,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "babcabc6f6268b25cc62c40fc81d7b95994971fa7468fc86a932206d51b42b41",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "9c99b5475b3ab403af3c8d43e3a17ba55e126057f9a7dce4c3662a85e9e4330b",
+      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
     },
     {
       "path": "crates/sdk-support/src/context.rs",
@@ -306,14 +306,14 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "2490636a6c8bfdc4f12b01cdfefee11f762c7d621f375738984461b45f7c6f4b",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；declare telemetry_tests module for GPU audit stats exposure tests"
+      "sha256": "9acc002908537133aeadfcad08a14d26721bac0110ee5e5653208a59d41f68f4",
+      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
     },
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
       "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
-      "sha256": "1af49dcdbf986aa62c256a062d62c96e12eadb956eb546cfb6810c89a34dc09b",
-      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+      "sha256": "a3b1ee40f7dd73b230d6568b637cbcadff6133e76b8bdd91eaa4986a7071beda",
+      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
     },
     {
       "path": "crates/vision-ffi/src/inference/hardware.rs",
@@ -390,80 +390,80 @@
     {
       "path": "crates/sdk-abi/src/fields_4.rs",
       "previousSha256": "264a66eedc78912e040c20c5df24d9a03387273120f1a3e46c202b1a053ab556",
-      "sha256": "2931fe8061d14550a8a10679b05512b219c0458564cfb83d97bfa0e5b4b7a146",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "70359c278d0e76c38e56fbce465846daf5c952c21a7c0a3c010a8d934a236fe3",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/fields_5.rs",
       "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-      "sha256": "6d61cbb7bccb4faba99665263b5b0e811a9efcabaa37abf1f8b4de02f6d8ab1a",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "4ed9595106c3d1d22647f9686aa4347c458af11f565d3e3fc4ff81a3b784f7bc",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "e85e38855ed063ac860f20d0011e316ec6a9933d07cbb0baf807eb986ff2b2a7",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "770322904822dc49a5fe1422cd273434527291eacaa9d2a284c2fdd38d1f2883",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "3e2accb20b52ae2c2e0c97b1d378a8cd35e5674d189038681ce2baf2e03f5cfb",
-      "reason": "M2c am_stats_t tail fields (generator output, struct_size negotiated) + R7 enum; C ABI compatible"
+      "sha256": "170c82661df2aea0abdf062d1c26a2ddd08bb065d17066cd6744433056742284",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
       "previousSha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36",
-      "sha256": "d4047c31c7a130f0f2782f3b6a28f09e4954ac18a7af37687bbf2ec424289ba5",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "3416f9129ae1040e60c0765a8f25b739490615817ebdbbcbb12aff2efcce5d8e",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/layout_5.rs",
       "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-      "sha256": "96a981570f35539b5e10ad9007cae7fbead1e9aa33381d7d179c56da56034b76",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "ec093435ebaa736c3af09d7ce0a694059ed891685ce84c3850a6134df7262d74",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "0451f377bec3212d939ab9404fa67e3b00796fa91c4289753a3dc3561fd30342",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "160827308706415eb321583c39c749a2f077a76a9f60a620b9be0da9ff6fa3ea",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "823bb92628107194a69f023982b318f66ecad531e355789cb3b47849c291bab6",
-      "reason": "M2c am_stats_t tail fields (generator output, struct_size negotiated) + R7 enum; C ABI compatible"
+      "sha256": "7fc37c32032774401132a903824d339cab83f8dfdc16fb21436ffa81a7a17060",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
       "previousSha256": "941040d1aaae58ec6e04e58aad256d3b80608e27ec6f7051992a2ffcb2146d36",
-      "sha256": "694d2d3dd2289bcd6e7160b4ab5a325eb4019b1374a4ed3faf6670687ded379a",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "316d790c5bae02506d8f6ad945bb37499058421ad3629f603e2ef2ef0f1ab888",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/types_5.rs",
       "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-      "sha256": "4245c0214379fe455e7679fdf92c51720b6481a40a812851079d8dc1047309f6",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "f5971dd31198396682d71c635363bbd1acb5a238ebe9ad1e3fa5ffd009dddd30",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "fa865a43811a867819c3baf26cc21d1c86a6a0a0facdd70418144ba516e1d77e",
-      "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+      "sha256": "648d00acae88e810e4082f8dd7f2e440901cdcd5c8f0f661883fe52d29e31bfe",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "5b19058ddcbf7edf58670cd16d41d3b0fce29800464290204d42b7d5dc10cebf",
-      "reason": "M2c am_stats_t tail fields (generator output, struct_size negotiated) + R7 enum; C ABI compatible"
+      "sha256": "4bfacede0e165dcb1e7283ae8e413765d5f4c8857893c4fa867f8bc92e8054c4",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "ebc88f0e006564b167ec6544cfa19445f0af3b10aebb2411766a0fae1b5a051d",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；E2 DirectML后端枚举扩展（第四推理路径）"
+      "sha256": "e6ad13eded0c978a64a9e92058b35488d6117e2fa4ad647820d598b6245b7512",
+      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
     },
     {
       "path": "crates/vision-ffi/src/inference/results.rs",
@@ -612,8 +612,8 @@
     {
       "path": "crates/vision-ffi/src/inference/notify/tests.rs",
       "previousSha256": null,
-      "sha256": "5c84e2f899a86461a70c60728ac19e18b531091cc63430a7ef43e41295d3111b",
-      "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化"
+      "sha256": "f767d8be236d273a2895ef91c61dcf70bddc1433a7d8c4186fb049b720c78f9a",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/camera-ffi/src/sources/events.rs",
@@ -684,8 +684,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
       "previousSha256": null,
-      "sha256": "9c67f87b95aa8ff17eb19219596b050ee9cb3bcfd2990b577b4ff05cb07c9eb6",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "8a90a7095afb698051bd46cb8f887db0765a0e02dcc753f94572aec3aea238e6",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/vision-ffi/src/inference/records.rs",
@@ -696,8 +696,8 @@
     {
       "path": "crates/vision-ffi/src/inference/records/tests.rs",
       "previousSha256": null,
-      "sha256": "d67d15e081d035d0d26c7ddfac1e137f0a9f35e2ad1fe430d2d7e455bccf3d1b",
-      "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
+      "sha256": "9e3f74bfcce1d8a952a514a2743b6496f3488a2ec30882550065037b2cc59bb4",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/camera-ffi/src/captures/mod.rs",
@@ -1104,20 +1104,20 @@
     {
       "path": "crates/sdk-abi/src/fields_8.rs",
       "previousSha256": null,
-      "sha256": "69f0b7fe5c4f0ee62cd7c33e338908d71f9383f9754b78a100eb9b9432b64e6b",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "822a79dfcd73384271141c8e814c4244271ed9694cf2b657fd52ab40bb008847",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/layout_8.rs",
       "previousSha256": null,
-      "sha256": "88380a9e6bce5cbf25cbd2a2bfad2ccbfe4ba84a8c75eacc17e1e080e0d8e997",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "10b56146b7723293329a05cc95e515911d3687709c8711ced1a2fad13d8ed1e7",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/sdk-abi/src/types_8.rs",
       "previousSha256": null,
-      "sha256": "c42c93da2e9383036a3fec3199a1608ec31ad869ff2c86ed4ac4e7d1934a07ca",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "0003c6139d53c0fc5865a5bf6c1e0f544cf05d0dae3492eafb0d28e246901850",
+      "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
     },
     {
       "path": "crates/vision/src/gpu/cuda_sys.rs",
@@ -1226,6 +1226,18 @@
       "previousSha256": null,
       "sha256": "aadb67004958f905e019f84390f4f428cd954375f59167f02e081f6795ecfd01",
       "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/swap_exports.rs",
+      "previousSha256": null,
+      "sha256": "7634d4cf3c64a35d5f48c23ca35503271237f9363176950bfbdd1686ad5be933",
+      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/swap_tests.rs",
+      "previousSha256": null,
+      "sha256": "2cf48ebe2c0a3f80ff1b52d36db0a4893fd72731acf418fbd8ab44ca08eb8219",
+      "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
     }
   ]
 }
