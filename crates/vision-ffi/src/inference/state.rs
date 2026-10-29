@@ -2,6 +2,7 @@ use super::{lock, records::Records, results::ResultBuffer};
 use am_sdk_support::{abi::*, context::Context, handles::Entry, Result};
 use std::{
     any::TypeId,
+    collections::HashMap,
     sync::{
         atomic::{AtomicU64, AtomicUsize, Ordering},
         Arc, Condvar, Mutex, Weak,
@@ -33,6 +34,7 @@ pub struct State {
     pub running: AtomicUsize,
     pub metrics: super::telemetry::Metrics,
     pub backends: Mutex<super::backends::Rows>,
+    pub swap_slots: Mutex<HashMap<u64, usize>>,
 }
 #[derive(Default)]
 pub struct Usage {
@@ -114,6 +116,7 @@ impl State {
                 running: AtomicUsize::new(0),
                 metrics: Default::default(),
                 backends: Mutex::default(),
+                swap_slots: Mutex::new(HashMap::new()),
             })
         })?;
         value.downcast().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)

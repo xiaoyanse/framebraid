@@ -16,6 +16,9 @@ mod selection;
 mod selection_tests;
 mod state;
 mod submission;
+mod swap_exports;
+#[cfg(test)]
+mod swap_tests;
 mod telemetry;
 #[cfg(test)]
 mod telemetry_tests;

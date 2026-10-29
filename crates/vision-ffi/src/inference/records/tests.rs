@@ -21,6 +21,7 @@ fn scope() -> (Domain, Arc<am_sdk_support::handles::Entry>, State) {
         running: 0.into(),
         metrics: Default::default(),
         backends: Default::default(),
+        swap_slots: std::sync::Mutex::new(std::collections::HashMap::new()),
     };
     (domain, entry, state)
 }

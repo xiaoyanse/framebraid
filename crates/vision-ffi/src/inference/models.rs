@@ -48,6 +48,11 @@ impl Managed for ModelHandle {
         self.notify.join();
         // 攒批登记随模型收尾回收；仍在窗的兜底项按关闭语义逐项收口。
         scheduler::batching_release(self);
+        if let Ok(mut slots) = self.state.swap_slots.lock() {
+            if slots.get(&0) == Some(&self.info.key.load(Ordering::Acquire)) {
+                slots.remove(&0);
+            }
+        }
         if let Ok(mut cache) = self.selection.lock() {
             cache.take();
         }
@@ -141,7 +146,7 @@ pub unsafe fn load(
     threads: u32,
     source: ModelSource<'_>,
 ) -> Result<usize> {
-    unsafe { load_inner(ctx, mode, profile, backend, threads, source, None) }
+    unsafe { load_inner(ctx, mode, profile, backend, threads, source, LoadKind::Bind) }
 }
 pub unsafe fn load_selected(
     ctx: usize,
@@ -160,10 +165,30 @@ pub unsafe fn load_selected(
             std::ptr::null(),
             threads,
             source,
-            Some((policy, attempt)),
+            LoadKind::Selected(policy, attempt),
         )
     }
 }
+pub(super) unsafe fn load_for_swap(
+    ctx: usize,
+    mode: u32,
+    profile: *const std::ffi::c_char,
+    backend: *const am_backend_policy_t,
+    threads: u32,
+    source: ModelSource<'_>,
+) -> Result<usize> {
+    unsafe { load_inner(ctx, mode, profile, backend, threads, source, LoadKind::Swap) }
+}
+
+enum LoadKind<'a> {
+    Bind,
+    Swap,
+    Selected(
+        &'a am_vision_core::sdk::selection::BackendSelectionPolicy,
+        &'a super::selection::Attempt,
+    ),
+}
+
 unsafe fn load_inner(
     ctx: usize,
     mode: u32,
@@ -171,11 +196,13 @@ unsafe fn load_inner(
     backend: *const am_backend_policy_t,
     threads: u32,
     source: ModelSource<'_>,
-    selected: Option<(
-        &am_vision_core::sdk::selection::BackendSelectionPolicy,
-        &super::selection::Attempt,
-    )>,
+    kind: LoadKind<'_>,
 ) -> Result<usize> {
+    let (selected, bind_slot) = match kind {
+        LoadKind::Selected(policy, attempt) => (Some((policy, attempt)), false),
+        LoadKind::Bind => (None, true),
+        LoadKind::Swap => (None, false),
+    };
     am_sdk_support::callbacks::reject_reentry()?;
     let active = crate::domain().active(ctx)?;
     let context = active.data::<Context>()?;
@@ -341,7 +368,7 @@ unsafe fn load_inner(
         session: Mutex::new(Some(model)),
         selection: Mutex::new(selection),
         info,
-        state,
+        state: state.clone(),
         inflight: AtomicUsize::new(0),
         stopping: AtomicBool::new(false),
         busy: AtomicBool::new(false),
@@ -357,5 +384,30 @@ unsafe fn load_inner(
     });
     let key = crate::domain().insert(ctx, handle.clone())?;
     handle.info.key.store(key, Ordering::Release);
+    if bind_slot {
+        if let Ok(mut slots) = state.swap_slots.lock() {
+            slots.insert(0, key);
+        }
+    }
     Ok(key)
+}
+#[cfg(test)]
+impl Info {
+    pub(crate) fn stub() -> Info {
+        Info {
+            key: AtomicUsize::new(0),
+            uid: MODEL_ID.fetch_add(1, Ordering::Relaxed),
+            profile: CString::new("swap-stub").unwrap(),
+            mode: AM_LOAD_RAW,
+            actual: 0,
+            device: CString::new("CPU").unwrap(),
+            fallback_reason: None,
+            native_batch: 1,
+            input_owners: Vec::new(),
+            output_owners: Vec::new(),
+            inputs: Vec::new(),
+            input_specs: Vec::new(),
+            outputs: Vec::new(),
+        }
+    }
 }

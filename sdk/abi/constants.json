@@ -68,7 +68,8 @@
     "AM_SFP_DROP_WAIT": 1,
     "AM_INIT_SHARED_FRAMES": 1,
     "AM_SHARED_PROTOCOL_VERSION": 1,
-    "AM_MEDIA_WORKER_LIMIT": 64
+    "AM_MEDIA_WORKER_LIMIT": 64,
+    "AM_SWAP_DETACH": 1
   },
   "cameraCapabilities": [
     "ENCODED_H264",

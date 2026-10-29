@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::HashMap;
 
 fn scope() -> (am_sdk_support::handles::Domain, Arc<Entry>, State) {
     let domain = am_sdk_support::handles::Domain::new(false);
@@ -19,6 +20,7 @@ fn scope() -> (am_sdk_support::handles::Domain, Arc<Entry>, State) {
         running: 0.into(),
         metrics: Default::default(),
         backends: Mutex::default(),
+        swap_slots: Mutex::new(HashMap::new()),
     };
     (domain, entry, state)
 }

@@ -1,4 +1,5 @@
 use super::*;
+use std::collections::HashMap;
 
 #[test]
 fn non_power_of_two_job_slots_have_exact_backing_capacity() {
@@ -65,6 +66,7 @@ fn state() -> Arc<State> {
         running: Default::default(),
         metrics: Default::default(),
         backends: Mutex::default(),
+        swap_slots: Mutex::new(HashMap::new()),
     })
 }
 

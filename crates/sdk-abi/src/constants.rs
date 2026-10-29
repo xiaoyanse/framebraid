@@ -51,6 +51,7 @@ pub const AM_SFP_DROP_WAIT: u32 = 1;
 pub const AM_INIT_SHARED_FRAMES: u32 = 1;
 pub const AM_SHARED_PROTOCOL_VERSION: u32 = 1;
 pub const AM_MEDIA_WORKER_LIMIT: u32 = 64;
+pub const AM_SWAP_DETACH: u32 = 1;
 pub const AMC_CAP_ENCODED_H264: u64 = 1 << 0;
 pub const AMC_CAP_ENCODED_H265: u64 = 1 << 1;
 pub const AMC_CAP_DECODE_H264: u64 = 1 << 2;
