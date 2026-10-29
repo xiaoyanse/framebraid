@@ -522,14 +522,14 @@
     {
       "path": "crates/am-camera/src/media/h264/fanout.rs",
       "previousSha256": "54bf768ac934f5f3c1da1473d9f2f5c43aa59cc60ad509488dbb5ad25bd7600d",
-      "sha256": "2dd88e223b59600ef8de0ca497c582ee094a72e1f33c876e087bd9c7025ad744",
-      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+      "sha256": "d748829ab29ab68636e61de369f3dd7567fab1d01a327b9abc9f87129b65ca0c",
+      "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
     },
     {
       "path": "crates/am-camera/src/media/h264/fanout/tests.rs",
       "previousSha256": null,
-      "sha256": "0793b9f61cab13cacb9065029a1f60f80d2fde033cea9b10782bef03ddc93783",
-      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+      "sha256": "df22aafebe9dce7c8fce3c1b027121f9ab6a67c71279a627ad8615fce984f931",
+      "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
     },
     {
       "path": "crates/am-camera/src/media/h264/session_tests.rs",
@@ -786,8 +786,8 @@
     {
       "path": "crates/am-camera/src/media/h264/session.rs",
       "previousSha256": "f2d5ad0b3a6992502c3ff8c5d35d4fd9702211a4ac171e015b2f6f97b46506dd",
-      "sha256": "3e4b7cb269e697e9c81ae0a0d4a3505baa37f24cc0d9c62bd9f69ce14295b32c",
-      "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
+      "sha256": "a2fcd2f85461d375c3c1b39c47dfabd35ef4dc7506c291409def9fe1d406fdbb",
+      "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
     },
     {
       "path": "crates/am-camera/src/media/h264/session/budget_tests.rs",
@@ -954,8 +954,8 @@
     {
       "path": "crates/am-camera/src/media/rtsp_tests.rs",
       "previousSha256": "95612225fa8ea084f57daf874a6b8772baddab37be8e3d3eb36ab4fb08310978",
-      "sha256": "7527551cd579c642820054f85f162d6888a946f61a9ab9486d4bfb94e719df54",
-      "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+      "sha256": "bdf319483cfec1d0381fdbfc1752308222a0607f9d7dbb27809ce399e6262da7",
+      "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
     },
     {
       "path": "crates/vision/src/lib.rs",
@@ -1243,13 +1243,13 @@
       "path": "crates/am-camera/src/media/h264/codec_probe.rs",
       "previousSha256": "e99211213a5743e53a1b437216b62fe3ea8c1d7458310907db449a23b9935ff6",
       "sha256": "c7a961840da79fe16035465db872b0587129b7d1af44d6be29c60873848bc295",
-      "reason": "有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
+      "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
     },
     {
       "path": "crates/am-camera/src/media/rtsp.rs",
       "previousSha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f",
       "sha256": "c72e028406dec497b7099e4d42bc92a49e9e87af0f638f5cd78e041cb796d6fd",
-      "reason": "有界流信息探测与无尺寸编码识别，保留低延迟运行参数"
+      "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
     }
   ]
 }
