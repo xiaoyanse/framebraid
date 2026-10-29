@@ -129,6 +129,7 @@ pub const AM_BACKEND_CPU: am_backend_e = 0;
 pub const AM_BACKEND_OPENVINO: am_backend_e = 1;
 pub const AM_BACKEND_CUDA: am_backend_e = 2;
 pub const AM_BACKEND_DIRECTML: am_backend_e = 3;
+pub const AM_BACKEND_OPENVINO_NATIVE: am_backend_e = 4;
 pub type am_frame_kind_e = i32;
 pub const AM_FRAME_KIND_PIXELS: am_frame_kind_e = 0;
 pub const AM_FRAME_KIND_GPU: am_frame_kind_e = 1;

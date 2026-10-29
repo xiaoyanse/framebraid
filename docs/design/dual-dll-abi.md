@@ -733,6 +733,8 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
   - **运行期切换**：configure 可在任何时刻调用；切换只影响此后接受的新请求，已进入等待窗口的在途项按切换前配置走完（凑满/截止/排空三择一）后生效。查询在关闭状态返回全零计数与默认选项。
   - 能力查询与实际支持一致：无动态批量能力的模型 get 返回 flags=0；绑定/生成器同步新导出与结构；本扩展不改变 batch_mode 既有三值语义——攒批只作用于 AUTO。
 
+- **OpenVINO 原生引擎（未发布兼容扩展，E1）**：`AM_BACKEND_OPENVINO_NATIVE=4` 作为第五推理路径（OpenVINO C API 直连，绕开 ORT OpenVINO EP 的 provider 桥接缺陷——2026-10-28 符号级证据：Intel provider wheel 的 C++ ABI 符号在所有公开运行库缺失）。矩阵第五行语义：hw=openvino.dll 在 runtime_dirs 可加载；deps=CPU 设备始终可用（GPU 设备枚举为增强项）；loadable=ov_core 初始化+模型编译成功；verified=真实推理成功一次。运行库约定：openvino.dll（2025.x 线）随 vision runtime_dirs 提供，独立于 onnxruntime.dll 目录（可并存）。**与 AM_BACKEND_OPENVINO=1（ORT EP 路径）语义区分**：1 走 ORT 会话的 OpenVINO EP（provider 可加载性受上述缺陷限制），4 走原生引擎（无 ORT 参与）。不支持该值的旧绑定收到 invalidArgument。策略回退：原生引擎失败（库缺失/模型格式不支持/设备不可用）回退 ORT CPU，回退原因进 selection 报告（不静默）。GPU 帧输入（§3.3a）适配位对两引擎统一（首版 OpenVINO 原生走 CPU 输入，GPU 帧直传为后续增强）。
+
 - **DirectML 后端（未发布兼容扩展，E2）**：`AM_BACKEND_DIRECTML=3` 作为第四推理路径（Windows 任意 GPU：Intel/AMD/NVIDIA）。矩阵第四行字段语义同其他后端（hw=运行库目录或系统含 DirectML.dll 且枚举到适配器；deps=d3d11+DirectML 运行库；loadable=ORT 会话以 DmlExecutionProvider 创建成功；verified=真实推理成功一次）。候选元组 device_id 忽略（EP 内部选卡，合同固定）；策略回退语义与其他后端一致。显式探测报告新增 directml 段（available；不承诺具体适配器型号）。不支持该值的旧绑定将收到 invalidArgument 而非未知崩溃。
 
 ### 3.6 结果获取（B02 五类结构 / B03 快照闭环 / B08 所有权）
