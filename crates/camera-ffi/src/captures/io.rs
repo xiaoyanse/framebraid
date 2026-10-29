@@ -217,6 +217,15 @@ fn capture(source: &Arc<SharedSource>, timeout: Duration) -> Result<Arc<Raw>> {
                 AM_FAULT_NETWORK as u32,
                 c"camera.captureFailed",
             );
+        } else if code == AM_ERR_CAMERA_URL_INVALID || code == AM_ERR_CAMERA_CODEC_UNSUPPORTED {
+            // 坏数据（200 但内容非 JPEG/解码失败——guess_format 走 Unsupported，
+            // R8 五形态实测曾停留 CONNECTING 且无 fault，监控盲区）：转
+            // RECONNECT_WAIT + 传输故障，与断连同级可观测；下一拍成功即回 LIVE。
+            source.report(
+                AM_SRC_RECONNECT_WAIT as u32,
+                AM_FAULT_NETWORK as u32,
+                c"camera.badImageData",
+            );
         }
         code
     })?;

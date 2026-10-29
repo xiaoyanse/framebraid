@@ -552,8 +552,8 @@
     {
       "path": "crates/camera-ffi/src/captures/io.rs",
       "previousSha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18",
-      "sha256": "658ac4c121f688c5ef2b112157cf51854ba1265fb812cec0e5f220c6fe3ab09b",
-      "reason": "Reviewed continuous-capture beat fix (in-flight freshness fast path returned stale frame every other beat halving GET cadence; single-subscriber transparent + fixed-grid scheduler); local fixture interval ~target verified; workspace green; C ABI unchanged"
+      "sha256": "01d8cf15cf812a31fddd0d17ffde78abc9fcd6db0f3c83ffefc41e4d88e82a71",
+      "reason": "R8 reviewed bad-image-data fault observability (decode failure -> RECONNECT_WAIT + NETWORK fault via camera.badImageData; five fault modes locally reproduced, baddata gap closed); workspace green; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/captures/io/tests.rs",
