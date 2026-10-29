@@ -113,6 +113,43 @@ pub unsafe extern "C" fn amc_gpu_frame_pool_create(
 }
 
 #[no_mangle]
+pub unsafe extern "C" fn amc_gpu_frame_desc(
+    frame: *const amc_gpu_frame_t,
+    out: *mut am_gpu_frame_desc_t,
+) -> i32 {
+    status(crate::domain(), frame as usize, || {
+        args::validate_output(out, std::mem::size_of::<am_gpu_frame_desc_t>())?;
+        if frame.is_null() {
+            return Err(AM_ERR_SDK_NULL_ARGUMENT);
+        }
+        // 跨 DLL 消费查询（§2.6a）：宿主经此组装 am_gpu_frame_ref_t 传给
+        // Vision（§3.3a）；desc 随帧构造定值，借用期内不变。句柄即 Box<GpuFrame>
+        // 裸指针（与 release 的 from_raw 对偶）。
+        let value = unsafe { (*frame.cast::<GpuFrame>()).desc };
+        unsafe { args::write(out, value) }
+    })
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn amc_gpu_frame_texture(
+    frame: *const amc_gpu_frame_t,
+    out: *mut *mut std::ffi::c_void,
+) -> i32 {
+    status(crate::domain(), frame as usize, || {
+        args::pointer(out)?;
+        if frame.is_null() {
+            return Err(AM_ERR_SDK_NULL_ARGUMENT);
+        }
+        // 同进程纹理指针（借用期内有效；不转移所有权，§2.6a 查询语义）。
+        let texture = unsafe { (*frame.cast::<GpuFrame>()).texture };
+        unsafe {
+            out.write(texture);
+        }
+        Ok(())
+    })
+}
+
+#[no_mangle]
 pub unsafe extern "C" fn amc_gpu_frame_borrow(frame: *const amc_gpu_frame_t) -> i32 {
     status(crate::domain(), frame as usize, || {
         if frame.is_null() {

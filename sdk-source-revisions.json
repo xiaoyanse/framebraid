@@ -1092,8 +1092,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/gpu_pool.rs",
       "previousSha256": null,
-      "sha256": "0b75333699d5a8286a709b2734613de2c690c8f4197b5f70f1a62738abf3576a",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "53ef1fab36627105e5243a0f81eb0e1d487c9cad7fd1da750fce3ac05bf8f1cf",
+      "reason": "R9 reviewed gpu frame desc/texture query exports implementation (contract-declared in M2b 2.6a, implementation was missed; Box<GpuFrame> handle dual to release from_raw); DLL export verified; C ABI unchanged"
     },
     {
       "path": "crates/camera-ffi/src/decoder/gpu_pool_tests.rs",
