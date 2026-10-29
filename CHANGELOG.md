@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Deliver the latest overlay fairly alongside video, reserving one queue entry and 512 KiB within the existing 36-entry/8 MiB limit. / 最新叠层与视频公平投递，在既有 36 项、8 MiB 上限内预留 1 项及 512 KiB。
+
 - Identify known non-H.264 stream codecs without requiring dimensions; use a temporary bounded stream-info probe when header data is insufficient. / 已知非 H.264 编码无需尺寸即可识别；头信息不足时临时采用有界流信息探测。
 
 ## [0.2.1] - 2026-10-29

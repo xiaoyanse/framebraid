@@ -522,14 +522,14 @@
     {
       "path": "crates/am-camera/src/media/h264/fanout.rs",
       "previousSha256": "54bf768ac934f5f3c1da1473d9f2f5c43aa59cc60ad509488dbb5ad25bd7600d",
-      "sha256": "2dd88e223b59600ef8de0ca497c582ee094a72e1f33c876e087bd9c7025ad744",
-      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+      "sha256": "d748829ab29ab68636e61de369f3dd7567fab1d01a327b9abc9f87129b65ca0c",
+      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged；最新叠层公平投递，保留单项及512KiB总预算"
     },
     {
       "path": "crates/am-camera/src/media/h264/fanout/tests.rs",
       "previousSha256": null,
-      "sha256": "0793b9f61cab13cacb9065029a1f60f80d2fde033cea9b10782bef03ddc93783",
-      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged"
+      "sha256": "df22aafebe9dce7c8fce3c1b027121f9ab6a67c71279a627ad8615fce984f931",
+      "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged；最新叠层公平投递，保留单项及512KiB总预算"
     },
     {
       "path": "crates/am-camera/src/media/h264/session_tests.rs",

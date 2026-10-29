@@ -16,6 +16,7 @@ mod tests;
 pub const CLIENT_QUEUE_MAX: usize = 36;
 /// 每订阅载荷上限；消息元数据另受36项限制，不以包数代替字节限制。
 pub const CLIENT_QUEUE_MAX_BYTES: usize = 8 * 1024 * 1024;
+const OVERLAY_MAX_BYTES: usize = 512 * 1024;
 
 /// 连续溢出踢线：持续消费不动=死客户端（半开连接），AIeng 32 帧连丢即踢。
 const CLIENT_STALL_KICK_AFTER: u32 = 2;
@@ -36,12 +37,28 @@ fn fits(queue: &VecDeque<H264Message>, message: &H264Message) -> bool {
             <= CLIENT_QUEUE_MAX_BYTES
 }
 
+fn fits_video(queue: &VecDeque<H264Message>, message: &H264Message) -> bool {
+    let mut count = 0usize;
+    let mut bytes = 0usize;
+    for item in queue
+        .iter()
+        .filter(|m| !matches!(m, H264Message::Overlay(_)))
+    {
+        count += 1;
+        bytes = bytes.saturating_add(message_bytes(item));
+    }
+    count < CLIENT_QUEUE_MAX - 1
+        && bytes.saturating_add(message_bytes(message))
+            <= CLIENT_QUEUE_MAX_BYTES - OVERLAY_MAX_BYTES
+}
+
 /// 客户端消息队列（有界语义在 ClientFan 投递侧实现）。
 pub(crate) struct ClientQueue {
     queue: Mutex<VecDeque<H264Message>>,
     notify: Notify,
     closed: AtomicBool,
     stall_overflows: std::sync::atomic::AtomicU32,
+    last_was_overlay: AtomicBool,
     #[cfg(test)]
     before_wait: Mutex<Option<Box<dyn FnOnce() + Send>>>,
 }
@@ -53,6 +70,7 @@ impl ClientQueue {
             notify: Notify::new(),
             closed: AtomicBool::new(false),
             stall_overflows: std::sync::atomic::AtomicU32::new(0),
+            last_was_overlay: AtomicBool::new(false),
             #[cfg(test)]
             before_wait: Mutex::default(),
         }
@@ -70,8 +88,19 @@ impl ClientQueue {
 
     fn poll_one(&self) -> (Option<H264Message>, bool) {
         let mut queue = self.lock();
-        let message = queue.pop_front();
+        let message = if self.last_was_overlay.load(Ordering::Relaxed)
+            && matches!(queue.front(), Some(H264Message::Overlay(_)))
+            && matches!(queue.get(1), Some(H264Message::Packet(_)))
+        {
+            queue.remove(1)
+        } else {
+            queue.pop_front()
+        };
         if message.is_some() {
+            self.last_was_overlay.store(
+                matches!(message, Some(H264Message::Overlay(_))),
+                Ordering::Relaxed,
+            );
             // 消费在动：清除死客户端踢除累计
             self.stall_overflows.store(0, Ordering::Relaxed);
         }
@@ -148,8 +177,8 @@ impl ClientFan {
             .iter()
             .fold(0usize, |n, p| n.saturating_add(p.data.len()));
         if gop.is_empty()
-            || gop.len() >= CLIENT_QUEUE_MAX
-            || bytes > CLIENT_QUEUE_MAX_BYTES
+            || gop.len() >= CLIENT_QUEUE_MAX - 1
+            || bytes > CLIENT_QUEUE_MAX_BYTES - OVERLAY_MAX_BYTES
             || !gop[0].keyframe
             || gop.iter().any(|p| p.generation != config.generation)
         {
@@ -180,18 +209,18 @@ impl ClientFan {
             if self.await_keyframe.load(Ordering::Relaxed) && !packet.keyframe {
                 return; // 丢后等关键帧
             }
-            if packet.data.len() > CLIENT_QUEUE_MAX_BYTES {
+            if packet.data.len() > CLIENT_QUEUE_MAX_BYTES - OVERLAY_MAX_BYTES {
                 self.queue.terminate(
                     queue,
                     H264Message::Closed(1009, Arc::from("media.packetTooLarge")),
                 );
                 return;
             }
-            if !fits(&queue, &message) {
+            if !fits_video(&queue, &message) {
                 // 低优先级叠层不应挤掉仍可解码的视频参考链。
                 queue.retain(|m| !matches!(m, H264Message::Overlay(_)));
             }
-            if !fits(&queue, &message) {
+            if !fits_video(&queue, &message) {
                 let stalls = self.queue.stall_overflows.fetch_add(1, Ordering::Relaxed) + 1;
                 if stalls >= CLIENT_STALL_KICK_AFTER {
                     // 持队列锁原子发布终态，不能放锁后让生产者穿过关闭屏障。
@@ -209,7 +238,7 @@ impl ClientFan {
                     generation: packet.generation,
                 });
                 self.await_keyframe.store(true, Ordering::Relaxed);
-                if !packet.keyframe || !fits(&queue, &message) {
+                if !packet.keyframe || !fits_video(&queue, &message) {
                     drop(queue);
                     self.queue.notify.notify_one();
                     return;
@@ -239,11 +268,13 @@ impl ClientFan {
         self.queue.notify.notify_one();
     }
 
-    /// 检测叠层帧投递（批③）：只保留最新一项；队列满即丢，
-    /// 不挤占视频帧窗口、不触发重同步（无消费者语义=丢，不积压）。
+    /// 最新叠层优先于视频，连续叠层与视频交替；控制消息保持在前。
     pub(crate) fn deliver_overlay(&self, json: Arc<str>) {
         let mut queue = self.queue.lock();
         if self.queue.closed.load(Ordering::Acquire) {
+            return;
+        }
+        if json.len() > OVERLAY_MAX_BYTES {
             return;
         }
         queue.retain(|m| !matches!(m, H264Message::Overlay(_)));
@@ -251,7 +282,16 @@ impl ClientFan {
         if !fits(&queue, &message) {
             return; // 队列满保视频帧：overlay 本 tick 丢弃
         }
-        queue.push_back(message);
+        let index = queue
+            .iter()
+            .take_while(|m| {
+                matches!(
+                    m,
+                    H264Message::Config(_) | H264Message::ResyncRequired { .. }
+                )
+            })
+            .count();
+        queue.insert(index, message);
         drop(queue);
         self.queue.notify.notify_one();
     }
