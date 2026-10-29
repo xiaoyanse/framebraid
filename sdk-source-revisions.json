@@ -1056,8 +1056,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg.rs",
       "previousSha256": null,
-      "sha256": "08db0ce428591f68a53e56e0c469a8c10ce9c44ab74665248c2a16678912e4d7",
-      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+      "sha256": "84f4f37760c904f22632e7fcc5391e23fa23efe489d9a8a342a605fdb8557d03",
+      "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
     },
     {
       "path": "crates/am-camera/src/media/mjpeg.rs",
@@ -1202,6 +1202,12 @@
       "previousSha256": null,
       "sha256": "9862b532b45757fe814f3079d0475668722694e97cd26a0b516216f3e4dc1510",
       "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg/tests.rs",
+      "previousSha256": null,
+      "sha256": "dee79e1d5ca1e2429dfa29fed423488eabedac04d890dba8e1b9608410ebc0b8",
+      "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
     }
   ]
 }

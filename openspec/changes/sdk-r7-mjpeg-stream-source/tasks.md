@@ -5,5 +5,5 @@
 - [x] 7.3 multipart 增量解析器（纯逻辑状态机）：boundary 提取/防误切/双校验/有界约束，恶意流字节序列单测 6 项全绿
 - [x] 7.4 流读取器：MjpegStream 长连接 + authorized_retry 复用 Digest 缓存 + 双超时（读超时/15s 窗 8MB 阈值）+ 超限断连信号
 - [x] 7.5 源类型接入现有生命周期（kind分派/reuse键/Encoded拒绝/流循环+本地multipart服务器集成测试通过；fast-worker实施+PM验收）
-- [ ] 7.6 端到端实测：本地合成 MJPEG 服务器（脚本生成流含正常/恶意/超时场景）+ 帧送达/重连/预算断言
-- [ ] 7.7 验证记录 + fmt/clippy/workspace 回归 + 边界检查 + 本地提交
+- [x] 7.6 端到端实测：本地multipart服务器三场景（正常帧订阅+干净关闭/恶意流六项解析器单测/断流重连generation递增实证），复跑3次稳定
+- [x] 7.7 验证记录（.local/evidence/sdk-r7-closeout-20261029.md）+ workspace 389全绿 + 边界264文件零漂移 + 提交链完整
