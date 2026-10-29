@@ -1061,7 +1061,7 @@
     },
     {
       "path": "crates/am-camera/src/media/mjpeg.rs",
-      "previousSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "previousSha256": null,
       "sha256": "83f669b722388db7788cc793376842c3d0169dc3618a292a83b057fef6c3adb6",
       "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     }
