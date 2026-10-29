@@ -48,8 +48,8 @@
     {
       "path": "crates/am-camera/src/media/mod.rs",
       "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
-      "sha256": "9815b5b73023a4d501225ad541864092df03fd6a32f73820e99f6cb83940ec60",
-      "reason": "R7 reviewed multipart module registration; C ABI unchanged"
+      "sha256": "195bef634f1be2e185d14a48772277b4cdfe41605d55ce5b708278e28b9863ca",
+      "reason": "R7 mjpeg/multipart module registrations (pub mod lines); C ABI unchanged"
     },
     {
       "path": "crates/am-camera/src/media/codec/hardware.rs",
@@ -1032,8 +1032,8 @@
     {
       "path": "crates/am-camera/src/media/sdk_io/http.rs",
       "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
-      "sha256": "2a221d466a794b941ae59cf67a0af104b69b803d27cc1e4986531d12ec460e45",
-      "reason": "R7 reviewed mjpeg stream reader helpers (authorized_retry/origin share, remaining/network pub) + R6 round2 decode_into path; C ABI unchanged"
+      "sha256": "74543d5e7daa9401c3aa0cb9c4ff6fc9f9a75b364ec08c42ced31c32bf70aa96",
+      "reason": "R7 mjpeg/multipart module registrations (pub mod lines); C ABI unchanged"
     },
     {
       "path": "crates/am-camera/Cargo.toml",
