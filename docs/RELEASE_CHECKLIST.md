@@ -4,7 +4,7 @@
 
 **v0.1.0 publication authorized by the owner on 2026-10-26; v0.2.0 authorized on 2026-10-28; v0.2.1 on 2026-10-29.**
 
-**锚点双层哈希（annotated tag，下游对接必读）**：发布回执须同时报 **tag 对象哈希**（ls-remote 直接可见）与**底层 commit**（tag^{commit}）；下游 Cargo git 依赖写 tag 名（）而非任何裸哈希。示例 v0.2.1：tag 对象 ，底层 commit 。 Each authorization covers only the identified build and scoped validation, not future versions or platforms.
+**锚点双层哈希（annotated tag，下游对接必读）**：发布回执须同时报 **tag 对象哈希**（ls-remote 直接可见）与**底层 commit**（tag 解引用所得）。下游 Cargo git 依赖两种写法皆可：`tag = "v0.2.1"`（随 tag 引用，语义等价）或 `rev = 底层 commit 全哈希`（下游门禁锁定场景，tag 是可移动引用与锁定语义冲突时用）。示例 v0.2.1：tag 对象 `4cfb2afd`，底层 commit `656c8ac8`。 Each authorization covers only the identified build and scoped validation, not future versions or platforms.
 
 **负责人已于 2026-10-26 授权发布 v0.1.0、2026-10-28 授权发布 v0.2.0。**每版授权仅覆盖具名构建与限定验证；未来版本须重新核对。
 
