@@ -1,10 +1,14 @@
 # Changelog / 变更记录
 
-## Unreleased
+## [0.3.0] - 2026-10-30
 
-- Deliver the latest overlay fairly alongside video, reserving one queue entry and 512 KiB within the existing 36-entry/8 MiB limit. / 最新叠层与视频公平投递，在既有 36 项、8 MiB 上限内预留 1 项及 512 KiB。
-
-- Identify known non-H.264 stream codecs without requiring dimensions; use a temporary bounded stream-info probe when header data is insufficient. / 已知非 H.264 编码无需尺寸即可识别；头信息不足时临时采用有界流信息探测。
+- GPU zero-copy mainline complete: D3D11VA texture frames flow to CUDA inference with per-frame copy audit (2 GPU copies, 0 CPU readback), detection-level parity verified on real hardware. / GPU 零拷贝主线全通：硬解纹理帧直达 CUDA 推理，每帧 2 次 GPU 内拷贝 / 0 次 CPU 回读，真机检测级对拍通过。
+- Fifth inference engine: OpenVINO native C-API direct engine (AM_BACKEND_OPENVINO_NATIVE=4) with ORT-path untouched and measured fallback matrix. / 第五推理引擎：OpenVINO 原生 C API 直连（与 ORT 路径并存，回退矩阵实测）。
+- Model hot swap: amv_model_swap atomic slot rebind; 8-thread sustained inference across swap with zero failures. / 模型热切换：槽位原子重绑，8 线程并发换模零失败。
+- Encode & stream: H.264 encoding (libx264, GPL per owner decision), MP4 archive (verified playable), RTMP sessions with reconnect backoff. / 编码推流：H.264 编码（libx264，GPL 经决策）、MP4 存档（可播放验证）、RTMP 推流会话（断线重连）。
+- MJPEG stream source: multipart/x-mixed-replace with bounded malicious-stream guards and reconnect. / MJPEG 流源：有界防护与重连。
+- Consumer validation system: baseline gate (decode vs OpenCV / cadence / lanes), scenario library (R-series regressions), release-checklist consumer profile. / 消费方验证体系：基线门禁+场景库+画像过堂。
+- Latest-overlay fair delivery with reserved queue entry (512 KiB within existing limits); bounded stream-info probe for insufficient header data. / 叠层公平投递（预留 1 项/512 KiB）；头信息不足时有界探测。
 
 ## [0.2.1] - 2026-10-29
 
