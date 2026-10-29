@@ -153,6 +153,17 @@ def main():
     binaries = []
     versions = {}
     actual_configurations = {}
+    # ⑤ x264 为动态依赖（mingw64 系统 DLL）：进入运行库闭包（GPL 许可文本随附）。
+    if GPL_BUILD:
+        x264_src = args.msys_root / "mingw64/bin/libx264-165.dll"
+        shutil.copy2(x264_src, root / "install/bin/libx264-165.dll")
+        x264_lic = args.msys_root / "mingw64/share/licenses/x264"
+        if x264_lic.is_dir():
+            for path in x264_lic.rglob("*"):
+                if path.is_file():
+                    target = root / "x264-license" / path.relative_to(x264_lic)
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copy2(path, target)
     with os.add_dll_directory(str(root / "install/bin")):
         for library, major in [("avutil", 61), ("swresample", 7), ("swscale", 10),
                                ("avcodec", 63), ("avformat", 63)]:
@@ -182,6 +193,13 @@ def main():
             shutil.copy2(path, runtime / name)
             binaries.append({"group": "ffmpeg", "file": name, "sha256": digest(path),
                              "bytes": path.stat().st_size, "directPeImports": imports})
+        if GPL_BUILD:
+            # x264 运行库闭包：avcodec 的 GPL 编码依赖，随 runtime 分发。
+            x264_dll = root / "install/bin/libx264-165.dll"
+            shutil.copy2(x264_dll, runtime / "libx264-165.dll")
+            binaries.append({"group": "x264", "file": "libx264-165.dll",
+                             "sha256": digest(x264_dll), "bytes": x264_dll.stat().st_size,
+                             "directPeImports": []})
     license_names = ["COPYING.LGPLv2.1", "LICENSE.md"]
     if GPL_BUILD:
         license_names.append("COPYING.GPLv2")
