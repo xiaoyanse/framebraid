@@ -2,7 +2,9 @@
 
 [Documentation / 文档入口](README.md) · [Current local status / 当前本地状态](RELEASE_STATUS.md)
 
-**v0.1.0 publication authorized by the owner on 2026-10-26; v0.2.0 authorized on 2026-10-28.** Each authorization covers only the identified build and scoped validation, not future versions or platforms.
+**v0.1.0 publication authorized by the owner on 2026-10-26; v0.2.0 authorized on 2026-10-28; v0.2.1 on 2026-10-29.**
+
+**锚点双层哈希（annotated tag，下游对接必读）**：发布回执须同时报 **tag 对象哈希**（ls-remote 直接可见）与**底层 commit**（tag^{commit}）；下游 Cargo git 依赖写 tag 名（）而非任何裸哈希。示例 v0.2.1：tag 对象 ，底层 commit 。 Each authorization covers only the identified build and scoped validation, not future versions or platforms.
 
 **负责人已于 2026-10-26 授权发布 v0.1.0、2026-10-28 授权发布 v0.2.0。**每版授权仅覆盖具名构建与限定验证；未来版本须重新核对。
 
