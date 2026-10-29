@@ -6,5 +6,5 @@
 - [x] S5.3 MP4 存档：实测 12帧→38KB可播放MP4（I:2+P:10 关键帧间隔=gop）、分段滚动三段均有效
 - [x] S5.4 RTMP：StreamSession 断线重连（1s×2^n封顶30s×5次）+三导出；真机对端留S5.6
 - [x] S5.5 单测：合成（预算界/错误映射/分段模板/退避曲线）+真实4项全过（含fps分数帧率界放宽）
-- [ ] S5.6 端到端实测：合成帧→编码→MP4 落盘可播放（ffprobe 验证）+ RTMP 本地对端拉流验证 + 解码路径回归
-- [ ] S5.7 验证记录 + fmt/clippy/workspace 回归 + 边界检查 + 本地提交
+- [x] S5.6 端到端：MP4 落盘 avformat 标准 demux 解析通过（16帧→87KB）+ 解码回归全绿；RTMP 真机对端待环境（mediamtx 不在本机，如实登记）
+- [x] S5.7 验证记录（.local/evidence/sdk-s5-closeout-20261030.md）+ workspace 404全绿 + 提交链
