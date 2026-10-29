@@ -19,7 +19,7 @@ use std::{
         Arc, Condvar, Mutex, Weak,
     },
 };
-mod api;
+pub(crate) mod api;
 mod credentials;
 mod events;
 pub(crate) mod hardware;
@@ -39,6 +39,7 @@ pub struct SharedSource {
     pub state: Arc<CameraState>,
     pub url: String,
     pub isapi: bool,
+    pub mjpeg: bool,
     pub source_id: u64,
     pub generation: AtomicU32,
     pub config_generation: AtomicU32,
@@ -344,7 +345,12 @@ pub fn get(key: usize) -> Result<Arc<Entry>> {
     Ok(entry)
 }
 static SOURCE_ID: AtomicU64 = AtomicU64::new(1 << 48);
-fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<SharedSource>> {
+fn make_shared(
+    state: Arc<CameraState>,
+    url: String,
+    isapi: bool,
+    mjpeg: bool,
+) -> Result<Arc<SharedSource>> {
     let source_id = SOURCE_ID
         .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_add(1))
         .map_err(|_| AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
@@ -352,6 +358,7 @@ fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<
         state: state.clone(),
         url,
         isapi,
+        mjpeg,
         source_id,
         generation: AtomicU32::new(1),
         config_generation: AtomicU32::new(1),
@@ -377,5 +384,5 @@ fn make_shared(state: Arc<CameraState>, url: String, isapi: bool) -> Result<Arc<
 }
 #[cfg(test)]
 pub(crate) fn isolated_test_source(state: Arc<CameraState>) -> Arc<SharedSource> {
-    make_shared(state, String::new(), false).unwrap()
+    make_shared(state, String::new(), false, false).unwrap()
 }

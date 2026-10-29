@@ -126,8 +126,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "9496e04b680b414fa03dc76c168d166fca6bb5d6f6f8cfa616be02746a248f9d",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     },
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -168,8 +168,8 @@
     {
       "path": "crates/camera-ffi/src/sources/mod.rs",
       "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-      "sha256": "133a5519e601885e0362909935de67197fd3f6d012e90139391de3d5f110a480",
-      "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+      "sha256": "c6ba061832e39b34b8e767ec9b697ab395f1263184b55e0d573aedf818f2f9d9",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -198,8 +198,8 @@
     {
       "path": "crates/camera-ffi/Cargo.toml",
       "previousSha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b",
-      "sha256": "11556c0644a8b3d13ec86209cb5d8f3e7d9c90cf4c0fced364661dd0dbd55ff7",
-      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+      "sha256": "7ad460b0420e0a798c97e5cd89f0003efd7dc98ae16b38d71d4123ead4d53422",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     },
     {
       "path": "crates/camera-ffi/src/lib.rs",
@@ -234,8 +234,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/mod.rs",
       "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
-      "sha256": "25d8719984d33f7c311c1ea07d95dcb7a1525e79311673ca0b42743af3662397",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "02f2c6dea533e383f56f2730e20ef3cd9426c6ceff3b529d5fd297f03acb4cfe",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     },
     {
       "path": "crates/sdk-abi/src/base.rs",
@@ -798,8 +798,8 @@
     {
       "path": "crates/camera-ffi/src/sources/api.rs",
       "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
-      "sha256": "f431319cf1a95462a01d73721a061d2f57730cc58f9bfcf26579667481c0165b",
-      "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+      "sha256": "1291d75a38ed26b393e1552101ec1c547f5ae8387ad0886992383c1227906600",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     },
     {
       "path": "crates/camera-ffi/src/probe/planning.rs",
@@ -1052,6 +1052,18 @@
       "previousSha256": null,
       "sha256": "c33db7e4d6e630a43bfbc50d64c394db90bbf19ad357ec9c969490876284b517",
       "reason": "Add GPU audit stats exposure tests covering increment visibility and context-scoped snapshot agreement with struct_size negotiation check"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg.rs",
+      "previousSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "sha256": "08db0ce428591f68a53e56e0c469a8c10ce9c44ab74665248c2a16678912e4d7",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+    },
+    {
+      "path": "crates/am-camera/src/media/mjpeg.rs",
+      "previousSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "sha256": "83f669b722388db7788cc793376842c3d0169dc3618a292a83b057fef6c3adb6",
+      "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
     }
   ]
 }

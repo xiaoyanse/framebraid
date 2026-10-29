@@ -3,6 +3,7 @@
 //! 经解析器 bytes_without_progress 配合时间窗判定）；连续超限由解析器断连
 //! 信号触发重建（调用方退避重连）。
 use crate::credentials::Secret;
+use std::collections::VecDeque;
 use std::io::Read;
 use std::time::{Duration, Instant};
 
@@ -19,6 +20,8 @@ const CHUNK: usize = 64 * 1024;
 pub struct MjpegStream {
     response: reqwest::blocking::Response,
     parser: MultipartParser,
+    /// feed 一次可产出多帧；逐次返回，未交付帧暂存于此。
+    pending: VecDeque<Output>,
     progress_deadline: Instant,
     byte_budget: usize,
     /// Content-Length 谎报累计（诊断导出）。
@@ -71,6 +74,7 @@ impl MjpegStream {
         Ok(Self {
             response,
             parser: MultipartParser::new(&boundary),
+            pending: VecDeque::new(),
             progress_deadline: Instant::now() + NO_PROGRESS_WINDOW,
             byte_budget: NO_PROGRESS_BYTES,
             false_content_length: 0,
@@ -86,6 +90,18 @@ impl MjpegStream {
             .ok_or(IoError::Invalid)?;
         let mut chunk = [0u8; CHUNK];
         loop {
+            // 先交付暂存帧；一次 feed 可产出多帧，返回第一帧其余入队等待。
+            if let Some(output) = self.pending.pop_front() {
+                match output {
+                    Output::Frame(frame) => {
+                        self.progress_reset();
+                        return Ok(Some(frame));
+                    }
+                    Output::Discarded => self.discarded += 1,
+                    Output::FalseContentLength => self.false_content_length += 1,
+                    Output::Closed => return Ok(None),
+                }
+            }
             remaining(deadline)?;
             // 读超时（reqwest read timeout）→ NoData 语义。
             let count = self.response.read(&mut chunk).map_err(|e| {
@@ -103,18 +119,7 @@ impl MjpegStream {
                 // 对端关流：视作断连（网络错误，调用方重连）。
                 return Err(IoError::Network);
             }
-            let outputs = self.parser.feed(&chunk[..count]);
-            for output in outputs {
-                match output {
-                    Output::Frame(frame) => {
-                        self.progress_reset();
-                        return Ok(Some(frame));
-                    }
-                    Output::Discarded => self.discarded += 1,
-                    Output::FalseContentLength => self.false_content_length += 1,
-                    Output::Closed => return Ok(None),
-                }
-            }
+            self.pending.extend(self.parser.feed(&chunk[..count]));
             // 双超时判定：无 boundary 进展（时间窗 + 字节阈值）。
             if Instant::now() >= self.progress_deadline
                 || self.parser.bytes_without_progress() > self.byte_budget

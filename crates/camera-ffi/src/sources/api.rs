@@ -13,7 +13,7 @@ pub unsafe extern "C" fn amc_source_open(
         let active = domain().active(ctx as usize)?;
         active.data::<am_sdk_support::context::Context>()?;
         let desc = unsafe { args::read(desc, size_of::<am_source_desc_t>()) }?;
-        if desc.kind > AM_SRC_DEVICE_REF as u32
+        if desc.kind > AM_SRC_MJPEG_URL as u32
             || desc.reuse > 1
             || desc.reserved.iter().any(|v| *v != 0)
             || !desc.creds.is_null() && !desc.provider.is_null()
@@ -27,10 +27,12 @@ pub unsafe extern "C" fn amc_source_open(
                 return Err(AM_ERR_SDK_INVALID_ARGUMENT);
             }
         }
+        let mjpeg = desc.kind == AM_SRC_MJPEG_URL as u32;
         let isapi = desc.kind == AM_SRC_ISAPI_URL as u32
             || desc.kind == AM_SRC_DEVICE_REF as u32
                 && (url.starts_with("http://") || url.starts_with("https://"));
-        am_camera_core::media::sdk_io::validate_url(&url, isapi)
+        // MJPEG 与 ISAPI 同为 http(s) 传输；rtsp 校验分支只属于流源。
+        am_camera_core::media::sdk_io::validate_url(&url, isapi || mjpeg)
             .map_err(|_| AM_ERR_CAMERA_URL_INVALID)?;
         let secret = if desc.creds.is_null() {
             None
@@ -62,6 +64,7 @@ pub unsafe extern "C" fn amc_source_open(
                     && Arc::ptr_eq(&s.state, &state)
                     && s.url == url
                     && s.isapi == isapi
+                    && s.mjpeg == mjpeg
                     && s.credentials
                         .claim(secret.as_ref(), provider.as_ref(), &s.owners, &s.stop)
             })
@@ -71,7 +74,7 @@ pub unsafe extern "C" fn amc_source_open(
         let fresh = reused.is_none();
         let shared = match reused {
             Some(shared) => shared,
-            None => make_shared(state, url, isapi)?,
+            None => make_shared(state, url, isapi, mjpeg)?,
         };
         if fresh && desc.reuse == 1 {
             // 尚未构造Source时无Drop回滚；fresh共享所有权随Arc一起销毁。

@@ -43,6 +43,10 @@ fn subscribe(source: usize, kind: Kind, mode: u32, items: u32, bytes: u64) -> Re
     if shared.isapi {
         return Err(AM_ERR_CAMERA_MODE_CONFLICT);
     }
+    // MJPEG 源无原始编码流输出语义；像素订阅由 hub 的流循环解码投递。
+    if shared.mjpeg && matches!(kind, Kind::Encoded { .. }) {
+        return Err(AM_ERR_CAMERA_CODEC_UNSUPPORTED);
+    }
     start(shared)?;
     let hub = lock(&shared.stream)?
         .as_ref()

@@ -13,6 +13,7 @@ mod consume;
 mod registry;
 pub(super) use registry::Snapshot;
 use registry::Subscribers;
+mod mjpeg;
 mod native;
 mod pipeline;
 mod sampling;
@@ -90,12 +91,19 @@ impl Hub {
             let _ = old.join();
         }
         let this = hub.clone();
+        let stream_mjpeg = source.mjpeg;
         let thread = source
             .state
             .metrics
             .threads
             .spawn("amc-shared-source", move || {
-                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| this.run()));
+                let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    if stream_mjpeg {
+                        mjpeg::run(&this);
+                    } else {
+                        this.run();
+                    }
+                }));
                 if let Ok(mut token) = this.interrupt.lock() {
                     token.take();
                 }
