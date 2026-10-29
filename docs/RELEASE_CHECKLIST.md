@@ -8,6 +8,25 @@
 
 **负责人已于 2026-10-26 授权发布 v0.1.0、2026-10-28 授权发布 v0.2.0。**每版授权仅覆盖具名构建与限定验证；未来版本须重新核对。
 
+## 消费方画像 / Consumer profile（发版前必答）
+
+发布候选确认前逐条作答，答案进发布说明；画像变化须复核基线/场景档位（豁免类别 profile-change）。
+
+1. **多路形态**：几路并发接入？各自目标频率？
+2. **主链路协议**：ISAPI 抓图 / RTSP H.264+H.265 / MJPEG 流，主消费路径是哪条？
+3. **分辨率档**：实际接入档位（含最大档，4K 档须过预算边界场景）？
+4. **认证方式**：HTTP Digest / 明文凭据 / 无认证？
+
+v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流；720p-2160p（4K 档预算边界已验证）；HTTP Digest（合成凭据本地验证）。
+
+## 基线与场景要件 / Baseline & scenario gate（发版前必跑）
+
+- [ ] 基线三件（`scripts/sdk/baselines/`）：`baseline_decode.py`（解码配对）、`baseline_capture_cadence.py`（节拍精度）、`baseline_lanes.py`（多路线性度）带 `--baseline recorded.json` 全过
+- [ ] 场景五件（`scripts/sdk/scenarios/`）：`scenario_budget_4k.py`、`scenario_cadence.py`、`scenario_mjpeg_stream.py`、`scenario_fault_observability.py`、`scenario_binding_load.py` 全过
+- [ ] 命令样例：`python scripts/sdk/baselines/baseline_decode.py --dll-dir <release> --runtime-dir <ffmpeg bin> --baseline scripts/sdk/baselines/recorded.json`
+- [ ] 漂移阻断：基线 FAIL=发布阻断；豁免仅限验证制度三类并按登记格式执行（见 VERIFICATION_DOCTRINE.md）
+- [ ] 运行结果（数字）进当版验证记录，输入档位与消费方画像对齐
+
 ## Completed locally / 本地已完成
 
 - [x] One FrameBraid repository containing Media SDK and Vision SDK; no host business dependency.

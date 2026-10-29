@@ -1,0 +1,48 @@
+{
+  "schema": "framebraid.baselines.v1",
+  "recorded_at": "2026-10-30",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "dll": ".local/build/current/release",
+  "runtime": ".local/runtimes/ffmpeg-h2-20261026/install/bin",
+  "decode": {
+    "warmup": 5,
+    "samples": 30,
+    "cells": [
+      {
+        "height": 1440,
+        "jpeg_sha256": "ba5d54b6b5088d8b7c918c7de504697f36d8d7267083d60e0442a4b52c76cb3d",
+        "sdk_p50_ms": 9.05,
+        "sdk_p95_ms": 11.267,
+        "cv_p50_ms": 8.547,
+        "cv_p95_ms": 9.407,
+        "tolerance_pct": 25.0,
+        "abs_floor_ms": 2.0
+      },
+      {
+        "height": 2160,
+        "jpeg_sha256": "b9ef4c5cd7c58bf99faf0fc37e087795d8f4622a9fdc2617362e0bffbe216bb9",
+        "sdk_p50_ms": 16.08,
+        "sdk_p95_ms": 19.57,
+        "cv_p50_ms": 19.914,
+        "cv_p95_ms": 21.401,
+        "tolerance_pct": 25.0,
+        "abs_floor_ms": 2.0
+      }
+    ]
+  },
+  "cadence": {
+    "target_ms": 100,
+    "window_s": 5,
+    "warmup_s": 2,
+    "p50_deviation_pct_max": 10.0,
+    "gets_ratio_min": 0.8,
+    "frames_ratio_min": 0.7
+  },
+  "lanes": {
+    "lanes": [1, 2, 4],
+    "window_s": 4.0,
+    "ratio2_min": 1.5,
+    "ratio4_min": 3.0
+  },
+  "exemptions": []
+}
