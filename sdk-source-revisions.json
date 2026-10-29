@@ -1218,8 +1218,8 @@
     {
       "path": "crates/vision/src/engine/openvino.rs",
       "previousSha256": null,
-      "sha256": "51b5b70e8dbb19cf6ba6ab788b47308a784db8304b9e1ed4e4cb4977ca380a55",
-      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+      "sha256": "1e1c7bf07890c4b49833dfd30708bb5e17474f6de6c15fbd318e8c1cc025dc52",
+      "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green"
     },
     {
       "path": "crates/vision/src/engine/mod.rs",
