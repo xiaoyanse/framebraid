@@ -42,6 +42,13 @@ def msys_path(path):
     return "/" + path[0].lower() + path[2:]
 
 
+# ⑤ x264/GPL 构建（2026-10-29 用户裁决）：编码推流需要 H.264 编码器。
+GPL_BUILD = True
+EXPECTED_LICENSE = "GPL version 2 or later" if GPL_BUILD else "LGPL version 2.1 or later"
+EXPECTED_LICENSE_ID = "GPL-2.0-or-later" if GPL_BUILD else "LGPL-2.1-or-later"
+BUILD_PROFILE = "ffmpeg-sdk-encode-win-x64" if GPL_BUILD else "ffmpeg-sdk-minimal-win-x64"
+
+
 def configure_args(prefix):
     return [
         "--prefix=" + prefix, "--target-os=mingw32", "--arch=x86_64",
@@ -161,7 +168,8 @@ def main():
             actual_configurations[library] = configuration_fn().decode()
             license_fn = getattr(loaded, library + "_license")
             license_fn.restype = ctypes.c_char_p
-            assert license_fn().decode() == "LGPL version 2.1 or later"
+            # ⑤ x264 构建为 GPL（2026-10-29 用户裁决）；license 声明随 profile。
+            assert license_fn().decode() == EXPECTED_LICENSE
             imports = subprocess.check_output([
                 str(args.msys_root / "mingw64/bin/objdump.exe"), "-p", str(path)
             ], text=True, encoding="utf-8")
@@ -174,7 +182,10 @@ def main():
             shutil.copy2(path, runtime / name)
             binaries.append({"group": "ffmpeg", "file": name, "sha256": digest(path),
                              "bytes": path.stat().st_size, "directPeImports": imports})
-    for name in ("COPYING.LGPLv2.1", "LICENSE.md"):
+    license_names = ["COPYING.LGPLv2.1", "LICENSE.md"]
+    if GPL_BUILD:
+        license_names.append("COPYING.GPLv2")
+    for name in license_names:
         shutil.copy2(source_dir / name, root / name)
     license_files = []
     for package in ("gcc-libs", "crt", "headers", "libwinpthread", "winpthreads"):
@@ -190,13 +201,14 @@ def main():
     shutil.copy2(build / "config.h", root / "config.h")
     config = (build / "config.h").read_text(encoding="utf-8")
     for token in ("#define HAVE_X86ASM 1", "#define HAVE_W32THREADS 1",
-                  "#define CONFIG_GPL 0", "#define CONFIG_NONFREE 0", "#define CONFIG_VERSION3 0"):
+                  f"#define CONFIG_GPL {1 if GPL_BUILD else 0}",
+                  "#define CONFIG_NONFREE 0", "#define CONFIG_VERSION3 0"):
         if token not in config:
             raise ValueError("构建策略未生效：" + token)
     gcc = args.msys_root / "mingw64/bin/gcc.exe"
-    record = {"schema": 1, "profile": "ffmpeg-sdk-minimal-win-x64", "sourceCommit": SOURCE_COMMIT,
+    record = {"schema": 1, "profile": BUILD_PROFILE, "sourceCommit": SOURCE_COMMIT,
               "sourceSha256": SOURCE_SHA256, "sourceArchive": str(archive), "configure": options,
-              "sourceModified": False, "license": "LGPL-2.1-or-later",
+              "sourceModified": False, "license": EXPECTED_LICENSE_ID,
               "externalMediaLibraries": [], "threadBackend": "w32threads", "x86Assembly": True,
               "makeVariables": {"EXTRALIBS": MAKE_EXTRALIBS},
               "compiler": subprocess.check_output([str(gcc), "--version"], text=True).splitlines()[0],
