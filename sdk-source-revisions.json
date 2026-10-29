@@ -240,8 +240,8 @@
     {
       "path": "crates/sdk-abi/src/base.rs",
       "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-      "sha256": "1188202ad90e023665fedee987c581f304f801e01245328e4b0f2d532be26c8e",
-      "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition"
+      "sha256": "fc755528b373ad8577cad848128bcb815005f68af636edb339974ef248002735",
+      "reason": "E1 AM_BACKEND_OPENVINO_NATIVE=4 enum constant (generator-synced); C ABI compatible addition"
     },
     {
       "path": "crates/camera-ffi/src/sources/hardware.rs",
