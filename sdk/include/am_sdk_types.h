@@ -269,6 +269,7 @@ typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DON
 #define AMV_CAP_PUSH_NOTIFY (UINT64_C(1) << 7)
 #define AMV_CAP_SHARED_FRAME_POOL (UINT64_C(1) << 8)
 #define AMV_CAP_ORDERED_SELECTION (UINT64_C(1) << 9)
+#define AMV_CAP_GPU_FRAME_INPUT (UINT64_C(1) << 10)
 typedef int32_t am_status_t;  /* 0=AM_OK；非 0 为稳定数值错误码（§6/主文件 §7），字符串名可查 */
 typedef uint32_t am_lifecycle_state_t; /* 关闭查询输出；枚举常量见主文件§5.4，固定4字节 */
 

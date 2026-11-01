@@ -50,17 +50,21 @@ impl RegisteredTexture {
         }
         let mut array: CudaArray = std::ptr::null_mut();
         let code = unsafe { (self.api.mapped_array)(&mut array, self.resource, subresource, 0) };
-        if code != 0 {
-            unsafe {
-                (self.api.unmap_resources)(1, &self.resource, std::ptr::null_mut());
+        if code != 0 || array.is_null() {
+            // 只回滚本次计数，归零才真正 unmap（与 MappedArray::Drop 同语义）；
+            // 无条件 unmap 会拆掉其他仍持有映射的子资源并留下错态计数（审计 A9）。
+            let now = self.mapped.fetch_sub(1, Ordering::AcqRel);
+            if now == 1 {
+                unsafe {
+                    (self.api.unmap_resources)(1, &self.resource, std::ptr::null_mut());
+                }
             }
-            return Err(crate::Error(format!("CUDA 子资源映射失败({code})")));
-        }
-        if array.is_null() {
-            unsafe {
-                (self.api.unmap_resources)(1, &self.resource, std::ptr::null_mut());
-            }
-            return Err(crate::Error("映射数组为空".into()));
+            let detail = if code != 0 {
+                format!("CUDA 子资源映射失败({code})")
+            } else {
+                "映射数组为空".to_owned()
+            };
+            return Err(crate::Error(detail));
         }
         Ok(MappedArray {
             api: self.api.clone(),

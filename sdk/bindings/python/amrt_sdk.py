@@ -1448,6 +1448,7 @@ AMV_CAP_RESULT_RAW_TENSOR = 64
 AMV_CAP_PUSH_NOTIFY = 128
 AMV_CAP_SHARED_FRAME_POOL = 256
 AMV_CAP_ORDERED_SELECTION = 512
+AMV_CAP_GPU_FRAME_INPUT = 1024
 
 FUNCTIONS = {
     "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),

@@ -68,15 +68,15 @@ const IO_DEADLINE: Duration = Duration::from_secs(5);
 /// 中断状态：deadline 限单段等待；stop 由租约释放触发立即中断阻塞 IO。
 /// 存 Box（内容地址稳定），opaque 指针在 InputGuard 移动后仍有效。
 pub(crate) struct InterruptState {
-    deadline: std::cell::Cell<Instant>,
-    stop: *const AtomicBool,
+    pub(crate) deadline: std::cell::Cell<Instant>,
+    pub(crate) stop: *const AtomicBool,
 }
 
 // SAFETY：stop 指向拉流线程持有的 SourceEntry.stop，生命周期覆盖 InputGuard。
 unsafe impl Send for InterruptState {}
 
 /// FFmpeg 中断回调：stop 置位或超 deadline 返回非 0。
-unsafe extern "C" fn interrupt_cb(opaque: *mut core::ffi::c_void) -> core::ffi::c_int {
+pub(crate) unsafe extern "C" fn interrupt_cb(opaque: *mut core::ffi::c_void) -> core::ffi::c_int {
     // SAFETY：opaque 指向 InputGuard 持有的 Box<InterruptState>，仅 IO 同步调用期间触发。
     let state = unsafe { &*(opaque.cast::<InterruptState>()) };
     if !state.stop.is_null() && unsafe { (*state.stop).load(Ordering::Relaxed) } {

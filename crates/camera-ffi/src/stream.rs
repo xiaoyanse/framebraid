@@ -3,7 +3,7 @@ use super::*;
 use am_camera_core::media::mux::MuxError;
 use am_camera_core::media::stream::StreamSession;
 use std::sync::{
-    atomic::{AtomicU32, Ordering},
+    atomic::{AtomicBool, AtomicU32, Ordering},
     Arc, Mutex,
 };
 
@@ -18,6 +18,7 @@ pub(crate) fn stream_error_status(error: MuxError) -> i32 {
         MuxError::Encode(inner) => encode_error_status(inner),
         MuxError::Config(_) => AM_ERR_SDK_INVALID_ARGUMENT,
         MuxError::Io(_) => AM_ERR_CAMERA_UNREACHABLE,
+        MuxError::Timeout => AM_ERR_CAMERA_TIMEOUT,
         MuxError::Ffmpeg(_) => AM_ERR_SDK_INTERNAL_ERROR,
     }
 }
@@ -25,6 +26,11 @@ pub(crate) fn stream_error_status(error: MuxError) -> i32 {
 pub(crate) struct StreamObject {
     pub(crate) session: Mutex<Option<StreamSession>>,
     pub(crate) state: AtomicU32,
+    /// 编码配置尺寸：输入视图必须与之一致，否则底层按配置行数读取会越界。
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    /// 停止信号：close/关闭即置位，唤醒 write 重连退避并中断连接 IO。
+    pub(crate) stop: Arc<AtomicBool>,
     _permit: Mutex<Option<ControlCharge>>,
 }
 
@@ -33,6 +39,8 @@ impl am_sdk_support::handles::Managed for StreamObject {
         self
     }
     fn request_close(&self) {
+        // 先置停止信号再标记关闭：阻塞在重连退避的 write 能立即退出并让出会话锁。
+        self.stop.store(true, Ordering::Release);
         self.state
             .store(AM_LIFECYCLE_CLOSING as u32, Ordering::Release);
     }
@@ -69,22 +77,28 @@ pub unsafe extern "C" fn amc_stream_open(
         let state = camera_state(ctx as usize)?;
         let url = am_sdk_support::args::string(rtmp_url_utf8)?;
         let (settings, _items, _bytes) = unsafe { read_encoder_config(enc_cfg)? };
+        let (width, height) = (settings.width, settings.height);
         if !url.to_ascii_lowercase().starts_with("rtmp://") {
             return Err(AM_ERR_CAMERA_URL_INVALID);
         }
         let api = encoder_runtime(&state)?;
         let permit = state.metadata(ENCODER_META_BYTES)?;
+        let stop = Arc::new(AtomicBool::new(false));
         let session = StreamSession::new(
             api,
             settings,
             std::ffi::CString::new(url)
                 .map_err(|_| AM_ERR_SDK_INVALID_ARGUMENT)?
                 .as_c_str(),
+            stop.clone(),
         )
         .map_err(stream_error_status)?;
         let object = StreamObject {
             session: Mutex::new(Some(session)),
             state: AtomicU32::new(AM_LIFECYCLE_RUNNING as u32),
+            width,
+            height,
+            stop,
             _permit: Mutex::new(Some(permit)),
         };
         let key = domain().insert(ctx as usize, Arc::new(object))?;
@@ -106,7 +120,11 @@ pub unsafe extern "C" fn amc_stream_write(
         if object.state.load(Ordering::Acquire) != AM_LIFECYCLE_RUNNING as u32 {
             return Err(AM_ERR_SDK_HANDLE_CLOSED);
         }
-        let (data, stride, _w, _h) = unsafe { read_pixel_view(frame)? };
+        let (data, stride, w, h) = unsafe { read_pixel_view(frame)? };
+        // 视图自洽不等于可用：底层按创建配置的尺寸读取，宽高不一致直接拒绝。
+        if w != object.width || h != object.height {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
         let mut guard = object
             .session
             .try_lock()

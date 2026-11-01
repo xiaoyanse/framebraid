@@ -53,6 +53,7 @@ namespace AmrtSdk {
         public IntPtr @view;
         public IntPtr @assoc;
         public uint @flags;
+        public IntPtr @gpu;
     }
 
     [StructLayout(LayoutKind.Sequential)]

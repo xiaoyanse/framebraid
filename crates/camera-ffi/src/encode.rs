@@ -65,6 +65,9 @@ pub(crate) fn encode_error_status(error: EncodeError) -> i32 {
 pub(crate) struct QueuedPacket {
     pub(crate) data: Vec<u8>,
     pub(crate) keyframe: bool,
+    /// 编码器时基下的原始时间戳（issue #7）：贯通到输出结构，不丢时间线。
+    pub(crate) pts: i64,
+    pub(crate) dts: i64,
     pub(crate) _charge: Charge,
 }
 
@@ -75,12 +78,21 @@ pub(crate) struct Inner {
     queue_budget_items: u32,
     queue_budget_bytes: u64,
     pub(crate) drained: bool,
+    /// 队满时的溢出包暂存（审计 A5）：投递失败不丢包也不部分入队，
+    /// receive 释放空间后由下一次 encode/drain 自动补投。
+    pub(crate) pending: Vec<EncodedPacket>,
 }
 
 pub(crate) struct EncoderObject {
     pub(crate) inner: Mutex<Option<Inner>>,
     pub(crate) state: AtomicU32,
     pub(crate) ctx_state: Arc<CameraState>,
+    /// 编码配置尺寸：输入视图必须与之一致，否则底层按配置行数读取会越界。
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    /// 编码器时基（1/fps）：输出包 PTS/DTS 的单位（issue #7 时间线贯通）。
+    pub(crate) time_base_num: u32,
+    pub(crate) time_base_den: u32,
     _permit: Mutex<Option<ControlCharge>>,
 }
 
@@ -147,31 +159,68 @@ pub(crate) fn encoder_runtime(state: &CameraState) -> Result<Arc<FfmpegApi>, i32
     crate::decoder::config::runtime(state)
 }
 
+/// 整批入队：任一包放不下即整批拒收（事务性，杜绝"部分入队后报错"的中间
+/// 态——审计 A5）。`stash_on_full` 仅 drain 尾包为真：编码器已 flush、包不可
+/// 再生，必须暂存待补投；编码路径报错即整帧拒收，调用方保留重发权。
 fn enqueue_packets(
     inner: &mut Inner,
     state: &Arc<CameraState>,
     packets: Vec<EncodedPacket>,
+    stash_on_full: bool,
 ) -> Result<usize, i32> {
+    if packets.is_empty() {
+        return Ok(0);
+    }
+    let fits = packets.iter().all(|packet| {
+        let bytes = packet.data.len() as u64 + 64;
+        inner.queue.len() < inner.queue_budget_items as usize
+            && bytes <= inner.queue_budget_bytes.saturating_sub(inner.queue_bytes)
+    });
+    if !fits {
+        if stash_on_full {
+            inner.pending.extend(packets);
+        }
+        return Err(AM_ERR_SDK_QUEUE_FULL);
+    }
+    let baseline = inner.queue.len();
     let mut enqueued = 0usize;
     for packet in packets {
         let bytes = packet.data.len() as u64 + 64;
-        let charge = state.charge(bytes, false)?;
-        let (max_items, max_bytes) = (inner.queue_budget_items, inner.queue_budget_bytes);
-        if inner.queue.len() >= max_items as usize
-            || bytes > max_bytes.saturating_sub(inner.queue_bytes)
-        {
-            drop(charge);
-            return Err(AM_ERR_SDK_QUEUE_FULL);
-        }
+        let charge = match state.charge(bytes, false) {
+            Ok(charge) => charge,
+            Err(error) => {
+                // 计费失败回滚本轮已入队项，保持整批事务性。
+                while inner.queue.len() > baseline {
+                    if let Some(queued) = inner.queue.pop_back() {
+                        inner.queue_bytes = inner
+                            .queue_bytes
+                            .saturating_sub(queued.data.len() as u64 + 64);
+                    }
+                }
+                return Err(error);
+            }
+        };
         inner.queue_bytes += bytes;
         inner.queue.push_back(QueuedPacket {
             data: packet.data,
             keyframe: packet.keyframe,
+            pts: packet.pts,
+            dts: packet.dts,
             _charge: charge,
         });
         enqueued += 1;
     }
     Ok(enqueued)
+}
+
+/// 补投 drain 暂存尾包：队满溢出的尾包在下一次 drain 时优先投递，投不下
+/// 即未完成（QUEUE_FULL），receive 腾出空间后重试。
+fn deliver_pending(inner: &mut Inner, state: &Arc<CameraState>) -> Result<(), i32> {
+    if inner.pending.is_empty() {
+        return Ok(());
+    }
+    let pending = std::mem::take(&mut inner.pending);
+    enqueue_packets(inner, state, pending, true).map(|_| ())
 }
 
 #[no_mangle]
@@ -191,6 +240,8 @@ pub unsafe extern "C" fn amc_encoder_create(
         let _active = domain().active(ctx as usize)?;
         let state = camera_state(ctx as usize)?;
         let (settings, items, bytes) = unsafe { read_encoder_config(cfg)? };
+        let (width, height) = (settings.width, settings.height);
+        let (time_base_num, time_base_den) = (settings.fps_den, settings.fps_num);
         let api = encoder_runtime(&state)?;
         let encoder = MediaEncoder::new(api, settings, false).map_err(encode_error_status)?;
         let permit = state.metadata(ENCODER_META_BYTES)?;
@@ -202,9 +253,14 @@ pub unsafe extern "C" fn amc_encoder_create(
                 queue_budget_items: items,
                 queue_budget_bytes: bytes,
                 drained: false,
+                pending: Vec::new(),
             })),
             state: AtomicU32::new(AM_LIFECYCLE_RUNNING as u32),
             ctx_state: state,
+            width,
+            height,
+            time_base_num,
+            time_base_den,
             _permit: Mutex::new(Some(permit)),
         });
         let key = domain().insert(ctx as usize, object)?;
@@ -226,7 +282,11 @@ pub unsafe extern "C" fn amc_encoder_encode(
         if object.state.load(Ordering::Acquire) != AM_LIFECYCLE_RUNNING as u32 {
             return Err(AM_ERR_SDK_HANDLE_CLOSED);
         }
-        let (data, stride, _w, _h) = unsafe { read_pixel_view(frame)? };
+        let (data, stride, w, h) = unsafe { read_pixel_view(frame)? };
+        // 视图自洽不等于可用：底层按创建配置的尺寸读取，宽高不一致直接拒绝。
+        if w != object.width || h != object.height {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
         let mut guard = object.inner.try_lock().map_err(|_| AM_ERR_SDK_QUEUE_FULL)?;
         let inner = guard.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
         if inner.drained {
@@ -234,7 +294,7 @@ pub unsafe extern "C" fn amc_encoder_encode(
         }
         let packets =
             unsafe { inner.encoder.encode_rgba(data, stride) }.map_err(encode_error_status)?;
-        enqueue_packets(inner, &object.ctx_state, packets)?;
+        enqueue_packets(inner, &object.ctx_state, packets, false)?;
         Ok(())
     })
 }
@@ -270,6 +330,14 @@ pub unsafe extern "C" fn amc_encoder_receive(
                                 bitstream_format: AM_BSF_ANNEXB,
                                 flags: AM_PKT_AU_COMPLETE
                                     | if queued.keyframe { AM_PKT_KEYFRAME } else { 0 },
+                                // 时间线贯通（issue #7）：编码器时基 1/fps 下的原始
+                                // PTS/DTS（帧序号语义，next_pts 逐帧递增）；当前
+                                // 公开入口无输入时间参数，为固定帧率合同，保留
+                                // 输入 PTS 属后续合同演进。
+                                pts: queued.pts,
+                                dts: queued.dts,
+                                time_base_num: object.time_base_num,
+                                time_base_den: object.time_base_den,
                                 ..Default::default()
                             },
                             bytes: queued.data,
@@ -304,9 +372,12 @@ pub unsafe extern "C" fn amc_encoder_drain(enc: *mut amc_encoder_t) -> i32 {
         }
         let mut guard = object.inner.try_lock().map_err(|_| AM_ERR_SDK_TRY_AGAIN)?;
         let inner = guard.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+        // 先补投上次队满暂存的尾包；投不下即未完成（QUEUE_FULL），调用方
+        // receive 后重试，不会把尾包静默丢失再报空成功（审计 A5）。
+        deliver_pending(inner, &object.ctx_state)?;
         let packets = inner.encoder.drain().map_err(encode_error_status)?;
         inner.drained = true;
-        enqueue_packets(inner, &object.ctx_state, packets)?;
+        enqueue_packets(inner, &object.ctx_state, packets, true)?;
         Ok(())
     })
 }

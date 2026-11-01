@@ -46,7 +46,8 @@ impl EncoderSettings {
             return Err("camera.encoder.gopRange");
         }
         let (n, d) = (self.fps_num, self.fps_den);
-        if n == 0 || d == 0 || n > 1_000_000 || d > 1_000_000 || n < d || n > FPS_RATIO_RANGE.1 * d {
+        if n == 0 || d == 0 || n > 1_000_000 || d > 1_000_000 || n < d || n > FPS_RATIO_RANGE.1 * d
+        {
             return Err("camera.encoder.fpsRange");
         }
         Ok(self)
@@ -119,9 +120,16 @@ impl Encoder {
             };
             (*ctx).gop_size = settings.gop_size as c_int;
             (*ctx).max_b_frames = 0;
-            (api.av_dict_set)(&mut options, c"preset".as_ptr(), c"veryfast".as_ptr(), 0);
-            // zerolatency 关掉 lookahead 缓冲：每帧确定性出包，队列预算语义可预测。
-            (api.av_dict_set)(&mut options, c"tune".as_ptr(), c"zerolatency".as_ptr(), 0);
+            // preset/tune 设置失败必须显式报错：静默回退默认参数会改变延迟与
+            // 每帧出包节奏，队列预算语义随之漂移（审计 A12）。
+            for (key, value) in [(c"preset", c"veryfast"), (c"tune", c"zerolatency")] {
+                let rc = (api.av_dict_set)(&mut options, key.as_ptr(), value.as_ptr(), 0);
+                if rc != 0 {
+                    (api.av_dict_free)(&mut options);
+                    (api.avcodec_free_context)(&mut ctx);
+                    return Err(EncodeError::Ffmpeg(rc));
+                }
+            }
             let rc =
                 (api.avcodec_open2)(ctx, codec, &mut options as *mut _ as *mut core::ffi::c_void);
             (api.av_dict_free)(&mut options);
@@ -209,7 +217,9 @@ impl Encoder {
             if (self.api.av_frame_make_writable)(self.frame) < 0 {
                 return Err(EncodeError::Ffmpeg(22));
             }
-            (self.api.sws_scale)(
+            // 行数核对与解码侧 codec.rs 一致：负值/部分转换说明目标帧残留
+            // 上帧数据，继续编码会静默产出坏帧（审计 A8）。
+            let rows = (self.api.sws_scale)(
                 self.sws,
                 src.as_ptr().cast(),
                 src_strides.as_ptr(),
@@ -218,6 +228,9 @@ impl Encoder {
                 (*self.frame).data.as_ptr(),
                 (*self.frame).linesize.as_ptr(),
             );
+            if rows != h as c_int {
+                return Err(EncodeError::Ffmpeg(rows));
+            }
             (*self.frame).pts = self.next_pts;
             self.next_pts += 1;
             let rc = (self.api.avcodec_send_frame)(self.ctx, self.frame);

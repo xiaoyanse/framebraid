@@ -2,8 +2,11 @@
 use super::encode::{EncodeError, Encoder, EncoderSettings};
 use super::ffmpeg_lib::FfmpegApi;
 use super::ffmpeg_sys::*;
+use super::rtsp::{interrupt_cb, InterruptState};
 use std::ffi::{c_int, CStr};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, OnceLock};
+use std::time::{Duration, Instant};
 
 /// 输出格式：MP4 存档或 FLV 推流（RTMP 承载）。
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -28,6 +31,8 @@ pub enum MuxError {
     Config(&'static str),
     Ffmpeg(c_int),
     Io(c_int),
+    /// 连接/重连总预算耗尽或停止信号取消（推流专用；不再无限放大阻塞）。
+    Timeout,
 }
 
 impl From<EncodeError> for MuxError {
@@ -53,6 +58,12 @@ pub fn backoff_delay_ms(attempt: u32) -> u64 {
 /// 推流最大重连次数（超过后会话报错，合同语义）。
 pub const STREAM_MAX_RETRIES: u32 = 5;
 
+/// 推流单段 IO（连接/写头）中断等待，与解码侧 IO_DEADLINE 对齐。
+pub const STREAM_IO_DEADLINE: Duration = Duration::from_secs(5);
+
+/// 推流连接/重连总预算（含退避等待）：超过返回 Timeout，宿主不再被长时间阻塞。
+pub const STREAM_CONNECT_BUDGET_MS: u64 = 15_000;
+
 pub struct Muxer {
     api: Arc<FfmpegApi>,
     fmt: *mut AVFormatContext,
@@ -61,6 +72,8 @@ pub struct Muxer {
     stream_tb: AVRational,
     connected: bool,
     finished: bool,
+    /// 推流连接的中断状态盒（opaque 指向其内容；随 Muxer 存活到 fmt 释放）。
+    _interrupt: Option<Box<InterruptState>>,
 }
 
 // SAFETY：FFmpeg 上下文只在 &mut self 方法内访问。
@@ -115,6 +128,7 @@ impl Muxer {
             stream_tb: AVRational { num: 0, den: 0 },
             connected: false,
             finished: false,
+            _interrupt: None,
         })
     }
 
@@ -124,8 +138,35 @@ impl Muxer {
     }
 
     /// 阶段二：连接网络端点并写头（RTMP 握手发生在此步）。
-    pub fn connect_stream(&mut self, url: &CStr) -> Result<(), MuxError> {
-        self.connect(url)
+    /// 单段 IO 受 deadline 中断、stop 置位立即取消；两者命中归一为 Timeout，
+    /// 避免不可中断的 avio_open 长时间占住调用线程。
+    pub fn connect_stream(
+        &mut self,
+        url: &CStr,
+        stop: Option<&AtomicBool>,
+    ) -> Result<(), MuxError> {
+        let stop_ptr = stop.map_or(std::ptr::null(), std::ptr::from_ref);
+        let interrupt = Box::new(InterruptState {
+            deadline: std::cell::Cell::new(Instant::now() + STREAM_IO_DEADLINE),
+            stop: stop_ptr,
+        });
+        // SAFETY：fmt 有效；opaque 指向随 Muxer 存活的 Box 内容（地址稳定）。
+        unsafe {
+            (*self.fmt).interrupt_callback = AVIOInterruptCB {
+                callback: Some(interrupt_cb),
+                opaque: std::ptr::from_ref(interrupt.as_ref())
+                    .cast_mut()
+                    .cast::<core::ffi::c_void>(),
+            };
+        }
+        self._interrupt = Some(interrupt);
+        let deadline = Instant::now() + STREAM_IO_DEADLINE;
+        let result = self.connect(url);
+        let stopped = stop.is_some_and(|flag| flag.load(Ordering::Relaxed));
+        if result.is_err() && (Instant::now() >= deadline || stopped) {
+            return Err(MuxError::Timeout);
+        }
+        result
     }
 
     fn connect(&mut self, target: &CStr) -> Result<(), MuxError> {

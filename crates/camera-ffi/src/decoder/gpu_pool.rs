@@ -112,6 +112,16 @@ pub unsafe extern "C" fn amc_gpu_frame_pool_create(
     status(crate::domain(), 0, || Err(AM_ERR_SDK_NOT_SUPPORTED))
 }
 
+/// 无生产链路期间的导出守卫：不存在合法 GPU 帧句柄（审计 A1），导出面
+/// 统一 notSupported（与 pool_create 一致），不裸解引用/释放任意指针；
+/// 真实句柄体系随 GPU 闭环接线（issue #3 主体）一并交付。
+fn gpu_frame_unavailable(frame: *const std::ffi::c_void) -> Result<()> {
+    if frame.is_null() {
+        return Err(AM_ERR_SDK_NULL_ARGUMENT);
+    }
+    Err(AM_ERR_SDK_NOT_SUPPORTED)
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn amc_gpu_frame_desc(
     frame: *const amc_gpu_frame_t,
@@ -119,14 +129,7 @@ pub unsafe extern "C" fn amc_gpu_frame_desc(
 ) -> i32 {
     status(crate::domain(), frame as usize, || {
         args::validate_output(out, std::mem::size_of::<am_gpu_frame_desc_t>())?;
-        if frame.is_null() {
-            return Err(AM_ERR_SDK_NULL_ARGUMENT);
-        }
-        // 跨 DLL 消费查询（§2.6a）：宿主经此组装 am_gpu_frame_ref_t 传给
-        // Vision（§3.3a）；desc 随帧构造定值，借用期内不变。句柄即 Box<GpuFrame>
-        // 裸指针（与 release 的 from_raw 对偶）。
-        let value = unsafe { (*frame.cast::<GpuFrame>()).desc };
-        unsafe { args::write(out, value) }
+        gpu_frame_unavailable(frame.cast())
     })
 }
 
@@ -137,46 +140,28 @@ pub unsafe extern "C" fn amc_gpu_frame_texture(
 ) -> i32 {
     status(crate::domain(), frame as usize, || {
         args::pointer(out)?;
-        if frame.is_null() {
-            return Err(AM_ERR_SDK_NULL_ARGUMENT);
-        }
-        // 同进程纹理指针（借用期内有效；不转移所有权，§2.6a 查询语义）。
-        let texture = unsafe { (*frame.cast::<GpuFrame>()).texture };
-        unsafe {
-            out.write(texture);
-        }
-        Ok(())
+        gpu_frame_unavailable(frame.cast())
     })
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn amc_gpu_frame_borrow(frame: *const amc_gpu_frame_t) -> i32 {
     status(crate::domain(), frame as usize, || {
-        if frame.is_null() {
-            return Err(AM_ERR_SDK_NULL_ARGUMENT);
-        }
-        Ok(())
+        gpu_frame_unavailable(frame.cast())
     })
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn amc_gpu_frame_return(frame: *mut amc_gpu_frame_t) -> i32 {
     status(crate::domain(), frame as usize, || {
-        if frame.is_null() {
-            return Err(AM_ERR_SDK_NULL_ARGUMENT);
-        }
-        Ok(())
+        gpu_frame_unavailable(frame.cast())
     })
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn amc_gpu_frame_release(frame: *mut amc_gpu_frame_t) -> i32 {
     status(crate::domain(), frame as usize, || {
-        if frame.is_null() {
-            return Err(AM_ERR_SDK_NULL_ARGUMENT);
-        }
-        drop(Box::from_raw(frame));
-        Ok(())
+        gpu_frame_unavailable(frame.cast())
     })
 }
 
@@ -187,7 +172,6 @@ pub unsafe extern "C" fn amc_gpu_frame_stats(
 ) -> i32 {
     status(crate::domain(), frame as usize, || {
         args::validate_output(out, std::mem::size_of::<am_gpu_frame_stats_t>())?;
-        // 统计从帧所属池读取；无池关联时返回全零。
-        unsafe { args::write(out, am_gpu_frame_stats_t::default()) }
+        gpu_frame_unavailable(frame.cast())
     })
 }

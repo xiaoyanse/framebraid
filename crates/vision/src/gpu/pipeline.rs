@@ -18,6 +18,29 @@ pub struct GpuFrameData {
     pub texture: *mut c_void,
 }
 
+/// CUDA 中间缓冲 guard：分配成功即接管释放；`?` 提前返回或 panic 任何退出
+/// 路径都走 Drop，后续分配/搬运失败不再泄漏已分配缓冲。
+struct CudaBuf {
+    ptr: *mut c_void,
+    free: unsafe extern "C" fn(*mut c_void) -> super::cuda_sys::CudaResult,
+}
+impl CudaBuf {
+    fn alloc(api: &CudaApi, bytes: usize, what: &str) -> Result<Self, Error> {
+        let mut ptr: *mut c_void = std::ptr::null_mut();
+        api.check(unsafe { (api.malloc)(&mut ptr, bytes) }, what)?;
+        Ok(Self {
+            ptr,
+            free: api.free,
+        })
+    }
+}
+impl Drop for CudaBuf {
+    fn drop(&mut self) {
+        // 析构路径错误无法传播；释放结果按既有惯例忽略，不构成吞错。
+        let _ = unsafe { (self.free)(self.ptr) };
+    }
+}
+
 /// 进程级 GPU 管线单例（driver ctx + JIT kernel；CUDA 环境进程内共享）。
 /// CUDA context 与模块句柄线程安全（驱动保证），裸指针跨线程只读使用。
 unsafe impl Send for GpuPipeline {}
@@ -93,24 +116,12 @@ impl GpuPipeline {
             // D2D 搬运：array → device buffer（GPU 内拷贝，计入搬运审计）。
             let y_bytes = frame.width as usize * frame.height as usize;
             let uv_bytes = y_bytes / 2;
-            let mut y_buf: *mut c_void = std::ptr::null_mut();
-            let mut uv_buf: *mut c_void = std::ptr::null_mut();
-            self.driver.check(
-                unsafe { (self.runtime.malloc)(&mut y_buf, y_bytes) },
-                "Y缓冲分配",
-            )?;
-            self.driver.check(
-                unsafe { (self.runtime.malloc)(&mut uv_buf, uv_bytes) },
-                "UV缓冲分配",
-            )?;
-            let result = self.copy_and_launch(
-                y_buf, uv_buf, y_array, uv_array, frame, dst_w, dst_h, session, input_name, y_bytes,
-            );
-            unsafe {
-                (self.runtime.free)(y_buf);
-                (self.runtime.free)(uv_buf);
-            }
-            result
+            let y_buf = CudaBuf::alloc(&self.runtime, y_bytes, "Y缓冲分配")?;
+            let uv_buf = CudaBuf::alloc(&self.runtime, uv_bytes, "UV缓冲分配")?;
+            self.copy_and_launch(
+                y_buf.ptr, uv_buf.ptr, y_array, uv_array, frame, dst_w, dst_h, session, input_name,
+                y_bytes,
+            )
         }
     }
 
@@ -197,4 +208,41 @@ pub mod audit {
 fn audit_frame() {
     use std::sync::atomic::Ordering;
     audit::GPU_INPUTS.fetch_add(1, Ordering::Relaxed);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    static FREED: AtomicUsize = AtomicUsize::new(0);
+
+    // 计数版 free：验证 Drop 语义（真实 cudaMalloc 失败注入需 CUDA 环境，未测）。
+    unsafe extern "C" fn counting_free(_p: *mut c_void) -> super::super::cuda_sys::CudaResult {
+        FREED.fetch_add(1, Ordering::SeqCst);
+        0
+    }
+
+    /// issue #5：每个成功分配的缓冲恰好释放一次；第二次分配失败时
+    /// 第一个缓冲随作用域退出释放——修复前该路径裸指针直接泄漏。
+    #[test]
+    fn cuda_buf_drop_frees_each_allocation_exactly_once() {
+        FREED.store(0, Ordering::SeqCst);
+        {
+            let _y = CudaBuf {
+                ptr: 1 as *mut c_void,
+                free: counting_free,
+            };
+            let _uv = CudaBuf {
+                ptr: 2 as *mut c_void,
+                free: counting_free,
+            };
+            // 第二次分配失败的形态：不存在第二个 guard，也没有游离的裸指针。
+        }
+        assert_eq!(
+            FREED.load(Ordering::SeqCst),
+            2,
+            "两个成功分配各释放一次，无双重释放"
+        );
+    }
 }

@@ -23,6 +23,8 @@ pub(crate) fn archive_error_status(error: MuxError) -> i32 {
     match error {
         MuxError::Encode(inner) => encode_error_status(inner),
         MuxError::Config(_) => AM_ERR_SDK_INVALID_ARGUMENT,
+        // Timeout 仅推流连接产生；存档文件 IO 到不了这里，归入内部错误防御。
+        MuxError::Timeout => AM_ERR_CAMERA_TIMEOUT,
         MuxError::Ffmpeg(_) | MuxError::Io(_) => AM_ERR_SDK_INTERNAL_ERROR,
     }
 }
@@ -78,11 +80,13 @@ impl ArchiveObject {
     }
 
     /// 冲刷 trailer 并关闭当前文件（close 导出与分段滚动共用）。
-    fn flush_segment(inner: &mut Inner) {
+    /// trailer/IO 失败必须上抛：吞掉会让调用方把损坏文件当保存成功。
+    fn flush_segment(inner: &mut Inner) -> Result<(), i32> {
         if let Some(mut mux) = inner.mux.take() {
-            let _ = mux.finish();
+            mux.finish().map_err(archive_error_status)?;
         }
         inner.frames_in_segment = 0;
+        Ok(())
     }
 }
 
@@ -143,7 +147,11 @@ pub unsafe extern "C" fn amc_archive_write(
         if object.state.load(Ordering::Acquire) != AM_LIFECYCLE_RUNNING as u32 {
             return Err(AM_ERR_SDK_HANDLE_CLOSED);
         }
-        let (data, stride, _w, _h) = unsafe { read_pixel_view(frame)? };
+        let (data, stride, w, h) = unsafe { read_pixel_view(frame)? };
+        // 视图自洽不等于可用：底层按创建配置的尺寸读取，宽高不一致直接拒绝。
+        if w != object.settings.width || h != object.settings.height {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
         let mut guard = object.inner.try_lock().map_err(|_| AM_ERR_SDK_TRY_AGAIN)?;
         let inner = guard.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
         if inner.mux.is_none() {
@@ -157,7 +165,7 @@ pub unsafe extern "C" fn amc_archive_write(
         result?;
         inner.frames_in_segment += 1;
         if object.segment_frames > 0 && inner.frames_in_segment >= object.segment_frames {
-            ArchiveObject::flush_segment(inner);
+            ArchiveObject::flush_segment(inner)?;
             inner.segment_index += 1;
         }
         Ok(())
@@ -176,15 +184,40 @@ pub unsafe extern "C" fn amc_archive_close(
             let entry = domain().get(arch as usize)?;
             let object = entry.data::<ArchiveObject>()?;
             let mut guard = object.inner.try_lock().map_err(|_| AM_ERR_SDK_TRY_AGAIN)?;
-            if let Some(inner) = guard.as_mut() {
-                ArchiveObject::flush_segment(inner);
+            match guard.as_mut() {
+                Some(inner) => ArchiveObject::flush_segment(inner),
+                None => Ok(()),
             }
-            Ok::<(), i32>(())
         };
-        let state = domain().close(arch as usize, wait)?;
+        let close_result = domain().close(arch as usize, wait);
+        // flush 错误优先于 close 结果：trailer 失败的存档必须报损坏。重试
+        // close 时 mux 已被首次 flush 取走、flush 恒 Ok，首次结果就是唯一真相，
+        // 不能让 TRY_AGAIN 等关闭错误把它顶掉（审计 A6）。
+        flush?;
+        let state = close_result?;
         unsafe {
             out_state.write(state);
         }
-        flush
+        Ok(())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// issue #6：无 mux（未开段/已冲刷）时 flush 幂等成功且计数清零。
+    /// 真实 trailer IO 失败注入不可模拟：错误产生由 mux 测试实证（未连接
+    /// finish 报错），传播由 Result 类型系统保证。
+    #[test]
+    fn flush_segment_without_mux_is_ok_and_resets_counter() {
+        let mut inner = Inner {
+            mux: None,
+            frames_in_segment: 7,
+            segment_index: 2,
+        };
+        assert_eq!(ArchiveObject::flush_segment(&mut inner), Ok(()));
+        assert_eq!(inner.frames_in_segment, 0, "帧计数应清零");
+        assert_eq!(inner.segment_index, 2, "段号不前移");
+    }
 }

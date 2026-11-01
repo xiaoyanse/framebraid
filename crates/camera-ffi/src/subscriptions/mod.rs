@@ -119,7 +119,18 @@ pub unsafe extern "C" fn amc_subscribe_frames(
         unsafe {
             out.write(std::ptr::null_mut());
         }
-        let d = unsafe { args::read(desc, size_of::<am_frame_sub_desc_t>()) }?;
+        // 前缀兼容（issue #2 同类，审计 A2）：frame_kind 为 M2a 尾部追加字段
+        // （偏移 40）；旧版 40 字节结构可订阅，frame_kind 不在 size 内时按 0
+        // （像素）处理。
+        const LEGACY_FRAME_SUB_BYTES: usize = 40;
+        const _: () = assert!(size_of::<am_frame_sub_desc_t>() == 48);
+        let d = unsafe { args::read(desc, LEGACY_FRAME_SUB_BYTES) }?;
+        // GPU 帧订阅尚未交付（审计 A3）：显式拒绝而非静默按像素订阅执行，
+        // 与头文件"SOFTWARE_ONLY 下不静默降级"合同一致；AMC_CAP_GPU_FRAMES
+        // 能力位同样未宣告，查询与入口行为一致。
+        if d.frame_kind != 0 {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
         if d.pixel_format > AM_PF_NV12 as u32 {
             return Err(AM_ERR_CAMERA_PIXEL_FORMAT_UNSUPPORTED);
         }

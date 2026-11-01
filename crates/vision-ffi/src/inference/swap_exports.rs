@@ -73,7 +73,9 @@ pub unsafe extern "C" fn amv_model_swap(
         out_model.write(new_key as _);
         out_old_model_id.write(old_key as u64);
         if swap.flags & AM_SWAP_DETACH != 0 {
-            let _ = crate::domain().close(old_key, 0);
+            // DETACH 合同：调用方不再自行关闭旧模型，排空失败必须上抛
+            // （审计 A7）；槽位已切换，调用方可持 old id 显式补关。
+            crate::domain().close(old_key, 0)?;
         }
         Ok(())
     })

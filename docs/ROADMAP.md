@@ -10,6 +10,8 @@
 
 登记待实现（防遗忘，按需启动）：GPU 全程显存管线（CUDA/OpenVINO 推理验收）、运行期模型热切换、编码推流输出（RTMP/MP4）、Linux 移植、包管理器分发（PyPI/NuGet/crates.io）、跨帧目标跟踪、ROI 区域裁剪推理、多模型流水线、ARM64 Windows、GB28181 客户端、ONVIF 发现+取流（低优先）。
 
+开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
+
 ---
 
  / Optimization roadmap

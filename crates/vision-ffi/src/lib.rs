@@ -55,7 +55,14 @@ pub unsafe extern "C" fn amv_query_capability(
                 | AMV_CAP_IMAGE_PREPROCESS_RAW
                 | AMV_CAP_RESULT_RAW_TENSOR
                 | AMV_CAP_PUSH_NOTIFY
-                | AMV_CAP_ORDERED_SELECTION) as u32,
+                | AMV_CAP_ORDERED_SELECTION
+                // GPU 帧直传按实际可载置位（审计 A4）：无 CUDA 运行库的机器
+                // 不得宣称该能力，查询与实际支持保持一致。
+                | if am_vision_core::gpu::pipeline::GpuPipeline::available() {
+                    AMV_CAP_GPU_FRAME_INPUT
+                } else {
+                    0
+                }) as u32,
             31,
         )
     })

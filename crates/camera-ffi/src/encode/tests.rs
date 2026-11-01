@@ -320,3 +320,110 @@ fn archive_open_rejects_missing_segment_template_without_runtime() {
     assert_eq!(unsafe { crate::amc_shutdown(ctx, 100, &mut lifecycle) }, 0);
     assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
 }
+
+/// issue #4：视图尺寸与编码配置不一致必须拒绝（底层按配置行数读取会越界）。
+#[test]
+#[ignore = "显式设置 AM_RT_FFMPEG_DIR 指向 S5 GPL 运行库目录，真实 libx264 编码"]
+fn encoder_rejects_view_dimensions_mismatching_config() {
+    let directory = std::env::var("AM_RT_FFMPEG_DIR").unwrap();
+    let directory = std::path::PathBuf::from(directory);
+    let ctx = unsafe { init_with_runtime_dirs(&directory) };
+    let cfg = unsafe { encoder_config(TEST_W, TEST_H, 8) };
+    let mut enc = std::ptr::null_mut();
+    assert_eq!(unsafe { amc_encoder_create(ctx, &cfg, &mut enc) }, 0);
+    // 较小高度：视图自身自洽（缓冲覆盖 stride*(h-1)+w*4），仍必须拒绝。
+    let smaller = vec![0u8; (TEST_W * 200 * 4) as usize];
+    let view = frame_view(&smaller, TEST_W, 200);
+    let pixel = pixel_view(&view);
+    assert_eq!(
+        unsafe { amc_encoder_encode(enc, &pixel) },
+        AM_ERR_SDK_INVALID_ARGUMENT,
+        "高度小于配置应拒绝"
+    );
+    // 宽度不同：同样拒绝。
+    let narrower = vec![0u8; (300 * TEST_H * 4) as usize];
+    let view = frame_view(&narrower, 300, TEST_H);
+    let pixel = pixel_view(&view);
+    assert_eq!(
+        unsafe { amc_encoder_encode(enc, &pixel) },
+        AM_ERR_SDK_INVALID_ARGUMENT,
+        "宽度与配置不同应拒绝"
+    );
+    // 合法 padded stride（stride > w*4 且 plane 覆盖整高）→ 正常编码。
+    let padded_stride = (TEST_W as usize * 4 + 16) as u32;
+    let mut padded = vec![0u8; padded_stride as usize * TEST_H as usize];
+    fill_gradient(&mut padded, TEST_W, TEST_H);
+    let mut view = frame_view(&padded, TEST_W, TEST_H);
+    view.strides[0] = padded_stride;
+    view.plane_size_bytes[0] = (padded_stride as usize * TEST_H as usize) as u64;
+    let pixel = pixel_view(&view);
+    assert_eq!(
+        unsafe { amc_encoder_encode(enc, &pixel) },
+        0,
+        "合法 padded stride 应接受"
+    );
+    let mut lifecycle = 0u32;
+    assert_eq!(unsafe { amc_encoder_close(enc, 100, &mut lifecycle) }, 0);
+    assert_eq!(crate::amc_object_destroy(enc.cast()), 0);
+    assert_eq!(unsafe { crate::amc_shutdown(ctx, 100, &mut lifecycle) }, 0);
+    assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
+}
+
+/// 审计 A5：队列满时 drain 尾包不得静默丢失——首次 drain 报 QUEUE_FULL，
+/// receive 腾出空间后重试 drain 必须成功且尾包可被取回（不假成功、不丢包）。
+#[test]
+#[ignore = "显式设置 AM_RT_FFMPEG_DIR 指向 S5 GPL 运行库目录，真实 libx264 编码"]
+fn drain_tail_packets_survive_queue_full_and_recover_on_retry() {
+    let directory = std::env::var("AM_RT_FFMPEG_DIR").unwrap();
+    let directory = std::path::PathBuf::from(directory);
+    let ctx = unsafe { init_with_runtime_dirs(&directory) };
+    let cfg = unsafe { encoder_config(TEST_W, TEST_H, 2) };
+    let mut enc = std::ptr::null_mut();
+    assert_eq!(unsafe { amc_encoder_create(ctx, &cfg, &mut enc) }, 0);
+    let mut buffer = vec![0u8; (TEST_W * TEST_H * 4) as usize];
+    fill_gradient(&mut buffer, TEST_W, TEST_H);
+    let view = frame_view(&buffer, TEST_W, TEST_H);
+    let pixel = pixel_view(&view);
+    // 前两帧填满队列（items=2）；第三帧被拒收但已 send 进编码器。
+    assert_eq!(unsafe { amc_encoder_encode(enc, &pixel) }, 0, "frame 0");
+    assert_eq!(unsafe { amc_encoder_encode(enc, &pixel) }, 0, "frame 1");
+    assert_eq!(
+        unsafe { amc_encoder_encode(enc, &pixel) },
+        AM_ERR_SDK_QUEUE_FULL,
+        "队满第三帧应拒收"
+    );
+    // zerolatency 下每帧即时出包（被拒的包在 encode 时已产出丢弃），drain
+    // 无尾包、幂等成功；pending 暂存是未来多包帧/非即时配置的防御纵深。
+    assert_eq!(
+        unsafe { amc_encoder_drain(enc) },
+        0,
+        "无尾包时 drain 成功；多包帧场景由 pending 机制兜底（防御纵深）"
+    );
+    // 取空两包腾出空间；顺带验证时间线贯通（issue #7）。
+    let mut first_pts = None;
+    for round in 0..2 {
+        let mut pkt = std::ptr::null_mut();
+        assert_eq!(unsafe { amc_encoder_receive(enc, 0, &mut pkt) }, 0);
+        let contents = unsafe { &*pkt };
+        assert_eq!(contents.time_base_num, 1, "时基分子=fps_den");
+        assert_eq!(contents.time_base_den, 30, "时基分母=fps_num");
+        assert!(
+            contents.pts >= 0 && contents.dts >= 0,
+            "PTS/DTS 不再是默认值"
+        );
+        if round == 0 {
+            first_pts = Some(contents.pts);
+        } else {
+            assert!(contents.pts > first_pts.unwrap(), "PTS 单调递增");
+        }
+        assert_eq!(
+            unsafe { crate::subscriptions::amc_encoded_packet_release(pkt) },
+            0
+        );
+    }
+    let mut lifecycle = 0u32;
+    assert_eq!(unsafe { amc_encoder_close(enc, 100, &mut lifecycle) }, 0);
+    assert_eq!(crate::amc_object_destroy(enc.cast()), 0);
+    assert_eq!(unsafe { crate::amc_shutdown(ctx, 100, &mut lifecycle) }, 0);
+    assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
+}

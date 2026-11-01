@@ -1,5 +1,10 @@
 # Changelog / 变更记录
 
+## [0.3.1] - 2026-11-01
+
+- Full audit-fix batch for review issues #2-#8 plus 10 additional same-pattern findings from a whole-repo audit (report: .local/audit/issue-pattern-audit-20261101.md): encode/archive/stream dimension validation (no OOB read on mismatched views), CUDA buffer RAII (no leak on second-allocation failure), MP4 finish-error propagation (no false save-success), RTMP connect budget + interruptible backoff (15s total, stop-wake, camera.timeout), encode PTS/DTS/time_base pass-through, am_image_input_t/am_frame_sub_desc_t prefix negotiation (legacy 48/40-byte callers keep working), C# binding regains the gpu field, AMV_CAP_GPU_FRAME_INPUT (bit10) capability bit set per actual CUDA availability, GPU frame handle exports hardened to notSupported until the closed loop lands. / 审查 issue #2-#8 与全仓模式审计另 10 项的全量修复：编码尺寸校验（杜绝越界读）、CUDA 缓冲 RAII（二次分配失败不泄漏）、MP4 结束错误上抛（不再误报保存成功）、RTMP 连接总预算与可唤醒退避（camera.timeout）、编码 PTS/DTS/时基贯通、图像输入与帧订阅结构前缀协商（旧版 48/40 字节调用方继续可用）、C# 绑定补 gpu 字段、GPU 帧输入能力位按实际置位、GPU 帧句柄族导出在闭环落地前统一 notSupported。
+- Contract doc updated (dual-dll-abi.md, six semantics) and source revisions registered per repo rules; 402 unit tests + real-FFmpeg suite green, failure list identical to pre-change baseline. / 合同文档六条语义增补、源码修订按仓规则登记；402 单测与真机套件全绿，失败清单与改动前基线逐项一致。
+
 ## [0.3.0] - 2026-10-30
 
 - GPU zero-copy mainline complete: D3D11VA texture frames flow to CUDA inference with per-frame copy audit (2 GPU copies, 0 CPU readback), detection-level parity verified on real hardware. / GPU 零拷贝主线全通：硬解纹理帧直达 CUDA 推理，每帧 2 次 GPU 内拷贝 / 0 次 CPU 回读，真机检测级对拍通过。

@@ -76,7 +76,11 @@ pub unsafe fn plan_item(
     asynchronous: bool,
     batch_item: bool,
 ) -> Result<Plan> {
-    let input = unsafe { args::read(input, size_of::<am_image_input_t>()) }?;
+    // 前缀兼容（issue #2）：gpu 为 M2b 尾部追加字段（偏移 48）；旧版 48 字节
+    // 结构照常可读，gpu 不在 size 内时保持默认 null，走既有 CPU 路径。
+    const LEGACY_IMAGE_INPUT_BYTES: usize = 48;
+    const _: () = assert!(size_of::<am_image_input_t>() == 56);
+    let input = unsafe { args::read(input, LEGACY_IMAGE_INPUT_BYTES) }?;
     let params = unsafe { params(p) }?;
     if input.flags & !AM_INPUT_BORROW_RETAINED != 0 || (!asynchronous && input.flags != 0) {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);

@@ -53,8 +53,12 @@ unsafe fn initialize_inner(
         if !runtime::initialized() {
             *failed = Some(code);
         }
-        domain.close(key, 0)?;
-        domain.destroy(key)?;
+        // 失败路径完整走收尾：close 与 destroy 都执行，`?` 短路会让注册槽滞留
+        // （审计 A10）；destroy 对未关闭对象按合同拒绝，不构成强拆。
+        let close_result = domain.close(key, 0);
+        let destroy_result = domain.destroy(key);
+        close_result?;
+        destroy_result?;
         *lock(&domain.thread_config)? = previous;
         return Err(code);
     }
