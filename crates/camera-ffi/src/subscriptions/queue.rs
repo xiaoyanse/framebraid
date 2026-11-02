@@ -447,7 +447,13 @@ impl Subscription {
             }
             match self.wake.wait_timeout(d, until - now) {
                 Ok((data, _)) => d = data,
-                Err(_) => return Err(AM_ERR_SDK_INTERNAL_ERROR),
+                Err(poisoned) => {
+                    // 毒化早退也必须归还等待者名额，否则并发拉取上限被永久占一格（审计F2）。
+                    if waiting {
+                        poisoned.into_inner().0.waiters -= 1;
+                    }
+                    return Err(AM_ERR_SDK_INTERNAL_ERROR);
+                }
             }
         };
         if waiting {
@@ -526,7 +532,14 @@ impl Subscription {
                     this.alive.store(false, Ordering::Release);
                     this.wake.notify_all();
                 }) {
-                Ok(thread) => *lock(&self.handle)? = Some(thread),
+                Ok(thread) => {
+                    // handle锁毒化也必须完成登记并继续收口，否则changing遗留true令订阅线程与调用方互等（审计F3）。
+                    let mut handle = self
+                        .handle
+                        .lock()
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    *handle = Some(thread);
+                }
                 Err(_) => {
                     self.alive.store(false, Ordering::Release);
                     d.callback = None;

@@ -216,13 +216,20 @@ impl Admission {
 }
 impl Drop for Admission {
     fn drop(&mut self) {
-        if let Ok(mut d) = self.engine.data.lock() {
-            if let Ok(mut used) = self.usage.preprocess.lock() {
-                d.inflight -= self.items;
-                d.bytes -= self.bytes;
-                used[self.class] -= self.bytes;
-            }
-        }
+        // 锁毒化也不得跳过出账：漏账会令执行器预算永久虚高直至恒QUEUE_FULL（审计F4）。
+        let mut d = self
+            .engine
+            .data
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut used = self
+            .usage
+            .preprocess
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        d.inflight -= self.items;
+        d.bytes -= self.bytes;
+        used[self.class] -= self.bytes;
         self.engine.wake.notify_all();
     }
 }
