@@ -1,5 +1,21 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.3.1 (2026-11-02)
+
+Audit-fix release, no ABI break (prefix compatibility strengthened). Fixes review issues #2-#8:
+encode/archive/stream dimension validation (no OOB reads on mismatched views), CUDA buffer RAII
+(no leak on second-allocation failure), MP4 finish-error propagation (no false save-success),
+RTMP connect budget with interruptible backoff (15s total, stop-wake, camera.timeout), encoded
+PTS/DTS/time_base pass-through, legacy 48/40-byte struct prefix negotiation (am_image_input_t /
+am_frame_sub_desc_t), C# binding regains the gpu field. Also fixes 10 same-pattern findings from
+a whole-repo audit and 2 high-severity extended-audit findings (batching three-lock deadlock,
+DETACH drain false-success). GPU frame handle exports return notSupported until the closed loop
+lands. 402 unit tests + real-FFmpeg suite green, failure list identical to pre-change baseline.
+/ 审查修复版，无 ABI 破坏（前缀兼容增强）：编码尺寸校验、CUDA 缓冲 RAII、MP4 结束错误
+上抛、RTMP 连接预算与可唤醒退避、编码时间线贯通、旧版结构前缀协商、C# 绑定补齐；含全仓
+模式审计同修 10 项与扩展审计高危 2 项（攒批三锁环、DETACH 假成功）。GPU 帧句柄族在闭环
+落地前统一 notSupported。402 单测+真机套件全绿，失败清单与基线一致。
+
 ## v0.2.0 (2026-10-28)
 
 Compatible-addition release. Media/Vision SDK move to C ABI 1.1 (r9 frozen artifacts): explicit

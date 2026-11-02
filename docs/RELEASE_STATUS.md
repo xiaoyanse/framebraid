@@ -1,7 +1,17 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.3.0**（2026-10-30 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.3.1**（2026-11-02 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
+
+## v0.3.1 验证状态快照
+
+审查缺陷全量修复版（无 ABI 破坏，前缀兼容增强）：issue #2-#8 七项缺陷（尺寸校验防越界、
+CUDA 缓冲 RAII、MP4 finish 错误上抛、RTMP 连接预算与可唤醒退避、编码 PTS/DTS 时基贯通、
+旧版结构前缀协商、C# 绑定补齐）+ 全仓模式审计同修 10 项 + 扩展审计高危 2 项（攒批三锁环
+挂死、DETACH 排空假成功）。GPU 帧句柄族导出在闭环落地前统一 notSupported（安全加固）。
+合同语义六条增补见 dual-dll-abi.md 2026-11-01 段。Rust 回归 402 项通过；真机 FFmpeg 套件
+全绿且失败清单与改动前基线逐项一致；源码修订按仓规则登记 sdk-source-revisions.json。
+审计报告与待修台账：.local/audit/（F7 丢包、F5 GPU 借用窗口等后续项不随本版）。
 
 ## v0.3.0 验证状态快照
 
