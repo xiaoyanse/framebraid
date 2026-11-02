@@ -60,6 +60,7 @@ pub(super) fn run(hub: &Arc<Hub>) {
             &secret,
             token,
             Duration::from_secs(5),
+            true,
         ) {
             Ok(mut reader) => {
                 if !hub.current(&source, stamp) {
@@ -72,6 +73,23 @@ pub(super) fn run(hub: &Arc<Hub>) {
                     AM_FAULT_KEYFRAME_WAIT as u32,
                     c"camera.waitingKeyframe",
                 );
+                // 合同 §2.4 FILE 段：无订阅者时读取暂停——demux 抢跑会把包发给空订阅
+                // 列表（短文件毫秒级读完尤其如此），首个订阅者注册前不进入读包循环。
+                let mut waited = 0u32;
+                while hub.list().iter().next().is_none() {
+                    if source.stop.load(std::sync::atomic::Ordering::Acquire) {
+                        return;
+                    }
+                    if !hub.current(&source, stamp) {
+                        break;
+                    }
+                    std::thread::sleep(Duration::from_millis(20));
+                    waited += 1;
+                }
+                let _ = waited;
+                if source.stop.load(std::sync::atomic::Ordering::Acquire) {
+                    return;
+                }
                 hub.consume(&source, &mut reader, stamp)
             }
             // 打开失败（不存在/损坏/非容器）在 validate_file_path 已挡掉大部分；

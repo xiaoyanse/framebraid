@@ -259,6 +259,7 @@ impl Hub {
                 &secret,
                 token.clone(),
                 Duration::from_secs(5),
+                false,
             );
             let result = match opened {
                 Ok(mut reader) => {

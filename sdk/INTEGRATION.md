@@ -123,6 +123,12 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 
 ## 2. 运行环境与首版范围
 
+### FILE 本地文件源（未发布）
+
+低层 `am_source_desc_t.kind = AM_SRC_FILE`（4），`url_utf8` 为 UTF-8 文件路径，可带 `file://` 前缀；不存在或不可读返回 `camera.urlInvalid`，详情包含路径和原因。`creds`、`provider` 必须为 NULL，`stream_kind_utf8` 仅允许 NULL 或空字符串。首版验收口径为 MP4 的 H.264/H.265，须配置 FFmpeg 运行库；Python/C# 当前高层 OpenSource 仅支持 RTSP/ISAPI，FILE 使用低层接口。
+
+文件按最快速度读取，订阅队列满时背压；EOF 状态为 `AM_SRC_EOF`（7），队列仍可按序排空，PULL 排空后返回 `AM_ERR_CAMERA_STREAM_ENDED`（517）。调用方仍须显式关闭源；不自动重播，seek/循环重播属于阶段 2，当前不支持。文件夹具和实际运行库验证结果另行记录。
+
 - Windows x64、x64 调用进程。C# 编译指定 `x64`，Python 使用 64 位版本。
 - 需要兼容的 Microsoft Visual C++ 2015–2022 Redistributable x64。已有兼容版本无需重装；缺失时使用 [Microsoft 官方安装入口](https://aka.ms/vs/17/release/vc_redist.x64.exe)，核实安装程序签名。不要复制其他电脑的 System32 DLL。
 - 本运行包提供 CPU 推理依赖；CUDA、OpenVINO 的 provider、插件、驱动并不随 CPU 包交付。查询到硬件不代表相应推理后端已可用，不把编译通过视为 GPU 执行验收。

@@ -11,6 +11,7 @@ namespace AmrtSdk {
         }
     }
     public sealed class CameraContext : OwnedResource {
+        public const uint AmSrcFile = 4;
         private void RequireWorkerBudget(Arena arena) {
             HardwareReports.RequireApi();
             IntPtr cap = arena.Struct(Arena.Sized<amc_capability_t>());
@@ -50,7 +51,7 @@ namespace AmrtSdk {
                 IntPtr raw; SdkException.Check(Diagnostics.Initialize(false, arena.Struct(p), out raw), "initialize camera"); return raw;
             }
         }
-        // stream：null 按协议取默认（rtsp=main，isapi=isapi）；显式 "main"/"sub" 选主/子码流。
+        // stream：null 按协议取默认；FILE 须使用低层 am_source_desc_t，本方法仅支持 RTSP/ISAPI。
         public CameraSource OpenSource(string url, string user, string password, bool rtsp, string stream = null) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_source_desc_t desc = Arena.Sized<am_source_desc_t>();

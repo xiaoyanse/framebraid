@@ -133,6 +133,7 @@ fn probe(state: &Arc<CameraState>, url: &str, secret: &Secret, timeout: Duration
                 secret,
                 Arc::new(AtomicBool::new(false)),
                 timeout,
+                false,
             )
             .and_then(|reader| {
                 let info = reader.info();

@@ -58,7 +58,10 @@ fn subscribe(source: usize, kind: Kind, mode: u32, items: u32, bytes: u64) -> Re
         }
         let codec = hub.codec.load(Ordering::Acquire);
         if codec == 0 {
-            shared.secret()?;
+            // FILE 源无凭据概念（P1-8）：不检查 secret，直接等 codec 探测就绪。
+            if !shared.file {
+                shared.secret()?;
+            }
             return Err(AM_ERR_CAMERA_PROBE_PENDING);
         }
         if mask & codec == 0 {

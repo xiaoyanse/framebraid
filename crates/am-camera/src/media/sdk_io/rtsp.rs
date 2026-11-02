@@ -85,7 +85,7 @@ impl Reader {
         stop: Arc<AtomicBool>,
         timeout: Duration,
     ) -> Result<Self, IoError> {
-        Self::open_with_budget(api, url, secret, stop, timeout, |_| Ok(()))
+        Self::open_with_budget(api, url, secret, stop, timeout, |_| Ok(()), false)
     }
     /// 在复制配置前预留SDK工作区；调用方须持有额度到Reader销毁，包括错误分支。
     /// 原生FFmpeg/网络库分配不计入此回调；旧open保持调用方管理预算的行为。
@@ -96,9 +96,16 @@ impl Reader {
         stop: Arc<AtomicBool>,
         timeout: Duration,
         mut reserve: impl FnMut(usize) -> Result<(), IoError>,
+        file: bool,
     ) -> Result<Self, IoError> {
-        validate_url(url, false)?;
+        // FILE 源（P1-8）：本地路径直传 avformat——跳过 RTSP 协议校验与凭据注入
+        //（探测/选流/读包/预算对本地文件全部通用）。
+        if !file {
+            validate_url(url, false)?;
+        }
         if timeout.is_zero()
+            || url.len() > 16 * 1024
+            || url.chars().any(char::is_control)
             || secret.username.len() + secret.password.len() > 8192
             || secret
                 .username
@@ -111,14 +118,18 @@ impl Reader {
         let deadline = Instant::now()
             .checked_add(timeout)
             .ok_or(IoError::Invalid)?;
-        let mut parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
-        parsed
-            .set_username(&secret.username)
-            .map_err(|_| IoError::Invalid)?;
-        parsed
-            .set_password(Some(&secret.password))
-            .map_err(|_| IoError::Invalid)?;
-        let address = CString::new(parsed.as_str()).map_err(|_| IoError::Invalid)?;
+        let address = if file {
+            CString::new(url).map_err(|_| IoError::Invalid)?
+        } else {
+            let mut parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
+            parsed
+                .set_username(&secret.username)
+                .map_err(|_| IoError::Invalid)?;
+            parsed
+                .set_password(Some(&secret.password))
+                .map_err(|_| IoError::Invalid)?;
+            CString::new(parsed.as_str()).map_err(|_| IoError::Invalid)?
+        };
         let quiet = super::quiet::Guard::new(api.clone())?;
         let mut reader = Self {
             api,

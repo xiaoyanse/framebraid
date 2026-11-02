@@ -65,6 +65,7 @@ The host owns device configuration, credential storage, business rules, persiste
 ## Media SDK
 
 - RTSP H.264/H.265/MJPEG handling; encoded-packet and decoded-frame subscriptions.
+- Local FILE source (unreleased): MP4 H.264/H.265 initial scope, EOF and queue draining; no seek.
 - Standalone H.264/H.265 decoding from **complete Annex B access units**. Arbitrary network fragments are not complete-frame inputs.
 - ISAPI HTTP Digest snapshots and bounded continuous acquisition. Actual rate depends on the camera and network.
 - Pull/callback interfaces, bounded queues, metadata, scaling, pixel conversion and reconnect controls.

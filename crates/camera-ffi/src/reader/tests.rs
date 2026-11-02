@@ -26,6 +26,7 @@ fn native_loopback_reader_reserves_before_copy_and_transfers_packet_ownership() 
             &secret,
             Arc::new(AtomicBool::new(false)),
             Duration::from_secs(5),
+            false,
         )
         .unwrap()
     };

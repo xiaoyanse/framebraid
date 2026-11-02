@@ -685,7 +685,7 @@ class CameraContext(Context):
             return self.get_decode_hardware_report()
 
     def open_source(self, url, username=None, password=None, rtsp=False, reuse=True, stream=None):
-        """stream：None 按协议取默认（rtsp=main，isapi=isapi）；"main"/"sub" 显式选主/子码流。"""
+        """stream：None 按协议取默认；FILE 使用低层 am_source_desc_t，不能通过此方法打开。"""
         desc, credentials = sized(a.am_source_desc_t), sized(a.am_credential_data_t)
         desc.kind, desc.url_utf8 = a.AM_SRC_RTSP_URL if rtsp else a.AM_SRC_ISAPI_URL, url.encode("utf-8")
         default_kind = b"main" if rtsp else b"isapi"

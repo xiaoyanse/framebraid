@@ -126,8 +126,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub.rs",
    "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-   "sha256": "016308746821951ae14926fa4c54ba2deda948a81a4d37124446e0a6a540170e",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546: FILE source stage 1 (P1-8): file::run worker branch + mod decl"
+   "sha256": "726d94c494eaec1e07072cbbbb16c0ab50eada8a91f5268d21370cebfffc10d8",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546: FILE source stage 1 (P1-8): file::run worker branch + mod decl; previous SHA-256 016308746821951ae14926fa4c54ba2deda948a81a4d37124446e0a6a540170e: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
   },
   {
    "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -234,14 +234,14 @@
   {
    "path": "crates/camera-ffi/src/sources/tests.rs",
    "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-   "sha256": "de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+   "sha256": "e180f238b8387310ba1f3b11c3e965c91b37fc86cc630bd7a1d9d32456635cac",
+   "reason": "R3 bounded borrowed hardware-report serialization; F2 against 5734e78 adds FILE argument and path diagnostics tests plus ignored FFmpeg EOF fixture, no production changes; prior reviewed sha256 de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19; previous SHA-256 534bf22ce06608e9b824923c5628970ec8a19e7a3b69f09a7487903c1415e92a: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/mod.rs",
    "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
-   "sha256": "a0fa24e035198cd19b87bb3c2996ce946d9bd0147850923630187b32a19fdda3",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green；v0.3.1 audit fix applied"
+   "sha256": "8bafaa9e6c998f05299bcee383f1c3c0af91aa3a17d0e300a812295f1574f2ac",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green；v0.3.1 audit fix applied; previous SHA-256 a0fa24e035198cd19b87bb3c2996ce946d9bd0147850923630187b32a19fdda3: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
   },
   {
    "path": "crates/sdk-abi/src/base.rs",
@@ -582,14 +582,14 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
    "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
-   "sha256": "b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+   "sha256": "3eb540ed21b0f81490b00c1be3594200812f342fb42099b64b33216c0a24b969",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
   },
   {
    "path": "crates/camera-ffi/src/probe.rs",
    "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
-   "sha256": "4cb2ab79d52af6ddec6660e23c8a495d6c7b3db91e15c17bd92e270b19230165",
-   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+   "sha256": "017519e6739f668edb4aba6ccbe09b2399dc7302682451b27e1d73a8114df8b1",
+   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged; previous SHA-256 4cb2ab79d52af6ddec6660e23c8a495d6c7b3db91e15c17bd92e270b19230165: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
   },
   {
    "path": "crates/vision-ffi/src/inference/notify.rs",
@@ -600,14 +600,14 @@
   {
    "path": "crates/camera-ffi/src/reader.rs",
    "previousSha256": null,
-   "sha256": "8ab8930af39a23ad82089f7f4b64a273d094cf7df6deb335b3baef7c570bfe12",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+   "sha256": "917997b26679882571eef4b3c1ed038b546a62e52d4108c07c2e0f82bcdafd9d",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 8ab8930a->917997b2 (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
   },
   {
    "path": "crates/camera-ffi/src/reader/tests.rs",
    "previousSha256": null,
-   "sha256": "5eddf8307e7133343d152e4cfc2161e620381ee80da3b7642d9093bcbbb432ca",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+   "sha256": "dae23c8ca58d5e799ac03cd6da52ca550cdb52f03398100516377842a2a5395f",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 5eddf830->dae23c8c (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
   },
   {
    "path": "crates/vision-ffi/src/inference/notify/queue.rs",
