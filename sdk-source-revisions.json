@@ -24,8 +24,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
    "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-   "sha256": "5ae81cb131c6e8293abd06926d6004aed9b556268e594deaf5935f8baa683ce0",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+   "sha256": "7f4d1b4f1d60708ce060af2c0b29c638502402661ab9f9bb92dc6755c70870c8",
+   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；blind-spot/poison fix applied"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
@@ -180,8 +180,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/queue.rs",
    "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-   "sha256": "571d7949c089aee5d46ef3c1e144c5265b225ca01c1d647d733a406d888a8a7f",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "5fbb04ecc9498f9b4ca6cb5d3a4cb2bc3bae7fba9f28c8d18e23d98e95b3d387",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
@@ -306,8 +306,8 @@
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "9acc002908537133aeadfcad08a14d26721bac0110ee5e5653208a59d41f68f4",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+   "sha256": "445a2e1a7ff7bdddac6bb664b536381a49fdae0902f9233d1514d48129fca0f1",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied"
   },
   {
    "path": "crates/vision-ffi/src/inference/state.rs",
@@ -702,8 +702,8 @@
   {
    "path": "crates/camera-ffi/src/captures/mod.rs",
    "previousSha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981",
-   "sha256": "68b432386081fabbe8bd3e3541ab480fe9e21e165cfb7b845d6e9ec79521e970",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "fc75cfb123619f83ce769e56b8253a26e79ad95dcde52bf0de13aac58898b1ec",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied"
   },
   {
    "path": "crates/camera-ffi/src/captures/requests.rs",
