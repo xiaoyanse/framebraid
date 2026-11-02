@@ -1,11 +1,11 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.3.1**（2026-11-02 发布，C ABI 1.1）。历史版本 [v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.3.2**（2026-11-03 发布，C ABI 1.1，[Release](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)；二进制构建提交 5181b39，tag 提交 76a3084 仅文档变更）。历史版本 [v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
 
-## v0.3.2 验证状态（未发布，本地领先登记）
+## v0.3.2 验证状态快照
 
-接入方反馈批（2026-11-03，五批并行推进中）。本批 P0-1（E1 OpenVINO 原生引擎 2026.x）：
+接入方反馈批（2026-11-03，已发布）。本批 P0-1（E1 OpenVINO 原生引擎 2026.x）：
 根因为运行库发现只认未文档化的 `AM_SDK_OPENVINO_DIR` 环境变量、未接 ABI 合同的
 runtime_dirs 通道——非 2026.x 符号断裂（绑定 28 符号在 2025.3.0/2026.1.0/2026.2.1
 三线的 openvino_c.dll 导出表全存在，元素类型枚举/结构布局/变参签名逐项一致；2026 线
