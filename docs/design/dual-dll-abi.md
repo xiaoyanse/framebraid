@@ -285,6 +285,8 @@ AM_API am_status_t amc_probe_result_release(am_probe_result_t* result);
 
 **MJPEG 流源（R7，未发布兼容扩展）**：`AM_SRC_MJPEG_URL = 3`——HTTP `multipart/x-mixed-replace` MJPEG 流地址（不含内嵌凭据，凭据注入与 ISAPI 同套）。**流语义（boundary 分帧为唯一真相源）**：响应 `Content-Type` 的 `boundary` 参数（≤70B，支持引号包裹）决定分帧；`Content-Length` 不参与分帧，谎报仅计数。分帧仅在行首 `\r\n--boundary` 上下文（流首 boundary 允许无 CRLF 前缀），且 part 头 `Content-Type=image/jpeg` + JPEG SOI/EOI 魔数双校验；载荷内出现 boundary 字节序列不误切，无法区分的极端歧义降级为丢帧。**有界硬约束（防恶意流）**：boundary ≤70B / part 头 ≤64KB / 单帧 ≤8MB——超限丢帧+计数，连续 3 次超限断连进重连退避。**双超时**：无数据（对端黑洞）与无 boundary 进展（有数据但恶意无界流）分别判定，超时断连重连（复用既有指数退避）。JPEG 帧进入既有解码管线（含 EXIF 方向）与像素订阅/预算/统计语义，与 ISAPI 快照一致。
 
+**FILE 本地文件源（P1-8，录像 AI 复盘阶段 1）**：`AM_SRC_FILE = 4`——本地媒体文件（MP4/MKV/MOV 等按 FFmpeg 原生 demux 能力，首版验收口径为 MP4/H.264+H.265）。`url_utf8` 为 UTF-8 文件路径，可带 `file://` 前缀（剥前缀后按 FFmpeg 原生规则打开）；路径不存在或不可读返回 `camera.urlInvalid`（错误详情带路径与 OS 错误码，按 §7 编码约定）。**输入约束**：`stream_kind_utf8` 仅接受 NULL/""（文件无主子码流概念，传 "main"/"sub"/"isapi" 返回 `sdk.invalidArgument`）；`creds`/`provider` 必须为 NULL（非 NULL 返回 `sdk.invalidArgument`）；`reuse` 位接受但无连接复用语义（每次打开独立 demux 句柄，多消费者各自独立读）。**灌入语义**：as-fast-as-possible——按文件时间戳顺序尽快解码分发，不加节拍不做倍速（回放保真属宿主职责）；帧/包时间戳、代次、订阅队列、预算与统计语义与流源一致（generation 固定 1，无重连）。**背压（FILE 特有）**：订阅队列满时 demux 暂停等待消费者（流源的"丢至关键帧"语义不适用——录像复盘要求完整时间轴，不丢帧）；无订阅者时读取同样暂停（源为订阅驱动，open 不启动读线程）。**EOF 终态（FILE 特有）**：demux 读到文件尾，state 转 `AM_SRC_EOF`——不再产生新帧/包，对象仍存活，订阅队列按序排空；PULL 排空后返回 `camera.streamEnded`（复用既有"流结束"码；FILE 下为预期终态而非故障，调用方判终态以 `status.state == AM_SRC_EOF` 为准）；事件回调经既有事件通道上报流结束（fault_class=NONE）；不自动重放、不自动 close（显式关闭仍走 `amc_source_close` 三段式）；seek/循环重放属阶段 2 扩展，本版无此入口（能力查询不声明）。打开失败（损坏文件/非媒体容器）按 §7 编码约定带检测详情。
+
 ```c
 /* 开源：原子凭据见上；reuse 时复用键=源配置+凭据权限哈希（不同权限不复用）；
    满载 camera.sourceLimitReached */

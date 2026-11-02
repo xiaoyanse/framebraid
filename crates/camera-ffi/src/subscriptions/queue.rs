@@ -351,6 +351,32 @@ impl Subscription {
                 return;
             }
         }
+        // FILE 源背压（P1-8 合同 §2.4：队列满时等待消费者，不丢帧保完整时间轴）。
+        // 流源维持既有丢帧/重同步语义，零波及。等待以 50ms 轮询兜底（pull 消费后无生产者唤醒信号）。
+        if d.queue.len() >= self.maximum || d.bytes.saturating_add(size) > self.max_bytes {
+            if let Some(source) = self.hub.upgrade().and_then(|h| h.source.upgrade()) {
+                if source.file {
+                    loop {
+                        let waited = self.wake.wait_timeout(d, Duration::from_millis(50));
+                        d = match waited {
+                            Ok((data, _)) => data,
+                            Err(poisoned) => poisoned.into_inner().0,
+                        };
+                        if d.stopped || d.changing {
+                            return;
+                        }
+                        if source.stop.load(Ordering::Acquire) {
+                            return;
+                        }
+                        if d.queue.len() < self.maximum
+                            && d.bytes.saturating_add(size) <= self.max_bytes
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
         if size > self.max_bytes
             || d.queue.len() >= self.maximum
             || d.bytes.saturating_add(size) > self.max_bytes
@@ -443,6 +469,15 @@ impl Subscription {
             }
             let now = Instant::now();
             if now >= until {
+                // FILE 源 EOF 后排空：返回流结束而非超时（合同 §2.4 FILE 段）。
+                if self
+                    .hub
+                    .upgrade()
+                    .and_then(|h| h.source.upgrade())
+                    .is_some_and(|s| s.file_ended())
+                {
+                    break Err(AM_ERR_CAMERA_STREAM_ENDED);
+                }
                 break Err(AM_ERR_SDK_DEADLINE_EXCEEDED);
             }
             match self.wake.wait_timeout(d, until - now) {

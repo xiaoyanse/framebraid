@@ -65,6 +65,11 @@ impl Hub {
             let mut pixel_config: Option<Arc<pipeline::Configuration>> = None;
             while self.current(source, stamp) {
                 let Some(owned) = reader.read_packet()? else {
+                    // FILE 源读到文件尾为预期终态（P1-8）：正常返回，由调用侧置 AM_SRC_EOF；
+                    // 流源维持断流语义触发外层重连。
+                    if source.file {
+                        return Ok(());
+                    }
                     return Err(IoError::Network);
                 };
                 // 局部变量逆序析构，早退也先释放包缓冲再退额度。

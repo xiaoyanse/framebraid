@@ -13,27 +13,51 @@ pub unsafe extern "C" fn amc_source_open(
         let active = domain().active(ctx as usize)?;
         active.data::<am_sdk_support::context::Context>()?;
         let desc = unsafe { args::read(desc, size_of::<am_source_desc_t>()) }?;
-        if desc.kind > AM_SRC_MJPEG_URL as u32
+        let file = desc.kind == AM_SRC_FILE as u32;
+        if desc.kind > AM_SRC_FILE as u32
             || desc.reuse > 1
             || desc.reserved.iter().any(|v| *v != 0)
             || !desc.creds.is_null() && !desc.provider.is_null()
+            // FILE 源禁用凭据（P1-8）：任一非 NULL 即拒绝。
+            || file && !(desc.creds.is_null() && desc.provider.is_null())
         {
             return Err(AM_ERR_SDK_INVALID_ARGUMENT);
         }
         let url = unsafe { args::string(desc.url_utf8) }?;
         if !desc.stream_kind_utf8.is_null() {
             let kind = unsafe { args::string(desc.stream_kind_utf8) }?;
-            if !["main", "sub", "isapi", ""].contains(&kind.as_str()) {
+            if !["main", "sub", "isapi", ""].contains(&kind.as_str()) || file && !kind.is_empty() {
                 return Err(AM_ERR_SDK_INVALID_ARGUMENT);
             }
         }
-        let mjpeg = desc.kind == AM_SRC_MJPEG_URL as u32;
-        let isapi = desc.kind == AM_SRC_ISAPI_URL as u32
-            || desc.kind == AM_SRC_DEVICE_REF as u32
-                && (url.starts_with("http://") || url.starts_with("https://"));
-        // MJPEG 与 ISAPI 同为 http(s) 传输；rtsp 校验分支只属于流源。
-        am_camera_core::media::sdk_io::validate_url(&url, isapi || mjpeg)
-            .map_err(|_| AM_ERR_CAMERA_URL_INVALID)?;
+        let url = if file {
+            // FILE：路径存在性/可读性校验并规范化（file:// 前缀剥除）；失败带路径与 OS 错误码详情。
+            match am_camera_core::media::sdk_io::validate_file_path(&url) {
+                Ok(path) => path,
+                Err(error) => {
+                    am_sdk_support::diagnostics::record(
+                        domain(),
+                        ctx as usize,
+                        AM_ERR_CAMERA_URL_INVALID,
+                        am_sdk_support::diagnostics::Detail::dynamic(
+                            &error.detail(),
+                            c"camera.urlInvalid",
+                            0,
+                        ),
+                    );
+                    return Err(AM_ERR_CAMERA_URL_INVALID);
+                }
+            }
+        } else {
+            // MJPEG 与 ISAPI 同为 http(s) 传输；rtsp 校验分支只属于流源。
+            let stream_mjpeg = desc.kind == AM_SRC_MJPEG_URL as u32;
+            let stream_isapi = desc.kind == AM_SRC_ISAPI_URL as u32
+                || desc.kind == AM_SRC_DEVICE_REF as u32
+                    && (url.starts_with("http://") || url.starts_with("https://"));
+            am_camera_core::media::sdk_io::validate_url(&url, stream_isapi || stream_mjpeg)
+                .map_err(|_| AM_ERR_CAMERA_URL_INVALID)?;
+            url
+        };
         let secret = if desc.creds.is_null() {
             None
         } else {
@@ -58,6 +82,10 @@ pub unsafe extern "C" fn amc_source_open(
             return Err(AM_ERR_CAMERA_SOURCE_LIMIT_REACHED);
         }
         reserve_registry(&mut registry.sources)?;
+        let mjpeg = desc.kind == AM_SRC_MJPEG_URL as u32;
+        let isapi = desc.kind == AM_SRC_ISAPI_URL as u32
+            || desc.kind == AM_SRC_DEVICE_REF as u32
+                && (url.starts_with("http://") || url.starts_with("https://"));
         let reused = if desc.reuse == 1 {
             registry.shared.iter().filter_map(Weak::upgrade).find(|s| {
                 !s.stop.load(Ordering::Acquire)
@@ -65,6 +93,7 @@ pub unsafe extern "C" fn amc_source_open(
                     && s.url == url
                     && s.isapi == isapi
                     && s.mjpeg == mjpeg
+                    && s.file == file
                     && s.credentials
                         .claim(secret.as_ref(), provider.as_ref(), &s.owners, &s.stop)
             })
@@ -74,7 +103,7 @@ pub unsafe extern "C" fn amc_source_open(
         let fresh = reused.is_none();
         let shared = match reused {
             Some(shared) => shared,
-            None => make_shared(state, url, isapi, mjpeg)?,
+            None => make_shared(state, url, isapi, mjpeg, file)?,
         };
         if fresh && desc.reuse == 1 {
             // 尚未构造Source时无Drop回滚；fresh共享所有权随Arc一起销毁。

@@ -126,8 +126,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub.rs",
    "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-   "sha256": "55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+   "sha256": "016308746821951ae14926fa4c54ba2deda948a81a4d37124446e0a6a540170e",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546: FILE source stage 1 (P1-8): file::run worker branch + mod decl"
   },
   {
    "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -174,8 +174,8 @@
   {
    "path": "crates/camera-ffi/src/sources/mod.rs",
    "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-   "sha256": "c6ba061832e39b34b8e767ec9b697ab395f1263184b55e0d573aedf818f2f9d9",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+   "sha256": "ae91e530a7b808db6bf99888688e1414cacc7cd4c7ae4ace03e7a31a51417e0a",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 c6ba061832e39b34b8e767ec9b697ab395f1263184b55e0d573aedf818f2f9d9: FILE source stage 1 (P1-8): file flag in SharedSource + make_shared + file_ended()"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
@@ -186,14 +186,14 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/queue.rs",
    "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-   "sha256": "5fbb04ecc9498f9b4ca6cb5d3a4cb2bc3bae7fba9f28c8d18e23d98e95b3d387",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied"
+   "sha256": "d1e251231129ecd463686f794f576b0a2d66d933f8dce3abcf3575e2a4615baf",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied; previous SHA-256 5fbb04ecc9498f9b4ca6cb5d3a4cb2bc3bae7fba9f28c8d18e23d98e95b3d387: FILE source stage 1 (P1-8): file-source backpressure (wait not drop) + PULL drain returns streamEnded"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
    "previousSha256": null,
-   "sha256": "c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "362c5bff840b2f231267687d5e6b334a1a10cedc2dad116acb4c984172fcbf38",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect)"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
@@ -246,8 +246,8 @@
   {
    "path": "crates/sdk-abi/src/base.rs",
    "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-   "sha256": "ed745163f8eca8d05480d57b490dd0afb4954f84b1429bc9d73e051f075c977c",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "458e72f7a1de24831b749408e1bb9031eae012d24fa2e0ab2b5e0e003b67cc73",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green; previous SHA-256 ed745163f8eca8d05480d57b490dd0afb4954f84b1429bc9d73e051f075c977c: FILE source stage 1 (P1-8): AM_SRC_FILE/AM_SRC_EOF enum constants via generate-rust-abi"
   },
   {
    "path": "crates/camera-ffi/src/sources/hardware.rs",
@@ -804,8 +804,8 @@
   {
    "path": "crates/camera-ffi/src/sources/api.rs",
    "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
-   "sha256": "1291d75a38ed26b393e1552101ec1c547f5ae8387ad0886992383c1227906600",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+   "sha256": "ea39c3fff5458331476236428a1642d8954c9244ee09f20fff4cd54a2e662acb",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 1291d75a38ed26b393e1552101ec1c547f5ae8387ad0886992383c1227906600: FILE source stage 1 (P1-8): AM_SRC_FILE entry constraints (creds/provider null, stream_kind empty, path validation with dynamic detail)"
   },
   {
    "path": "crates/camera-ffi/src/probe/planning.rs",
@@ -1086,8 +1086,8 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/mod.rs",
    "previousSha256": "9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4",
-   "sha256": "69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "8538541ddd7c17e045a646642521135a6b71ad67c637f767505875979eb88ea2",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged; previous SHA-256 69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30: FILE source stage 1 (P1-8): validate_file_path + FileCheckError (path/os_error detail)"
   },
   {
    "path": "crates/am-camera/tests/jpeg_bench.rs",

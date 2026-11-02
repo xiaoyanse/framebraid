@@ -40,6 +40,8 @@ pub struct SharedSource {
     pub url: String,
     pub isapi: bool,
     pub mjpeg: bool,
+    /// FILE 源（P1-8 阶段 1）：无重连/凭据，EOF 终态，队列满背压不丢帧。
+    pub file: bool,
     pub source_id: u64,
     pub generation: AtomicU32,
     pub config_generation: AtomicU32,
@@ -72,6 +74,10 @@ impl SharedSource {
     }
     pub fn credential_version(&self) -> u32 {
         self.credentials.version()
+    }
+    /// FILE 源是否已进入 EOF 终态（P1-8）：订阅排空判定用。
+    pub fn file_ended(&self) -> bool {
+        self.file && self.state_code.load(Ordering::Acquire) == AM_SRC_EOF as u32
     }
     pub fn credential_snapshot(&self) -> Result<(Secret, u32, u32, u32)> {
         let generation = self.generation.load(Ordering::Acquire);
@@ -350,6 +356,7 @@ fn make_shared(
     url: String,
     isapi: bool,
     mjpeg: bool,
+    file: bool,
 ) -> Result<Arc<SharedSource>> {
     let source_id = SOURCE_ID
         .fetch_update(Ordering::AcqRel, Ordering::Acquire, |n| n.checked_add(1))
@@ -359,6 +366,7 @@ fn make_shared(
         url,
         isapi,
         mjpeg,
+        file,
         source_id,
         generation: AtomicU32::new(1),
         config_generation: AtomicU32::new(1),
@@ -384,5 +392,5 @@ fn make_shared(
 }
 #[cfg(test)]
 pub(crate) fn isolated_test_source(state: Arc<CameraState>) -> Arc<SharedSource> {
-    make_shared(state, String::new(), false, false).unwrap()
+    make_shared(state, String::new(), false, false, false).unwrap()
 }
