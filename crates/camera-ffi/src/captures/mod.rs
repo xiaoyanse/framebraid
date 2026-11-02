@@ -10,6 +10,8 @@ mod continuous;
 mod images;
 mod io;
 mod requests;
+#[cfg(test)]
+mod requests_tests;
 mod state;
 pub(crate) mod tables;
 

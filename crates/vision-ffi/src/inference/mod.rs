@@ -2,11 +2,15 @@ pub(crate) mod backends;
 mod batch_exports;
 mod batching_exports;
 mod exports;
+#[cfg(test)]
+mod exports_tests;
 mod hardware;
 mod input;
 mod models;
 mod notify;
 mod receipt;
+#[cfg(test)]
+mod receipt_tests;
 mod records;
 mod results;
 mod scheduler;
