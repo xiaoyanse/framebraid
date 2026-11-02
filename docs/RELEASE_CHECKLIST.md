@@ -47,6 +47,15 @@ v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流
 
 - [x] Process document scope confirmed and superseded records archived; generator/ABI/license/provenance inputs preserved.
 
+## Publication actions / 发布动作（推送获批后按序执行，缺一即发布不完整）
+
+- [ ] **Git 层**：annotated tag（`git tag -a vX.Y.Z -m ...`）+ `git push origin main --tags`——按当次授权，推送通常由用户亲手执行
+- [ ] **GitHub Release 页**（git push 只同步标签对象，不建发布条目，必须单独创建）：`gh release create vX.Y.Z --title ... --notes-file ...`，正文必须含**双哈希锚点**（tag 对象 + 底层 commit，见本页锚点段）与升级须知
+- [ ] **资产上传**：双 DLL + SHA256SUMS.txt（必要时加 build-record.json）作为 Release 附件，上传后 `gh release view` 核对文件名与字节数
+- [ ] **回执**：向决策通道报 tag/commit 双哈希 + Release URL；`docs/RELEASE_STATUS.md` 首行版本与链接同步
+
+> 教训登记（2026-11-02，v0.3.1）：推送完成后 Release 页未建即回执"发布完成"，缺口由用户问询发现——根因是本清单此前无此段，发布动作靠会话临场发挥。
+
 ## Publication authorization and scope / 发布授权与范围
 
 - [x] FrameBraid is the public SDK maintenance source; host version-pinning migration is separate work.
