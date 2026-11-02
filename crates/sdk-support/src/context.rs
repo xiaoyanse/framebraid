@@ -70,6 +70,10 @@ pub fn shared_state(domain: &Domain, flags: u64) -> u32 {
 }
 fn flags_valid(domain: &Domain, flags: u64) -> Result<()> {
     if flags & !(AM_INIT_SHARED_FRAMES as u64) != 0 {
+        crate::common::init_note(format!(
+            "feature_flags=0x{:x} has undefined bits: only AM_INIT_SHARED_FRAMES=0x1 is defined",
+            flags
+        ));
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
     if flags != 0 && shared_state(domain, flags) != AM_SFP_ENABLED as u32 {
@@ -79,6 +83,12 @@ fn flags_valid(domain: &Domain, flags: u64) -> Result<()> {
 }
 fn version_valid(version: u32) -> Result<()> {
     if version >> 16 != AM_ABI_VERSION >> 16 || version > AM_ABI_VERSION {
+        crate::common::init_note(format!(
+            "abi_version=0x{:08x} out of range: accepted 0x{:08x}..0x{:08x} (same ABI major)",
+            version,
+            (AM_ABI_VERSION >> 16) << 16,
+            AM_ABI_VERSION
+        ));
         Err(AM_ERR_SDK_ABI_UNSUPPORTED)
     } else {
         Ok(())
@@ -91,6 +101,7 @@ pub unsafe fn initialize_camera(
     domain: &Domain,
     params: *const amc_init_params_t,
 ) -> Result<usize> {
+    crate::common::clear_init_note();
     let prefix = std::mem::offset_of!(amc_init_params_t, feature_flags);
     let mut p = unsafe { args::read(params, prefix) }?;
     if (p.struct_size as usize) < prefix + 8 {
@@ -99,6 +110,7 @@ pub unsafe fn initialize_camera(
     version_valid(p.abi_version)?;
     flags_valid(domain, p.feature_flags)?;
     if p.reserved.iter().any(|v| *v != 0) {
+        crate::common::init_note("reserved must be all zero".to_string());
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
     let directories =
@@ -126,6 +138,7 @@ pub unsafe fn initialize_vision(
     domain: &Domain,
     params: *const amv_init_params_t,
 ) -> Result<usize> {
+    crate::common::clear_init_note();
     let prefix = std::mem::offset_of!(amv_init_params_t, feature_flags);
     let mut p = unsafe { args::read(params, prefix) }?;
     if (p.struct_size as usize) < prefix + 8 {
@@ -134,6 +147,7 @@ pub unsafe fn initialize_vision(
     version_valid(p.abi_version)?;
     flags_valid(domain, p.feature_flags)?;
     if p.reserved.iter().any(|v| *v != 0) {
+        crate::common::init_note("reserved must be all zero".to_string());
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
     let directories =
@@ -162,13 +176,27 @@ pub unsafe fn initialize_vision(
     } else {
         p.domain_infer_slots
     };
-    if total == 0
-        || total > machine
-        || parallel == 0
-        || parallel > total.min(4)
-        || slots == 0
-        || slots > SDK_DOMAIN_INFER_SLOTS
-    {
+    // 逐字段报「字段名/传入值/合法区间」（P1-3/P1-6），经 amv_get_init_error 下发。
+    if total == 0 || total > machine {
+        crate::common::init_note(format!(
+            "total_thread_budget={} out of range: valid 1..={} (0=auto: machine logical cores)",
+            p.total_thread_budget, machine
+        ));
+        return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+    }
+    let parallel_cap = total.min(4);
+    if parallel == 0 || parallel > parallel_cap {
+        crate::common::init_note(format!(
+            "infer_threads={} out of range: valid 1..={} (0=auto; cap=min(total_thread_budget,4))",
+            p.infer_threads, parallel_cap
+        ));
+        return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+    }
+    if slots == 0 || slots > SDK_DOMAIN_INFER_SLOTS {
+        crate::common::init_note(format!(
+            "domain_infer_slots={} out of range: valid 1..={} (0=auto/inherit the existing executor)",
+            p.domain_infer_slots, SDK_DOMAIN_INFER_SLOTS
+        ));
         return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
     }
     let budget = ThreadBudget {
@@ -177,6 +205,10 @@ pub unsafe fn initialize_vision(
         slots,
     };
     if existing.is_some_and(|value| value != budget) {
+        crate::common::init_note(
+            "thread configuration differs from the in-process executor singleton; pass 0 to inherit"
+                .to_string(),
+        );
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
     let mut limits = default_limits(true);
@@ -332,5 +364,71 @@ mod admission_tests {
         domain.close(key, 0).unwrap();
         domain.destroy(key).unwrap();
         assert!(domain.idle_for_unload());
+    }
+
+    #[test]
+    fn init_failure_details_report_field_value_and_bounds() {
+        // INIT_ERROR 为进程单槽：init_error/get_init_error 全部串行在本测试内验证。
+        fn message_of(code: i32) -> String {
+            crate::common::init_error(code);
+            let mut out = am_init_error_t::default();
+            unsafe { crate::common::get_init_error(&mut out) }.unwrap();
+            out.message
+                .iter()
+                .take_while(|byte| **byte != 0)
+                .map(|byte| *byte as u8 as char)
+                .collect()
+        }
+        let domain = Domain::new(true);
+        let params = amv_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            total_thread_budget: 1,
+            infer_threads: 2,
+            ..Default::default()
+        };
+        let code = unsafe { initialize_vision(&domain, &params) }.unwrap_err();
+        assert_eq!(code, AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+        let message = message_of(code);
+        assert!(message.starts_with("sdk.limitOutOfRange: "), "{message}");
+        assert!(message.contains("infer_threads=2"), "{message}");
+        assert!(message.contains("valid 1..=1"), "{message}");
+
+        let params = amv_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            total_thread_budget: u32::MAX,
+            ..Default::default()
+        };
+        let code = unsafe { initialize_vision(&domain, &params) }.unwrap_err();
+        let message = message_of(code);
+        assert!(
+            message.contains("total_thread_budget=4294967295"),
+            "{message}"
+        );
+        assert!(message.contains("machine logical cores"), "{message}");
+
+        let camera = Domain::new(false);
+        let params = amc_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            runtime_dir_count: SDK_MAX_RUNTIME_DIRECTORIES as u32 + 1,
+            ..Default::default()
+        };
+        let code = unsafe { initialize_camera(&camera, &params) }.unwrap_err();
+        assert_eq!(code, AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+        let message = message_of(code);
+        assert!(message.contains("runtime_dir_count=17"), "{message}");
+        assert!(message.contains("valid 0..=16"), "{message}");
+
+        // 无详情时保持纯状态名；成功 init 清空暂存备注，不串扰后续失败详情。
+        let domain = Domain::new(true);
+        let params = amv_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            domain_infer_slots: 2,
+            ..Default::default()
+        };
+        let key = unsafe { initialize_vision(&domain, &params) }.unwrap();
+        let bare = message_of(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+        assert_eq!(bare, "sdk.limitOutOfRange");
+        domain.close(key, 0).unwrap();
+        domain.destroy(key).unwrap();
     }
 }

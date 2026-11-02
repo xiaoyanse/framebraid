@@ -6,6 +6,7 @@ use crate::{
     Result,
 };
 use std::{
+    cell::Cell,
     ffi::c_char,
     sync::{
         atomic::{AtomicU64, Ordering},
@@ -22,13 +23,25 @@ struct InitFailure {
     code: i32,
     seq: u64,
     time: i64,
+    detail: Option<String>,
 }
 static INIT_ERROR: Mutex<InitFailure> = Mutex::new(InitFailure {
     code: 0,
     seq: 0,
     time: i64::MIN,
+    detail: None,
 });
 static INIT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+// init 失败详情在调用线程暂存，随 init_error 一起入槽；init 入口先清空防串扰。
+thread_local! {
+    static INIT_NOTE: Cell<Option<String>> = const { Cell::new(None) };
+}
+pub(crate) fn init_note(note: String) {
+    INIT_NOTE.with(|slot| slot.set(Some(note)));
+}
+pub(crate) fn clear_init_note() {
+    INIT_NOTE.with(|slot| slot.set(None));
+}
 pub fn init_error(code: i32) {
     if let Ok(mut error) = INIT_ERROR.lock() {
         let seq = INIT_SEQUENCE.fetch_add(1, Ordering::AcqRel) + 1;
@@ -40,6 +53,7 @@ pub fn init_error(code: i32) {
             } else {
                 clock::monotonic_ms()
             },
+            detail: INIT_NOTE.with(|slot| slot.take()),
         };
     }
 }
@@ -74,9 +88,20 @@ pub unsafe fn get_init_error(out: *mut am_init_error_t) -> Result<()> {
     };
     let text = status_name(error.code)
         .unwrap_or(c"sdk.internalError")
-        .to_bytes();
+        .to_bytes()
+        .to_vec();
+    // 参数类失败附「字段名/传入值/合法区间」详情（P1-6）；详情为调用线程登记的 ASCII 文本。
+    let text = match error.detail.as_ref() {
+        Some(detail) => {
+            let mut composed = text;
+            composed.extend_from_slice(b": ");
+            composed.extend_from_slice(detail.as_bytes());
+            composed
+        }
+        None => text,
+    };
     for (to, from) in value.message.iter_mut().take(255).zip(text) {
-        *to = *from as c_char;
+        *to = from as c_char;
     }
     unsafe { args::write(out, value) }
 }

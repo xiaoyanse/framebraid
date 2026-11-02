@@ -108,7 +108,9 @@ class Resource:
 
 
 class Context(Resource):
-    def __init__(self, dll_path, runtime_dirs=(), shared_frames=False, vision=False):
+    def __init__(self, dll_path, runtime_dirs=(), shared_frames=False, vision=False,
+                 infer_threads=0, total_thread_budget=None, domain_infer_slots=None,
+                 feature_flags=None):
         self._library = load_library(dll_path)
         self._prefix = "amv_" if vision else "amc_"
         try:
@@ -118,12 +120,21 @@ class Context(Resource):
                                str(Path(dll_path).resolve())) from error
         p = sized(a.amv_init_params_t if vision else a.amc_init_params_t)
         p.abi_version = a.AM_ABI_VERSION
-        p.feature_flags = a.AM_INIT_SHARED_FRAMES if shared_frames else 0
+        # feature_flags=None 只保留 shared_frames 位；显式传入时按位或叠加，未知位被 init 拒绝。
+        flags = a.AM_INIT_SHARED_FRAMES if shared_frames else 0
+        if feature_flags is not None:
+            flags |= int(feature_flags)
+        p.feature_flags = flags
         directories = (c.c_char_p * len(runtime_dirs))(
             *(str(Path(path).resolve()).encode("utf-8") for path in runtime_dirs))
         p.runtime_dirs_utf8, p.runtime_dir_count = directories, len(directories)
         if vision:
-            p.infer_threads = 2
+            # 0=SDK 自适应；None=不设（结构零值即 SDK 默认）。越界时 init 失败详情带字段/区间。
+            p.infer_threads = int(infer_threads)
+            if total_thread_budget is not None:
+                p.total_thread_budget = int(total_thread_budget)
+            if domain_infer_slots is not None:
+                p.domain_infer_slots = int(domain_infer_slots)
         handle = c.POINTER(a.amv_context_t if vision else a.amc_context_t)()
         code = self._library_function("init")(c.byref(p), c.byref(handle))
         if code:
@@ -156,14 +167,20 @@ class VisionContext(Context):
             return _selection_report(self, self.library.amv_get_selection_attempt_report,
                                      self._require(), attempt_id)
 
-    def load_model_selected(self, path, candidates, profile=None, allow_fallback=True, budget_ms=1500):
-        """candidates为(backend, device_id)序列；不会自动添加CPU。"""
-        return self._load_selected(path, candidates, profile, allow_fallback, budget_ms, False)
+    def load_model_selected(self, path, candidates, profile=None, allow_fallback=True, budget_ms=1500,
+                            intra_threads=0):
+        """candidates为(backend, device_id)序列；不会自动添加CPU。
 
-    def load_model_memory_selected(self, data, candidates, profile=None, allow_fallback=True, budget_ms=1500):
-        return self._load_selected(data, candidates, profile, allow_fallback, budget_ms, True)
+        intra_threads=0 用 SDK 默认，合法 1..total_thread_budget（预算内记账，§6）。
+        """
+        return self._load_selected(path, candidates, profile, allow_fallback, budget_ms, intra_threads, False)
 
-    def _load_selected(self, source, candidates, profile, fallback, budget, memory):
+    def load_model_memory_selected(self, data, candidates, profile=None, allow_fallback=True, budget_ms=1500,
+                                   intra_threads=0):
+        """内存版同 load_model_selected；intra_threads 语义一致（0=SDK 默认）。"""
+        return self._load_selected(data, candidates, profile, allow_fallback, budget_ms, intra_threads, True)
+
+    def _load_selected(self, source, candidates, profile, fallback, budget, intra_threads, memory):
         with self._lock:
             handle = self._require()
             capability = sized(a.amv_capability_t)
@@ -186,9 +203,9 @@ class VisionContext(Context):
                 storage = (c.c_ubyte * len(source)).from_buffer_copy(source)
                 desc.bytes, desc.size = storage, len(storage)
                 code = self.library.amv_model_load_memory_selected(handle, c.byref(desc), c.byref(policy),
-                                                                  2, c.byref(model), c.byref(attempt))
+                                                                  int(intra_threads), c.byref(model), c.byref(attempt))
             else:
-                desc.path_utf8, desc.intra_threads = str(Path(source).resolve()).encode("utf-8"), 2
+                desc.path_utf8, desc.intra_threads = str(Path(source).resolve()).encode("utf-8"), int(intra_threads)
                 code = self.library.amv_model_load_selected(handle, c.byref(desc), c.byref(policy),
                                                            c.byref(model), c.byref(attempt))
             try:
@@ -219,10 +236,31 @@ class VisionContext(Context):
             self._check(self.library.amv_probe_inference_hardware(self._require(), budget_ms), "probe inference hardware")
             return self.get_inference_hardware_report()
 
-    def __init__(self, dll_path, runtime_dirs=(), shared_frames=False):
-        super().__init__(dll_path, runtime_dirs, shared_frames, True)
+    def __init__(self, dll_path, runtime_dirs=(), shared_frames=False,
+                 infer_threads=0, total_thread_budget=None, domain_infer_slots=None,
+                 feature_flags=None):
+        """线程与执行器参数透传 amv_init（None=不设，用 SDK 默认）。
 
-    def load_model(self, path, profile=None, backend=a.AM_BACKEND_CPU, strict=True):
+        infer_threads：推理执行线程预算，0=SDK 自适应（min(总预算,4)）；
+            合法区间 1..min(total_thread_budget,4)。
+        total_thread_budget：执行器工作线程+ORT intra/inter-op+预处理线程的合计上限，
+            0/None=机器逻辑核数；上限即机器逻辑核数。
+        domain_infer_slots：执行器域在途预算（0/None=SDK 默认 64）；进程内首个 init 定值，
+            后续 init 须一致（0=继承现值）。
+        feature_flags：附加 init 功能位（与 shared_frames 位按位或）。
+        记账关系：每个模型 load_model* 的 intra_threads 在 total_thread_budget 预算内消费
+        （见 docs/design/dual-dll-abi.md §6）；参数越界时 init 失败详情
+        （amv_get_init_error message）带字段名/传入值/合法区间。
+        """
+        super().__init__(dll_path, runtime_dirs, shared_frames, True,
+                         infer_threads, total_thread_budget, domain_infer_slots, feature_flags)
+
+    def load_model(self, path, profile=None, backend=a.AM_BACKEND_CPU, strict=True, intra_threads=0):
+        """加载模型文件；intra_threads=0 用 SDK 默认，合法 1..total_thread_budget。
+
+        intra_threads 从 total_thread_budget 记账（预算内消费，§6）；越界返回
+        sdk.limitOutOfRange，last_error 详情含字段与合法区间。
+        """
         with self._lock:
             self._require()
             desc, policy = sized(a.am_model_desc_t), sized(a.am_backend_policy_t)
@@ -230,7 +268,7 @@ class VisionContext(Context):
             desc.load_mode = a.AM_LOAD_PROFILE if profile else a.AM_LOAD_RAW
             desc.profile_id = profile.encode("utf-8") if profile else None
             policy.requested, policy.strict = backend, int(strict)
-            desc.backend, desc.intra_threads = c.pointer(policy), 2
+            desc.backend, desc.intra_threads = c.pointer(policy), int(intra_threads)
             handle = c.POINTER(a.amv_model_t)()
             self._check(self.library.amv_model_load(self.handle, c.byref(desc), c.byref(handle)), "load model")
             return Model(self, handle, self.library.amv_model_close)
@@ -517,6 +555,65 @@ class Model(Resource):
         image.kind, image.view = a.AM_IMG_PIXEL_VIEW, c.pointer(pixel)
         # 默认复制接受的异步输入，调用返回后即可归还共享借用。
         return self._infer(image, asynchronous, confidence, preprocess)
+
+    def infer_tensors(self, tensors, asynchronous=False, confidence=0.25, preprocess=None):
+        """命名张量直灌推理（amv_infer_tensors_sync/async；无隐式前处理）。
+
+        tensors 为 (name, dtype, shape, data) 序列：name=模型输入名；dtype=AM_DTYPE_*
+        常量；shape=维度序列（标量传 ()）；data=bytes/bytearray/ctypes 数组（元素数×
+        dtype 宽度须与 data 字节数一致，否则 vision.inputBytesMismatch）。
+        封装固定 flags=AM_TENSOR_CONTIGUOUS（合同要求显式声明，零值会被
+        vision.ioUnsupported 拒绝；非连续布局首版不支持）。
+        借用语义：SDK 在预算准入后复制数据；缓冲须存活且（可变缓冲）不可改写到本调用
+        返回为止——同步与异步提交相同，异步接受即复制、不等推理完成。
+        线程与预算仍由 VisionContext/load_model* 的线程参数控制（§6 记账）。
+        """
+        entries, keepalive = [], []
+        for name, dtype, shape, data in tensors:
+            entry = a.am_tensor_in_t()
+            entry.name = str(name).encode("utf-8")
+            entry.dtype = int(dtype)
+            dims = tuple(int(value) for value in shape)
+            if any(value < 0 for value in dims):
+                raise ValueError("Tensor shape dimensions must be non-negative")
+            if dims:
+                shapes = (c.c_int64 * len(dims))(*dims)
+                entry.shape, entry.shape_len = shapes, len(dims)
+                keepalive.append(shapes)
+            if isinstance(data, bytes):
+                holder, size = c.c_char_p(data), len(data)
+            elif isinstance(data, bytearray):
+                holder, size = (c.c_ubyte * len(data)).from_buffer(data), len(data)
+            elif isinstance(data, c.Array):
+                holder, size = data, c.sizeof(data)
+            else:
+                raise TypeError("Tensor data must be bytes, bytearray or a ctypes array")
+            entry.data, entry.data_size = c.cast(holder, c.c_void_p), size
+            entry.flags = a.AM_TENSOR_CONTIGUOUS
+            keepalive.append(holder)
+            entries.append(entry)
+        if not entries:
+            raise ValueError("Provide at least one input tensor")
+        inputs = (a.am_tensor_in_t * len(entries))(*entries)
+        with self._lock:
+            params = sized(a.am_infer_params_t)
+            params.confidence_threshold = confidence
+            params.raw_preprocess = c.pointer(preprocess) if preprocess is not None else None
+            rid = c.c_uint64()
+            if asynchronous:
+                self._check(self.library.amv_infer_tensors_async(self._require(), len(inputs), inputs,
+                                                                c.byref(params), c.byref(rid)),
+                            "submit tensor inference")
+                return rid.value
+            pointer = c.POINTER(a.amv_result_t)()
+            code = self.library.amv_infer_tensors_sync(self._require(), len(inputs), inputs,
+                                                       c.byref(params), c.byref(pointer), c.byref(rid))
+            if code == a.AM_ERR_SDK_DEADLINE_EXCEEDED:
+                error = TimeoutError("Tensor inference continues; query/fetch/ack request_id=%d" % rid.value)
+                error.request_id = rid.value
+                raise error
+            self._check(code, "infer tensors")
+            return rid.value, Result(self.context, pointer, self.library.amv_result_release, False)
 
     def _infer(self, image, asynchronous, confidence, preprocess):
         with self._lock:

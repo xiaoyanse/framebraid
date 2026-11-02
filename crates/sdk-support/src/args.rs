@@ -137,6 +137,10 @@ pub(crate) unsafe fn runtime_directories<'a>(
     count: u32,
 ) -> Result<RuntimeDirectories<'a>> {
     if count > SDK_MAX_RUNTIME_DIRECTORIES as u32 {
+        crate::common::init_note(format!(
+            "runtime_dir_count={} out of range: valid 0..={}",
+            count, SDK_MAX_RUNTIME_DIRECTORIES
+        ));
         return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
     }
     if count > 0 {
