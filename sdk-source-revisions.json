@@ -132,8 +132,8 @@
   {
    "path": "crates/camera-ffi/src/decoder/config.rs",
    "previousSha256": "9d504128dd8b83e86ab16a001047e1900e88dd6a5a1e5d0241e6b8bc6aafdf57",
-   "sha256": "dd420d6093e93b67410a59834f6c96aa2f431bdca1ee0a207d4993ed57faa26f",
-   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged；v0.3.2 batch D：FfmpegLoadError 新增 version 字段的构造点同步（None 兜底）"
+   "sha256": "02760c0185135620b672ca4f9a5510b7fd030d1e85045c3c5964ff5f411e34e0",
+   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged；v0.3.2 batch D：FfmpegLoadError 新增 version 字段的构造点同步（None 兜底）; previous SHA-256 dd420d6093e93b67…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
   },
   {
    "path": "crates/camera-ffi/src/decoder/diagnostics.rs",
@@ -192,8 +192,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
    "previousSha256": null,
-   "sha256": "362c5bff840b2f231267687d5e6b334a1a10cedc2dad116acb4c984172fcbf38",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect)"
+   "sha256": "2e7f49e9724233d0e94b7efd3c1dd062b4e2607890e1379e8e78f651d039af04",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect); previous SHA-256 362c5bff840b2f23…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
@@ -510,8 +510,8 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/tests.rs",
    "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
-   "sha256": "f3b581fe29ed15a977782bdb16ec80240a05098f703d46cb3371c8cc81f885a4",
-   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior"
+   "sha256": "8b44b546a68ffc3feb28091930675e2f0a8c8f7708f1ab39a9a79af66833af4a",
+   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior; previous SHA-256 f3b581fe29ed15a9…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
@@ -582,8 +582,8 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
    "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
-   "sha256": "3eb540ed21b0f81490b00c1be3594200812f342fb42099b64b33216c0a24b969",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+   "sha256": "fd5dd301999b09cebd0ec2d28eb3d3671c3f5a43cfedbb5b0b6b932ea43ced94",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 3eb540ed21b0f814…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
   },
   {
    "path": "crates/camera-ffi/src/probe.rs",

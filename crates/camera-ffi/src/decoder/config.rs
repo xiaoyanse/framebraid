@@ -324,6 +324,21 @@ pub fn convert(e: DecodeError) -> i32 {
 mod tests {
     use super::*;
     #[test]
+    fn h264_combined_sets_and_idr_in_one_packet_is_ready() {
+        // FILE 源 framing 输出形态：SPS+PPS 前置与 IDR 同包（Annex-B）。
+        let mut g = Gate::default();
+        let combined = [
+            &[0u8, 0, 0, 1, 0x67, 100, 0, 30, 172, 217][..],
+            &[0, 0, 0, 1, 0x68, 100, 0][..],
+            &[0, 0, 0, 1, 0x65, 158, 66, 120, 133][..],
+        ]
+        .concat();
+        assert!(
+            g.observe(VideoCodec::H264, &combined).unwrap(),
+            "SPS+PPS+IDR in one packet must be ready"
+        );
+    }
+    #[test]
     fn h264_parameter_change_requires_real_idr_again() {
         let mut g = Gate::default();
         assert!(!g

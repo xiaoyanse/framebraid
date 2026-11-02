@@ -60,6 +60,10 @@ pub struct Reader {
     stream: i32,
     info: StreamInfo,
     framing: Framing,
+    /// 文件模式首包标记（P1-8）：文件起点视为随机访问点，首包强制按关键帧
+    /// 输出——Framing 据此在首包前置参数集，Gate 才能就绪（MP4 demux 的 KEY
+    /// 标志不可靠且参数集在带外 extradata，与 RTSP 带内语义不同）。
+    file_first: bool,
     _quiet: super::quiet::Guard,
 }
 // SAFETY：Reader 只在唯一所有者线程操作 FFmpeg；stop 为独立原子信号。
@@ -151,6 +155,7 @@ impl Reader {
                 extradata: Vec::new(),
             },
             framing: Framing::new(1, &[])?,
+            file_first: file,
             _quiet: quiet,
         };
         reader.check()?;
@@ -320,7 +325,11 @@ impl Reader {
                     Some(Err(IoError::Resource))
                 } else {
                     let bytes = std::slice::from_raw_parts(packet.data, packet.size as usize);
-                    let keyframe = packet.flags & AV_PKT_FLAG_KEY != 0;
+                    let mut keyframe = packet.flags & AV_PKT_FLAG_KEY != 0;
+                    if self.file_first {
+                        keyframe = true;
+                        self.file_first = false;
+                    }
                     let converted = self
                         .framing
                         .workspace_bytes(bytes, self.info.codec, self.info.extradata.capacity())

@@ -150,3 +150,60 @@ fn rtsp_authority_accepts_separate_credentials() {
     assert!(url.set_password(Some("sdk-transport-secret")).is_ok());
     assert_eq!(url.host_str(), Some("127.0.0.1"));
 }
+
+#[test]
+#[ignore = "显式设置 AM_RT_FFMPEG_DIR 与 AM_SDK_FILE_SOURCE_SAMPLE（真实 MP4）"]
+fn reader_file_mode_reads_first_packet() {
+    let ffmpeg = std::env::var("AM_RT_FFMPEG_DIR").unwrap();
+    let sample = std::env::var("AM_SDK_FILE_SOURCE_SAMPLE").unwrap();
+    let api = std::sync::Arc::new(
+        crate::media::ffmpeg_lib::FfmpegApi::load_from(std::path::Path::new(&ffmpeg)).unwrap(),
+    );
+    let secret = Secret {
+        username: String::new(),
+        password: String::new(),
+    };
+    let mut reader = super::rtsp::Reader::open_with_budget(
+        api,
+        &sample,
+        &secret,
+        std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        Duration::from_secs(5),
+        |_| Ok(()),
+        true,
+    )
+    .unwrap();
+    assert_eq!(reader.info().codec, 1, "expect h264");
+    assert!(reader.info().width > 0, "probe should fill dimensions");
+    let mut packets = 0;
+    loop {
+        match reader.read_packet_with_budget(|_| Ok(())).unwrap() {
+            Some(packet) => {
+                if packets < 3 {
+                    let types: Vec<u8> = packet
+                        .data
+                        .windows(4)
+                        .enumerate()
+                        .filter(|(_, w)| *w == [0u8, 0, 0, 1])
+                        .map(|(i, _)| packet.data[i + 4] & 31)
+                        .collect();
+                    eprintln!(
+                        "packet#{} key={} len={} types={:?}",
+                        packets,
+                        packet.keyframe,
+                        packet.data.len(),
+                        types
+                    );
+                }
+                packets += 1;
+            }
+            None => break,
+        }
+    }
+    eprintln!(
+        "reader file mode: {} packets, extradata {} bytes",
+        packets,
+        reader.info().extradata.len()
+    );
+    assert!(packets > 0, "file must yield packets before EOF");
+}
