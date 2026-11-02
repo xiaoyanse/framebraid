@@ -104,6 +104,7 @@ pub fn runtime(state: &CameraState) -> Result<Arc<FfmpegApi>> {
                 key,
                 component,
                 os_code: None,
+                version: None,
             },
             code,
         )

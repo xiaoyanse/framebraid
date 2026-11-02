@@ -14,6 +14,15 @@ runtime_dirs 通道——非 2026.x 符号断裂（绑定 28 符号在 2025.3.0/
 回退矩阵三档 + runtime_dirs 接线用例（不设环境变量）全过；失败详情经 amv_get_last_error
 携带检测版本与期望线。运行库存放：`.local/deps/ov2026|ov2025`（wheel 解包，仅本地验证用）。
 
+批 D（2026-11-03）：错误详情架构——动态文本驻留下沉 sdk-support（`diagnostics::intern`
+内容去重进程保活 + `Detail::dynamic`），键纪律修订为稳定键与动态详情并存；FFmpeg 版本
+不匹配失败详情带具体库名/检测主版本/期望主版本（经驻留下发）。C#/Python 绑定参数对齐
+（init 线程参数、intra_threads、confidence、capture deadline、PULL 队列参数、stream 主/子
+码流、abi_version/magic 生成常量）。本地验证：三 crate 单测/clippy 绿 + 工作区 check 绿 +
+check-boundary 过闸（270 核心源码，指纹链式登记）+ C# 全绑定 csc 语法编译通过 + Python
+py_compile/生成器 --check 通过。真机 FFmpeg 版本不匹配注入复现未跑（需伪造主版本 DLL，
+登记为待验，不阻塞：构造路径为纯格式化字符串，映射单测已锁定）。
+
 ## v0.3.1 验证状态快照
 
 审查缺陷全量修复版（无 ABI 破坏，前缀兼容增强）：issue #2-#8 七项缺陷（尺寸校验防越界、

@@ -254,12 +254,15 @@ const DLLS: [&str; 5] = [
     "avformat-63.dll",
 ];
 
-/// 只保留库名、稳定原因和OS码，不把路径、URL或认证信息带入诊断。
+/// 只保留库名、稳定原因、OS码和版本检测值（主版本号，非路径/URL/认证信息），
+/// 不把路径、URL或认证信息带入诊断。
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FfmpegLoadError {
     pub key: &'static str,
     pub component: &'static str,
     pub os_code: Option<i32>,
+    /// 版本不匹配时的 (检测主版本, 期望主版本)；其余失败为 None。
+    pub version: Option<(u32, u32)>,
 }
 impl FfmpegLoadError {
     fn new(key: &'static str, component: &'static str) -> Self {
@@ -267,6 +270,16 @@ impl FfmpegLoadError {
             key,
             component,
             os_code: None,
+            version: None,
+        }
+    }
+    /// 版本类失败：携带具体库的检测主版本与期望主版本（审计 A8，进失败详情）。
+    fn version_mismatch(component: &'static str, detected: u32, expected: u32) -> Self {
+        Self {
+            key: "media.ffmpegVersionMismatch",
+            component,
+            os_code: None,
+            version: Some((detected, expected)),
         }
     }
     #[cfg(not(windows))]
@@ -278,6 +291,7 @@ impl FfmpegLoadError {
             key: "media.ffmpegLibraryLoadFailed",
             component,
             os_code,
+            version: None,
         }
     }
 }
@@ -323,6 +337,7 @@ fn load_library(
             key: "media.ffmpegLibraryLoadFailed",
             component,
             os_code,
+            version: None,
         });
     }
     // 句柄只有一份所有权，交回libloading沿用原来的失败回收/成功常驻策略。
@@ -400,18 +415,39 @@ impl FfmpegApi {
                 ));
             };
             // 手工FFI前缀只对冻结主版本有效，不能仅凭DLL文件名相信布局兼容。
-            for (library, symbol, major) in [
-                (avutil, b"avutil_version\0".as_slice(), 61),
-                (avcodec, b"avcodec_version\0".as_slice(), 63),
-                (avformat, b"avformat_version\0".as_slice(), 63),
-                (swscale, b"swscale_version\0".as_slice(), 10),
-                (swresample, b"swresample_version\0".as_slice(), 7),
+            for (library, symbol, component, major) in [
+                (avutil, b"avutil_version\0".as_slice(), "avutil-61.dll", 61),
+                (
+                    avcodec,
+                    b"avcodec_version\0".as_slice(),
+                    "avcodec-63.dll",
+                    63,
+                ),
+                (
+                    avformat,
+                    b"avformat_version\0".as_slice(),
+                    "avformat-63.dll",
+                    63,
+                ),
+                (
+                    swscale,
+                    b"swscale_version\0".as_slice(),
+                    "swscale-10.dll",
+                    10,
+                ),
+                (
+                    swresample,
+                    b"swresample_version\0".as_slice(),
+                    "swresample-7.dll",
+                    7,
+                ),
             ] {
                 let version: AvutilVersionFn = get_fn(library, symbol)?;
-                if version() >> 16 != major {
-                    return Err(FfmpegLoadError::new(
-                        "media.ffmpegVersionMismatch",
-                        "ffmpeg",
+                let detected = version() >> 16;
+                if detected != major {
+                    // 版本类失败带检测值与期望线（审计 A8）：主版本号非敏感，直接入诊断。
+                    return Err(FfmpegLoadError::version_mismatch(
+                        component, detected, major,
                     ));
                 }
             }

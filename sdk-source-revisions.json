@@ -96,8 +96,8 @@
   {
    "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
    "previousSha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592",
-   "sha256": "f7e785a2ac8e601829fb0649e266a1655263876e3a0e1a0ed5796265045223ec",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "cbd17618b1420348c94106eda67d2071e66479810e2842ee38bb585164b19470",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green；v0.3.2 batch D：FFmpeg 版本不匹配失败携带检测/期望主版本（FfmpegLoadError.version 字段，具体库名作 component），workspace 207 绿"
   },
   {
    "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
@@ -132,8 +132,14 @@
   {
    "path": "crates/camera-ffi/src/decoder/config.rs",
    "previousSha256": "9d504128dd8b83e86ab16a001047e1900e88dd6a5a1e5d0241e6b8bc6aafdf57",
-   "sha256": "8c51c68b86de47bf8d718efee560e810cd5880ea24f2accc411194b22825a67c",
-   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+   "sha256": "dd420d6093e93b67410a59834f6c96aa2f431bdca1ee0a207d4993ed57faa26f",
+   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged；v0.3.2 batch D：FfmpegLoadError 新增 version 字段的构造点同步（None 兜底）"
+  },
+  {
+   "path": "crates/camera-ffi/src/decoder/diagnostics.rs",
+   "previousSha256": "bf0357167256624764c996a72ea3d8c49138b76512b66a14828fce845a41b6a7",
+   "sha256": "f547064f09377caa62a2db4cfb8ee4f12f7437490a0de9b9bbcb54359fad0c52",
+   "reason": "v0.3.2 batch D：ffmpegVersionMismatch 失败详情带检测/期望主版本（审计 A8），动态文本经 sdk-support diagnostics::intern 驻留下发；映射单测锁定检测值/期望线与驻留复用"
   },
   {
    "path": "crates/camera-ffi/src/frames.rs",
@@ -1250,6 +1256,12 @@
    "previousSha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f",
    "sha256": "835a8c2ee108c3c753962a32792c4c1d9648e9aa7a693a1567195fe1f0b78397",
    "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge；v0.3.1 audit fix applied"
+  },
+  {
+   "path": "crates/sdk-support/src/diagnostics.rs",
+   "previousSha256": "fd3806e1adc1ed4e02d37db6a038b0213f99c4b4578568172036a94394a18c40",
+   "sha256": "18e8544f4bb055cc47f737ac0440d109d9e26841626fe3d835f320ee36348ab7",
+   "reason": "v0.3.2 batch D：诊断动态详情驻留机制下沉 sdk-support（intern 内容去重进程保活 + Detail::dynamic），键纪律修订为稳定 key 与动态详情并存；新增驻留单测，sdk-support 测试绿"
   }
  ]
 }

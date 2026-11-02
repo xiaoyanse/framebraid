@@ -19,7 +19,14 @@ pub fn detail(error: FfmpegLoadError) -> Detail {
             _ => c"FFmpeg missing avutil-61.dll; deploy the complete matched x64 runtime and pass its directory through runtime_dirs_utf8.",
         },
         "media.ffmpegSymbolMissing" => c"FFmpeg required exported symbol missing; use the complete matched runtime (avutil 61, swresample 7, swscale 10, avcodec 63, avformat 63), not renamed DLLs.",
-        "media.ffmpegVersionMismatch" => c"FFmpeg ABI major version mismatch; required avutil 61, swresample 7, swscale 10, avcodec 63, avformat 63. Deploy a matched runtime through runtime_dirs_utf8.",
+        // 版本类失败带检测值与期望线（审计 A8）：经 sdk-support 驻留为 'static 详情文本。
+        "media.ffmpegVersionMismatch" => match error.version {
+            Some((detected, expected)) => am_sdk_support::diagnostics::intern(&format!(
+                "FFmpeg ABI major version mismatch: {} reports major {}, required {}. Deploy a matched runtime through runtime_dirs_utf8.",
+                error.component, detected, expected
+            )),
+            None => c"FFmpeg ABI major version mismatch; required avutil 61, swresample 7, swscale 10, avcodec 63, avformat 63. Deploy a matched runtime through runtime_dirs_utf8.",
+        },
         "media.ffmpegDirInvalid" => c"FFmpeg runtime directory cannot be resolved; pass an existing accessible directory through runtime_dirs_utf8.",
         "media.ffmpegDomainConflict" => c"FFmpeg already bound to a different runtime directory in this DLL; use the same explicit runtime directory for all contexts.",
         _ => match error.os_code {
@@ -35,5 +42,41 @@ pub fn detail(error: FfmpegLoadError) -> Detail {
         message,
         source,
         fault_class: AM_FAULT_RESOURCE as u32,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_mismatch_detail_carries_detected_and_expected_major() {
+        let error = FfmpegLoadError {
+            key: "media.ffmpegVersionMismatch",
+            component: "avcodec-63.dll",
+            os_code: None,
+            version: Some((62, 63)),
+        };
+        let first = detail(error);
+        assert_eq!(first.source, c"camera.ffmpeg.avcodec-63.dll");
+        let message = std::str::from_utf8(first.message.to_bytes()).unwrap();
+        assert!(
+            message.contains("avcodec-63.dll reports major 62"),
+            "{message}"
+        );
+        assert!(message.contains("required 63"), "{message}");
+        // 同内容驻留复用同一指针；无版本信息时回退静态基线文案。
+        let again = detail(error);
+        assert_eq!(first.message.as_ptr(), again.message.as_ptr());
+        let bare = detail(FfmpegLoadError {
+            key: "media.ffmpegVersionMismatch",
+            component: "ffmpeg",
+            os_code: None,
+            version: None,
+        });
+        assert_eq!(
+            std::str::from_utf8(bare.message.to_bytes()).unwrap(),
+            "FFmpeg ABI major version mismatch; required avutil 61, swresample 7, swscale 10, avcodec 63, avformat 63. Deploy a matched runtime through runtime_dirs_utf8."
+        );
     }
 }
