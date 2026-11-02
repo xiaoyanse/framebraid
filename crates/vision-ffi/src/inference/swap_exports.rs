@@ -73,9 +73,14 @@ pub unsafe extern "C" fn amv_model_swap(
         out_model.write(new_key as _);
         out_old_model_id.write(old_key as u64);
         if swap.flags & AM_SWAP_DETACH != 0 {
-            // DETACH 合同：调用方不再自行关闭旧模型，排空失败必须上抛
-            // （审计 A7）；槽位已切换，调用方可持 old id 显式补关。
-            crate::domain().close(old_key, 0)?;
+            // DETACH 合同：调用方不再自行关闭旧模型，排空未完成必须上抛
+            // （审计 A7/F6）——close 零超时对在途请求返回 Ok(CLOSING) 而非
+            // Err，仅 `?` 捕不到；非 CLOSED 即视为未排空，调用方可持 old id
+            // 显式补关，避免线程配额与 ORT 会话滞留至 context 销毁。
+            let state = crate::domain().close(old_key, 0)?;
+            if state != AM_LIFECYCLE_CLOSED as u32 {
+                return Err(AM_ERR_SDK_TRY_AGAIN);
+            }
         }
         Ok(())
     })

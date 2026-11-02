@@ -310,16 +310,22 @@ pub(in crate::inference) fn next_deadline() -> Option<Instant> {
 /// 已由排空触发清空，此处兜底异常路径的准入与在途账目）。
 pub(in crate::inference) fn release(model: &ModelHandle) {
     let key = model.info.key.load(Ordering::Acquire);
-    let Ok(mut registry) = lock(&REGISTRY) else {
-        return;
-    };
-    let Some(index) = registry.iter().position(|r| r.key == key) else {
-        return;
-    };
-    let mut removed = registry.remove(index);
-    let flushed = removed.coord.drain(&mut core::Stats::default());
-    let Some(flush) = flushed else {
-        return;
+    // 临界区内只做回收与窗口冲刷收集；逐项收口移到锁外执行——finish 会取
+    // state.records，域锁内调用会与提交（records→engine.data）及 worker 周期
+    // （data→REGISTRY）构成三锁环，模型关闭+并发提交时可挂死全局引擎
+    // （审计 F1；与 tick 的 pruned 锁外收口同构）。
+    let flush = {
+        let Ok(mut registry) = lock(&REGISTRY) else {
+            return;
+        };
+        let Some(index) = registry.iter().position(|r| r.key == key) else {
+            return;
+        };
+        let mut removed = registry.remove(index);
+        match removed.coord.drain(&mut core::Stats::default()) {
+            Some(flush) => flush,
+            None => return,
+        }
     };
     let count = flush.items.len();
     for pending in flush.items {

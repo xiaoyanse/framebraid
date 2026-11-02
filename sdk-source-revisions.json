@@ -1194,8 +1194,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
    "previousSha256": null,
-   "sha256": "16f60032c6a53b7d86a423eab0a440994e07695e7b7963e7dca3ec80bb2f8a50",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "8cf83b5d0c45f9d488d66f48b0ee411458206641e3767af9bc7f18900fbb9c00",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；extended-audit F1/F6 fix applied"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
@@ -1230,8 +1230,8 @@
   {
    "path": "crates/vision-ffi/src/inference/swap_exports.rs",
    "previousSha256": null,
-   "sha256": "2a0911dc61dbef2f6919eaa595016a432f25889a6e23da5648520851a5bcb5b9",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied (issues #2-#8)"
+   "sha256": "46e1674fded610d673711a15e9d6182845f998701a7064bfa56b14ce0d6ba104",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied (issues #2-#8)；extended-audit F1/F6 fix applied"
   },
   {
    "path": "crates/vision-ffi/src/inference/swap_tests.rs",
