@@ -551,8 +551,8 @@ Media订阅的对象、队列引用槽和缩放预设容量属于控制元数据
 typedef struct am_encoder_config_s {
   uint32_t struct_size;
   uint32_t width, height;       /* 输入帧尺寸（编码目标） */
-  uint32_t bitrate_kbps;        /* 目标码率；0=默认 2500 */
-  uint32_t gop_size;            /* 关键帧间隔；0=默认 60 */
+  uint32_t bitrate_kbps;        /* 目标码率；0=默认 2500 */ /* zero=default */
+  uint32_t gop_size;            /* 关键帧间隔；0=默认 60 */ /* zero=default */
   uint32_t fps_num, fps_den;    /* 时间基（帧率） */
   uint32_t queue_max_items, queue_max_bytes;  /* 输出包队列（同订阅预算语义） */
 } am_encoder_config_t;
@@ -776,7 +776,7 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
   ```c
   typedef struct am_batching_options_s {
     uint32_t struct_size; uint32_t abi_minor;  /* 版本协商同全局规则 */
-    uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */
+    uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */ /* zero=default */
     uint32_t max_wait_ms;                      /* 0..5000；0=凑满即发不等 */
     uint32_t flags;                            /* AM_BATCHING_ENABLE=1 */
   } am_batching_options_t;
@@ -1257,6 +1257,14 @@ Python `Frame/BorrowedFrame/RgbBuffer.pixels()` 和 C# `CameraFrame/SharedBorrow
 | vision.resultExpired（兼容别名） / vision.requestStateInvalid | 同 sdk.resultExpired（保留旧名）/ 终态后非法操作（如重复 ack） | N / M |
 
 诊断输出统一脱敏：不含密码、令牌、含凭据完整地址，默认不输出原始图像。未知/旧数据/正常空结果/故障四分：时间与代次元数据 + 空结果正常返回表达，不以"无人"代替故障。同对象并发同步调用失败时，`am?_get_last_error` 返回该句柄最近一次失败（对象级）；并发请求各自失败互不覆盖（请求级快照，B03/B09）。
+
+### 错误上下文编码约定 / Error detail encoding rules
+
+- 参数类失败必须提供字段名、传入值和合法区间；参考 camera-ffi decoder 的 `limitOutOfRange` 静态表。
+- 版本类失败必须提供检测到的版本和期望版本线；参考 OpenVINO runtime 版本检测及 FFmpeg 主版本不匹配详情。
+- 文件类失败必须提供路径和 Windows 错误码。
+- 键纪律：稳定 key 与动态详情并存，key 保持诊断兼容、不随版本漂移；动态上下文放入 detail/message。v0.3.2 起 sdk-support 的 `diagnostics::intern` 和 `Detail::dynamic` 已提供机制。
+- 新增高频路径裸 `Err(AM_ERR_*)`（无 detail）须在代码评审中说明理由。
 
 ## 8. 规格对照矩阵（Requirement → 接口映射；按 2026-10-25 整改后三 specs 重建）
 

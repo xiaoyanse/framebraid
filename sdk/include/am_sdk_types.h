@@ -281,8 +281,8 @@ typedef struct am_version_info_s {   /* 字符串 DLL 拥有，随进程生命�
 } am_version_info_t;
 
 typedef struct amc_init_params_s {
-  uint32_t struct_size;
-  uint32_t abi_version;                  /* 请求版本，主版本不符拒绝 */
+  uint32_t struct_size; /* explicit */
+  uint32_t abi_version;                  /* 请求版本，主版本不符拒绝 */ /* explicit */
   const char* const* runtime_dirs_utf8;  /* 显式运行库目录（SDK-G3/B15），NULL=默认搜索顺序 */
   uint32_t runtime_dir_count;
   uint32_t reserved[4];
@@ -293,14 +293,14 @@ typedef struct amv_init_params_s {
   uint32_t struct_size, abi_version;
   const char* const* runtime_dirs_utf8;
   uint32_t runtime_dir_count;
-  uint32_t infer_threads;           /* 推理执行线程预算，0=默认（§6） */
+  uint32_t infer_threads;           /* 推理执行线程预算，0=默认（§6） */ /* zero=default */
   uint64_t domain_infer_slots;      /* 执行器域在途预算（P4 三轮）：消费方式单选合同下（主文件 §1.2）
                                        推理执行器=进程内单例（宿主静态/DLL 二选一=部署约束（P4 四轮：
                                        部署方保证），SDK 尽力检测冲突返回 sdk.domainConflict、
                                        不承诺自动互检）；首个创建执行器的 init 定值，后续 init
-                                       须一致（0=继承现值），不一致 sdk.invalidArgument */
+                                       须一致（0=继承现值），不一致 sdk.invalidArgument */ /* zero=default */
   uint32_t total_thread_budget;     /* 总线程预算（P4）：执行器+ORT intra/inter-op+预处理线程
-                                       合计上限；0=机器核数默认；stats.threads_active/peak 观测 */
+                                       合计上限；0=机器核数默认；stats.threads_active/peak 观测 */ /* zero=default */
   uint32_t reserved[3];
   uint64_t feature_flags;           /* 尾追加且按8字节对齐；AM_INIT_SHARED_FRAMES=1，旧 size 按0，未知位拒绝 */
 } amv_init_params_t;
@@ -620,7 +620,7 @@ typedef struct am_frame_sub_desc_s {
   const am_scale_preset_t* presets;
   uint32_t mode, queue_max_items;  /* AM_SUB_PUSH/AM_SUB_PULL；实时帧队列丢旧留新 */
   uint64_t queue_max_bytes;
-  uint32_t frame_kind;         /* M2a：0=像素（默认/兼容），1=GPU帧；struct_size 版本协商 */
+  uint32_t frame_kind;         /* M2a：0=像素（默认/兼容），1=GPU帧；struct_size 版本协商 */ /* zero=default */
 } am_frame_sub_desc_t;
 
 typedef enum am_decoder_hw_policy_e { AM_DHW_PREFER_HW = 0, AM_DHW_SOFTWARE_ONLY } am_decoder_hw_policy_e;
@@ -786,7 +786,7 @@ typedef struct am_model_desc_s {
                               AM_LOAD_RAW：generic 模式，不要求档案，仅原始张量出口 */
   const char* profile_id;  /* PROFILE 模式：档案 ID；NULL=尝试元数据唯一识别，识别不了报
                               profileRequired（RAW 模式忽略本字段） */
-  const am_backend_policy_t* backend; uint32_t intra_threads;  /* P2 指针化；threads 0=默认 2 */
+  const am_backend_policy_t* backend; uint32_t intra_threads;  /* P2 指针化；threads 0=默认 2 */ /* zero=default */
 } am_model_desc_t;
 typedef struct am_model_memory_desc_s {
   uint32_t struct_size;
@@ -800,8 +800,8 @@ typedef struct am_model_memory_desc_s {
 typedef struct am_encoder_config_s {
   uint32_t struct_size;
   uint32_t width, height;       /* 16..8192 */
-  uint32_t bitrate_kbps;        /* 0=2500 默认 */
-  uint32_t gop_size;            /* 0=60 默认 */
+  uint32_t bitrate_kbps;        /* 0=2500 默认 */ /* zero=default */
+  uint32_t gop_size;            /* 0=60 默认 */ /* zero=default */
   uint32_t fps_num, fps_den;    /* 时间基 */
   uint32_t queue_max_items, queue_max_bytes;  /* 输出包队列预算 */
 } am_encoder_config_t;
@@ -913,8 +913,8 @@ typedef struct am_infer_params_s {
   float confidence_threshold;  /* 档案默认外的覆盖；越界 vision.confidenceRange */
   float nms_iou_threshold;     /* NMS IoU 阈值覆盖（P8 四轮）：0=用档案默认（detect/segment/obb
                                   内置 NMS 默认 0.7，ultralytics 默认）；仅带 NMS 档案生效 */
-  uint32_t max_det;            /* 最大检出数覆盖（P8 四轮）：0=用档案默认（300）；仅带 NMS 档案生效 */
-  uint32_t sync_deadline_ms;   /* 同步截止时间（0=默认 30000）；超时语义见主文件 §3.3（B06） */
+  uint32_t max_det;            /* 最大检出数覆盖（P8 四轮）：0=用档案默认（300）；仅带 NMS 档案生效 */ /* zero=default */
+  uint32_t sync_deadline_ms;   /* 同步截止时间（0=默认 30000）；超时语义见主文件 §3.3（B06） */ /* zero=default */
   uint64_t slot_key;           /* B11：实时槽身份（如 source_id）；0=全局单槽；适用于图像/张量/
                                   批量全部入口（P6，无入口例外） */
   const am_raw_preprocess_t* raw_preprocess;  /* RAW 模型图像入口必填；PROFILE 模式忽略 */
@@ -953,7 +953,7 @@ typedef struct am_batch_receipt_s {   /* 逐项回执（B11）：接受/拒绝�
 typedef struct am_batching_options_s {  /* 自适应攒批（未发布兼容扩展 R5-2.1，主文件 §3.5 末）：
                                            默认关闭；仅动态批量轴模型可启用 */
   uint32_t struct_size; uint32_t abi_minor;  /* 版本协商同全局规则 */
-  uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */
+  uint32_t max_batch_items;                  /* 2..64；0=取模型动态上限 */ /* zero=default */
   uint32_t max_wait_ms;                      /* 0..5000；0=凑满即发不等 */
   uint32_t flags;                            /* AM_BATCHING_ENABLE=1 */
 } am_batching_options_t;

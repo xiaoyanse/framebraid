@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "structures": {
+    "amv_init_params_t": {"fields": {
+      "struct_size": {"python":"defaulted","csharp":"defaulted","note":"Automatically set to structure size"},
+      "abi_version": {"python":"defaulted","csharp":"defaulted","note":"Automatically set to binding ABI version"},
+      "runtime_dirs_utf8": {"python":"exposed","csharp":"exposed","note":"Runtime directory list"},
+      "runtime_dir_count": {"python":"exposed","csharp":"exposed","note":"Derived from runtime directory list"},
+      "infer_threads": {"python":"exposed","csharp":"exposed","note":"0 = SDK default"},
+      "domain_infer_slots": {"python":"exposed","csharp":"exposed","note":"0 = inherit"},
+      "total_thread_budget": {"python":"exposed","csharp":"exposed","note":"0 = SDK default"},
+      "reserved": {"python":"not-applicable","csharp":"not-applicable","note":"Reserved, initialized to zero"},
+      "feature_flags": {"python":"exposed","csharp":"exposed","note":"Flags provided by caller"}
+    }},
+    "amc_init_params_t": {"fields": {
+      "struct_size": {"python":"defaulted","csharp":"defaulted","note":"Automatically set to structure size"},
+      "abi_version": {"python":"defaulted","csharp":"defaulted","note":"Automatically set to binding ABI version"},
+      "runtime_dirs_utf8": {"python":"exposed","csharp":"exposed","note":"Runtime directory list"},
+      "runtime_dir_count": {"python":"exposed","csharp":"exposed","note":"Derived from runtime directory list"},
+      "reserved": {"python":"not-applicable","csharp":"not-applicable","note":"Reserved, initialized to zero"},
+      "feature_flags": {"python":"exposed","csharp":"exposed","note":"Python accepts flags; C# exposes shared-frames bit only"}
+    }},
+    "am_image_input_t": {"fields": {
+      "struct_size": {"python":"defaulted","csharp":"defaulted","note":"Automatically set to structure size"},
+      "kind": {"python":"exposed","csharp":"exposed","note":"Selected by encoded or pixel input method"},
+      "encoded": {"python":"exposed","csharp":"exposed","note":"Encoded input data"},
+      "encoded_size": {"python":"exposed","csharp":"exposed","note":"Derived from encoded data length"},
+      "view": {"python":"exposed","csharp":"exposed","note":"Pixel input"},
+      "assoc": {"python":"defaulted","csharp":"defaulted","note":"NULL; association not exposed by safe methods"},
+      "flags": {"python":"defaulted","csharp":"defaulted","note":"0; safe methods use default input behavior"},
+      "gpu": {"python":"defaulted","csharp":"defaulted","note":"NULL; GPU input not exposed by safe methods"}
+    }},
+    "am_frame_sub_desc_t": {"fields": {
+      "struct_size": {"python":"defaulted","csharp":"defaulted","note":"Automatically set to structure size"},
+      "pixel_format": {"python":"exposed","csharp":"exposed","note":"Pixel format argument"},
+      "sampling_max_fps": {"python":"exposed","csharp":"exposed","note":"Sampling rate argument"},
+      "preset_count": {"python":"defaulted","csharp":"defaulted","note":"0; presets not exposed"},
+      "presets": {"python":"defaulted","csharp":"defaulted","note":"NULL; presets not exposed"},
+      "mode": {"python":"exposed","csharp":"exposed","note":"Only PULL accepted"},
+      "queue_max_items": {"python":"exposed","csharp":"exposed","note":"Queue item limit"},
+      "queue_max_bytes": {"python":"exposed","csharp":"exposed","note":"Queue byte limit"},
+      "frame_kind": {"python":"defaulted","csharp":"defaulted","note":"0; CPU frame"}
+    }}
+  }
+}

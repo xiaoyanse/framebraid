@@ -312,8 +312,8 @@
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "97615fd1c93cc9b16b58bcdd329e12d2b143530d706f66f65a76750186651a12",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied；feedback P0-1 OV2026：intern_detail 诊断文本驻留（'static CStr，按内容去重，旧详情指针不失效）"
+   "sha256": "38a78bcd1106516b1f0bac476bf81c9efdee87ca545de5ed86c8bced352157d7",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied；feedback P0-1 OV2026：intern_detail 诊断文本驻留（'static CStr，按内容去重，旧详情指针不失效）；v0.3.3 previous SHA-256 97615fd1c93cc9b16b58bcdd329e12d2b143530d706f66f65a76750186651a12：intern_detail 委托 sdk-support::diagnostics::intern 收敛双实现（审计 D 委托）"
   },
   {
    "path": "crates/vision-ffi/src/inference/state.rs",
