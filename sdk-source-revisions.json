@@ -588,8 +588,8 @@
   {
    "path": "crates/vision-ffi/src/inference/notify.rs",
    "previousSha256": "9d8ae3ede7d71496b040f9bc53068cf7da8b06b06c1f72d7cf3a5a4b8c4f6a05",
-   "sha256": "d94479a1efa42ba57af6cb87fb5b0fc772fc76abfe462a70b1bc7dbbe76d73e8",
-   "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化"
+   "sha256": "3a6114995c2245c96fac973ad9f9c5d34988ad81f3600ec10bc98b2e5f706d7b",
+   "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化；extended-audit F7/F9 fix applied"
   },
   {
    "path": "crates/camera-ffi/src/reader.rs",
