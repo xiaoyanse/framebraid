@@ -462,8 +462,8 @@
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
    "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-   "sha256": "0827c3b4bfc6fca7ac47d596ea1412f12793233f806b3e6dba4947b24e738ce0",
-   "reason": "Fix backend policy bound 2->4 (E1/E2 backends were unreachable via amv_model_load public entry; caught by pre-integration comparison testing); workspace 408 green；feedback P0-1 OV2026：模型加载重扫 runtime_dirs 登记、backendStrictUnavailable 失败经 amv_get_last_error 携带检测版本/期望线（登记哈希对应 682b86e 提交的 P0-1 hunk；并行批次同文件的 intra_threads 详情 hunk 落地时须另行链式更新本条）"
+   "sha256": "eb22f7c5460d556aa4b1c98afda4b2f7987057a913f378e31c5efaa76eeb37d4",
+   "reason": "Fix backend policy bound 2->4 (E1/E2 backends were unreachable via amv_model_load public entry; caught by pre-integration comparison testing); workspace 408 green；feedback P0-1 OV2026：模型加载重扫 runtime_dirs 登记、backendStrictUnavailable 失败经 amv_get_last_error 携带检测版本/期望线（登记哈希对应 682b86e 提交的 P0-1 hunk；并行批次同文件的 intra_threads 详情 hunk 落地时须另行链式更新本条）；feedback batch A: intra_threads out-of-range detail lands, chained update per note"
   },
   {
    "path": "crates/vision-ffi/src/inference/results.rs",

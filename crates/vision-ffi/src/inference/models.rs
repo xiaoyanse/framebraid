@@ -244,6 +244,18 @@ unsafe fn load_inner(
         threads
     };
     if threads == 0 || threads > budget.total {
+        // 参数类失败附字段与合法区间（P1-6）；经对象级 last_error 通道下发。
+        am_sdk_support::diagnostics::record(
+            crate::domain(),
+            ctx,
+            AM_ERR_SDK_LIMIT_OUT_OF_RANGE,
+            am_sdk_support::diagnostics::Detail {
+                message:
+                    c"intra_threads out of range: valid 1..=total_thread_budget (0=SDK default)",
+                source: c"vision.model.load",
+                fault_class: 0,
+            },
+        );
         return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
     }
     let old = state.models.fetch_add(1, Ordering::AcqRel);
