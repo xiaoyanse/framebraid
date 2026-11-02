@@ -510,8 +510,8 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/tests.rs",
    "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
-   "sha256": "8b44b546a68ffc3feb28091930675e2f0a8c8f7708f1ab39a9a79af66833af4a",
-   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior; previous SHA-256 f3b581fe29ed15a9…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
+   "sha256": "078e2737a0b0ac167a3ac685eaa13df9c48a2b0d9835be14e18f3444be1b4000",
+   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior; previous SHA-256 f3b581fe29ed15a9…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); realigned 8b44b546 (fmt)"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
