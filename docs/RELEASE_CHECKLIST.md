@@ -24,6 +24,9 @@ v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流
 - [ ] 基线三件（`scripts/sdk/baselines/`）：`baseline_decode.py`（解码配对）、`baseline_capture_cadence.py`（节拍精度）、`baseline_lanes.py`（多路线性度）带 `--baseline recorded.json` 全过
 - [ ] 场景五件（`scripts/sdk/scenarios/`）：`scenario_budget_4k.py`、`scenario_cadence.py`、`scenario_mjpeg_stream.py`、`scenario_fault_observability.py`、`scenario_binding_load.py` 全过
 - [ ] 命令样例：`python scripts/sdk/baselines/baseline_decode.py --dll-dir <release> --runtime-dir <ffmpeg bin> --baseline scripts/sdk/baselines/recorded.json`
+- [ ] 绑定参数覆盖：`node scripts/sdk/check-bindings.mjs --check`（2026-11-03 新增）
+- [ ] 文档符号覆盖：`node scripts/sdk/check-doc-coverage.mjs --check`（2026-11-03 新增）
+- [ ] 零值语义覆盖：`node scripts/sdk/check-zero-semantics.mjs --check`（2026-11-03 新增）
 - [ ] 漂移阻断：基线 FAIL=发布阻断；豁免仅限验证制度三类并按登记格式执行（见 VERIFICATION_DOCTRINE.md）
 - [ ] 运行结果（数字）进当版验证记录，输入档位与消费方画像对齐
 
@@ -51,10 +54,31 @@ v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流
 
 - [ ] **Git 层**：annotated tag（`git tag -a vX.Y.Z -m ...`）+ `git push origin main --tags`——按当次授权，推送通常由用户亲手执行
 - [ ] **GitHub Release 页**（git push 只同步标签对象，不建发布条目，必须单独创建）：`gh release create vX.Y.Z --title ... --notes-file ...`，正文必须含**双哈希锚点**（tag 对象 + 底层 commit，见本页锚点段）与升级须知
-- [ ] **资产上传**：双 DLL + SHA256SUMS.txt（必要时加 build-record.json）作为 Release 附件，上传后 `gh release view` 核对文件名与字节数
+- [ ] **资产上传**：按下方固定清单上传全部 Release 附件，上传后 `gh release view` 核对文件名与字节数
 - [ ] **回执**：向决策通道报 tag/commit 双哈希 + Release URL；`docs/RELEASE_STATUS.md` 首行版本与链接同步
+- [ ] **下游联动通知**：向固定引用方（vl-SDK）发送 tag 双哈希锚点通知（按供应链冻结纪律对称约定）
 
 > 教训登记（2026-11-02，v0.3.1）：推送完成后 Release 页未建即回执"发布完成"，缺口由用户问询发现——根因是本清单此前无此段，发布动作靠会话临场发挥。
+
+### Artifact set / 附件形态固定清单（每版逐项勾选）
+
+v0.3.2 起最低形态：
+
+- [ ] `am_camera.dll` + `am_vision.dll`（裸 DLL，直取即用）
+- [ ] `FrameBraid-SDK-windows-x64-<ver>.zip`：`sdk/` 目录包含双 DLL、`include/`、`bindings/`、`INTEGRATION.md`、`RELEASE-NOTES.md`、`SHA256SUMS.txt`、`build-record.json` 和 `LICENSE`。
+- [ ] `FrameBraid-SDK-source-<ver>.zip`（git archive 全仓源码）
+- [ ] `SHA256SUMS.txt`（裸 DLL 哈希）
+- [ ] `build-record.json`（独立附件，与 zip 内同源）
+
+附件形态不得低于上一正式版；缺项须当版登记原因，不得静默缩水。zip 打包前必须过排除检查（下节），上传前必须核对附件字节大小与本地一致。
+
+### Package hygiene / 打包排除检查（发布前必跑）
+
+- 禁入公开包：`__pycache__/`、`*.pyc`、`.exp`/`.lib`（导入库另有交付渠道时）、`.local/`、`.omc/`、IDE/临时文件。
+- 必入项核对：`build-record.json` 必须在 windows zip 内且含 `sourceCommit`、`binaries`、`buildInputs`；上传前重算 `BUNDLE-SUMS`。
+- 检查示例（无输出即通过此项）：`unzip -l <zip> | grep -Ei 'pycache|\.pyc'`；其余禁入项亦须逐项检查。
+
+> 教训登记（2026-11-03，v0.3.2）：首版 windows zip 混入 3 个 .pyc 且缺 build-record.json，发布前核查发现后清污重打包——本段即该教训的制度化。
 
 ## Publication authorization and scope / 发布授权与范围
 

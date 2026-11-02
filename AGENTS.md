@@ -25,6 +25,8 @@
 - 下游固定消费版本/提交及匹配绑定，以版本协商、struct_size、能力查询和实际依赖检查决定启用或回退；不从哈希或 GitHub 最新文档猜兼容，不默认自动替换 DLL/改宿主代码。本要求是维护规范，不代表已有自动升级或在线合同同步服务。
 - 运行时包版本取 Cargo 版本，目标取实际 target triple；现有 notes 返回构建时提交、源码输入 clean/dirty/unknown、profile 与公共支撑层共享帧编译特性（实际每库能力另查）。无自身 Git 仓库不猜提交；该信息不替代制品 SHA-256。发布前须核实际载入库与候选清单一致，查询能力不等于自动升级。
 
+- CHANGELOG 定版段每条声明须绑定实现提交哈希或 `docs/verification` 验证记录链接；接入方提供的数字须标注来源（如 `integrator-measured`），不得写成本仓实测。Unreleased 可记录计划，定版前逐条核对，无实现支撑的条目不得流入定版段。
+
 ## 本地目录与宿主接入
 
 - 唯一维护根为本仓与 AM-RT 宿主仓；归属和版本交接见 `docs/LOCAL_LAYOUT.md`、`docs/SOURCE_MAINTENANCE.md`。不在宿主恢复核心副本，也不把本地未公开提交偷偷写成公共 Git 依赖。

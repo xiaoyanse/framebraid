@@ -11,6 +11,7 @@
 | Full lifecycle and language integration / 完整生命周期及接入 | [Integration / 接入说明](../sdk/INTEGRATION.md) |
 | Runnable examples / 可运行示例 | [Examples / 示例](../sdk/examples/README.md) |
 | Platform/feature limits / 平台与能力限制 | [Support / 支持边界](SUPPORT.md) |
+| Runtime environment variables / 运行时环境变量 | [Registry / 登记表](ENVVARS.md) — all `AM_RT_*`/`AM_SDK_*` variables; new variables must register here first |
 | Implementation goals and tasks / 实施目标与任务 | [SDK OpenSpec](../openspec/README.md) |
 | Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、阶段成果与MET-2验收；整包未完成 |
 | Current validation / 当前验证 | [Local Release status / 本地 Release 状态](RELEASE_STATUS.md) |

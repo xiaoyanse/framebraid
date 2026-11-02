@@ -35,6 +35,10 @@ The local direct C decoder now selects hardware and admits CPU recovery ([verifi
 
 ## Versions / 版本
 
+运行库兼容矩阵以本文件为唯一口径，代码内版本常量注释须指向本矩阵；`RELEASE_STATUS.md` 每版登记已验运行库版本。
+
+The runtime compatibility matrix in this document is authoritative; code comments on version constants must point here, and `RELEASE_STATUS.md` records the runtime versions verified for each release.
+
 Version 0.1.0 is a developer preview, not a production support commitment. C ABI 1.0 and legacy symbols remain. Before 1.0, source/wrapper changes may occur; match actual DLLs, headers, bindings and capability queries, not package numbers alone. ABI changes require contract/generator/test review.
 
 0.1.0 为开发者预览版，不代表生产支持承诺。保留 C ABI 1.0 和兼容符号，1.0 前源码/封装可能变化；按实际 DLL 匹配头、封装、能力，不只看包版本。ABI 变化须审合同、生成器与测试。
