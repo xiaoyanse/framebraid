@@ -134,7 +134,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 | camera | `runtime_dirs_utf8 = [FFMPEG_DIR]` | `avcodec-63`、`avformat-63`、`avutil-61`、`swresample-7`、`swscale-10` 对应 DLL |
 | vision | `runtime_dirs_utf8 = [ORT_DIR]` | 包内固定版本 `onnxruntime.dll` |
 
-SDK DLL 搜索与上述运行库目录是两件事。Python 用 SDK DLL 绝对路径；C# 的 P/Invoke 将 SDK DLL 放到程序目录或仅为当前进程设置 DLL 搜索 PATH；C/C++ 可将两 DLL 放在 EXE 旁。FFmpeg 与 ORT 目录仍由初始化参数传入，不要将它们混成一个目录或随意换成其他版本。
+SDK DLL 搜索与上述运行库目录是两件事。Python 用 SDK DLL 绝对路径；C# 的 P/Invoke 将 SDK DLL 放到程序目录或仅为当前进程设置 DLL 搜索 PATH；C/C++ 可将两 DLL 放在 EXE 旁。FFmpeg 与 ORT 目录仍由初始化参数传入，不要将它们混成一个目录或随意换成其他版本。运行库档案的许可边界（纯解码/推理用 LGPL minimal 档案即可、编码推流需要 GPL 构建、各自分发义务）见[运行库许可选择指引](../docs/RUNTIME-LICENSING.md)。
 
 **无 ORT 的例外：** 双 SDK 编入共享帧功能，并显式启用 `AM_INIT_SHARED_FRAMES` 时，vision 可以在不传任何运行库目录的情况下只执行共享池 attach/borrow/return。它不能加载模型或执行推理。只要传了运行库目录，就按该目录严格初始化，错误不静默降级。相机 FFmpeg 在需要解码或取流时检查，不能把仅创建相机上下文成功当成 FFmpeg 已可用。
 
@@ -284,6 +284,38 @@ cl /nologo /utf-8 /std:c++17 /EHsc /W4 /WX /I "%SDK_ROOT%\include" "%SDK_ROOT%\e
 | 单个异步请求失败 | `amv_request_query` 的错误快照 | 先复制详情再 release 快照，避免请求错误互相覆盖 |
 
 Python SDK 异常有 `code/message/source/retryable/fault_class`；C# 有 `Status/Detail/SourceKey`。初始化严格失败后，纠正环境并在无登记上下文的屏障下显式调用 `amv_backend_retry`，不要无限重复初始化或静默换后端。共享帧专用模式不受“必须安装 ORT”要求约束。
+
+## 7A. v0.3 扩展能力接入（E1 / M5 / S5）
+
+v0.3.0 起公开的三组扩展入口。合同语义以 [ABI 设计](../docs/design/dual-dll-abi.md)为准，本节只给接入要点。三组入口均为 C ABI 导出：Python 高层 `safe_sdk` 暂未封装（可经 `amrt_sdk.py` 函数表调用），C# 经 P/Invoke，C/C++ 直接链接 `lib/win-x64`。
+
+### E1：OpenVINO 原生引擎（`AM_BACKEND_OPENVINO_NATIVE=4`）
+
+第五推理路径：OpenVINO C API 直连（`openvino_c.dll`），不经 ORT 的 OpenVINO EP。与 `AM_BACKEND_OPENVINO=1`（ORT 会话 + OpenVINO EP，provider 桥接受 Intel provider 运行库符号缺失限制）是两条不同路径：4 = 原生引擎、无 ORT 参与。
+
+- **前置运行库**：进程环境变量 `AM_SDK_OPENVINO_DIR` 指向 OpenVINO 运行库目录（init 前设置，进程级）。目录内须含 `openvino_c.dll` 及完整依赖闭包——openvino 主库/插件、ONNX 前端及其传递依赖（libprotobuf、libprotobuf-lite、abseil_dll、tbb12 等，E1 验证闭包共 11 个 DLL）。缺目录、缺文件或符号缺失都按候选失败进入 selection 报告。该目录独立于 vision `runtime_dirs` 的 onnxruntime.dll，两者可并存，ORT 路径不受影响。
+- **版本线**：已验证版本 2026.1.0（vcpkg 构建，逐符号核签 28 个 FFI 符号 + 真实对拍）；ABI 合同段（dual-dll-abi.md E1）写作"2025.x 线"，与实测登记存在出入，兼容矩阵以[交付状态](../docs/RELEASE_STATUS.md)登记为准，不在本说明新设承诺。v0.3.2 起装载时读取运行库版本，版本不可用/不匹配的失败详情携带检测到的版本与期望版本线（反馈 P0-1/P1-6），不再需要对照文档倒推。
+- **参数**：经有序选择 `amv_model_load_selected` 候选 `(4, 0)`（backend=4、device_id=0），或旧入口 backend 策略 requested=4 + strict/回退语义。OpenVINO 首版固定 CPU 设备并显式配置线程。
+- **错误处理**：strict 候选失败返回 `vision.backendStrictUnavailable`，selection 报告含逐候选尝试阶段与错误（如 stage=runtime）；允许回退时回退 ORT CPU，回退原因进 selection 报告，不静默降级。回退矩阵（目录缺失 / 环境未设 / strict 拒绝）已实测。
+- **已知限制**：不支持该枚举值的旧绑定收到 `sdk.invalidArgument`。GPU 帧直传为后续增强，首版原生引擎走 CPU 输入（GPU 帧输入能力位对两引擎统一按实际可载置位）。CPU+单加速后端约束保持；同进程多套 OpenVINO 副本或预载冲突不在承诺内。
+
+### M5：模型热切换（`amv_model_swap`）
+
+单调用内完成"新模型就绪 + 槽位切换"，无两步窗口。既有"load 新句柄 + close 旧句柄"两步路径语义不变，可与 swap 并存；五引擎统一（ModelEngine 抽象），无 per-engine 分支。
+
+- **参数**：`amv_model_swap(ctx, &swap_desc, &new_desc, &out_model, &out_old_model_id)`。`am_model_swap_desc_t`：`slot_key` 槽位寻址（0=全局单槽，即既有 load 使用的槽）；`flags` 目前仅支持 `AM_SWAP_DETACH=1`，未知位或 `reserved≠0` 返回 `sdk.invalidArgument`。`new_desc` 为路径模型描述（`am_model_desc_t`：load_mode / profile_id / backend / intra_threads / path_utf8），内存模型不走 swap。输出：`out_model`=新模型句柄，`out_old_model_id`=旧模型 ID（非 DETACH 时用于后续 close）。
+- **在途请求与所有权**：swap 前已提交的请求由旧模型完成、结果不丢（执行器持旧模型引用自然续命）；swap 后新请求即时路由新模型。槽位身份延续（消费方句柄/订阅不换），新模型身份独立（B14）；旧模型的 selection 查询置 legacy_model（既有语义复用）。
+- **错误处理**：新模型加载失败或槽位不存在时，槽位保持原模型不变，错误码与 load 一致。旧模型释放两条路径：默认（`AM_SWAP_DETACH=0`）由调用方持 `out_old_model_id` 后续 `amv_model_close`（常规排空语义）；`AM_SWAP_DETACH=1` 时由 swap 调用内对旧模型零超时排空，**排空未完成返回 `sdk.tryAgain`**（v0.3.1 修复"DETACH 排空假成功"后的合同），调用方可重试或持旧 ID 显式补关，避免线程配额与原生会话滞留到 context 销毁。
+- **已知限制**：`slot_key≠0` 当前返回 `sdk.handleInvalid`（按槽寻址未实现，合同保留字段语义）。Python/C# 高层封装未覆盖，经 `amrt_sdk.py` 函数表或 P/Invoke 调用。
+
+### S5：编码与推流（encoder / archive / stream）
+
+像素帧（RGBA8）→ H.264 编码（libx264 CPU 软编；NVENC 硬编为后续增强）。三组入口：`amc_encoder_create/encode/receive/drain/close`（裸编码器，输出 `am_encoded_packet_t` 引用计数包）、`amc_archive_open/write/close`（MP4 存档，close 冲刷 trailer 保证文件可播放）、`amc_stream_open/write/close`（RTMP 推流，flv/rtmp muxer）。存档/推流会话内部各持一个编码器；预算按编码器+会话元数据计费（§6 语义）；编码会话生命周期与解码器同族（三段式 close）。
+
+- **前置运行库**：需要含 libx264 的 GPL 构建 FFmpeg（v0.3.0 起随包分发；许可边界与分发义务见[运行库许可选择指引](../docs/RUNTIME-LICENSING.md)）。LGPL minimal 构建缺 libx264 时三个入口的 create/open 返回 `sdk.notSupported`，不静默降级；解码/取图/推理路径不受影响。运行库目录仍经 `amc_init` 的 `runtime_dirs` 传入，与解码共用同一 FFmpeg 目录。
+- **参数**：`am_encoder_config_t`（宽高界 16..8192，越界 `sdk.invalidArgument`；`bitrate_kbps` 0=默认 2500；`gop_size` 0=默认 60；`fps_num/fps_den` 时间基；`queue_max_items/queue_max_bytes` 输出包队列）。存档 `segment_frames>0` 时按帧数分段多文件，路径模板须含 `%d`（缺失 `sdk.invalidArgument`）。输入像素视图限定 RGBA8（其他格式 `camera.pixelFormatUnsupported`），宽高必须与创建配置一致，不一致 `sdk.invalidArgument`——底层按配置行数读取，不做隐式缩放。固定帧率合同：输出包 PTS/DTS 贯通编码器时基（1/fps）并填充 time_base；当前公开入口无输入时间参数，输入 PTS 直通属后续合同演进。
+- **错误处理**：`receive` 无包且未排干 → `sdk.tryAgain`（同解码器语义）；drain 后再 encode → `sdk.drained`。输出队列满不丢包：移交失败的包暂存，下一次 encode/receive 释放空间后自动补投，可重试取回同一包。RTMP 连接/重连受单段 IO 中断（5s）与总预算（15s）约束，退避等待可被停止信号唤醒；预算耗尽或取消返回 `camera.timeout`；断线按既有退避（1s×2ⁿ 封顶 30s）重试。MP4 finish 错误如实上抛，不误报保存成功。
+- **已知限制**：Windows x64 限定（其他平台 notSupported）。RTMP 真实服务端环境按[交付状态](../docs/RELEASE_STATUS.md)如实登记，不冒充已验。能力位不含编码位，运行库是否含 libx264 以实际 create/open 调用结果为准。Python/C# 高层封装未覆盖，经 `amrt_sdk.py` 函数表或 P/Invoke 调用。
 
 ## 8. 从源码构建与材料
 

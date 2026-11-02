@@ -4,7 +4,7 @@ members = ["crates/vision-types","crates/am-camera","crates/vision","crates/sdk-
 resolver = "2"
 
 [workspace.package]
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 rust-version = "1.90"
 license = "Apache-2.0"

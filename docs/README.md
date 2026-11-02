@@ -20,7 +20,7 @@
 | Visual identity / 视觉标识 | [Selected logo and banner / 已选 Logo 与横幅](../assets/brand/README.md) |
 | Future publication / 后续发布 | [Release checklist / 发布清单](RELEASE_CHECKLIST.md) |
 | Contribute/security / 贡献与安全 | [Contributing](../CONTRIBUTING.md) · [Security](../SECURITY.md) |
-| Licensing/materials / 许可材料 | [NOTICE](../NOTICE) · [Third-party materials](../sdk/third-party/README.md) |
+| Licensing/materials / 许可材料 | [NOTICE](../NOTICE) · [Third-party materials](../sdk/third-party/README.md) · [Runtime licensing / 运行库许可选择](RUNTIME-LICENSING.md) |
 
 ## Reference contracts / 接口参考
 

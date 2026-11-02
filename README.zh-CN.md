@@ -163,4 +163,4 @@ v0.2.0 Windows x64 **Release 候选**通过 **384 项 workspace Rust 测试**（
 
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse)。
 
-原始 SDK 代码采用 [Apache-2.0](LICENSE)，允许在遵守条款前提下商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可。见 [NOTICE](NOTICE) 与[第三方材料](sdk/third-party/README.md)。
+原始 SDK 代码采用 [Apache-2.0](LICENSE)，允许在遵守条款前提下商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可。见 [NOTICE](NOTICE) 与[第三方材料](sdk/third-party/README.md)。FFmpeg 运行库的 LGPL minimal 与 GPL 编码（libx264）构建如何选择、各自分发义务是什么，见[运行库许可选择指引](docs/RUNTIME-LICENSING.md)。

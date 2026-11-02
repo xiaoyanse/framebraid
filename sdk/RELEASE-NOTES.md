@@ -1,5 +1,25 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.3.2 (2026-11-03)
+
+Integrator-feedback release, no ABI break. Python bindings expose the init/thread parameters that
+were previously hardcoded (`infer_threads`, `total_thread_budget`, `domain_infer_slots`,
+`feature_flags` on init; `intra_threads` on model load, 0 = SDK default) — measured on a 16-core
+host, raising intra threads to 12 moves full-chain p50 from 63.5 to 33.1 ms, the level previously
+reachable only via direct C API. The OpenVINO native engine (E1) detects the loaded runtime
+version and reports detected-vs-expected version lines in failure details (feedback P0-1/P1-6).
+`amv_init` out-of-range failures now carry the field name, submitted value and valid range instead
+of a bare `sdk.limitOutOfRange`. Raw-tensor binding wrappers default the contiguous flag.
+INTEGRATION.md gains E1/M5/S5 integration sections, and a new runtime licensing guide
+(docs/RUNTIME-LICENSING.md) covers the LGPL-minimal vs GPL-encode (libx264) boundary and
+distribution obligations. GitHub Release artifacts are published in full per version (binaries +
+SHA256SUMS), closing the v0.3.1 gap.
+/ 接入方反馈版，无 ABI 破坏：Python 绑定放开此前写死的 init/线程参数（16 核实测全链 p50
+63.5→33.1ms，与直调 C API 同档）；OpenVINO 原生引擎版本检测与明确报错（失败详情带检测到
+的版本与期望版本线）；init 超范围失败带字段/传入值/合法区间；raw 张量绑定默认连续标志；
+INTEGRATION 增补 E1/M5/S5 接入说明；新增运行库许可选择指引（LGPL minimal 与 GPL 编码构建
+边界及分发义务）；Release 制品按版本完整发布（补 v0.3.1 缺口）。
+
 ## v0.3.1 (2026-11-02)
 
 Audit-fix release, no ABI break (prefix compatibility strengthened). Fixes review issues #2-#8:
