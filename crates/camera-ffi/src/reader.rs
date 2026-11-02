@@ -30,16 +30,25 @@ impl BudgetedReader {
         secret: &Secret,
         stop: Arc<AtomicBool>,
         timeout: Duration,
+        file: bool,
     ) -> Result<Self, IoError> {
         let mut pending = None;
-        let reader = Reader::open_with_budget(api, url, secret, stop, timeout, |bytes| {
-            pending = Some(
-                state
-                    .charge(bytes as u64, false)
-                    .map_err(|_| IoError::Resource)?,
-            );
-            Ok(())
-        })?;
+        let reader = Reader::open_with_budget(
+            api,
+            url,
+            secret,
+            stop,
+            timeout,
+            |bytes| {
+                pending = Some(
+                    state
+                        .charge(bytes as u64, false)
+                        .map_err(|_| IoError::Resource)?,
+                );
+                Ok(())
+            },
+            file,
+        )?;
         let mut owned = Self {
             reader,
             retained: pending.take().ok_or(IoError::Resource)?,

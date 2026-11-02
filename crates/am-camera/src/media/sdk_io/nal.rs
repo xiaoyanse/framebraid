@@ -6,6 +6,35 @@ pub(super) struct Framing {
     pub parameters: Vec<u8>,
 }
 impl Framing {
+    /// AVCC 判定（P1-8 修复）：已知长度前缀字节数时按"链自洽"校验——从首字节按
+    /// length_bytes 读长度逐段走完整个 data 且每段非空，即为 AVCC；否则视为
+    /// Annex-B 直通。取代旧 `annex_b()` 启发式：4 字节大端长度 < 0x200000 时前缀
+    /// 恰为 `00 00 01 xx` 形态，视频包几乎总落此区间，旧启发式会误判为已转换
+    /// （实测 MP4/H.264 场景，见 `avcc_length_prefix_not_mistaken_for_start_code`）。
+    fn is_avcc(&self, data: &[u8]) -> bool {
+        if self.length_bytes == 0 || data.is_empty() {
+            return false;
+        }
+        // 非空但短于一个长度字段：没有 NAL 空间，按 AVCC 交转换路径报 Invalid
+        //（与旧启发式行为一致），不误直通。
+        if data.len() <= self.length_bytes {
+            return true;
+        }
+        let mut pos = 0usize;
+        while pos < data.len() {
+            let Ok(length) = number(data, &mut pos, self.length_bytes) else {
+                return false;
+            };
+            if length == 0 {
+                return false;
+            }
+            match pos.checked_add(length) {
+                Some(end) if end <= data.len() => pos = end,
+                _ => return false,
+            }
+        }
+        pos == data.len()
+    }
     pub fn workspace_bytes(
         &self,
         data: &[u8],
@@ -22,9 +51,7 @@ impl Framing {
                 .and_then(|n| n.checked_add(info_capacity))
                 .ok_or(IoError::Resource);
         }
-        let normalized = if annex_b(data) || self.length_bytes == 0 {
-            data.len()
-        } else {
+        let normalized = if self.is_avcc(data) {
             let (mut pos, mut total) = (0usize, 0usize);
             while pos < data.len() {
                 let length = number(data, &mut pos, self.length_bytes)?;
@@ -39,6 +66,8 @@ impl Framing {
                     .ok_or(IoError::Resource)?;
             }
             total
+        } else {
+            data.len()
         };
         // 转换/参数组合/输出/信息副本可并存；另覆盖两份最多256项的参数视图。
         normalized
@@ -102,9 +131,7 @@ impl Framing {
             return Ok(data.to_vec());
         }
         let mut converted = Vec::new();
-        let data = if annex_b(data) || self.length_bytes == 0 {
-            data
-        } else {
+        let data = if self.is_avcc(data) {
             let mut pos = 0;
             while pos < data.len() {
                 let length = number(data, &mut pos, self.length_bytes)?;
@@ -123,6 +150,8 @@ impl Framing {
                 pos = end;
             }
             &converted
+        } else {
+            data
         };
         self.observe(data, codec)?;
         let mut output = Vec::new();
@@ -252,6 +281,46 @@ fn append_config(data: &[u8], pos: &mut usize, output: &mut Vec<u8>) -> Result<(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn avcc_length_prefix_not_mistaken_for_start_code() {
+        // P1-8 实证复现：4 字节大端长度 0x1cf=463（< 0x200000）时前缀恰为
+        // `00 00 01 cf`——旧 annex_b() 启发式误判为 3 字节 start code 直通，
+        // 导致 MP4 FILE 源首包被 Gate 以非法 NAL 头拒绝。链自洽判定必须识别为 AVCC。
+        let avcc_extradata = [
+            0x01, 0x64, 0x00, 0x1e, 0xff, 0xe1, 0x00, 0x19, // avcC 头 + SPS 长度 25
+            0x67, 0x64, 0x00, 0x1e, 0xac, 0xb2, 0x01, 0x40, 0x7b, 0x60, 0x22, 0x00, 0x00, 0x03,
+            0x00, 0x20, 0x00, 0x00, 0x03, 0x00, 0x78, 0x1e, 0x2c, 0x5c, 0x90, 0x01, 0x00, 0x06,
+            0x68, 0xeb, 0xc3, 0xcb, 0x22, 0xc0,
+        ];
+        let mut framing = Framing::new(1, &avcc_extradata).unwrap();
+        assert_eq!(framing.parameters.len(), 4 + 25 + 4 + 6, "SPS+PPS Annex-B");
+        // 原始包（铁证形态）：[00 00 01 cf][463 字节 slice]——前缀形似 3 字节 start code。
+        let slice_nal = vec![0x41u8, 0x9a, 0x3b, 0x10];
+        let mut raw = Vec::new();
+        raw.extend_from_slice(&0x1cfu32.to_be_bytes());
+        // 补足 463 字节总长：4 头 + 459 数据。
+        raw.extend_from_slice(&slice_nal);
+        raw.extend(std::iter::repeat(0x55).take(463 - slice_nal.len()));
+        assert!(raw.starts_with(&[0x00, 0x00, 0x01, 0xcf]));
+        assert_eq!(raw.len(), 467);
+        let converted = framing.packet(&raw, true, 1).unwrap();
+        // key=true 先前置参数集（SPS+PPS），转换后的 slice 段在其后：start code + 0x41。
+        let parameters_len = framing.parameters.len();
+        assert!(
+            converted.starts_with(&[0, 0, 0, 1, 0x67]),
+            "keyframe prepends parameter sets, got head {:?}",
+            &converted[..6]
+        );
+        assert_eq!(
+            &converted[parameters_len..parameters_len + 5],
+            &[0, 0, 0, 1, 0x41],
+            "length prefix must become start code + original NAL head"
+        );
+        // 非 AVCC（真 Annex-B）仍直通：start code 开头且长度链不自洽。
+        let annexb = [0x00, 0x00, 0x00, 0x01, 0x67, 0x01];
+        let out = framing.packet(&annexb, false, 1).unwrap();
+        assert!(out.starts_with(&[0, 0, 0, 1, 0x67]));
+    }
     #[test]
     fn workspace_preflight_handles_short_lengths_and_rejects_without_mutation() {
         let avcc = [1, 66, 0, 30, 252, 225, 0, 2, 103, 1, 1, 0, 2, 104, 2];

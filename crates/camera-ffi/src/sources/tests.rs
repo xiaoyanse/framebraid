@@ -2,6 +2,145 @@ use super::{api::*, *};
 use std::time::{Duration, Instant};
 
 #[test]
+fn file_source_rejects_credentials_provider_and_stream_kind() {
+    let f = Fixture::new();
+    let creds = am_credential_data_t::default();
+    let provider = am_credential_provider_t::default();
+    let mut desc = am_source_desc_t {
+        kind: AM_SRC_FILE as u32,
+        url_utf8: c"missing-file-source-test.mp4".as_ptr(),
+        ..Default::default()
+    };
+    let mut out = std::ptr::null_mut();
+    desc.creds = &creds;
+    assert_eq!(
+        unsafe { amc_source_open(f.ctx as _, &desc, &mut out) },
+        AM_ERR_SDK_INVALID_ARGUMENT
+    );
+    desc.creds = std::ptr::null();
+    desc.provider = &provider;
+    assert_eq!(
+        unsafe { amc_source_open(f.ctx as _, &desc, &mut out) },
+        AM_ERR_SDK_INVALID_ARGUMENT
+    );
+    desc.provider = std::ptr::null();
+    desc.stream_kind_utf8 = c"main".as_ptr();
+    assert_eq!(
+        unsafe { amc_source_open(f.ctx as _, &desc, &mut out) },
+        AM_ERR_SDK_INVALID_ARGUMENT
+    );
+}
+
+#[test]
+fn file_source_missing_path_reports_details_with_null_and_empty_stream() {
+    let f = Fixture::new();
+    let mut desc = am_source_desc_t {
+        kind: AM_SRC_FILE as u32,
+        url_utf8: c"missing-file-source-test.mp4".as_ptr(),
+        ..Default::default()
+    };
+    for stream in [std::ptr::null(), c"".as_ptr()] {
+        desc.stream_kind_utf8 = stream;
+        let mut out = std::ptr::null_mut();
+        assert_eq!(
+            unsafe { amc_source_open(f.ctx as _, &desc, &mut out) },
+            AM_ERR_CAMERA_URL_INVALID
+        );
+        let mut error = am_error_info_t::default();
+        assert_eq!(
+            unsafe { crate::amc_get_last_error(f.ctx as _, &mut error) },
+            0
+        );
+        let message = unsafe { CStr::from_ptr(error.message_utf8) }.to_string_lossy();
+        assert!(
+            message.contains("path=") && message.contains("reason="),
+            "{message}"
+        );
+        assert!(out.is_null());
+    }
+}
+
+#[test]
+#[ignore = "显式设置 AM_RT_FFMPEG_DIR 和 AM_SDK_FILE_SOURCE_SAMPLE（合成 MP4 文件）"]
+fn file_source_pull_drains_after_eof() {
+    use std::ffi::CString;
+    let directory = CString::new(std::env::var("AM_RT_FFMPEG_DIR").unwrap()).unwrap();
+    let sample = CString::new(std::env::var("AM_SDK_FILE_SOURCE_SAMPLE").unwrap()).unwrap();
+    let dirs = [directory.as_ptr()];
+    let params = amc_init_params_t {
+        abi_version: AM_ABI_VERSION,
+        runtime_dirs_utf8: dirs.as_ptr(),
+        runtime_dir_count: 1,
+        ..Default::default()
+    };
+    let ctx = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+    let desc = am_source_desc_t {
+        kind: AM_SRC_FILE as u32,
+        url_utf8: sample.as_ptr(),
+        ..Default::default()
+    };
+    let mut source = std::ptr::null_mut();
+    assert_eq!(unsafe { amc_source_open(ctx as _, &desc, &mut source) }, 0);
+    let sub_desc = am_encoded_sub_desc_t {
+        mode: AM_SUB_PULL,
+        codec_mask: AM_CODEC_H264,
+        ..Default::default()
+    };
+    let mut sub = std::ptr::null_mut();
+    // FILE 源与流源同序：订阅驱动启动 demux，codec 探测完成前订阅返回 PROBE_PENDING，
+    // 短退避重试（对齐流源真机测试的时序处理）。
+    let subscribe_deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let result =
+            unsafe { crate::subscriptions::amc_subscribe_encoded(source, &sub_desc, &mut sub) };
+        if result == 0 {
+            break;
+        }
+        assert_eq!(
+            result, AM_ERR_CAMERA_PROBE_PENDING,
+            "unexpected subscribe error"
+        );
+        assert!(
+            Instant::now() < subscribe_deadline,
+            "codec probe did not settle"
+        );
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut count = 0;
+    loop {
+        assert!(Instant::now() < deadline, "FILE source did not reach EOF");
+        let mut packet = std::ptr::null_mut();
+        let result = unsafe { crate::subscriptions::amc_encoded_pull(sub, 100, &mut packet) };
+        if result == AM_ERR_CAMERA_STREAM_ENDED {
+            break;
+        }
+        if result == AM_ERR_SDK_DEADLINE_EXCEEDED {
+            continue;
+        }
+        assert_eq!(result, 0);
+        count += 1;
+        assert_eq!(
+            unsafe { crate::subscriptions::amc_encoded_packet_release(packet) },
+            0
+        );
+    }
+    assert!(count > 0);
+    assert_eq!(status_of(source as usize).state, AM_SRC_EOF);
+    let mut lifecycle = 0;
+    assert_eq!(
+        unsafe { crate::subscriptions::amc_encoded_unsubscribe(sub, 2000, &mut lifecycle) },
+        0
+    );
+    domain().destroy(sub as usize).unwrap();
+    assert_eq!(unsafe { amc_source_close(source, 2000, &mut lifecycle) }, 0);
+    assert_eq!(lifecycle, AM_LIFECYCLE_CLOSED as u32);
+    domain().destroy(source as usize).unwrap();
+    domain().close(ctx, 2000).unwrap();
+    domain().destroy(ctx).unwrap();
+}
+
+#[test]
 fn source_decode_policy_is_shared_frozen_on_push_subscription_and_closed_report_is_idle() {
     let mut f = Fixture::new();
     let desc = am_source_desc_t {

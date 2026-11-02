@@ -65,6 +65,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 ## Media SDK
 
 - RTSP H.264/H.265/MJPEG 接入；编码包与解码帧订阅。
+- 本地 FILE 源（未发布）：首版范围 MP4 H.264/H.265，支持 EOF 与队列排空；暂不支持 seek。
 - 独立 H.264/H.265 解码，输入须为**完整 Annex B 访问单元**；任意网络分片不是完整帧输入。
 - ISAPI HTTP Digest 抓图与有界连续采集；实际节拍取决于相机与网络。
 - 拉取/回调接口、有界队列、元数据、缩放、像素转换与重连控制。

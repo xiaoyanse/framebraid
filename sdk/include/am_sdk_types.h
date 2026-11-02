@@ -484,21 +484,30 @@ typedef struct amc_capability_s {
 } amc_capability_t;
 
 typedef enum am_source_kind_e { AM_SRC_RTSP_URL = 0, AM_SRC_ISAPI_URL = 1,
-                                AM_SRC_DEVICE_REF = 2, AM_SRC_MJPEG_URL = 3 } am_source_kind_e;
+                                AM_SRC_DEVICE_REF = 2, AM_SRC_MJPEG_URL = 3,
+                                AM_SRC_FILE = 4 } am_source_kind_e;
 typedef struct am_source_desc_s {
   uint32_t struct_size, kind;      /* am_source_kind_e */
   const char* url_utf8;            /* RTSP/ISAPI 具体地址；DEVICE_REF 时=宿主已解析的具体流地址
-                                     （B04：SDK 不内建设备引用解析器） */
-  const char* stream_kind_utf8;    /* "main"/"sub"/"isapi"：宿主提示的类型标注，SDK 按实际行为执行 */
-  const am_credential_data_t* creds;          /* 原子凭据（B04 推荐）：NULL=WAITING_CREDENTIALS 起步 */
-  const am_credential_provider_t* provider;   /* 原子凭据提供器（与 creds 二选一） */
-  uint32_t reuse; uint32_t reserved[4];       /* AM_REUSE_ALLOWED=1：同键复用底层连接 */
+                                     （B04：SDK 不内建设备引用解析器）；FILE 时=本地媒体文件
+                                     UTF-8 路径（可带 file:// 前缀，按 FFmpeg 原生规则打开） */
+  const char* stream_kind_utf8;    /* "main"/"sub"/"isapi"：宿主提示的类型标注，SDK 按实际行为执行；
+                                     FILE 源仅接受 NULL/""（文件无主子码流，其他值拒绝） */
+  const am_credential_data_t* creds;          /* 原子凭据（B04 推荐）：NULL=WAITING_CREDENTIALS 起步；
+                                     FILE 源必须为 NULL（本地文件无凭据概念，非 NULL 拒绝） */
+  const am_credential_provider_t* provider;   /* 原子凭据提供器（与 creds 二选一）；FILE 源必须为 NULL */
+  uint32_t reuse; uint32_t reserved[4];       /* AM_REUSE_ALLOWED=1：同键复用底层连接；FILE 源
+                                     接受该位但无连接复用语义（每次打开独立 demux 句柄，如实文档） */
 } am_source_desc_t;
 
 typedef enum am_source_state_e { AM_SRC_WAITING_CREDENTIALS = 0, AM_SRC_CONNECTING, AM_SRC_LIVE,
-  AM_SRC_RECONNECT_WAIT, AM_SRC_AUTH_WAITING, AM_SRC_CLOSING, AM_SRC_CLOSED } am_source_state_e;
+  AM_SRC_RECONNECT_WAIT, AM_SRC_AUTH_WAITING, AM_SRC_CLOSING, AM_SRC_CLOSED,
+  AM_SRC_EOF = 7 } am_source_state_e;
 /* AUTH_WAITING=最终认证失败（明确凭据拒绝且重试耗尽；正常 Digest challenge 不算，B13），
    停止重试等 credentials_set/provider 更新后自动重连 */
+/* EOF=FILE 源专属终态：demux 读到文件尾，不再产生新帧/包；对象仍存活，订阅队列按序排空，
+   PULL 排空后返回 camera.sourceEof（不阻塞等待）；事件回调按既有事件通道上报流结束；
+   不自动重放（seek/循环属后续扩展）。CLOSED 仍为显式关闭后的终态 */
 
 typedef enum am_fault_class_e { AM_FAULT_NONE = 0, AM_FAULT_NETWORK, AM_FAULT_AUTH,
   AM_FAULT_RESOURCE, AM_FAULT_KEYFRAME_WAIT, AM_FAULT_DECODE } am_fault_class_e;

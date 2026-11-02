@@ -60,6 +60,10 @@ pub struct Reader {
     stream: i32,
     info: StreamInfo,
     framing: Framing,
+    /// 文件模式首包标记（P1-8）：文件起点视为随机访问点，首包强制按关键帧
+    /// 输出——Framing 据此在首包前置参数集，Gate 才能就绪（MP4 demux 的 KEY
+    /// 标志不可靠且参数集在带外 extradata，与 RTSP 带内语义不同）。
+    file_first: bool,
     _quiet: super::quiet::Guard,
 }
 // SAFETY：Reader 只在唯一所有者线程操作 FFmpeg；stop 为独立原子信号。
@@ -85,7 +89,7 @@ impl Reader {
         stop: Arc<AtomicBool>,
         timeout: Duration,
     ) -> Result<Self, IoError> {
-        Self::open_with_budget(api, url, secret, stop, timeout, |_| Ok(()))
+        Self::open_with_budget(api, url, secret, stop, timeout, |_| Ok(()), false)
     }
     /// 在复制配置前预留SDK工作区；调用方须持有额度到Reader销毁，包括错误分支。
     /// 原生FFmpeg/网络库分配不计入此回调；旧open保持调用方管理预算的行为。
@@ -96,9 +100,16 @@ impl Reader {
         stop: Arc<AtomicBool>,
         timeout: Duration,
         mut reserve: impl FnMut(usize) -> Result<(), IoError>,
+        file: bool,
     ) -> Result<Self, IoError> {
-        validate_url(url, false)?;
+        // FILE 源（P1-8）：本地路径直传 avformat——跳过 RTSP 协议校验与凭据注入
+        //（探测/选流/读包/预算对本地文件全部通用）。
+        if !file {
+            validate_url(url, false)?;
+        }
         if timeout.is_zero()
+            || url.len() > 16 * 1024
+            || url.chars().any(char::is_control)
             || secret.username.len() + secret.password.len() > 8192
             || secret
                 .username
@@ -111,14 +122,18 @@ impl Reader {
         let deadline = Instant::now()
             .checked_add(timeout)
             .ok_or(IoError::Invalid)?;
-        let mut parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
-        parsed
-            .set_username(&secret.username)
-            .map_err(|_| IoError::Invalid)?;
-        parsed
-            .set_password(Some(&secret.password))
-            .map_err(|_| IoError::Invalid)?;
-        let address = CString::new(parsed.as_str()).map_err(|_| IoError::Invalid)?;
+        let address = if file {
+            CString::new(url).map_err(|_| IoError::Invalid)?
+        } else {
+            let mut parsed = reqwest::Url::parse(url).map_err(|_| IoError::Invalid)?;
+            parsed
+                .set_username(&secret.username)
+                .map_err(|_| IoError::Invalid)?;
+            parsed
+                .set_password(Some(&secret.password))
+                .map_err(|_| IoError::Invalid)?;
+            CString::new(parsed.as_str()).map_err(|_| IoError::Invalid)?
+        };
         let quiet = super::quiet::Guard::new(api.clone())?;
         let mut reader = Self {
             api,
@@ -140,6 +155,7 @@ impl Reader {
                 extradata: Vec::new(),
             },
             framing: Framing::new(1, &[])?,
+            file_first: file,
             _quiet: quiet,
         };
         reader.check()?;
@@ -309,7 +325,11 @@ impl Reader {
                     Some(Err(IoError::Resource))
                 } else {
                     let bytes = std::slice::from_raw_parts(packet.data, packet.size as usize);
-                    let keyframe = packet.flags & AV_PKT_FLAG_KEY != 0;
+                    let mut keyframe = packet.flags & AV_PKT_FLAG_KEY != 0;
+                    if self.file_first {
+                        keyframe = true;
+                        self.file_first = false;
+                    }
                     let converted = self
                         .framing
                         .workspace_bytes(bytes, self.info.codec, self.info.extradata.capacity())

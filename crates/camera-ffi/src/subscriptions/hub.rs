@@ -13,6 +13,7 @@ mod consume;
 mod registry;
 pub(super) use registry::Snapshot;
 use registry::Subscribers;
+mod file;
 mod mjpeg;
 mod native;
 mod pipeline;
@@ -92,6 +93,7 @@ impl Hub {
         }
         let this = hub.clone();
         let stream_mjpeg = source.mjpeg;
+        let stream_file = source.file;
         let thread = source
             .state
             .metrics
@@ -100,6 +102,8 @@ impl Hub {
                 let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     if stream_mjpeg {
                         mjpeg::run(&this);
+                    } else if stream_file {
+                        file::run(&this);
                     } else {
                         this.run();
                     }
@@ -255,6 +259,7 @@ impl Hub {
                 &secret,
                 token.clone(),
                 Duration::from_secs(5),
+                false,
             );
             let result = match opened {
                 Ok(mut reader) => {
