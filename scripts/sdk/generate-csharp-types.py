@@ -53,7 +53,12 @@ def generate():
                 target = typename(value)
             lines.append("        public %s @%s;" % (target, field))
         lines += ["    }", ""]
-    lines += ["    public static class VisionCapabilities {",
+    lines += ["    public static class AbiConstants {",
+              "        public const uint AbiVersion = %dU;" % a.AM_ABI_VERSION,
+              "        public const uint PixelViewMagic = %dU;" % a.AM_PIXEL_VIEW_MAGIC,
+              "        public const uint SubscriptionPull = %dU;" % a.AM_SUB_PULL,
+              "    }",
+              "    public static class VisionCapabilities {",
               "        public const uint OrderedSelection = %dU;" % a.AMV_CAP_ORDERED_SELECTION,
               "    }", "}", ""]
     return "\n".join(lines)

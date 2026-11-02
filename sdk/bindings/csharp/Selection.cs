@@ -8,16 +8,18 @@ namespace AmrtSdk {
             lock (Gate) return SelectionReports.Read(Raw, attemptId, false);
         }
         public Model LoadModelSelected(string path, am_backend_candidate_t[] candidates, out ulong attemptId,
-                                       string profile = null, bool allowFallback = true, uint budgetMs = 1500) {
-            return LoadSelected(path, null, candidates, out attemptId, profile, allowFallback, budgetMs);
+                                       string profile = null, bool allowFallback = true, uint budgetMs = 1500,
+                                       uint intraThreads = 0) {
+            return LoadSelected(path, null, candidates, out attemptId, profile, allowFallback, budgetMs, intraThreads);
         }
         public Model LoadModelMemorySelected(byte[] bytes, am_backend_candidate_t[] candidates, out ulong attemptId,
-                                             string profile = null, bool allowFallback = true, uint budgetMs = 1500) {
+                                             string profile = null, bool allowFallback = true, uint budgetMs = 1500,
+                                             uint intraThreads = 0) {
             if (bytes == null) throw new ArgumentNullException("bytes");
-            return LoadSelected(null, bytes, candidates, out attemptId, profile, allowFallback, budgetMs);
+            return LoadSelected(null, bytes, candidates, out attemptId, profile, allowFallback, budgetMs, intraThreads);
         }
         private Model LoadSelected(string path, byte[] bytes, am_backend_candidate_t[] candidates, out ulong attemptId,
-                                   string profile, bool fallback, uint budget) {
+                                   string profile, bool fallback, uint budget, uint intraThreads) {
             attemptId = 0;
             if (candidates == null || candidates.Length < 1 || candidates.Length > 3)
                 throw new ArgumentException("Provide one to three backend/device candidates", "candidates");
@@ -39,13 +41,13 @@ namespace AmrtSdk {
                 if (bytes == null) {
                     am_model_desc_t desc = Arena.Sized<am_model_desc_t>();
                     desc.path_utf8 = arena.Utf8(System.IO.Path.GetFullPath(path));
-                    desc.profile_id = arena.Utf8(profile); desc.load_mode = profile == null ? 1U : 0U; desc.intra_threads = 2;
+                    desc.profile_id = arena.Utf8(profile); desc.load_mode = profile == null ? 1U : 0U; desc.intra_threads = intraThreads;
                     code = Native.amv_model_load_selected(Raw, arena.Struct(desc), arena.Struct(policy), raw, id);
                 } else {
                     am_model_memory_desc_t desc = Arena.Sized<am_model_memory_desc_t>();
                     desc.bytes = arena.Bytes(bytes); desc.size = (ulong)bytes.LongLength;
                     desc.profile_id = arena.Utf8(profile); desc.load_mode = profile == null ? 1U : 0U;
-                    code = Native.amv_model_load_memory_selected(Raw, arena.Struct(desc), arena.Struct(policy), 2, raw, id);
+                    code = Native.amv_model_load_memory_selected(Raw, arena.Struct(desc), arena.Struct(policy), intraThreads, raw, id);
                 }
                 attemptId = unchecked((ulong)Marshal.ReadInt64(id));
                 Diagnostics.Check(code, "load selected model", Raw, true);

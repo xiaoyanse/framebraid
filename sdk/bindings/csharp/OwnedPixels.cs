@@ -10,16 +10,16 @@ namespace AmrtSdk {
         internal OwnedPixels(object lifetime, object ownerGate, Func<am_pixel_view_t> getter) {
             owner = lifetime; gate = ownerGate; getPixel = getter;
         }
-        public InferenceResult Infer(Model model, out ulong request, am_raw_preprocess_t? preprocessing = null) {
+        public InferenceResult Infer(Model model, out ulong request, am_raw_preprocess_t? preprocessing = null, float confidence = 0.25F) {
             lock (gate) {
-                try { return model.InferPixel(getPixel(), out request, preprocessing); }
+                try { return model.InferPixel(getPixel(), out request, preprocessing, confidence); }
                 finally { GC.KeepAlive(owner); }
             }
         }
         // SDK 默认复制接受的异步输入，只需保护到提交返回，不承诺全链零拷贝。
-        public ulong Submit(Model model, am_raw_preprocess_t? preprocessing = null) {
+        public ulong Submit(Model model, am_raw_preprocess_t? preprocessing = null, float confidence = 0.25F) {
             lock (gate) {
-                try { return model.SubmitPixel(getPixel(), preprocessing); }
+                try { return model.SubmitPixel(getPixel(), preprocessing, confidence); }
                 finally { GC.KeepAlive(owner); }
             }
         }

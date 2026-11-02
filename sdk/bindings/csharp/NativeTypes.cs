@@ -500,6 +500,11 @@ namespace AmrtSdk {
         public uint @shared_pool_state;
     }
 
+    public static class AbiConstants {
+        public const uint AbiVersion = 65537U;
+        public const uint PixelViewMagic = 1095585880U;
+        public const uint SubscriptionPull = 1U;
+    }
     public static class VisionCapabilities {
         public const uint OrderedSelection = 512U;
     }

@@ -459,7 +459,7 @@ class RgbBuffer:
             if not self.handle:
                 raise RuntimeError("RGB buffer is closed")
             pixel = sized(a.am_pixel_view_t)
-            pixel.magic, pixel.view = 1095585880, c.pointer(self._frame)
+            pixel.magic, pixel.view = a.AM_PIXEL_VIEW_MAGIC, c.pointer(self._frame)
             pixel.assoc = c.pointer(self._association) if self._association is not None else None
             return pixel
 
@@ -684,10 +684,13 @@ class CameraContext(Context):
             self._check(self.library.amc_probe_decode_hardware(self._require(), codec, budget_ms), "probe decode hardware")
             return self.get_decode_hardware_report()
 
-    def open_source(self, url, username=None, password=None, rtsp=False, reuse=True):
+    def open_source(self, url, username=None, password=None, rtsp=False, reuse=True, stream=None):
+        """stream：None 按协议取默认（rtsp=main，isapi=isapi）；"main"/"sub" 显式选主/子码流。"""
         desc, credentials = sized(a.am_source_desc_t), sized(a.am_credential_data_t)
         desc.kind, desc.url_utf8 = a.AM_SRC_RTSP_URL if rtsp else a.AM_SRC_ISAPI_URL, url.encode("utf-8")
-        desc.stream_kind_utf8, desc.reuse = b"main" if rtsp else b"isapi", int(reuse)
+        default_kind = b"main" if rtsp else b"isapi"
+        desc.stream_kind_utf8 = stream.encode("utf-8") if stream is not None else default_kind
+        desc.reuse = int(reuse)
         if username is not None:
             credentials.username_utf8 = username.encode("utf-8")
             credentials.password_utf8 = (password or "").encode("utf-8")
@@ -718,19 +721,24 @@ class Source(Resource):
             self._check(self.library.amc_source_set_decode_policy(self._require(),
                 a.AM_DHW_SOFTWARE_ONLY if software_only else a.AM_DHW_PREFER_HW), "set source decode policy")
 
-    def capture(self, cpu_frame=False):
+    def capture(self, cpu_frame=False, deadline_ms=0):
+        """deadline_ms=0 用 SDK 默认抓图超时；上限以 amc_capture_sync 校验为准。"""
         request = sized(a.am_capture_request_t)
         request.output_kind = a.AM_CAP_CPU_FRAME if cpu_frame else a.AM_CAP_ENCODED_JPEG
-        request.deadline_ms = 5000
+        request.deadline_ms = int(deadline_ms)
         pointer = c.POINTER(a.am_captured_image_t)()
         with self._lock:
             self._check(self.library.amc_capture_sync(self._require(), c.byref(request), c.byref(pointer)), "capture")
             return CapturedImage(self.context, pointer, self.library.amc_image_release, False)
 
-    def frames(self, sampling_fps=5, pixel_format=a.AM_PF_RGB8):
+    def frames(self, sampling_fps=5, pixel_format=a.AM_PF_RGB8,
+               queue_max_items=2, queue_max_bytes=32*1024*1024, mode=a.AM_SUB_PULL):
+        """队列参数只对 PULL 订阅开放；PUSH 需配回调封装，绑定层暂不放开。"""
+        if mode != a.AM_SUB_PULL:
+            raise NotImplementedError("PUSH 订阅封装未开放，请使用 PULL（mode=AM_SUB_PULL）")
         desc = sized(a.am_frame_sub_desc_t)
-        desc.pixel_format, desc.sampling_max_fps, desc.mode = pixel_format, sampling_fps, a.AM_SUB_PULL
-        desc.queue_max_items, desc.queue_max_bytes = 2, 32*1024*1024
+        desc.pixel_format, desc.sampling_max_fps, desc.mode = pixel_format, sampling_fps, mode
+        desc.queue_max_items, desc.queue_max_bytes = int(queue_max_items), int(queue_max_bytes)
         handle = c.POINTER(a.amc_frame_sub_t)()
         with self._lock:
             self._check(self.library.amc_subscribe_frames(self._require(), c.byref(desc), c.byref(handle)), "subscribe frames")

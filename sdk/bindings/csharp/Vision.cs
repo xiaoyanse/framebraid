@@ -15,23 +15,30 @@ namespace AmrtSdk {
                 return HardwareReports.Read(Raw, true);
             }
         }
-        public VisionContext(string[] runtimeDirectories, bool sharedFrames) : base(Create(runtimeDirectories, sharedFrames), null,
+        public VisionContext(string[] runtimeDirectories, bool sharedFrames)
+            : this(runtimeDirectories, sharedFrames ? 1UL : 0UL) { }
+        // 线程参数 0=SDK 自适应/默认；totalThreadBudget 与 domainInferSlots 同 amv_init_params_t 语义。
+        public VisionContext(string[] runtimeDirectories, ulong featureFlags = 0UL,
+                             uint inferThreads = 0, uint totalThreadBudget = 0, ulong domainInferSlots = 0)
+            : base(Create(runtimeDirectories, featureFlags, inferThreads, totalThreadBudget, domainInferSlots), null,
             Native.amv_shutdown, Native.amv_object_destroy, null) { }
-        private static IntPtr Create(string[] directories, bool shared) {
+        private static IntPtr Create(string[] directories, ulong featureFlags,
+                                     uint inferThreads, uint totalThreadBudget, ulong domainInferSlots) {
             using (Arena arena = new Arena()) {
                 amv_init_params_t p = Arena.Sized<amv_init_params_t>();
-                p.abi_version = 65536; p.feature_flags = shared ? 1UL : 0UL; p.infer_threads = 2;
+                p.abi_version = AbiConstants.AbiVersion; p.feature_flags = featureFlags;
+                p.infer_threads = inferThreads; p.total_thread_budget = totalThreadBudget; p.domain_infer_slots = domainInferSlots;
                 p.runtime_dirs_utf8 = arena.Directories(directories); p.runtime_dir_count = (uint)directories.Length;
                 IntPtr raw; SdkException.Check(Diagnostics.Initialize(true, arena.Struct(p), out raw), "initialize vision"); return raw;
             }
         }
-        public Model LoadModel(string path, string profile, uint backend, bool strict) {
+        public Model LoadModel(string path, string profile, uint backend, bool strict, uint intraThreads = 0) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_model_desc_t p = Arena.Sized<am_model_desc_t>();
                 am_backend_policy_t policy = Arena.Sized<am_backend_policy_t>();
                 policy.requested = backend; policy.strict = strict ? 1U : 0U;
                 p.path_utf8 = arena.Utf8(System.IO.Path.GetFullPath(path)); p.profile_id = arena.Utf8(profile);
-                p.load_mode = profile == null ? 1U : 0U; p.backend = arena.Struct(policy); p.intra_threads = 2;
+                p.load_mode = profile == null ? 1U : 0U; p.backend = arena.Struct(policy); p.intra_threads = intraThreads;
                 IntPtr raw; Diagnostics.Check(Native.amv_model_load(Raw, arena.Struct(p), out raw), "load model", Raw, true);
                 return new Model(this, raw);
             }
@@ -122,48 +129,48 @@ namespace AmrtSdk {
             }
         }
         internal override void BeforeClose() { EnableNotifications(false); }
-        public InferenceResult InferEncoded(byte[] bytes, bool png, out ulong request, am_raw_preprocess_t? preprocessing) {
+        public InferenceResult InferEncoded(byte[] bytes, bool png, out ulong request, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>();
                 image.kind = png ? 1U : 0U; image.encoded = arena.Bytes(bytes); image.encoded_size = (ulong)bytes.LongLength;
-                return Infer(arena, image, preprocessing, out request);
+                return Infer(arena, image, preprocessing, confidence, out request);
             }
         }
-        public ulong SubmitEncoded(byte[] bytes, bool png, am_raw_preprocess_t? preprocessing) {
+        public ulong SubmitEncoded(byte[] bytes, bool png, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>();
                 image.kind = png ? 1U : 0U; image.encoded = arena.Bytes(bytes); image.encoded_size = (ulong)bytes.LongLength;
-                return Submit(arena, image, preprocessing);
+                return Submit(arena, image, preprocessing, confidence);
             }
         }
         // 低层借用入口；调用方必须保护拥有者直到返回，优先用 owner.Pixels().Infer。
-        public InferenceResult InferPixel(am_pixel_view_t pixel, out ulong request, am_raw_preprocess_t? preprocessing) {
+        public InferenceResult InferPixel(am_pixel_view_t pixel, out ulong request, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>(); image.kind = 2; image.view = arena.Struct(pixel);
-                return Infer(arena, image, preprocessing, out request);
+                return Infer(arena, image, preprocessing, confidence, out request);
             }
         }
         // 默认复制接受的异步输入；提交返回前仍需保护拥有者，优先用 Pixels().Submit。
-        public ulong SubmitPixel(am_pixel_view_t pixel, am_raw_preprocess_t? preprocessing) {
+        public ulong SubmitPixel(am_pixel_view_t pixel, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>(); image.kind = 2; image.view = arena.Struct(pixel);
-                return Submit(arena, image, preprocessing);
+                return Submit(arena, image, preprocessing, confidence);
             }
         }
-        private IntPtr Parameters(Arena arena, am_raw_preprocess_t? preprocessing) {
-            am_infer_params_t p = Arena.Sized<am_infer_params_t>(); p.confidence_threshold = 0.25F;
+        private IntPtr Parameters(Arena arena, am_raw_preprocess_t? preprocessing, float confidence) {
+            am_infer_params_t p = Arena.Sized<am_infer_params_t>(); p.confidence_threshold = confidence;
             if (preprocessing.HasValue) p.raw_preprocess = arena.Struct(preprocessing.Value);
             return arena.Struct(p);
         }
-        private InferenceResult Infer(Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, out ulong request) {
+        private InferenceResult Infer(Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, float confidence, out ulong request) {
             IntPtr result;
-            int status = Native.amv_infer_image_sync(Raw, arena.Struct(image), Parameters(arena, preprocessing), out result, out request);
+            int status = Native.amv_infer_image_sync(Raw, arena.Struct(image), Parameters(arena, preprocessing, confidence), out result, out request);
             if (status == 9) throw new RequestTimeoutException(request);
             Diagnostics.Check(status, "infer image", Raw, true); return new InferenceResult(context, result);
         }
-        private ulong Submit(Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing) {
+        private ulong Submit(Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, float confidence) {
             ulong request;
-            Diagnostics.Check(Native.amv_infer_image_async(Raw, arena.Struct(image), Parameters(arena, preprocessing), out request), "submit inference", Raw, true);
+            Diagnostics.Check(Native.amv_infer_image_async(Raw, arena.Struct(image), Parameters(arena, preprocessing, confidence), out request), "submit inference", Raw, true);
             return request;
         }
     }

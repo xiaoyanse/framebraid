@@ -45,15 +45,17 @@ namespace AmrtSdk {
         private static IntPtr Create(string[] directories, bool shared) {
             using (Arena arena = new Arena()) {
                 amc_init_params_t p = Arena.Sized<amc_init_params_t>();
-                p.abi_version = 65536; p.feature_flags = shared ? 1UL : 0UL;
+                p.abi_version = AbiConstants.AbiVersion; p.feature_flags = shared ? 1UL : 0UL;
                 p.runtime_dirs_utf8 = arena.Directories(directories); p.runtime_dir_count = (uint)directories.Length;
                 IntPtr raw; SdkException.Check(Diagnostics.Initialize(false, arena.Struct(p), out raw), "initialize camera"); return raw;
             }
         }
-        public CameraSource OpenSource(string url, string user, string password, bool rtsp) {
+        // stream：null 按协议取默认（rtsp=main，isapi=isapi）；显式 "main"/"sub" 选主/子码流。
+        public CameraSource OpenSource(string url, string user, string password, bool rtsp, string stream = null) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_source_desc_t desc = Arena.Sized<am_source_desc_t>();
-                desc.kind = rtsp ? 0U : 1U; desc.url_utf8 = arena.Utf8(url); desc.stream_kind_utf8 = arena.Utf8(rtsp ? "main" : "isapi"); desc.reuse = 1;
+                desc.kind = rtsp ? 0U : 1U; desc.url_utf8 = arena.Utf8(url);
+                desc.stream_kind_utf8 = arena.Utf8(stream ?? (rtsp ? "main" : "isapi")); desc.reuse = 1;
                 if (user != null) {
                     am_credential_data_t credentials = Arena.Sized<am_credential_data_t>();
                     credentials.username_utf8 = arena.Utf8(user); credentials.password_utf8 = arena.Utf8(password ?? ""); desc.creds = arena.Struct(credentials);
@@ -82,16 +84,22 @@ namespace AmrtSdk {
         }
         private readonly CameraContext context;
         internal CameraSource(CameraContext owner, IntPtr raw) : base(raw, owner, Native.amc_source_close, Native.amc_object_destroy, null) { context = owner; }
-        public CapturedImage Capture(bool cpuPixels) {
+        // deadlineMs=0 用 SDK 默认抓图超时；上限以 amc_capture_sync 校验为准（超限返回 limitOutOfRange）。
+        public CapturedImage Capture(bool cpuPixels, uint deadlineMs = 0) {
             lock (Gate) using (Arena arena = new Arena()) {
-                am_capture_request_t p = Arena.Sized<am_capture_request_t>(); p.output_kind = cpuPixels ? 1U : 0U; p.deadline_ms = 5000;
+                am_capture_request_t p = Arena.Sized<am_capture_request_t>(); p.output_kind = cpuPixels ? 1U : 0U; p.deadline_ms = deadlineMs;
                 IntPtr image; Diagnostics.Check(Native.amc_capture_sync(Raw, arena.Struct(p), out image), "capture", Raw, false); return new CapturedImage(context, image);
             }
         }
-        public FrameSubscription Frames(uint fps, uint pixelFormat) {
+        // 队列参数只对 PULL 订阅开放；PUSH 需配回调封装（审计 A3，暂未开放，绑定侧拒绝）。
+        public FrameSubscription Frames(uint fps, uint pixelFormat, uint queueMaxItems = 2,
+                                        ulong queueMaxBytes = 32UL * 1024 * 1024, uint mode = AbiConstants.SubscriptionPull) {
+            if (mode != AbiConstants.SubscriptionPull)
+                throw new NotSupportedException("PUSH subscriptions need callback packaging not exposed by these bindings; use PULL");
             lock (Gate) using (Arena arena = new Arena()) {
                 am_frame_sub_desc_t p = Arena.Sized<am_frame_sub_desc_t>();
-                p.pixel_format = pixelFormat; p.sampling_max_fps = fps; p.mode = 1; p.queue_max_items = 2; p.queue_max_bytes = 32UL * 1024 * 1024;
+                p.pixel_format = pixelFormat; p.sampling_max_fps = fps; p.mode = mode;
+                p.queue_max_items = queueMaxItems; p.queue_max_bytes = queueMaxBytes;
                 IntPtr sub; SdkException.Check(Native.amc_subscribe_frames(Raw, arena.Struct(p), out sub), "subscribe frames");
                 return new FrameSubscription(this, context, sub);
             }

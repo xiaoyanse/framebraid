@@ -42,7 +42,7 @@ namespace AmrtSdk {
         public am_pixel_view_t BorrowPixel() {
             lock (gate) {
             if (view == IntPtr.Zero) throw new ObjectDisposedException("RgbBuffer");
-            am_pixel_view_t pixel = Arena.Sized<am_pixel_view_t>(); pixel.magic = 1095585880; pixel.view = view; pixel.assoc = association; return pixel;
+            am_pixel_view_t pixel = Arena.Sized<am_pixel_view_t>(); pixel.magic = AbiConstants.PixelViewMagic; pixel.view = view; pixel.assoc = association; return pixel;
             }
         }
         public void Dispose() {
