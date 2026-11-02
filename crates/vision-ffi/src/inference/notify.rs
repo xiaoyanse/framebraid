@@ -91,7 +91,12 @@ impl Notify {
                 while data.queue.is_empty() && !data.stop {
                     data = match self.wake.wait(data) {
                         Ok(d) => d,
-                        Err(_) => return,
+                        Err(_) => {
+                            // 毒化早退也必须清 alive（审计 F9）：否则 drained() 恒
+                            // false，模型关闭判定永不满足，永久滞留 CLOSING。
+                            self.alive.store(false, Ordering::Release);
+                            return;
+                        }
                     };
                 }
                 if data.stop {

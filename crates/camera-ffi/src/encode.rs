@@ -320,9 +320,22 @@ pub unsafe extern "C" fn amc_encoder_receive(
             }
             if let Ok(mut guard) = object.inner.try_lock() {
                 let inner = guard.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+                // 队列空且暂存非空时先补投（审计 F7 配套）：上次移交失败的包
+                // 经 pending 暂存，资源释放后重试 receive 可取回同一包。
+                if inner.queue.is_empty() && !inner.pending.is_empty() {
+                    deliver_pending(inner, &object.ctx_state)?;
+                }
                 if let Some(queued) = inner.queue.pop_front() {
                     let accounted = queued.data.len() as u64 + 64;
                     inner.queue_bytes = inner.queue_bytes.saturating_sub(accounted);
+                    // F7 预备：data 即将 move 进移交 Payload，失败暂存副本先行备好
+                    // （每包一次小拷贝，占编码耗时 <1%）；成功路径副本随作用域丢弃。
+                    let stash = EncodedPacket {
+                        data: queued.data.clone(),
+                        keyframe: queued.keyframe,
+                        pts: queued.pts,
+                        dts: queued.dts,
+                    };
                     let packet = crate::subscriptions::queue::Item::Encoded(std::sync::Arc::new(
                         crate::subscriptions::queue::Payload {
                             abi: am_encoded_packet_t {
@@ -344,7 +357,16 @@ pub unsafe extern "C" fn amc_encoder_receive(
                             _charge: queued._charge,
                         },
                     ));
-                    let key = packet.transfer(&object.ctx_state)?;
+                    let key = match packet.transfer(&object.ctx_state) {
+                        Ok(key) => key,
+                        Err(error) => {
+                            // 移交失败（审计 F7）：包转入 pending 暂存——原 charge 随
+                            // Payload 归还，暂存期不占队列计数；调用方释放结果缓冲后
+                            // 重试 receive 会先补投 pending 取回同一包，不静默丢失。
+                            inner.pending.push(stash);
+                            return Err(error);
+                        }
+                    };
                     unsafe {
                         out_pkt.write(key as _);
                     }
