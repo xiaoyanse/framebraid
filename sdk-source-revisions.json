@@ -192,8 +192,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
    "previousSha256": null,
-   "sha256": "2e7f49e9724233d0e94b7efd3c1dd062b4e2607890e1379e8e78f651d039af04",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect); previous SHA-256 362c5bff840b2f23…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
+   "sha256": "aed148423cc551a9e47569ab6cd2329c9cc0484d71fc8686a8fd6c4333b2e41f",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect); previous SHA-256 362c5bff840b2f23…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 2e7f49e9724233d0…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
@@ -234,8 +234,8 @@
   {
    "path": "crates/camera-ffi/src/sources/tests.rs",
    "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-   "sha256": "e180f238b8387310ba1f3b11c3e965c91b37fc86cc630bd7a1d9d32456635cac",
-   "reason": "R3 bounded borrowed hardware-report serialization; F2 against 5734e78 adds FILE argument and path diagnostics tests plus ignored FFmpeg EOF fixture, no production changes; prior reviewed sha256 de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19; previous SHA-256 534bf22ce06608e9b824923c5628970ec8a19e7a3b69f09a7487903c1415e92a: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+   "sha256": "3c5165886006281d029cfd9d0c3c5ec98d6dc9ab397387a4b7bb98461acb55e8",
+   "reason": "R3 bounded borrowed hardware-report serialization; F2 against 5734e78 adds FILE argument and path diagnostics tests plus ignored FFmpeg EOF fixture, no production changes; prior reviewed sha256 de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19; previous SHA-256 534bf22ce06608e9b824923c5628970ec8a19e7a3b69f09a7487903c1415e92a: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 e180f238b8387310…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/mod.rs",
@@ -576,14 +576,14 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/nal.rs",
    "previousSha256": "a5363ffc037e76ebb56bb5fceec8afbd8993176fc4c5e8d1fcfa25eef02bca04",
-   "sha256": "0f454d2da4b10d4f5b16dcd0e23589447a11489928af5a881f47b43e3efc99fe",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
+   "sha256": "2cede55f775104380811c09721a92900871a21eea4dee6ee709ca8644f5761ed",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 0f454d2da4b10d4f…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
   },
   {
    "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
    "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
-   "sha256": "fd5dd301999b09cebd0ec2d28eb3d3671c3f5a43cfedbb5b0b6b932ea43ced94",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 3eb540ed21b0f814…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
+   "sha256": "7e809ece96d9d0dcc76800afcff2451fe5ef0bc42d808079232abdeba282d7ab",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 3eb540ed21b0f814…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 fd5dd301999b09ce…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
   },
   {
    "path": "crates/camera-ffi/src/probe.rs",

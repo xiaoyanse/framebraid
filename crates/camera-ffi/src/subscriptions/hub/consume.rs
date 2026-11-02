@@ -47,7 +47,14 @@ impl Hub {
             .charge(cache_bytes, false)
             .map_err(|_| IoError::Resource)?;
         let mut gate = if let Some(codec) = codec {
-            Some(Gate::new(&configuration(codec, &info)).map_err(|_| IoError::Invalid)?)
+            let mut gate = Gate::new(&configuration(codec, &info)).map_err(|_| IoError::Invalid)?;
+            if source.file {
+                // FILE 源（P1-8）：文件起点是受控随机访问起点（参数集由 Framing 在首包
+                // 前置），不同于网络乱流恢复——非 IDR 的 I 帧（x264 open-GOP 常态）照常
+                // 放行输出；IDR 门槛建留流源。
+                gate.started = true;
+            }
+            Some(gate)
         } else {
             None
         };
@@ -60,6 +67,7 @@ impl Hub {
             _charge: _info_charge,
         });
         let info = &stream.info;
+        let mut file_first_packet = source.file;
         std::thread::scope(|scope| {
             let mut execution = pipeline::Execution::new(scope, self, source, stamp);
             let mut pixel_config: Option<Arc<pipeline::Configuration>> = None;
@@ -90,6 +98,13 @@ impl Hub {
                         .observe(codec, &packet.data)
                         .map_err(|_| IoError::Invalid)?;
                     random = is_random(codec, &packet.data);
+                    if source.file && file_first_packet {
+                        // FILE 起点（P1-8）：首包按随机访问点输出（与 Gate started、
+                        // Framing 首包 keyframe 同一语义链），非 IDR I 帧不因缺
+                        // KEYFRAME 标志被订阅队列 waiting_key 全量丢弃。
+                        random = true;
+                        file_first_packet = false;
+                    }
                     if gate.dirty {
                         let _copy_charge = source
                             .state
