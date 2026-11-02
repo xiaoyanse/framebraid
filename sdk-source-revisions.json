@@ -269,7 +269,7 @@
   },
   {
    "path": "crates/vision/src/sdk/runtime.rs",
-   "previousSha256": "d6cd1657d81d94f5172892e2e5e390d3319d3a8b9a582f319f993f6ebec94324",
+   "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
    "sha256": "bc0e7db07a269bbf304e65186f89ab629a691374fa7b8a9067e686ff5f32dd22",
    "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数；E2 DirectML后端枚举扩展（第四推理路径）；feedback P0-1 OV2026：note_openvino_dirs/runtime 失败详情读写清零转发（E1 运行库随 runtime_dirs 提供的合同接线）"
   },
@@ -305,7 +305,7 @@
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
-   "previousSha256": "445a2e1a7ff7bdddac6bb664b536381a49fdae0902f9233d1514d48129fca0f1",
+   "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
    "sha256": "97615fd1c93cc9b16b58bcdd329e12d2b143530d706f66f65a76750186651a12",
    "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied；feedback P0-1 OV2026：intern_detail 诊断文本驻留（'static CStr，按内容去重，旧详情指针不失效）"
   },
@@ -917,7 +917,7 @@
   },
   {
    "path": "crates/vision-ffi/src/inference/backends.rs",
-   "previousSha256": "7c7c5e4c58ad1da3b3f400411a327229a7cf53f22ced7aef71a75b5064c4a194",
+   "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
    "sha256": "e4c38717763756400cd99fac6722d006a90e0b64efde780e26e396f8828e41b3",
    "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证；E2 DirectML后端枚举扩展（第四推理路径）；v0.3.1 audit fix applied；feedback P0-1 OV2026：amv_init 侧 runtime_dirs 扫描登记 OpenVINO 运行库目录"
   },
@@ -1211,13 +1211,13 @@
   },
   {
    "path": "crates/vision/src/engine/ov_sys.rs",
-   "previousSha256": "d348c12cf248e7f788fe0cc64f43f4b85161d0230f4f6479de951eeb7a071b75",
+   "previousSha256": null,
    "sha256": "761ef16deb9d51266658dd2c822298994ea2c9cd28a9ed457f8007809e64549d",
    "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）"
   },
   {
    "path": "crates/vision/src/engine/openvino.rs",
-   "previousSha256": "1e1c7bf07890c4b49833dfd30708bb5e17474f6de6c15fbd318e8c1cc025dc52",
+   "previousSha256": null,
    "sha256": "4de7046c7eb77bdff0b321b155d3e68a2dfb3bafdef5aeb87feddf08341b4ec5",
    "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）"
   },
