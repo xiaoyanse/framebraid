@@ -122,10 +122,34 @@ fn ov_try(status: ov_status_e, stage: &'static str) -> std::result::Result<(), C
     }
 }
 
+/// 期望的运行库线（失败详情用；符号集/枚举/结构在两线逐项核对一致）。
+const EXPECTED_LINE: &str = "expected OpenVINO C API 2025.x/2026.x line (openvino_c.dll)";
+
 /// 编译并装配引擎；候选失败统一 backendStrictUnavailable 触发 selection 回退。
+/// 每次尝试先清零旧失败详情；装载/构造失败时记录检测版本与期望线（进 last_error 详情）。
 pub(crate) fn create(bytes: &[u8]) -> std::result::Result<OpenvinoEngine, CreateFailure> {
-    let api = OvApi::load().map_err(|_| fail("runtime"))?;
-    unsafe { build(api, bytes) }
+    ov_sys::clear_load_failure();
+    let api = OvApi::load().map_err(|failure| {
+        ov_sys::note_load_failure(format!(
+            "openvino native engine unavailable: {}; {EXPECTED_LINE}",
+            failure.reason
+        ));
+        fail("runtime")
+    })?;
+    let built = unsafe { build(api.clone(), bytes) };
+    if let Err(failure) = &built {
+        let version = api.version();
+        let detected = if version.is_empty() {
+            String::from("runtime version unknown")
+        } else {
+            format!("detected runtime {version}")
+        };
+        ov_sys::note_load_failure(format!(
+            "openvino native engine failed at {} (native_code={:?}, {detected}); {EXPECTED_LINE}",
+            failure.stage, failure.native_code
+        ));
+    }
+    built
 }
 
 unsafe fn build(
@@ -468,6 +492,10 @@ mod tests {
             Some(dir) => std::env::set_var("AM_SDK_OPENVINO_DIR", dir),
             None => std::env::remove_var("AM_SDK_OPENVINO_DIR"),
         }
+        // E1 runtime_dirs 登记与失败详情同为进程级状态：每测试恢复到进程启动时
+        // 的干净值，避免登记残留让「环境未设→回退」等档位误找到运行库。
+        super::ov_sys::reset_runtime_dir_for_tests();
+        super::ov_sys::clear_load_failure();
     }
 
     fn ensure_ort_ready() {
@@ -595,7 +623,7 @@ mod tests {
         let bytes = std::fs::read(PARITY_MODEL).expect("模型文件缺失");
         let api = match OvApi::load() {
             Ok(api) => api,
-            Err(reason) => panic!("运行库加载失败: {reason}"),
+            Err(failure) => panic!("运行库加载失败: {}", failure.reason),
         };
         let engine = match unsafe { build(api.clone(), &bytes) } {
             Ok(engine) => engine,
@@ -757,5 +785,124 @@ mod tests {
         };
         assert_eq!(error.0, "vision.backendStrictUnavailable");
         println!("fallback-matrix strict=true -> error=vision.backendStrictUnavailable（不回退）");
+    }
+
+    /// P0-1 接线：runtime_dirs 扫描登记 + 环境变量显式覆盖 + 首次登记优先。
+    /// 用空假文件驱动发现路径，不加载真实 DLL（LoadLibrary 对空文件必失败）。
+    #[test]
+    fn ov_discovery_prefers_env_override_then_first_registered_dir() {
+        let _env = env_lock();
+        restore_ov_dir();
+        let original = std::env::var_os("AM_SDK_OPENVINO_DIR");
+        let base = std::env::temp_dir().join(format!("am-ov-disc-{}", std::process::id()));
+        let first = base.join("first");
+        let second = base.join("second");
+        std::fs::create_dir_all(&first).expect("建目录 first");
+        std::fs::create_dir_all(&second).expect("建目录 second");
+        std::fs::write(first.join(super::ov_sys::library_name()), b"").expect("假库文件 first");
+        std::fs::write(second.join(super::ov_sys::library_name()), b"").expect("假库文件 second");
+        let assert_dir_channel = |reason: &str, dir: &Path, channel: &str| {
+            assert!(reason.contains(channel), "缺渠道标记 {channel}: {reason}");
+            assert!(
+                reason.contains(dir.to_string_lossy().as_ref()),
+                "缺目录 {}: {reason}",
+                dir.display()
+            );
+        };
+        let load_failure = || match OvApi::load() {
+            Ok(_) => panic!("假库文件必然装载失败"),
+            Err(failure) => failure,
+        };
+        std::env::remove_var("AM_SDK_OPENVINO_DIR");
+        // 扫描登记：无库目录跳过，取第一个含 openvino_c 的目录（次序敏感）。
+        crate::sdk::runtime::note_openvino_dirs(&[
+            base.join("absent").to_string_lossy().into_owned(),
+            second.to_string_lossy().into_owned(),
+        ]);
+        let failure = load_failure();
+        assert_dir_channel(&failure.reason, &second, "runtime_dirs");
+        // 环境变量显式覆盖：优先于登记目录。
+        std::env::set_var("AM_SDK_OPENVINO_DIR", &first);
+        let failure = load_failure();
+        assert_dir_channel(&failure.reason, &first, "AM_SDK_OPENVINO_DIR");
+        // 首次登记优先：已登记目录不被后续登记覆盖。
+        std::env::remove_var("AM_SDK_OPENVINO_DIR");
+        super::ov_sys::register_runtime_dir(&first);
+        let failure = load_failure();
+        assert_dir_channel(&failure.reason, &second, "runtime_dirs");
+        match original {
+            Some(dir) => std::env::set_var("AM_SDK_OPENVINO_DIR", dir),
+            None => std::env::remove_var("AM_SDK_OPENVINO_DIR"),
+        }
+        super::ov_sys::reset_runtime_dir_for_tests();
+        super::ov_sys::clear_load_failure();
+        let _ = std::fs::remove_dir_all(&base);
+    }
+
+    /// P0-1 痛点：候选失败详情必须携带定位原因与期望版本线（无运行库环境可跑）。
+    #[test]
+    fn engine_failure_detail_carries_expected_line() {
+        let _env = env_lock();
+        restore_ov_dir();
+        let original = std::env::var_os("AM_SDK_OPENVINO_DIR");
+        std::env::remove_var("AM_SDK_OPENVINO_DIR");
+        super::ov_sys::reset_runtime_dir_for_tests();
+        let failure = match create(b"onnx-bytes") {
+            Ok(_) => panic!("无运行库应候选失败"),
+            Err(failure) => failure,
+        };
+        assert_eq!(failure.error.0, "vision.backendStrictUnavailable");
+        assert_eq!(failure.stage, "runtime");
+        let detail =
+            crate::sdk::runtime::openvino_load_failure().expect("装载失败必须记录诊断详情");
+        assert!(
+            detail.contains("AM_SDK_OPENVINO_DIR unset"),
+            "缺定位原因: {detail}"
+        );
+        assert!(detail.contains("2025.x/2026.x"), "缺期望版本线: {detail}");
+        // 详情随每次引擎构造清零：成功构造不存在，这里验证读取侧可再清空。
+        crate::sdk::runtime::clear_openvino_load_failure();
+        assert!(crate::sdk::runtime::openvino_load_failure().is_none());
+        match original {
+            Some(dir) => std::env::set_var("AM_SDK_OPENVINO_DIR", dir),
+            None => std::env::remove_var("AM_SDK_OPENVINO_DIR"),
+        }
+    }
+
+    /// P0-1 接线复现接入方场景：运行库只经 runtime_dirs 提供（环境变量不设），
+    /// 原生引擎应可装载并真实推理。
+    #[test]
+    #[ignore = "真实 OpenVINO 运行库经 runtime_dirs 登记（进程启动时 AM_SDK_OPENVINO_DIR 指向运行库目录）；E1 接线复现"]
+    fn runtime_dirs_registered_engine_loads_and_infers() {
+        let _env = env_lock();
+        restore_ov_dir();
+        let original = ORIGINAL_OV_DIR
+            .get()
+            .cloned()
+            .flatten()
+            .map(PathBuf::from)
+            .unwrap_or_else(|| panic!("进程启动时须设 AM_SDK_OPENVINO_DIR 指向真实运行库目录"));
+        std::env::remove_var("AM_SDK_OPENVINO_DIR");
+        crate::sdk::runtime::note_openvino_dirs(&[
+            std::env::temp_dir()
+                .join(format!("am-ov-absent-{}", std::process::id()))
+                .to_string_lossy()
+                .into_owned(),
+            original.to_string_lossy().into_owned(),
+        ]);
+        let bytes = std::fs::read(PARITY_MODEL).expect("模型文件缺失");
+        let engine = create(&bytes).expect("runtime_dirs 登记后应能装载原生引擎");
+        assert_eq!(engine.inputs.len(), 1);
+        let len = crate::sdk::byte_count(engine.inputs[0].dtype, &engine.inputs[0].shape).unwrap();
+        let input = TensorData::new(engine.inputs[0].clone(), &vec![0u8; len]).unwrap();
+        let outputs = engine
+            .infer(std::slice::from_ref(&input), 64 << 20)
+            .expect("原生引擎推理");
+        assert!(!outputs.is_empty());
+        println!(
+            "runtime-dirs wiring: outputs={} runtime={}",
+            outputs.len(),
+            engine.api.version()
+        );
     }
 }

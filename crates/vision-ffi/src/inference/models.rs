@@ -232,6 +232,9 @@ unsafe fn load_inner(
         .find(|p| p.is_file())
         .ok_or(AM_ERR_VISION_RUNTIME_MISSING)?;
     am_vision_core::sdk::initialize(&runtime).map_err(error)?;
+    // E1：每次模型加载重扫 runtime_dirs（首次登记优先），并清零上次 OV 失败详情。
+    am_vision_core::sdk::runtime::note_openvino_dirs(&context.runtime_dirs);
+    am_vision_core::sdk::runtime::clear_openvino_load_failure();
     let state = State::get(ctx)?;
     let limits = *lock(&context.limits)?;
     let budget = context.thread_budget.ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
@@ -303,6 +306,22 @@ unsafe fn load_inner(
         Err(e) => {
             state.models.fetch_sub(1, Ordering::AcqRel);
             drop(permit);
+            // P0-1/P1-6：原生引擎候选失败详情（检测版本/期望线）进 ctx 的 last_error，
+            // 接入方不看源码即可定位；详情仅在本次加载真实走过 OV 路径时存在。
+            if e == AM_ERR_VISION_BACKEND_STRICT_UNAVAILABLE {
+                if let Some(detail) = am_vision_core::sdk::runtime::openvino_load_failure() {
+                    am_sdk_support::diagnostics::record(
+                        crate::domain(),
+                        ctx,
+                        e,
+                        am_sdk_support::diagnostics::Detail {
+                            message: super::intern_detail(&detail),
+                            source: c"vision.backend.openvino-native",
+                            fault_class: AM_FAULT_NONE as u32,
+                        },
+                    );
+                }
+            }
             return Err(e);
         }
     };

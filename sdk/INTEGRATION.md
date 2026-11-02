@@ -293,8 +293,8 @@ v0.3.0 起公开的三组扩展入口。合同语义以 [ABI 设计](../docs/des
 
 第五推理路径：OpenVINO C API 直连（`openvino_c.dll`），不经 ORT 的 OpenVINO EP。与 `AM_BACKEND_OPENVINO=1`（ORT 会话 + OpenVINO EP，provider 桥接受 Intel provider 运行库符号缺失限制）是两条不同路径：4 = 原生引擎、无 ORT 参与。
 
-- **前置运行库**：进程环境变量 `AM_SDK_OPENVINO_DIR` 指向 OpenVINO 运行库目录（init 前设置，进程级）。目录内须含 `openvino_c.dll` 及完整依赖闭包——openvino 主库/插件、ONNX 前端及其传递依赖（libprotobuf、libprotobuf-lite、abseil_dll、tbb12 等，E1 验证闭包共 11 个 DLL）。缺目录、缺文件或符号缺失都按候选失败进入 selection 报告。该目录独立于 vision `runtime_dirs` 的 onnxruntime.dll，两者可并存，ORT 路径不受影响。
-- **版本线**：已验证版本 2026.1.0（vcpkg 构建，逐符号核签 28 个 FFI 符号 + 真实对拍）；ABI 合同段（dual-dll-abi.md E1）写作"2025.x 线"，与实测登记存在出入，兼容矩阵以[交付状态](../docs/RELEASE_STATUS.md)登记为准，不在本说明新设承诺。v0.3.2 起装载时读取运行库版本，版本不可用/不匹配的失败详情携带检测到的版本与期望版本线（反馈 P0-1/P1-6），不再需要对照文档倒推。
+- **前置运行库（v0.3.2 起与 runtime_dirs 打通）**：运行库目录随 vision `amv_init` 的 `runtime_dirs` 提供——目录内须含 `openvino_c.dll` 及其依赖闭包（openvino 主库/插件、ONNX 前端等；Python wheel `site-packages/openvino/libs/` 即满足，wheel 闭包无需 vcpkg 版的 libprotobuf/abseil 传递依赖文件）。进程环境变量 `AM_SDK_OPENVINO_DIR` 为显式操作员覆盖，优先于 `runtime_dirs`（不设即用 runtime_dirs）。定位不到、缺文件或符号缺失都按候选失败进入 selection 报告；`onnxruntime.dll` 与 `openvino_c.dll` 可在不同目录并存，ORT 路径不受影响。
+- **版本线**：单一绑定覆盖 2025.x/2026.x 两线（C API 符号集/元素类型枚举/结构布局逐项核对一致，无需版本分路径）；实测矩阵 2026.2.1（wheel）/ 2026.1.0（vcpkg，逐符号核签 28 个 FFI 符号 + 真实对拍）/ 2025.3.0（wheel）三线装载+编译+推理+对拍全过，登记以[交付状态](../docs/RELEASE_STATUS.md)为准。候选失败详情（`amv_get_last_error`）携带定位原因（渠道+路径）、检测到的运行库版本与期望版本线（反馈 P0-1/P1-6），不再需要对照文档倒推。
 - **参数**：经有序选择 `amv_model_load_selected` 候选 `(4, 0)`（backend=4、device_id=0），或旧入口 backend 策略 requested=4 + strict/回退语义。OpenVINO 首版固定 CPU 设备并显式配置线程。
 - **错误处理**：strict 候选失败返回 `vision.backendStrictUnavailable`，selection 报告含逐候选尝试阶段与错误（如 stage=runtime）；允许回退时回退 ORT CPU，回退原因进 selection 报告，不静默降级。回退矩阵（目录缺失 / 环境未设 / strict 拒绝）已实测。
 - **已知限制**：不支持该枚举值的旧绑定收到 `sdk.invalidArgument`。GPU 帧直传为后续增强，首版原生引擎走 CPU 输入（GPU 帧输入能力位对两引擎统一按实际可载置位）。CPU+单加速后端约束保持；同进程多套 OpenVINO 副本或预载冲突不在承诺内。

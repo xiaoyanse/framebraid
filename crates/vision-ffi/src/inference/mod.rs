@@ -39,3 +39,24 @@ pub fn error(e: am_vision_core::Error) -> i32 {
 pub fn lock<T>(mutex: &std::sync::Mutex<T>) -> Result<std::sync::MutexGuard<'_, T>> {
     mutex.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
 }
+/// 诊断详情要求 'static 文本；按内容驻留（失败详情种类有限，进程生命周期保活，
+/// 旧详情指针不随后续失败失效——与 sdk-support 诊断寿命约定一致）。
+pub fn intern_detail(text: &str) -> &'static std::ffi::CStr {
+    static INTERNED: std::sync::Mutex<Vec<&'static std::ffi::CStr>> =
+        std::sync::Mutex::new(Vec::new());
+    let text = text.split('\0').next().unwrap_or("");
+    let mut pool = match INTERNED.lock() {
+        Ok(guard) => guard,
+        Err(poisoned) => poisoned.into_inner(),
+    };
+    if let Some(found) = pool.iter().find(|item| item.to_bytes() == text.as_bytes()) {
+        return found;
+    }
+    let leaked: &'static std::ffi::CStr = match std::ffi::CString::new(text) {
+        Ok(value) => Box::leak(value.into_boxed_c_str()),
+        // split('\0') 已排除内嵌 NUL；此分支不可达，兜底空串。
+        Err(_) => c"",
+    };
+    pool.push(leaked);
+    leaked
+}

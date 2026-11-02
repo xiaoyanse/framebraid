@@ -1,9 +1,11 @@
 //! OpenVINO C API 最小 FFI：显式加载 openvino_c 运行库，符号存在性校验后逐名解析。
 //! 签名依据 vcpkg openvino 头文件（openvino/c/*.h）；升级运行库大版本须复核。
+//! C API 符号集与元素类型枚举在 2025.x/2026.x 两线一致（2026-11-03 逐符号对比），
+//! 单一绑定覆盖两线，无需按版本分路径。
 #![allow(non_camel_case_types)]
 use std::ffi::{c_char, c_void, CStr};
-use std::path::Path;
-use std::sync::Arc;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex};
 
 pub type ov_status_e = i32;
 pub type ov_element_type_e = u32;
@@ -111,26 +113,103 @@ pub struct OvApi {
     /// 诊断用：错误消息只进冒烟/联调日志，不进 selection 报告（同 ORT 键纪律）。
     #[allow(dead_code)]
     pub get_last_err_msg: unsafe extern "C" fn() -> *const c_char,
-    /// 装载即取的运行库版本（诊断用：运行库冒烟/E1.6 对拍读，正常推理不读）。
-    #[allow(dead_code)]
+    /// 装载即取的运行库版本（诊断用：失败详情/E1.6 对拍读，正常推理不读）。
     version: String,
 }
 
 impl OvApi {
-    /// 显式加载 openvino_c 运行库：目录取 AM_SDK_OPENVINO_DIR；缺目录/缺文件/
-    /// 符号缺失都作为候选失败返回，由 selection 回退下一候选。
-    pub fn load() -> Result<Arc<Self>, &'static str> {
-        let dir = std::env::var_os("AM_SDK_OPENVINO_DIR").ok_or("未配置 OpenVINO 运行库目录")?;
-        let path = Path::new(&dir).join(library_name());
-        if !path.is_file() {
-            return Err("openvino_c 运行库文件缺失");
-        }
-        let library = unsafe { open_library(&path) }.map_err(|_| "openvino_c 加载失败")?;
-        unsafe { Self::resolve(library) }
+    /// 检测到的运行库版本（buildNumber，如 "2026.2.1-…"；读取失败为空串）。
+    pub fn version(&self) -> &str {
+        &self.version
     }
 }
 
-fn library_name() -> &'static str {
+/// 已登记的 OpenVINO 运行库目录（amv_init runtime_dirs 扫描写入；首次登记优先）。
+/// ABI 合同（dual-dll-abi.md E1）：OpenVINO 运行库随 vision runtime_dirs 提供；
+/// AM_SDK_OPENVINO_DIR 环境变量为显式操作员覆盖，优先于登记目录。
+static REGISTERED_DIR: Mutex<Option<PathBuf>> = Mutex::new(None);
+/// 最近一次原生引擎装载/构造失败的诊断详情（检测版本/期望线/路径上下文）。
+/// 只在模型加载失败路径读取（amv_get_last_error 详情），随每次引擎构造尝试清零。
+static LAST_FAILURE: Mutex<Option<String>> = Mutex::new(None);
+
+/// 装载失败的结构化原因：仅进诊断详情（last_error message），不进 selection 报告。
+pub(crate) struct LoadFailure {
+    pub reason: String,
+}
+
+/// 登记 runtime_dirs 中的 OpenVINO 运行库目录；首次登记优先，后续登记不覆盖。
+pub(crate) fn register_runtime_dir(dir: &Path) {
+    if let Ok(mut slot) = REGISTERED_DIR.lock() {
+        if slot.is_none() {
+            *slot = Some(dir.to_path_buf());
+        }
+    }
+}
+
+/// 记录引擎侧诊断详情（装载/构造失败上下文，含检测到的运行库版本）。
+pub(crate) fn note_load_failure(detail: String) {
+    if let Ok(mut slot) = LAST_FAILURE.lock() {
+        *slot = Some(detail);
+    }
+}
+
+/// 测试专用：清空登记目录，恢复进程启动时的发现状态（与 ENV_LOCK 配合）。
+#[cfg(test)]
+pub(crate) fn reset_runtime_dir_for_tests() {
+    if let Ok(mut slot) = REGISTERED_DIR.lock() {
+        *slot = None;
+    }
+}
+
+/// 读取最近一次原生引擎失败详情；每次模型加载前由 FFI 层清零后再取。
+pub(crate) fn load_failure() -> Option<String> {
+    LAST_FAILURE.lock().ok().and_then(|slot| slot.clone())
+}
+
+pub(crate) fn clear_load_failure() {
+    if let Ok(mut slot) = LAST_FAILURE.lock() {
+        *slot = None;
+    }
+}
+
+impl OvApi {
+    /// 显式加载 openvino_c 运行库：目录解析顺序为 AM_SDK_OPENVINO_DIR（显式覆盖）
+    /// → runtime_dirs 登记目录；缺目录/缺文件/符号缺失都作为候选失败返回，
+    /// 由 selection 回退下一候选。
+    pub fn load() -> Result<Arc<Self>, LoadFailure> {
+        if let Some(dir) = std::env::var_os("AM_SDK_OPENVINO_DIR") {
+            return load_from(Path::new(&dir), "AM_SDK_OPENVINO_DIR");
+        }
+        let registered = REGISTERED_DIR.lock().ok().and_then(|slot| slot.clone());
+        match registered {
+            Some(dir) => load_from(&dir, "runtime_dirs"),
+            None => Err(LoadFailure {
+                reason: "openvino_c runtime not located: AM_SDK_OPENVINO_DIR unset and no runtime_dirs entry provides it".into(),
+            }),
+        }
+    }
+}
+
+fn load_from(dir: &Path, channel: &str) -> Result<Arc<OvApi>, LoadFailure> {
+    let path = dir.join(library_name());
+    if !path.is_file() {
+        return Err(LoadFailure {
+            reason: format!(
+                "openvino_c runtime file missing (channel {channel}: {})",
+                path.display()
+            ),
+        });
+    }
+    let library = unsafe { open_library(&path) }.map_err(|_| LoadFailure {
+        reason: format!(
+            "openvino_c library load failed (dependency resolution; channel {channel}: {})",
+            path.display()
+        ),
+    })?;
+    unsafe { OvApi::resolve(library) }
+}
+
+pub(crate) fn library_name() -> &'static str {
     if cfg!(windows) {
         "openvino_c.dll"
     } else if cfg!(target_os = "macos") {
@@ -163,13 +242,15 @@ unsafe fn open_library(path: &Path) -> Result<libloading::Library, libloading::E
 impl OvApi {
     /// 符号存在性校验装载；库句柄 forget 保活（进程生命周期，cuda_sys 同策略）。
     #[allow(clippy::missing_transmute_annotations)]
-    unsafe fn resolve(library: libloading::Library) -> Result<Arc<Self>, &'static str> {
-        let sym = |name: &[u8]| -> Result<*mut c_void, &'static str> {
+    unsafe fn resolve(library: libloading::Library) -> Result<Arc<Self>, LoadFailure> {
+        let sym = |name: &[u8]| -> Result<*mut c_void, LoadFailure> {
             unsafe {
-                library
-                    .get(name)
-                    .map(|s| *s)
-                    .map_err(|_| "OpenVINO 符号缺失")
+                library.get(name).map(|s| *s).map_err(|_| LoadFailure {
+                    reason: format!(
+                        "OpenVINO symbol missing: {}",
+                        String::from_utf8_lossy(&name[..name.len() - 1])
+                    ),
+                })
             }
         };
         // transmute 源类型标注为 *mut c_void（符号地址），目标由字段声明固定。

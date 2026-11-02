@@ -232,6 +232,32 @@ pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<Backend
         .collect())
 }
 
+/// E1 原生引擎运行库登记：在 runtime_dirs 中定位 openvino_c 运行库目录并登记
+/// （首次登记优先）。定位不到不视为错误——OpenVINO 原生是可选候选，
+/// 由引擎装载期按候选不可用回退；ABI 合同（dual-dll-abi.md E1）约定
+/// OpenVINO 运行库随 vision runtime_dirs 提供，AM_SDK_OPENVINO_DIR 为显式覆盖。
+pub fn note_openvino_dirs(dirs: &[String]) {
+    for dir in dirs {
+        if Path::new(dir)
+            .join(crate::engine::ov_sys::library_name())
+            .is_file()
+        {
+            crate::engine::ov_sys::register_runtime_dir(Path::new(dir));
+            return;
+        }
+    }
+}
+
+/// 最近一次 OpenVINO 原生引擎失败详情（检测版本/期望线）；模型加载失败时进
+/// amv_get_last_error 详情，读取前由 FFI 层在每次模型加载前清零保证新鲜度。
+pub fn openvino_load_failure() -> Option<String> {
+    crate::engine::ov_sys::load_failure()
+}
+
+pub fn clear_openvino_load_failure() {
+    crate::engine::ov_sys::clear_load_failure()
+}
+
 #[cfg(test)]
 mod backend_tests {
     use super::*;

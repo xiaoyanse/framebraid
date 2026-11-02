@@ -31,6 +31,9 @@ unsafe fn initialize_inner(
     let result = (|| {
         let entry = domain.get(key)?;
         let c = entry.data::<Context>()?;
+        // E1：OpenVINO 原生引擎运行库按合同随 runtime_dirs 提供；定位不到不报错
+        //（可选候选，装载期回退）。环境变量 AM_SDK_OPENVINO_DIR 仍可显式覆盖。
+        runtime::note_openvino_dirs(&c.runtime_dirs);
         if !retry && c.runtime_dirs.is_empty() && c.flags & AM_INIT_SHARED_FRAMES as u64 != 0 {
             return Ok(());
         }
