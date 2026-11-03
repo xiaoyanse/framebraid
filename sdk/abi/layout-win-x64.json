@@ -916,6 +916,34 @@
         "boxes": 8
       }
     },
+    "am_vocab_entry_t": {
+      "size": 32,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "label_utf8": 8,
+        "token_ids": 16,
+        "token_rows": 24,
+        "token_cols": 28
+      }
+    },
+    "am_vocab_hit_t": {
+      "size": 8,
+      "align": 4,
+      "offsets": {
+        "entry_index": 0,
+        "prompt_index": 4
+      }
+    },
+    "am_vocab_hit_map_t": {
+      "size": 16,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "count": 4,
+        "hits": 8
+      }
+    },
     "am_classify_entry_t": {
       "size": 32,
       "align": 8,
@@ -992,7 +1020,7 @@
       }
     },
     "amv_result_t": {
-      "size": 208,
+      "size": 216,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -1010,7 +1038,8 @@
         "raw_output_count": 176,
         "raw_outputs": 184,
         "infer_start_ms": 192,
-        "infer_end_ms": 200
+        "infer_end_ms": 200,
+        "vocab_hits": 208
       }
     },
     "am_realtime_policy_t": {

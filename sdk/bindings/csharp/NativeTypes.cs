@@ -114,6 +114,7 @@ namespace AmrtSdk {
         public IntPtr @raw_outputs;
         public long @infer_start_ms;
         public long @infer_end_ms;
+        public IntPtr @vocab_hits;
     }
 
     [StructLayout(LayoutKind.Sequential)]

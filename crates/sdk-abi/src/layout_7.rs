@@ -16,6 +16,71 @@ fn am_detect_result_t_matches_c() {
     );
 }
 #[test]
+fn am_vocab_entry_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_vocab_entry_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_vocab_entry_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_entry_t, struct_size),
+        0,
+        "am_vocab_entry_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_entry_t, label_utf8),
+        8,
+        "am_vocab_entry_t.label_utf8"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_entry_t, token_ids),
+        16,
+        "am_vocab_entry_t.token_ids"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_entry_t, token_rows),
+        24,
+        "am_vocab_entry_t.token_rows"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_entry_t, token_cols),
+        28,
+        "am_vocab_entry_t.token_cols"
+    );
+}
+#[test]
+fn am_vocab_hit_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_vocab_hit_t>(), 8);
+    assert_eq!(core::mem::align_of::<am_vocab_hit_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_t, entry_index),
+        0,
+        "am_vocab_hit_t.entry_index"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_t, prompt_index),
+        4,
+        "am_vocab_hit_t.prompt_index"
+    );
+}
+#[test]
+fn am_vocab_hit_map_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_vocab_hit_map_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_vocab_hit_map_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_map_t, struct_size),
+        0,
+        "am_vocab_hit_map_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_map_t, count),
+        4,
+        "am_vocab_hit_map_t.count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_map_t, hits),
+        8,
+        "am_vocab_hit_map_t.hits"
+    );
+}
+#[test]
 fn am_classify_entry_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_classify_entry_t>(), 32);
     assert_eq!(core::mem::align_of::<am_classify_entry_t>(), 8);
@@ -198,135 +263,5 @@ fn am_obb_instance_t_matches_c() {
         core::mem::offset_of!(am_obb_instance_t, angle_normalized),
         60,
         "am_obb_instance_t.angle_normalized"
-    );
-}
-#[test]
-fn am_obb_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_obb_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_obb_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_obb_result_t, count),
-        0,
-        "am_obb_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_result_t, instances),
-        8,
-        "am_obb_result_t.instances"
-    );
-}
-#[test]
-fn amv_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<amv_result_t>(), 208);
-    assert_eq!(core::mem::align_of::<amv_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, struct_size),
-        0,
-        "amv_result_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, request_id),
-        8,
-        "amv_result_t.request_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, task),
-        16,
-        "amv_result_t.task"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, frame),
-        24,
-        "amv_result_t.frame"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, model),
-        32,
-        "amv_result_t.model"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, execution),
-        56,
-        "amv_result_t.execution"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, transform),
-        88,
-        "amv_result_t.transform"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, pose),
-        96,
-        "amv_result_t.pose"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, detect),
-        112,
-        "amv_result_t.detect"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, classify),
-        128,
-        "amv_result_t.classify"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, segment),
-        144,
-        "amv_result_t.segment"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, obb),
-        160,
-        "amv_result_t.obb"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, raw_output_count),
-        176,
-        "amv_result_t.raw_output_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, raw_outputs),
-        184,
-        "amv_result_t.raw_outputs"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, infer_start_ms),
-        192,
-        "amv_result_t.infer_start_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(amv_result_t, infer_end_ms),
-        200,
-        "amv_result_t.infer_end_ms"
-    );
-}
-#[test]
-fn am_realtime_policy_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_realtime_policy_t>(), 20);
-    assert_eq!(core::mem::align_of::<am_realtime_policy_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, struct_size),
-        0,
-        "am_realtime_policy_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, max_inflight),
-        4,
-        "am_realtime_policy_t.max_inflight"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, replace_oldest),
-        8,
-        "am_realtime_policy_t.replace_oldest"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, slot_count),
-        12,
-        "am_realtime_policy_t.slot_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, fair_round_robin),
-        16,
-        "am_realtime_policy_t.fair_round_robin"
     );
 }

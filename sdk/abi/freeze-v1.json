@@ -7,23 +7,23 @@
   "files": [
     {
       "path": "sdk/include/am_camera.h",
-      "sha256": "0970ef3debf023539b0aaa7f9de8f6e924007cb8e70b0b1fdc94062705a94398",
-      "bytes": 8374
+      "sha256": "a3b142aa6f69e5ea37fe56f66fcd4f61a7c08a610fc2ac1d5437fc953d0351a0",
+      "bytes": 10217
     },
     {
       "path": "sdk/include/am_vision.h",
-      "sha256": "be4aa93847c5f3cbde897900791e68b7773347c778ca82a8386945100b34d7be",
-      "bytes": 6717
+      "sha256": "86de0f9eebba863e320017bfaaf95b25427bc39a53109dfcd98132f419039aa7",
+      "bytes": 7079
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "e56d61be2dd3e8623571b9ddb76bd421e5fec1993e3c307c5d26665515548ae0",
-      "bytes": 66790
+      "sha256": "c795f77ac02bd32e065517eda06740516bbd231bd6b28487a2603b76db09a5b1",
+      "bytes": 74038
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "e18e730a4e8e182672f059ffec6bd0bd23e75891ab5f1024b3e946c725bf9f00",
-      "bytes": 2376
+      "sha256": "8960c3dea8780810983bfb1280e4829b7d9b5346084df52e614c0bbc444ec926",
+      "bytes": 2469
     },
     {
       "path": "sdk/abi/defaults.json",
@@ -32,8 +32,8 @@
     },
     {
       "path": "sdk/abi/layout-win-x64.json",
-      "sha256": "b7ee70a9d3f3277fc91a549d8e28a60f7e7859dcf5f3e110ae82b4e14cfe58f2",
-      "bytes": 5536
+      "sha256": "2534815b025c9e3dec8277d1e63486713de05175230e85ed8e920d4c6cbb4a04",
+      "bytes": 24735
     },
     {
       "path": "sdk/abi/decode-hardware-report-v1.schema.json",
@@ -52,8 +52,8 @@
     },
     {
       "path": "crates/vision/resources/profiles.json",
-      "sha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
-      "bytes": 3526
+      "sha256": "64e7597a591fb4f90c5c0d355e57314ebb3fc16ab784bc72cea0ef7cb22d6c89",
+      "bytes": 4032
     },
     {
       "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",

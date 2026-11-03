@@ -165,6 +165,7 @@ pub const AM_TASK_CLASSIFY: am_task_e = 3;
 pub const AM_TASK_SEGMENT: am_task_e = 4;
 pub const AM_TASK_OBB: am_task_e = 5;
 pub const AM_TASK_GENERIC: am_task_e = 6;
+pub const AM_TASK_TEXT_ENCODER: am_task_e = 7;
 pub type am_source_event_e = i32;
 pub const AM_EVENT_STATE_CHANGED: am_source_event_e = 0;
 pub const AM_EVENT_GENERATION_CHANGED: am_source_event_e = 1;

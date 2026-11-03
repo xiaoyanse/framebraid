@@ -214,6 +214,15 @@ class am_detect_box_t(Structure):
 class am_detect_result_t(Structure):
     pass
 
+class am_vocab_entry_t(Structure):
+    pass
+
+class am_vocab_hit_t(Structure):
+    pass
+
+class am_vocab_hit_map_t(Structure):
+    pass
+
 class am_classify_entry_t(Structure):
     pass
 
@@ -416,6 +425,7 @@ AM_TASK_CLASSIFY = 3
 AM_TASK_SEGMENT = 4
 AM_TASK_OBB = 5
 AM_TASK_GENERIC = 6
+AM_TASK_TEXT_ENCODER = 7
 
 am_source_event_e = c_int32
 AM_EVENT_STATE_CHANGED = 0
@@ -759,6 +769,14 @@ am_detect_box_t._fields_ = [
     ("class_name_utf8", c_char_p),
 ]
 
+am_vocab_entry_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("label_utf8", c_char_p),
+    ("token_ids", POINTER(c_int64)),
+    ("token_rows", c_uint32),
+    ("token_cols", c_uint32),
+]
+
 am_classify_entry_t._fields_ = [
     ("class_id", c_int32),
     ("class_name_utf8", c_char_p),
@@ -997,15 +1015,9 @@ am_detect_result_t._fields_ = [
     ("boxes", POINTER(am_detect_box_t)),
 ]
 
-am_segment_instance_t._fields_ = [
-    ("bounds", c_float * 4),
-    ("confidence", c_float),
-    ("class_id", c_int32),
-    ("mask_width", c_uint32),
-    ("mask_height", c_uint32),
-    ("mask_stride_bytes", c_uint32),
-    ("mask_bits", POINTER(c_uint8)),
-    ("roi_map", am_roi_map_t),
+am_classify_result_t._fields_ = [
+    ("count", c_uint32),
+    ("entries", POINTER(am_classify_entry_t)),
 ]
 
 am_obb_result_t._fields_ = [
@@ -1155,9 +1167,20 @@ am_batching_stats_t._fields_ = [
     ("rejected_items", c_uint64),
 ]
 
-am_classify_result_t._fields_ = [
-    ("count", c_uint32),
-    ("entries", POINTER(am_classify_entry_t)),
+am_vocab_hit_t._fields_ = [
+    ("entry_index", c_int32),
+    ("prompt_index", c_int32),
+]
+
+am_segment_instance_t._fields_ = [
+    ("bounds", c_float * 4),
+    ("confidence", c_float),
+    ("class_id", c_int32),
+    ("mask_width", c_uint32),
+    ("mask_height", c_uint32),
+    ("mask_stride_bytes", c_uint32),
+    ("mask_bits", POINTER(c_uint8)),
+    ("roi_map", am_roi_map_t),
 ]
 
 am_pixel_view_t._fields_ = [
@@ -1224,9 +1247,10 @@ am_pose_detection_t._fields_ = [
     ("keypoints", POINTER(am_keypoint_t)),
 ]
 
-am_segment_result_t._fields_ = [
+am_vocab_hit_map_t._fields_ = [
+    ("struct_size", c_uint32),
     ("count", c_uint32),
-    ("instances", POINTER(am_segment_instance_t)),
+    ("hits", POINTER(am_vocab_hit_t)),
 ]
 
 am_shared_frame_view_t._fields_ = [
@@ -1251,6 +1275,11 @@ am_batch_item_t._fields_ = [
     ("tensors", POINTER(am_tensor_in_t)),
     ("slot_key", c_uint64),
     ("raw_preprocess", POINTER(am_raw_preprocess_t)),
+]
+
+am_segment_result_t._fields_ = [
+    ("count", c_uint32),
+    ("instances", POINTER(am_segment_instance_t)),
 ]
 
 am_frame_sub_desc_t._fields_ = [
@@ -1299,6 +1328,7 @@ amv_result_t._fields_ = [
     ("raw_outputs", POINTER(am_tensor_out_t)),
     ("infer_start_ms", c_int64),
     ("infer_end_ms", c_int64),
+    ("vocab_hits", POINTER(am_vocab_hit_map_t)),
 ]
 
 AM_ABI_VERSION = 65537
@@ -1568,6 +1598,7 @@ FUNCTIONS = {
     "amv_infer_image_async": (am_status_t, [POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
     "amv_infer_tensors_sync": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),
     "amv_infer_tensors_async": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
+    "amv_vocab_bind": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_vocab_entry_t), c_uint32]),
     "amv_infer_batch": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_batch_item_t), POINTER(am_batch_options_t), POINTER(am_batch_receipt_t)]),
     "amv_receipt_release": (am_status_t, [POINTER(am_batch_receipt_t)]),
     "amv_model_configure_batching": (am_status_t, [POINTER(amv_model_t), POINTER(am_batching_options_t)]),
