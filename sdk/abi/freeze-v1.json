@@ -7,8 +7,8 @@
   "files": [
     {
       "path": "sdk/include/am_camera.h",
-      "sha256": "a3b142aa6f69e5ea37fe56f66fcd4f61a7c08a610fc2ac1d5437fc953d0351a0",
-      "bytes": 10217
+      "sha256": "c9546790d60946f9a3c600c72b3cd3be52ed3d12275c682023ebf069f0dc78a6",
+      "bytes": 10558
     },
     {
       "path": "sdk/include/am_vision.h",
@@ -17,12 +17,12 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "c795f77ac02bd32e065517eda06740516bbd231bd6b28487a2603b76db09a5b1",
-      "bytes": 74038
+      "sha256": "547299ad2af249b0d8cb2eab14a82c36662129ebff9e0fe1b8e54405f1016b9f",
+      "bytes": 74660
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "8960c3dea8780810983bfb1280e4829b7d9b5346084df52e614c0bbc444ec926",
+      "sha256": "d6b7b3faca0b7dd8e41aa2383e18ce92a07eaa0a2a64660de5ac973560b323e7",
       "bytes": 2469
     },
     {
@@ -52,8 +52,8 @@
     },
     {
       "path": "crates/vision/resources/profiles.json",
-      "sha256": "64e7597a591fb4f90c5c0d355e57314ebb3fc16ab784bc72cea0ef7cb22d6c89",
-      "bytes": 4032
+      "sha256": "eeaff524f2794a3981a925dbbbc6803cf0938fd1a388b0357cd84c653acc8551",
+      "bytes": 4319
     },
     {
       "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",

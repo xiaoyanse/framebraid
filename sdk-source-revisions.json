@@ -618,8 +618,8 @@
   {
    "path": "crates/sdk-abi/src/constants.rs",
    "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-   "sha256": "42631ad9a378f34cb9943e15e8b5a18421b6ea7213aff26b2385963df4b393de",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied"
+   "sha256": "14cc848f5c87b0dd511dcd5246272aad08f0b90bdbe49ab64ee824b2fedf6eca",
+   "reason": "v0.5.0 version bump: AM_ABI_VERSION 65538 (C ABI 1.2), regenerated constants/status headers"
   },
   {
    "path": "crates/sdk-abi/src/defaults.rs",

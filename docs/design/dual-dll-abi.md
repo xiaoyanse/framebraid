@@ -5,6 +5,8 @@
 状态：**1.0实施冻结**——2026-10-25用户授权收口并继续DLL/共享帧实施；当前定稿以[冻结记录](dual-sdk-abi-freeze-v1.md)和`sdk/abi/freeze-v1.json`为准。本文保留各轮历史整改和原候选讨论，历史“待回审/候选”不再覆盖上述当前定稿。冻结是设计状态，不等于121个入口已实现或SDK-G0～G3通过。
 
 本地R2新增ABI 1.1，以[兼容扩展冻结依据](dual-sdk-abi-freeze-v1.1.md)和当前freeze-v1.json为准；1.0正文与历史快照保留。JSON字段约束也纳入冻结：`sdk/abi/decode-hardware-report-v1.schema.json`。源码新增不等于已发布，旧v0.1.0制品仍为ABI 1.0。
+
+**ABI 1.2（v0.5.0，2026-11-04 兼容新增）**：`AM_ABI_VERSION` 65537→**65538**。新增面——camera：`amc_source_seek`（三档 `am_seek_mode_e`）/`amc_source_get_duration`/`amc_source_set_rate`/`amc_source_set_loop`（§2.4 FILE 阶段 2，EOF 复活+RESYNC 生效事实源语义）；vision：`amv_vocab_bind`（§4.1 词表绑定）+ `am_vocab_entry_t`/`am_vocab_hit_t`/`am_vocab_hit_map_t` + `amv_result_t` 尾部追加 `vocab_hits` 指针（P2/struct_size 协商）+ `AM_TASK_TEXT_ENCODER=7` + 错误码 `vision.vocabNotBound=1033`。既有语义零变更；旧消费者按 struct_size/枚举尾追加协商，不受影响。
 依据（冲突时以此顺序为准）：camera-sdk (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/camera-sdk/spec.md`)、inference-sdk (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/inference-sdk/spec.md`)、native-sdk-contract (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/native-sdk-contract/spec.md`) 三份 delta spec > [dual-dll-sdk.md](dual-dll-sdk.md) > 本文。本文不勾选任何实施任务。
 
 **交付主体口径（2026-10-25 用户修正）**：交付物是可脱离 AM-RT 独立构建的**源码 SDK**（am-camera+am-vision+内部纯函数依赖+独立构建清单）；本文的 Windows x64 DLL 只是编译产物之一，非 Rust 宿主经本 C ABI 消费。首版验收仍 Windows x64；其他平台单列为「首版设计、后续平台实施」（不默认宣称编译或运行已通过，与 native spec 口径一致），不扩大首版。
