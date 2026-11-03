@@ -12,6 +12,9 @@ use super::encode::{
 };
 use super::frames::{camera_state, ControlCharge};
 
+#[cfg(test)]
+mod tests;
+
 /// 推流错误映射：Io 类（可重连）归 CAMERA_UNREACHABLE，其余同存档。
 pub(crate) fn stream_error_status(error: MuxError) -> i32 {
     match error {

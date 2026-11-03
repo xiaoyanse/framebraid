@@ -8,7 +8,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-/// 进程级 Digest challenge 缓存（origin → 最近 challenge）。容量上限防漂移；
+/// 进程级 Digest challenge 缓存（origin → 最近 challenge）。逐 origin 覆盖不逐出
+///（键来自宿主已验证 URL，增长速度受宿主控制，非服务器可控 DoS——P3 审计定级）；
 /// nonce 失效由 401 拒收回退刷新，不存凭据。
 static CHALLENGE_CACHE: OnceLock<Mutex<HashMap<String, String>>> = OnceLock::new();
 

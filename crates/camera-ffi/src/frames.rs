@@ -509,6 +509,8 @@ pub unsafe extern "C" fn amc_frame_release_bridge(p: *mut c_void) {
 }
 
 pub(crate) mod scale;
+#[cfg(test)]
+mod scale_tests;
 
 pub struct ControlCharge {
     ctx: Weak<Entry>,

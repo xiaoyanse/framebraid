@@ -224,6 +224,74 @@ mod tests {
     use super::*;
     use std::io::Write;
     #[test]
+    fn hardware_report_copy_protocol_gates_capacity_overlap_and_nulls() {
+        let params = amv_init_params_t {
+            struct_size: std::mem::size_of::<amv_init_params_t>() as u32,
+            abi_version: AM_ABI_VERSION,
+            infer_threads: 2,
+            ..Default::default()
+        };
+        // 并行测试共享进程域的上下文准入上限；名额被占满时等待其它测试释放
+        let mut admitted = None;
+        for _ in 0..600 {
+            match unsafe { am_sdk_support::context::initialize_vision(crate::domain(), &params) } {
+                Ok(key) => {
+                    admitted = Some(key);
+                    break;
+                }
+                Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                    std::thread::sleep(std::time::Duration::from_millis(5))
+                }
+                Err(other) => panic!("vision ctx init: {other}"),
+            }
+        }
+        let ctx = admitted.expect("vision ctx admission never freed");
+        let report = |buffer: *mut std::ffi::c_char, capacity: u64, required: *mut u64| unsafe {
+            amv_get_inference_hardware_report(ctx as *mut amv_context_t, buffer, capacity, required)
+        };
+        // capacity=0：仅查询所需长度，buffer允许为空
+        let mut needed: u64 = 0;
+        assert_eq!(report(std::ptr::null_mut(), 0, &mut needed), AM_ERR_SDK_OK);
+        assert!(needed > 1, "not_probed报告也必须给出所需长度");
+        // 容量正好：完整JSON + NUL 结尾
+        let mut buffer = vec![0u8; needed as usize];
+        let mut again: u64 = 0;
+        assert_eq!(
+            report(buffer.as_mut_ptr().cast(), needed, &mut again),
+            AM_ERR_SDK_OK
+        );
+        assert_eq!(again, needed);
+        let text = &buffer[..needed as usize - 1];
+        assert!(text.starts_with(b"{\"schema\":\"framebraid.inference-hardware/1\""));
+        assert_eq!(buffer[needed as usize - 1], 0, "必须NUL结尾");
+        // 容量不足：LIMIT_OUT_OF_RANGE，不交付半份报告
+        let mut small = vec![0u8; needed as usize - 1];
+        assert_eq!(
+            report(small.as_mut_ptr().cast(), needed - 1, &mut again),
+            AM_ERR_SDK_LIMIT_OUT_OF_RANGE
+        );
+        // 有容量但buffer为空：NULL_ARGUMENT
+        assert_eq!(
+            report(std::ptr::null_mut(), needed, &mut again),
+            AM_ERR_SDK_NULL_ARGUMENT
+        );
+        // required与buffer重叠：INVALID_ARGUMENT（栈上对齐槽，指针合法仅因重叠被拒）
+        let mut overlap = [0u64; 128];
+        assert!(needed as usize <= overlap.len() * 8);
+        let required_inside = unsafe { overlap.as_mut_ptr().add(1).cast::<u64>() };
+        assert_eq!(
+            report(overlap.as_mut_ptr().cast(), needed, required_inside),
+            AM_ERR_SDK_INVALID_ARGUMENT
+        );
+        // required为空：NULL_ARGUMENT
+        assert_eq!(
+            report(buffer.as_mut_ptr().cast(), needed, std::ptr::null_mut()),
+            AM_ERR_SDK_NULL_ARGUMENT
+        );
+        crate::domain().close(ctx, 5000).unwrap();
+        crate::domain().destroy(ctx).unwrap();
+    }
+    #[test]
     fn probing_matrix_does_not_wait_for_cache_lock() {
         let slot = Arc::new(Slot::default());
         slot.busy.store(true, Ordering::Release);

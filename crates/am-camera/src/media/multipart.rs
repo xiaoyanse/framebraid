@@ -201,6 +201,15 @@ impl MultipartParser {
                 return false;
             }
         };
+        // 带终结符的超大头块同样受 ≤64KB 合同上限约束（P1 审计 2026-11-01：
+        // 此前仅"未找到终结符"分支检查，恶意头块自带 \r\n\r\n 可在 64KB～
+        // feed 缓冲上限间绕过且不触发超限计数）。
+        if head_end + 4 > HEADER_MAX_BYTES {
+            self.header_bytes = head_end + 4;
+            self.record_over_limit(outputs);
+            self.resync();
+            return false;
+        }
         let header = self
             .buffer
             .iter()
@@ -415,6 +424,30 @@ mod tests {
         v.extend_from_slice(body);
         v.extend_from_slice(b"\r\n");
         v
+    }
+
+    #[test]
+    fn oversized_terminated_header_is_discarded_not_accepted() {
+        // P1（审计 2026-11-01）：自带 \r\n\r\n 终结的超大 part 头（64KB～feed 上限间）
+        // 不得绕过 ≤64KB 合同上限——超限丢帧+计数，不产出 Frame。
+        let mut parser = MultipartParser::new(b"b");
+        let mut stream = Vec::new();
+        stream.extend_from_slice(b"--b\r\n");
+        stream.extend_from_slice(b"X-Padding: ");
+        stream.extend_from_slice(&vec![b'a'; 100 * 1024]);
+        stream.extend_from_slice(b"\r\nContent-Type: image/jpeg\r\n\r\n");
+        stream.extend_from_slice(&frame(b"payload"));
+        stream.extend_from_slice(b"\r\n");
+        let mut outs = Vec::new();
+        outs = parser.feed(&stream);
+        assert!(
+            outs.iter().any(|o| matches!(o, Output::Discarded)),
+            "oversized terminated header must be counted, got {outs:?}"
+        );
+        assert!(
+            !outs.iter().any(|o| matches!(o, Output::Frame { .. })),
+            "frame after oversized header must not be accepted"
+        );
     }
 
     #[test]

@@ -261,15 +261,18 @@ impl Reader {
             let rate = (reader.api.av_guess_frame_rate)(reader.fmt, stream, std::ptr::null_mut());
             reader.info = StreamInfo {
                 codec,
-                width: params.width as u32,
-                height: params.height as u32,
+                // 负/零声明（恶意 SDP 头）按未知 0 处理，不得经 as u32 变成巨值
+                //（L2 审计 2026-11-01：下游虽有再校验，探测/事件元数据不得短暂异常）。
+                width: params.width.max(0) as u32,
+                height: params.height.max(0) as u32,
                 fps: if rate.num > 0 && rate.den > 0 {
                     f64::from(rate.num) / f64::from(rate.den)
                 } else {
                     -1.0
                 },
-                time_base_num: timebase.num as u32,
-                time_base_den: timebase.den as u32,
+                // 时基同理：非正值（含 AVRational 未知 0/0）按 0 交下游校验拒绝。
+                time_base_num: timebase.num.max(0) as u32,
+                time_base_den: timebase.den.max(0) as u32,
                 extradata: reader.framing.parameters.clone(),
             };
             reader.stream = index;

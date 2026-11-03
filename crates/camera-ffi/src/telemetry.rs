@@ -122,3 +122,63 @@ pub unsafe extern "C" fn amc_stats_release(pointer: *mut am_stats_t) -> i32 {
         domain().buffers.release(pointer as usize)
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stats_scope_gate_and_release_type_checks() {
+        let params = amc_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            ..Default::default()
+        };
+        // 并行测试共享进程域的上下文准入上限；名额被占满时等待其它测试释放
+        let mut admitted = None;
+        for _ in 0..600 {
+            match unsafe { am_sdk_support::context::initialize_camera(domain(), &params) } {
+                Ok(key) => {
+                    admitted = Some(key);
+                    break;
+                }
+                Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                    std::thread::sleep(std::time::Duration::from_millis(5))
+                }
+                Err(other) => panic!("camera ctx init: {other}"),
+            }
+        }
+        let ctx = admitted.expect("camera ctx admission never freed");
+        let mut out: *mut am_stats_t = std::ptr::null_mut();
+        // 未知scope拒绝；空scope默认context
+        assert_eq!(
+            unsafe { amc_get_stats(ctx as *mut amc_context_t, c"models".as_ptr(), &mut out) },
+            AM_ERR_SDK_INVALID_ARGUMENT
+        );
+        assert!(out.is_null());
+        assert_eq!(
+            unsafe { amc_get_stats(ctx as *mut amc_context_t, std::ptr::null(), &mut out) },
+            AM_OK as i32
+        );
+        assert!(!out.is_null());
+        let stats = unsafe { *out };
+        assert_eq!(stats.struct_size as usize, size_of::<am_stats_t>());
+        assert_eq!(
+            unsafe { std::ffi::CStr::from_ptr(stats.scope_utf8).to_bytes() },
+            b"context",
+            "scope字符串必须指向拥有者的context副本"
+        );
+        // 正确视图可释放；双重释放与外来指针按类型/登记拒绝
+        assert_eq!(unsafe { amc_stats_release(out) }, AM_OK as i32);
+        assert_eq!(
+            unsafe { amc_stats_release(out) },
+            AM_ERR_SDK_HANDLE_INVALID,
+            "双重释放必须拒绝"
+        );
+        assert_eq!(
+            unsafe { amc_stats_release(0x777_0000 as *mut am_stats_t) },
+            AM_ERR_SDK_HANDLE_INVALID
+        );
+        domain().close(ctx, 1000).unwrap();
+        domain().destroy(ctx).unwrap();
+    }
+}

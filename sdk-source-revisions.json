@@ -138,8 +138,8 @@
   {
    "path": "crates/am-camera/src/media/multipart.rs",
    "previousSha256": null,
-   "sha256": "aadaf2063faee67e285bbc06c3ac7e7ce7eaf163af3bd9479ffbde480a5ec870",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "f34cfbf1ccad920be7e939f9e86e350664bf4f94d03292cabb46b77897e1877f",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 comment honesty, L2 dimension clamp; blind-spot regression tests x9; workspace 447 green"
   },
   {
    "path": "crates/am-camera/src/media/pixel_ops.rs",
@@ -162,8 +162,8 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/http.rs",
    "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
-   "sha256": "74543d5e7daa9401c3aa0cb9c4ff6fc9f9a75b364ec08c42ced31c32bf70aa96",
-   "reason": "R7 mjpeg/multipart module registrations (pub mod lines); C ABI unchanged"
+   "sha256": "ffaf80334b883ac24ca1ca4aa55e7cdbdc303655391114eebc2e4d03062f36c1",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 challenge-cache comment honesty, L2 negative dimension clamp; blind-spot regression tests x9 (7 gaps + stats/copy_report parity); workspace 447 green"
   },
   {
    "path": "crates/am-camera/src/media/sdk_io/mod.rs",
@@ -180,8 +180,8 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
    "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
-   "sha256": "3050322f7b0d16b608e10449fd84d14facebf02e81ea7a7fc60a151f1cef50d8",
-   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
+   "sha256": "d0f67b554a6dee04e1fd9741a93528ac8b3995e291a0508627554437b7f2aca5",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 challenge-cache comment honesty, L2 negative dimension clamp; blind-spot regression tests x9 (7 gaps + stats/copy_report parity); workspace 447 green"
   },
   {
    "path": "crates/am-camera/src/media/sdk_io/tests.rs",
@@ -216,8 +216,8 @@
   {
    "path": "crates/camera-ffi/src/captures/continuous/storage_tests.rs",
    "previousSha256": null,
-   "sha256": "021364c10eeb0aceea64aae4e1d3df3a3588caab8cebf97fe3900ff8796c477b",
-   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+   "sha256": "3d28ef07d41dac8de0eff40460d428567bbe19f7b4c6efb527b4748dced4ac16",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 comment honesty, L2 dimension clamp; blind-spot regression tests x9; workspace 447 green"
   },
   {
    "path": "crates/camera-ffi/src/captures/images.rs",
@@ -342,8 +342,8 @@
   {
    "path": "crates/camera-ffi/src/frames.rs",
    "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-   "sha256": "c10c17b86fe66087ff792032f0b13eb97461fa8e7e3244759d85b53411c44e99",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "868d68dbce09c6e8bba4414329c282069b800849c46183c6e9fb5c8f77306ccc",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 challenge-cache comment honesty, L2 negative dimension clamp; blind-spot regression tests x9 (7 gaps + stats/copy_report parity); workspace 447 green"
   },
   {
    "path": "crates/camera-ffi/src/frames/budget_tests.rs",
@@ -600,8 +600,8 @@
   {
    "path": "crates/camera-ffi/src/telemetry.rs",
    "previousSha256": "750ec6a77e681771f38c9f269b233971ecbab34124a5a5ad99464e753540ea9a",
-   "sha256": "0cce70bb18bb342508fca6daff849c9c0e4dab955de9644b2335f7cb76ee8bc2",
-   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+   "sha256": "0146947b0ca6f46f15542ef4d9eec9bdf7fa222eaa7520e74ed14dfc77cf9bae",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 challenge-cache comment honesty, L2 negative dimension clamp; blind-spot regression tests x9 (7 gaps + stats/copy_report parity); workspace 447 green"
   },
   {
    "path": "crates/camera-ffi/src/threads.rs",
@@ -870,8 +870,8 @@
   {
    "path": "crates/vision-ffi/src/inference/backends.rs",
    "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
-   "sha256": "e4c38717763756400cd99fac6722d006a90e0b64efde780e26e396f8828e41b3",
-   "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证；E2 DirectML后端枚举扩展（第四推理路径）；v0.3.1 audit fix applied；feedback P0-1 OV2026：amv_init 侧 runtime_dirs 扫描登记 OpenVINO 运行库目录"
+   "sha256": "3beb94003f403e885ccc34d6555c5f5e110ef8a111936edd7843fce1f806d106",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 challenge-cache comment honesty, L2 negative dimension clamp; blind-spot regression tests x9 (7 gaps + stats/copy_report parity); workspace 447 green"
   },
   {
    "path": "crates/vision-ffi/src/inference/batch_exports.rs",
@@ -888,8 +888,8 @@
   {
    "path": "crates/vision-ffi/src/inference/hardware.rs",
    "previousSha256": null,
-   "sha256": "ff4638f43af4d339442d43d86e48bc051dc49feb4a0d711850803f123e2ec290",
-   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
+   "sha256": "71b95222b166dd6480364632729d397be91594ccf4a2428b1def6f71a1fc2511",
+   "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 comment honesty, L2 dimension clamp; blind-spot regression tests x9; workspace 447 green"
   },
   {
    "path": "crates/vision-ffi/src/inference/input.rs",

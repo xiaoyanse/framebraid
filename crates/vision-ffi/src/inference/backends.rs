@@ -10,6 +10,9 @@ use am_sdk_support::{
 use am_vision_core::sdk::runtime;
 use std::{path::Path, sync::Mutex};
 
+#[cfg(test)]
+mod backends_tests;
+
 static INITIALIZATION: Mutex<Option<i32>> = Mutex::new(None);
 pub struct Rows(pub Box<[am_backend_row_t; 4]>);
 impl Default for Rows {

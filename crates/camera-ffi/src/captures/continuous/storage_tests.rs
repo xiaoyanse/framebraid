@@ -1,5 +1,197 @@
 use super::*;
 
+struct SubFixture {
+    ctx: usize,
+    source: usize,
+    sub: usize,
+}
+impl SubFixture {
+    /// 合成ISAPI源（127.0.0.1:9 拒连，队列恒空）+ 指定模式连续采集订阅。
+    fn new(mode: u32) -> Self {
+        let params = amc_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            ..Default::default()
+        };
+        // 并行测试共享进程域的上下文准入上限；名额被占满时等待其它测试释放
+        let mut admitted = None;
+        for _ in 0..600 {
+            match unsafe { am_sdk_support::context::initialize_camera(crate::domain(), &params) } {
+                Ok(key) => {
+                    admitted = Some(key);
+                    break;
+                }
+                Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                    std::thread::sleep(std::time::Duration::from_millis(5))
+                }
+                Err(other) => panic!("camera ctx init: {other}"),
+            }
+        }
+        let ctx = admitted.expect("camera ctx admission never freed");
+        let source_desc = am_source_desc_t {
+            kind: AM_SRC_ISAPI_URL as u32,
+            url_utf8: c"http://127.0.0.1:9/ISAPI/Streaming/channels/101/picture".as_ptr(),
+            ..Default::default()
+        };
+        let mut source = std::ptr::null_mut();
+        assert_eq!(
+            unsafe {
+                crate::sources::api::amc_source_open(ctx as *mut _, &source_desc, &mut source)
+            },
+            AM_OK as i32
+        );
+        let sub_desc = am_capture_continuous_desc_t {
+            target_interval_ms: 1000,
+            max_inflight: 1,
+            request_timeout_ms: 500,
+            output_kind: AM_CAP_ENCODED_JPEG,
+            mode,
+            queue_max_items: 2,
+            queue_max_bytes: 1024 * 1024,
+            ..Default::default()
+        };
+        let mut sub = std::ptr::null_mut();
+        assert_eq!(
+            unsafe { amc_capture_continuous_start(source, &sub_desc, &mut sub) },
+            AM_OK as i32,
+            "mode={mode} 订阅必须创建成功"
+        );
+        Self {
+            ctx,
+            source: source as usize,
+            sub: sub as usize,
+        }
+    }
+    fn subscription(&self) -> Arc<am_sdk_support::handles::Entry> {
+        crate::domain().get(self.sub).unwrap()
+    }
+}
+impl Drop for SubFixture {
+    fn drop(&mut self) {
+        let mut final_state = 0u32;
+        assert_eq!(
+            unsafe { amc_capture_continuous_stop(self.sub as *mut _, 2000, &mut final_state) },
+            AM_OK as i32
+        );
+        crate::domain().destroy(self.sub).unwrap();
+        crate::domain().close(self.source, 2000).unwrap();
+        crate::domain().destroy(self.source).unwrap();
+        crate::domain().close(self.ctx, 2000).unwrap();
+        crate::domain().destroy(self.ctx).unwrap();
+    }
+}
+
+#[test]
+fn capture_sub_pull_waiter_count_returns_on_every_exit_without_consuming_on_reject() {
+    let f = SubFixture::new(AM_SUB_PULL);
+    let sub_entry = f.subscription();
+    let sub = sub_entry.data::<Subscription>().unwrap();
+    let mut policy = am_queue_policy_t::default();
+    assert_eq!(
+        unsafe {
+            crate::amc_get_queue_policy(
+                f.ctx as *mut amc_context_t,
+                AM_Q_REALTIME_FRAMES as u32,
+                &mut policy,
+            )
+        },
+        AM_OK as i32
+    );
+    assert!(policy.max_waiters >= 1);
+    let mut out: *mut am_captured_image_t = std::ptr::null_mut();
+    // 超上限timeout直接拒绝，不进入等待
+    assert_eq!(
+        unsafe { amc_capture_sub_pull(f.sub as *mut _, 30001, &mut out) },
+        AM_ERR_SDK_LIMIT_OUT_OF_RANGE
+    );
+    assert_eq!(sub.waiters.load(Ordering::Acquire), 0);
+    // 零超时空队列：TRY_AGAIN，等待者计数随RAII归还
+    for _ in 0..5 {
+        assert_eq!(
+            unsafe { amc_capture_sub_pull(f.sub as *mut _, 0, &mut out) },
+            AM_ERR_SDK_TRY_AGAIN
+        );
+        assert!(out.is_null());
+        assert_eq!(
+            sub.waiters.load(Ordering::Acquire),
+            0,
+            "零超时返回后等待者计数必须归还，不得泄漏"
+        );
+    }
+    // 有限超时空队列：DEADLINE_EXCEEDED后计数同样归还
+    assert_eq!(
+        unsafe { amc_capture_sub_pull(f.sub as *mut _, 30, &mut out) },
+        AM_ERR_SDK_DEADLINE_EXCEEDED
+    );
+    assert_eq!(sub.waiters.load(Ordering::Acquire), 0);
+    // 计数饱和：新阻塞等待者QUEUE_FULL，拒绝不得消耗或增加计数
+    sub.waiters
+        .store(policy.max_waiters as usize, Ordering::Release);
+    assert_eq!(
+        unsafe { amc_capture_sub_pull(f.sub as *mut _, 30, &mut out) },
+        AM_ERR_SDK_QUEUE_FULL
+    );
+    assert_eq!(
+        sub.waiters.load(Ordering::Acquire),
+        policy.max_waiters as usize,
+        "QUEUE_FULL拒绝路径不得改动等待者计数"
+    );
+    // 零超时不受等待者上限约束（不阻塞不占等待位），返回后计数回到饱和值
+    assert_eq!(
+        unsafe { amc_capture_sub_pull(f.sub as *mut _, 0, &mut out) },
+        AM_ERR_SDK_TRY_AGAIN
+    );
+    assert_eq!(
+        sub.waiters.load(Ordering::Acquire),
+        policy.max_waiters as usize
+    );
+    sub.waiters.store(0, Ordering::Release);
+}
+
+#[test]
+fn capture_sub_set_callback_rejects_pull_mode_and_null_unregisters() {
+    // PULL模式订阅：注册回调必须以模式冲突拒绝
+    let pull = SubFixture::new(AM_SUB_PULL);
+    assert_eq!(
+        unsafe { amc_capture_sub_set_callback(pull.sub as *mut _, None, std::ptr::null_mut()) },
+        AM_ERR_CAMERA_MODE_CONFLICT
+    );
+    drop(pull);
+    // PUSH模式订阅：注册生效并清空未投递队列；NULL注销
+    let push = SubFixture::new(AM_SUB_PUSH);
+    let push_entry = push.subscription();
+    let sub = push_entry.data::<Subscription>().unwrap();
+    unsafe extern "C" fn probe(
+        _sub: *mut amc_capture_sub_t,
+        _image: *mut am_captured_image_t,
+        _user: *mut c_void,
+    ) {
+    }
+    {
+        let mut q = sub.queue.lock().unwrap();
+        q.bytes = 4096;
+    }
+    let user = 0x1234usize as *mut c_void;
+    assert_eq!(
+        unsafe { amc_capture_sub_set_callback(push.sub as *mut _, Some(probe), user) },
+        AM_OK as i32
+    );
+    {
+        let q = sub.queue.lock().unwrap();
+        assert!(q.callback.is_some(), "注册后回调必须生效");
+        assert_eq!(q.user, user as usize);
+        assert_eq!(q.bytes, 0, "注册新回调必须清空未投递队列");
+    }
+    assert_eq!(
+        unsafe { amc_capture_sub_set_callback(push.sub as *mut _, None, std::ptr::null_mut()) },
+        AM_OK as i32
+    );
+    {
+        let q = sub.queue.lock().unwrap();
+        assert!(q.callback.is_none(), "NULL回调必须完成注销");
+        assert_eq!(q.user, 0);
+    }
+}
+
 #[test]
 fn continuous_history_and_reference_slots_fit_the_admitted_storage() {
     let mut queue = Queue::new(3).unwrap();

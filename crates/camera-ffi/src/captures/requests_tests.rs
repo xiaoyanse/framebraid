@@ -12,8 +12,21 @@ impl Fixture {
             abi_version: AM_ABI_VERSION,
             ..Default::default()
         };
-        let ctx = unsafe { am_sdk_support::context::initialize_camera(crate::domain(), &params) }
-            .unwrap();
+        // 并行测试共享进程域的上下文准入上限；名额被占满时等待其它测试释放
+        let mut ctx = None;
+        for _ in 0..600 {
+            match unsafe { am_sdk_support::context::initialize_camera(crate::domain(), &params) } {
+                Ok(key) => {
+                    ctx = Some(key);
+                    break;
+                }
+                Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                    std::thread::sleep(std::time::Duration::from_millis(5))
+                }
+                Err(other) => panic!("camera ctx init: {other}"),
+            }
+        }
+        let ctx = ctx.expect("camera ctx admission never freed");
         Self {
             ctx,
             sources: Vec::new(),
@@ -121,6 +134,68 @@ fn records_full_rejects_queue_full_without_touching_existing_records() {
         2,
         "拒绝路径不得增删既有记录"
     );
+}
+
+#[test]
+fn captured_image_fetch_gates_handles_states_and_error_passthrough() {
+    let mut f = Fixture::new();
+    let source = f.open_isapi();
+    let (shared, state) = capture_state(source);
+    let seed = |req_state: u32, code: i32| -> u64 {
+        let mut records = state.records.lock().unwrap();
+        let id = state.id().unwrap();
+        records
+            .try_insert(
+                &shared.state,
+                id,
+                state::Record {
+                    state: req_state,
+                    code,
+                    created: monotonic_ms(),
+                    finished: monotonic_ms(),
+                    expires: i64::MAX,
+                    result: None,
+                    _charge: shared.state.control(0, false).unwrap(),
+                },
+                256,
+            )
+            .unwrap();
+        id
+    };
+    let pending = seed(AM_REQ_PENDING as u32, 0);
+    let running = seed(AM_REQ_RUNNING as u32, 0);
+    let failed = seed(AM_REQ_FAILED as u32, AM_ERR_CAMERA_TIMEOUT);
+    let done = seed(AM_REQ_DONE as u32, 0);
+    let purged = seed(AM_REQ_CANCELED as u32, 0);
+    state.records.lock().unwrap().remove(&purged);
+    let mut out: *mut am_captured_image_t = std::ptr::null_mut();
+    let fetch = |ctx: usize, id: u64, out: *mut *mut am_captured_image_t| unsafe {
+        requests::amc_captured_image_fetch(ctx as *mut amc_context_t, id, out)
+    };
+    // 门禁：空出参指针与未知上下文句柄
+    assert_eq!(
+        fetch(f.ctx, pending, std::ptr::null_mut()),
+        AM_ERR_SDK_NULL_ARGUMENT
+    );
+    assert_eq!(fetch(0, pending, &mut out), AM_ERR_SDK_HANDLE_INVALID);
+    // 未知请求ID：REQUEST_UNKNOWN；已知前缀但已移除：RESULT_EXPIRED
+    assert_eq!(
+        fetch(f.ctx, 0xffff_ffff_ffff_ffff, &mut out),
+        AM_ERR_SDK_REQUEST_UNKNOWN
+    );
+    assert_eq!(fetch(f.ctx, purged, &mut out), AM_ERR_SDK_RESULT_EXPIRED);
+    // 非终态：TRY_AGAIN而不是假成功
+    assert_eq!(fetch(f.ctx, pending, &mut out), AM_ERR_SDK_TRY_AGAIN);
+    assert_eq!(fetch(f.ctx, running, &mut out), AM_ERR_SDK_TRY_AGAIN);
+    assert!(out.is_null());
+    // 终态失败：错误码原样透传
+    assert_eq!(fetch(f.ctx, failed, &mut out), AM_ERR_CAMERA_TIMEOUT);
+    assert!(out.is_null());
+    // DONE但无结果体：不得凭空交付
+    assert_eq!(fetch(f.ctx, done, &mut out), AM_ERR_SDK_RESULT_EXPIRED);
+    assert!(out.is_null());
+    // 全部拒绝路径不得增删既有记录
+    assert_eq!(state.records.lock().unwrap().len(), 4);
 }
 
 #[test]
