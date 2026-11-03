@@ -934,6 +934,10 @@ AM_API const char* amv_status_name(am_status_t status);
 - `modelMeta`：模型元数据必须匹配的键值（加载校验，防档案与导出版本漂移）；`semantics`：输出张量行语义（供原始张量复核），行内布局说明随档案附录。
 - Segment/OBB 档案在 `postprocess`/`coords` 中分别补：掩膜系数×原型合成/裁切/阈值化顺序与输出口径（`maskBits` 1bit/px+roi_map）；角度单位/周期/方向/顶点顺序与旋转 NMS 声明。
 
+**通用检测头布局声明（B1，开放词汇首批）**：detect 类档案 `postprocess` 可声明 `"layout": "transposed" | "row-major"`（输出盒布局；默认 transposed=`[1, 4+classes, anchors]`，row-major=`[1, anchors, 4+classes]`）与 `"coordForm": "cxcywh" | "xyxy"`（盒坐标形式；默认 cxcywh）。加载时输出 shape 末两维与 `4+classes`/anchors 声明一致性校验，失配拒绝（`vision.profileMismatch`，错误详情带检测 shape 与声明——§7 参数类约定）。开放词汇模型（YOLO-World 类，输出无类别维的亲和度矩阵）不在此布局范围，走 RAW 通道。
+
+**开放词汇双输入档案与配对校验（A3，首批）**：双输入模型（图像 + 文本嵌入，YOLO-World 两阶段形态的检测头部分）按 `inputs[]` 声明两个输入；加载与张量入口对每个输入逐项校验（名字/dtype/shape，失配 `vision.inputShapeMismatch` 详情带检测值与期望值——§7 约定）。**空间配对属运行期语义问题**：维度一致不证明嵌入空间配对（异源文本塔实测产生 letterbox 填充带假框与饱和假分，见 docs/EXTENSION_CAPABILITIES.md A3 实证），本版 SDK 提供维度/类型校验与文档警示，**不承诺拦截所有异源配对**；嵌入空间健康度探测（检出分布统计）登记为后续能力。
+
 ### 4.2 内置档案表（首版冻结清单——YOLO 全家族五类，2026-10-25 用户拍板）
 
 | profileId | task | 输入→输出（dtype/shape） | 前处理 | 后处理 | 状态 |

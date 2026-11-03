@@ -4,70 +4,10 @@
  "reviewBaseCommit": "688bf762c26e75e5400979934954c379c5348aa1",
  "files": [
   {
-   "path": "crates/sdk-support/src/common.rs",
-   "previousSha256": "f7b20e9c0ec6b67a5622de4dacd32a2c3002d214834a7aabc2c2dd09da2175bc",
-   "sha256": "6dea3a9efe037d75a75443cdc6317eeffe48e7fa86f6bc203a83cd1938067c1a",
-   "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication；feedback batch A"
-  },
-  {
-   "path": "crates/sdk-support/build.rs",
-   "previousSha256": null,
-   "sha256": "aa4733ecf9efe019339f8b8641ee7df33fd3a673ffdd39d113b4ed1d6257125b",
-   "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
-  },
-  {
-   "path": "crates/sdk-support/tests/version.rs",
-   "previousSha256": null,
-   "sha256": "6d6fff6e9a79f1d497f06ea9e12eb3eaf0edc347ba36728ad90099673e41cceb",
-   "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler.rs",
-   "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-   "sha256": "7f4d1b4f1d60708ce060af2c0b29c638502402661ab9f9bb92dc6755c70870c8",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；blind-spot/poison fix applied"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
-   "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
-   "sha256": "f3fac25e46de9930b6d8d0efc9f0e05ac7a06db7d1126ae039ea7668504c3951",
-   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
-   "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "96fa6067e31481320fde10e61788df328095771ff299d6b8fe391ccef7b86fb1",
-   "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
-   "previousSha256": null,
-   "sha256": "9c7730a0cf821c1e46eae00f8a90e19c6dc1c86e0b58f13af62d268b96e80884",
-   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
-  },
-  {
-   "path": "crates/am-camera/src/media/mod.rs",
-   "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
-   "sha256": "4aaf3593252d67ff8cc1636b5ada079c477d6e479a4bc2e281b37af8cd528cfe",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
-  },
-  {
-   "path": "crates/am-camera/src/media/codec/hardware.rs",
-   "previousSha256": null,
-   "sha256": "b07ca7312cd6f39d617c4cc12ed18223ed0675e5471d2bb54827dfd6fb71c45b",
-   "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/src/media/hardware.rs",
-   "previousSha256": null,
-   "sha256": "2fa21cd48a0f3801be7373695c87a920e6f67988ab6815130294cc958164a4d4",
-   "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/src/media/codec/selection.rs",
-   "previousSha256": null,
-   "sha256": "d1050db70f95541b80a10d9c32d1829d9621a16576010f9f6dc1681c1acacd8a",
-   "reason": "M3 reviewed Intel iGPU path measurements (Arc 140T D3D11VA H264/H265 verified via driver log, ghost-adapter fault injection, fallback matrix recheck); adapter-targeting gap honestly recorded; workspace 404 green"
+   "path": "crates/am-camera/Cargo.toml",
+   "previousSha256": "c49aef7faba6a39e41250fd91227ae9e9849714740e0f3b264abc9fd847fe6af",
+   "sha256": "cf6ac395b20cade41c473700199eb64101631d81cebd05fa52a14ffab648b7d0",
+   "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged"
   },
   {
    "path": "crates/am-camera/src/media/codec.rs",
@@ -82,10 +22,34 @@
    "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
   },
   {
+   "path": "crates/am-camera/src/media/codec/gpu_frame.rs",
+   "previousSha256": null,
+   "sha256": "25c2337672a276af0ea8e44132c3d24bbe3c0459690f649e43991eb5de2983c7",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+  },
+  {
+   "path": "crates/am-camera/src/media/codec/hardware.rs",
+   "previousSha256": null,
+   "sha256": "b07ca7312cd6f39d617c4cc12ed18223ed0675e5471d2bb54827dfd6fb71c45b",
+   "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+  },
+  {
+   "path": "crates/am-camera/src/media/codec/nal.rs",
+   "previousSha256": null,
+   "sha256": "b133059487aa1b6bcb6833a9814e788622d87283c9f8fda57abcf52ae359ff58",
+   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+  },
+  {
    "path": "crates/am-camera/src/media/codec/readback.rs",
    "previousSha256": null,
    "sha256": "ca1bc6a4373aaa06831a8da1d594f51a36cc2c0eb1f91cb8e9bd28954babc09f",
    "reason": "R2 reviewed aligned readback accounting and single-cache/Sws reuse; real hardware, fault, CPU DLL and paired performance tests; C ABI unchanged"
+  },
+  {
+   "path": "crates/am-camera/src/media/codec/selection.rs",
+   "previousSha256": null,
+   "sha256": "d1050db70f95541b80a10d9c32d1829d9621a16576010f9f6dc1681c1acacd8a",
+   "reason": "M3 reviewed Intel iGPU path measurements (Arc 140T D3D11VA H264/H265 verified via driver log, ghost-adapter fault injection, fallback matrix recheck); adapter-targeting gap honestly recorded; workspace 404 green"
   },
   {
    "path": "crates/am-camera/src/media/codec/tests.rs",
@@ -106,16 +70,202 @@
    "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
   },
   {
+   "path": "crates/am-camera/src/media/h264/codec_probe_tests.rs",
+   "previousSha256": "75e5b9af10fe151d4f223b4e3d2435745ebdc64a9b3c542d88562e7b4a1c6fc9",
+   "sha256": "543c11c84889d15661d6458440ca6c2e36c7238b393eaf657f8be86484454367",
+   "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/codec_probe.rs",
+   "previousSha256": "e99211213a5743e53a1b437216b62fe3ea8c1d7458310907db449a23b9935ff6",
+   "sha256": "c7a961840da79fe16035465db872b0587129b7d1af44d6be29c60873848bc295",
+   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/fanout.rs",
+   "previousSha256": "54bf768ac934f5f3c1da1473d9f2f5c43aa59cc60ad509488dbb5ad25bd7600d",
+   "sha256": "d748829ab29ab68636e61de369f3dd7567fab1d01a327b9abc9f87129b65ca0c",
+   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/fanout/tests.rs",
+   "previousSha256": null,
+   "sha256": "df22aafebe9dce7c8fce3c1b027121f9ab6a67c71279a627ad8615fce984f931",
+   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/session_tests.rs",
+   "previousSha256": "d8268827e64df362ad31d296425d7e644a8a5c8f8c2f23f41c1d84e3f1fa8ad4",
+   "sha256": "d18a42ac1b0f27405f2fa55d7b91c7478600b6977136b1389f7e4cb5253c2b55",
+   "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged；CI环境跳过标注补登；FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/session.rs",
+   "previousSha256": "f2d5ad0b3a6992502c3ff8c5d35d4fd9702211a4ac171e015b2f6f97b46506dd",
+   "sha256": "a2fcd2f85461d375c3c1b39c47dfabd35ef4dc7506c291409def9fe1d406fdbb",
+   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/session/budget_tests.rs",
+   "previousSha256": null,
+   "sha256": "91d3c634da10dddbd5f25dce279982f6271a94401a1b24a798b7b4a5eba78fbc",
+   "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
+  },
+  {
+   "path": "crates/am-camera/src/media/hardware.rs",
+   "previousSha256": null,
+   "sha256": "2fa21cd48a0f3801be7373695c87a920e6f67988ab6815130294cc958164a4d4",
+   "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+  },
+  {
    "path": "crates/am-camera/src/media/hardware/windows.rs",
    "previousSha256": null,
    "sha256": "6be6d258b318ad50061bec33cfc7b9841590a33a1f671d56fdb5db005328e14b",
    "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
   },
   {
-   "path": "crates/camera-ffi/src/decoder/mod.rs",
-   "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-   "sha256": "5da224fe84bd6af61ff2ecce39b8accb2b1ec2b5760311ab81ee693f71ead581",
-   "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+   "path": "crates/am-camera/src/media/mjpeg.rs",
+   "previousSha256": null,
+   "sha256": "83f669b722388db7788cc793376842c3d0169dc3618a292a83b057fef6c3adb6",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
+  },
+  {
+   "path": "crates/am-camera/src/media/mod.rs",
+   "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
+   "sha256": "4aaf3593252d67ff8cc1636b5ada079c477d6e479a4bc2e281b37af8cd528cfe",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+  },
+  {
+   "path": "crates/am-camera/src/media/multipart.rs",
+   "previousSha256": null,
+   "sha256": "aadaf2063faee67e285bbc06c3ac7e7ce7eaf163af3bd9479ffbde480a5ec870",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+  },
+  {
+   "path": "crates/am-camera/src/media/pixel_ops.rs",
+   "previousSha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526",
+   "sha256": "8d71366c21a5812dc280ab9bd430e8ac122d8d95dbf142dba1278ff9f3b690e7",
+   "reason": "最近邻像素缩放按通道复制，逐字节对拍与局部 A/A 量化，其他语义不变；R2 1.4 SIMD决策：定点重写被256^3穷举否决（半整数边界rgb(7,39,43)），保留f64路径改进程级RG表，逐位一致由穷举对拍保证"
+  },
+  {
+   "path": "crates/am-camera/src/media/rtsp_tests.rs",
+   "previousSha256": "95612225fa8ea084f57daf874a6b8772baddab37be8e3d3eb36ab4fb08310978",
+   "sha256": "bdf319483cfec1d0381fdbfc1752308222a0607f9d7dbb27809ce399e6262da7",
+   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
+  },
+  {
+   "path": "crates/am-camera/src/media/rtsp.rs",
+   "previousSha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f",
+   "sha256": "835a8c2ee108c3c753962a32792c4c1d9648e9aa7a693a1567195fe1f0b78397",
+   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge；v0.3.1 audit fix applied"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/http.rs",
+   "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
+   "sha256": "74543d5e7daa9401c3aa0cb9c4ff6fc9f9a75b364ec08c42ced31c32bf70aa96",
+   "reason": "R7 mjpeg/multipart module registrations (pub mod lines); C ABI unchanged"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/mod.rs",
+   "previousSha256": "9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4",
+   "sha256": "8538541ddd7c17e045a646642521135a6b71ad67c637f767505875979eb88ea2",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged; previous SHA-256 69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30: FILE source stage 1 (P1-8): validate_file_path + FileCheckError (path/os_error detail)"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/nal.rs",
+   "previousSha256": "a5363ffc037e76ebb56bb5fceec8afbd8993176fc4c5e8d1fcfa25eef02bca04",
+   "sha256": "2cede55f775104380811c09721a92900871a21eea4dee6ee709ca8644f5761ed",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 0f454d2da4b10d4f…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
+   "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
+   "sha256": "7e809ece96d9d0dcc76800afcff2451fe5ef0bc42d808079232abdeba282d7ab",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 3eb540ed21b0f814…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 fd5dd301999b09ce…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/tests.rs",
+   "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
+   "sha256": "078e2737a0b0ac167a3ac685eaa13df9c48a2b0d9835be14e18f3444be1b4000",
+   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior; previous SHA-256 f3b581fe29ed15a9…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); realigned 8b44b546 (fmt)"
+  },
+  {
+   "path": "crates/am-camera/tests/jpeg_bench.rs",
+   "previousSha256": null,
+   "sha256": "84a3b03db3b576c7948d0ffec34fbaff0c71cafcdd1f9c2fd3f0ed19b8d607d4",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+  },
+  {
+   "path": "crates/am-camera/tests/nal_visit.rs",
+   "previousSha256": null,
+   "sha256": "912177c287a35c380f86d316548e820e93489dbd5481fe7461baca4d0ec65ecd",
+   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/Cargo.toml",
+   "previousSha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b",
+   "sha256": "a3a66a15e9b1459e43f0323bccbafd4ce13c1d5f7f430bbcc0c7de07629cc7ce",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/continuous.rs",
+   "previousSha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced",
+   "sha256": "a53d1506480b93531d5b3ce0a53d5e1e0e1ae9a974192e815fa6d5489d7d0a83",
+   "reason": "Reviewed continuous-capture beat fix (in-flight freshness fast path returned stale frame every other beat halving GET cadence; single-subscriber transparent + fixed-grid scheduler); local fixture interval ~target verified; workspace green; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/continuous/storage_tests.rs",
+   "previousSha256": null,
+   "sha256": "021364c10eeb0aceea64aae4e1d3df3a3588caab8cebf97fe3900ff8796c477b",
+   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/images.rs",
+   "previousSha256": "6363e851b83c2b4ce3f1aa40c87200ebf552a5926c41182b919afaf035a4a504",
+   "sha256": "ea42751b434a616158c87a533aa20928b10a446d864a784c1c43f72b55fd8367",
+   "reason": "Reviewed default frame budget raise 96->128MiB with cpu-frame scratch precision 8->7 B/px (2160p downstream feedback); workspace green; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/io.rs",
+   "previousSha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18",
+   "sha256": "01d8cf15cf812a31fddd0d17ffde78abc9fcd6db0f3c83ffefc41e4d88e82a71",
+   "reason": "R8 reviewed bad-image-data fault observability (decode failure -> RECONNECT_WAIT + NETWORK fault via camera.badImageData; five fault modes locally reproduced, baddata gap closed); workspace green; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/io/tests.rs",
+   "previousSha256": null,
+   "sha256": "e2e4b32a62f882a1909e04cacb543008c4032e36afc07af222e8c515ba4fcc95",
+   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/mod.rs",
+   "previousSha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981",
+   "sha256": "fc75cfb123619f83ce769e56b8253a26e79ad95dcde52bf0de13aac58898b1ec",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/requests.rs",
+   "previousSha256": "0b8b6901fb88baf76225e8f6bdf43d218304fe1c00ff39591f06360983ce2e2a",
+   "sha256": "0a0e19252b9cafffa0233f11e50d4b4ebe2f202dddc6f749f0a5b4f09b2ce19c",
+   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/state.rs",
+   "previousSha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5",
+   "sha256": "0a1a3dd54d796b455a8bc70b615b375532b274ec9b463fd0fe23824e2bd53dc9",
+   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/tables.rs",
+   "previousSha256": null,
+   "sha256": "579c0968e81aa2914af49a7c2bf35cb2acac269c73ee1299ba066471cb18cbb6",
+   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/captures/tables/tests.rs",
+   "previousSha256": null,
+   "sha256": "1dcf609fc691939e2d924b48f4841afb5f3af68d9f2738a850f213dadc1ed7eb",
+   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
   },
   {
    "path": "crates/camera-ffi/src/decoder/budget.rs",
@@ -124,10 +274,10 @@
    "reason": "H2.3c reviewed RTSP parameter rebuild reuses selected device/decoder permit; actual CPU/D3D11 H264/HEVC, retained frames, budget/native faults and loopback DLL checks; unchanged ABI"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/hub.rs",
-   "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-   "sha256": "726d94c494eaec1e07072cbbbb16c0ab50eada8a91f5268d21370cebfffc10d8",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546: FILE source stage 1 (P1-8): file::run worker branch + mod decl; previous SHA-256 016308746821951ae14926fa4c54ba2deda948a81a4d37124446e0a6a540170e: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+   "path": "crates/camera-ffi/src/decoder/buffers.rs",
+   "previousSha256": null,
+   "sha256": "5ffd55419110a3851f4b9ac95a24033ac617e068db63a34b9033d4678386630e",
+   "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
   },
   {
    "path": "crates/camera-ffi/src/decoder/config.rs",
@@ -142,10 +292,22 @@
    "reason": "v0.3.2 batch D：ffmpegVersionMismatch 失败详情带检测/期望主版本（审计 A8），动态文本经 sdk-support diagnostics::intern 驻留下发；映射单测锁定检测值/期望线与驻留复用"
   },
   {
-   "path": "crates/camera-ffi/src/frames.rs",
-   "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
-   "sha256": "c10c17b86fe66087ff792032f0b13eb97461fa8e7e3244759d85b53411c44e99",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "path": "crates/camera-ffi/src/decoder/gpu_pool_tests.rs",
+   "previousSha256": null,
+   "sha256": "f164364bf3f77e74e71c62464533b988a95a6e0462788ff9178e2d81ae7eded7",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/decoder/gpu_pool.rs",
+   "previousSha256": null,
+   "sha256": "a3c20a76c3b906909cca32f64d47794dd329109f609a27a69fd26757a9bcf1df",
+   "reason": "R9 reviewed gpu frame desc/texture query exports implementation (contract-declared in M2b 2.6a, implementation was missed; Box<GpuFrame> handle dual to release from_raw); DLL export verified; C ABI unchanged；v0.3.1 audit fix applied (issue A1: exports hardened to notSupported until GPU closed-loop lands)"
+  },
+  {
+   "path": "crates/camera-ffi/src/decoder/mod.rs",
+   "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
+   "sha256": "5da224fe84bd6af61ff2ecce39b8accb2b1ec2b5760311ab81ee693f71ead581",
+   "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
   },
   {
    "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -160,10 +322,28 @@
    "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
   },
   {
+   "path": "crates/camera-ffi/src/decoder/retained.rs",
+   "previousSha256": null,
+   "sha256": "0853d5f2dada5c99f4513848d787cd4a67c07dc61a9c1dd95cdc33f450251f9d",
+   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/decoder/retained/tests.rs",
+   "previousSha256": null,
+   "sha256": "d9d69fa71f7809319f1a9db548e129c9a1f718edecb567c007b2d8f22335d843",
+   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+  },
+  {
    "path": "crates/camera-ffi/src/decoder/tests.rs",
    "previousSha256": null,
    "sha256": "2a73f8bb29ffe350e5c627de0ca957c4df539709dcbd72d5caad09f99f33d272",
    "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+  },
+  {
+   "path": "crates/camera-ffi/src/frames.rs",
+   "previousSha256": "69355f02a49645756e882a5c4776f8334c80aa5960cfe692f508107a8b0cfd54",
+   "sha256": "c10c17b86fe66087ff792032f0b13eb97461fa8e7e3244759d85b53411c44e99",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
    "path": "crates/camera-ffi/src/frames/budget_tests.rs",
@@ -172,58 +352,10 @@
    "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变"
   },
   {
-   "path": "crates/camera-ffi/src/sources/mod.rs",
-   "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
-   "sha256": "ae91e530a7b808db6bf99888688e1414cacc7cd4c7ae4ace03e7a31a51417e0a",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 c6ba061832e39b34b8e767ec9b697ab395f1263184b55e0d573aedf818f2f9d9: FILE source stage 1 (P1-8): file flag in SharedSource + make_shared + file_ended()"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
-   "previousSha256": "df1471666e1cabb774f93d3cdba8689c0ff97bb017473951c5d4d88b8576b111",
-   "sha256": "09f802b354d49bac3a143d4d1edc65c2bce8b0bf1d8df95667dccb567d431606",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/queue.rs",
-   "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-   "sha256": "d1e251231129ecd463686f794f576b0a2d66d933f8dce3abcf3575e2a4615baf",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied; previous SHA-256 5fbb04ecc9498f9b4ca6cb5d3a4cb2bc3bae7fba9f28c8d18e23d98e95b3d387: FILE source stage 1 (P1-8): file-source backpressure (wait not drop) + PULL drain returns streamEnded"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
+   "path": "crates/camera-ffi/src/frames/registry_tests.rs",
    "previousSha256": null,
-   "sha256": "aed148423cc551a9e47569ab6cd2329c9cc0484d71fc8686a8fd6c4333b2e41f",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect); previous SHA-256 362c5bff840b2f23…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 2e7f49e9724233d0…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
-   "previousSha256": null,
-   "sha256": "738e7bce1b863e01c4bd6b98ea60eac7d2e45d4820a0deeb674b5f433daf8a20",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
-  },
-  {
-   "path": "crates/camera-ffi/Cargo.toml",
-   "previousSha256": "c8dd9dfefcfe91fbe7fcb171c604180edf32144257c026a2195045644700d35b",
-   "sha256": "a3a66a15e9b1459e43f0323bccbafd4ce13c1d5f7f430bbcc0c7de07629cc7ce",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
-  },
-  {
-   "path": "crates/camera-ffi/src/lib.rs",
-   "previousSha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82",
-   "sha256": "cef8be44b3575debcb1882eedb16cee729d24f58e81de196330b4f5936695f33",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
-  },
-  {
-   "path": "crates/sdk-abi/src/constants.rs",
-   "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-   "sha256": "42631ad9a378f34cb9943e15e8b5a18421b6ea7213aff26b2385963df4b393de",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied"
-  },
-  {
-   "path": "crates/sdk-support/src/context.rs",
-   "previousSha256": "5bbc555780e27a91f722499d4012582970535cd96ac8da7dc5a34a2a9c88a170",
-   "sha256": "6dcdaaeaaad4633491ed70c16aa58ceca795713004cfb9c772e6e7dea3170695",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；feedback batch A"
+   "sha256": "40f1bad19523640d6492b4e3627dc97854ec383bd1939abc282e02e8012e0354",
+   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
   },
   {
    "path": "crates/camera-ffi/src/hardware.rs",
@@ -232,22 +364,82 @@
    "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
   },
   {
-   "path": "crates/camera-ffi/src/sources/tests.rs",
-   "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-   "sha256": "3c5165886006281d029cfd9d0c3c5ec98d6dc9ab397387a4b7bb98461acb55e8",
-   "reason": "R3 bounded borrowed hardware-report serialization; F2 against 5734e78 adds FILE argument and path diagnostics tests plus ignored FFmpeg EOF fixture, no production changes; prior reviewed sha256 de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19; previous SHA-256 534bf22ce06608e9b824923c5628970ec8a19e7a3b69f09a7487903c1415e92a: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 e180f238b8387310…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+   "path": "crates/camera-ffi/src/hardware/tests.rs",
+   "previousSha256": null,
+   "sha256": "490c46c1718cde2b41b96d49c8c05e844d0b96c85734571ba80b5767fb075c4d",
+   "reason": "有界硬解后端支持状态，分离未检查和不支持，定向验证并记录 Rust 结构迁移"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/mod.rs",
-   "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
-   "sha256": "8bafaa9e6c998f05299bcee383f1c3c0af91aa3a17d0e300a812295f1574f2ac",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green；v0.3.1 audit fix applied; previous SHA-256 a0fa24e035198cd19b87bb3c2996ce946d9bd0147850923630187b32a19fdda3: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+   "path": "crates/camera-ffi/src/lib.rs",
+   "previousSha256": "ce27ba45347c7bffd5fd56fdeeb8f7926d5c0af553787fb13d67948dba8f1b82",
+   "sha256": "cef8be44b3575debcb1882eedb16cee729d24f58e81de196330b4f5936695f33",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
   },
   {
-   "path": "crates/sdk-abi/src/base.rs",
-   "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-   "sha256": "458e72f7a1de24831b749408e1bb9031eae012d24fa2e0ab2b5e0e003b67cc73",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green; previous SHA-256 ed745163f8eca8d05480d57b490dd0afb4954f84b1429bc9d73e051f075c977c: FILE source stage 1 (P1-8): AM_SRC_FILE/AM_SRC_EOF enum constants via generate-rust-abi"
+   "path": "crates/camera-ffi/src/probe.rs",
+   "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
+   "sha256": "017519e6739f668edb4aba6ccbe09b2399dc7302682451b27e1d73a8114df8b1",
+   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged; previous SHA-256 4cb2ab79d52af6ddec6660e23c8a495d6c7b3db91e15c17bd92e270b19230165: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+  },
+  {
+   "path": "crates/camera-ffi/src/probe/planning.rs",
+   "previousSha256": null,
+   "sha256": "a44b11cc84054c725c44e209d47b2ca3db963b825b1a5fc713a1111bea9992e4",
+   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/probe/storage.rs",
+   "previousSha256": null,
+   "sha256": "48cb49990c40af44119a79d106b2dac13bdc1dafda65203bade98e8718b117b1",
+   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+  },
+  {
+   "path": "crates/camera-ffi/src/probe/tests.rs",
+   "previousSha256": null,
+   "sha256": "b74d373dfb8f4386bacda369316facf701b0c50802b49e09208417a2e2d9626a",
+   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/reader.rs",
+   "previousSha256": null,
+   "sha256": "917997b26679882571eef4b3c1ed038b546a62e52d4108c07c2e0f82bcdafd9d",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 8ab8930a->917997b2 (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
+  },
+  {
+   "path": "crates/camera-ffi/src/reader/tests.rs",
+   "previousSha256": null,
+   "sha256": "dae23c8ca58d5e799ac03cd6da52ca550cdb52f03398100516377842a2a5395f",
+   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 5eddf830->dae23c8c (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/api.rs",
+   "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
+   "sha256": "ea39c3fff5458331476236428a1642d8954c9244ee09f20fff4cd54a2e662acb",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 1291d75a38ed26b393e1552101ec1c547f5ae8387ad0886992383c1227906600: FILE source stage 1 (P1-8): AM_SRC_FILE entry constraints (creds/provider null, stream_kind empty, path validation with dynamic detail)"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/credentials.rs",
+   "previousSha256": "ea9e85be771b9ff1fece47e3e0921b6d8354bdce182a2f8fd665f9c2886f9106",
+   "sha256": "0e2265a4ab7e3489aefe93478214d120cdd1d7f55aba76ba457ebb4393e88862",
+   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/events.rs",
+   "previousSha256": "b286bced772ab175d578db3cd9efc1c85ad5054c9d7bb9757f9f9b2ab71a5c71",
+   "sha256": "0ac4712b70c778215912b32c44d6f2e59045fb0e232cd2e075196d76441f8edc",
+   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/events/queue.rs",
+   "previousSha256": null,
+   "sha256": "77e1e79bbb9e66a609eb4d06c3ee91bd44053417bd4c3f2bf9c413b6330765ed",
+   "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/events/tests.rs",
+   "previousSha256": null,
+   "sha256": "3897be512782cbeb0c57f2af74164eb71a78c9790d3d90458742a58c7f6d2046",
+   "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
   },
   {
    "path": "crates/camera-ffi/src/sources/hardware.rs",
@@ -256,94 +448,58 @@
    "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
   },
   {
+   "path": "crates/camera-ffi/src/sources/mod.rs",
+   "previousSha256": "770025024c5b26a2567c15d565812a3b82cc4cd7122754146601b6084534ddfa",
+   "sha256": "ae91e530a7b808db6bf99888688e1414cacc7cd4c7ae4ace03e7a31a51417e0a",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 c6ba061832e39b34b8e767ec9b697ab395f1263184b55e0d573aedf818f2f9d9: FILE source stage 1 (P1-8): file flag in SharedSource + make_shared + file_ended()"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/snapshot.rs",
+   "previousSha256": null,
+   "sha256": "a604dd43932a19c7f301b7ccb08cdecf96e5b35d20d01a0e934854d42b4d0d34",
+   "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/snapshot/tests.rs",
+   "previousSha256": null,
+   "sha256": "e7beb15143add0364c19b19d4ff500ae4c23faef8f94ff72735a8510e14d2fbf",
+   "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+  },
+  {
+   "path": "crates/camera-ffi/src/sources/tests.rs",
+   "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
+   "sha256": "3c5165886006281d029cfd9d0c3c5ec98d6dc9ab397387a4b7bb98461acb55e8",
+   "reason": "R3 bounded borrowed hardware-report serialization; F2 against 5734e78 adds FILE argument and path diagnostics tests plus ignored FFmpeg EOF fixture, no production changes; prior reviewed sha256 de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19; previous SHA-256 534bf22ce06608e9b824923c5628970ec8a19e7a3b69f09a7487903c1415e92a: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 e180f238b8387310…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub.rs",
+   "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
+   "sha256": "726d94c494eaec1e07072cbbbb16c0ab50eada8a91f5268d21370cebfffc10d8",
+   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546: FILE source stage 1 (P1-8): file::run worker branch + mod decl; previous SHA-256 016308746821951ae14926fa4c54ba2deda948a81a4d37124446e0a6a540170e: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
+   "previousSha256": null,
+   "sha256": "aed148423cc551a9e47569ab6cd2329c9cc0484d71fc8686a8fd6c4333b2e41f",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect); previous SHA-256 362c5bff840b2f23…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 2e7f49e9724233d0…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg.rs",
+   "previousSha256": null,
+   "sha256": "84f4f37760c904f22632e7fcc5391e23fa23efe489d9a8a342a605fdb8557d03",
+   "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg/tests.rs",
+   "previousSha256": null,
+   "sha256": "dee79e1d5ca1e2429dfa29fed423488eabedac04d890dba8e1b9608410ebc0b8",
+   "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
+  },
+  {
    "path": "crates/camera-ffi/src/subscriptions/hub/native.rs",
    "previousSha256": null,
    "sha256": "d3d08633e4fcf3f81c51b347f7172eec4054d523fa198e88f7dc5356fe12c2a4",
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
-  },
-  {
-   "path": "crates/vision/src/sdk/mod.rs",
-   "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-   "sha256": "64322fe73350cb0d3c3c0b49c3d473cd8a9d1058f5e29c52887544f0d6f827ac",
-   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
-  },
-  {
-   "path": "crates/vision/src/sdk/model.rs",
-   "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-   "sha256": "c6471dd66954bc66c0f59355e00ddcdbab0ea26814377c99819bd5a1f08b46c0",
-   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
-  },
-  {
-   "path": "crates/vision/src/sdk/runtime.rs",
-   "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
-   "sha256": "bc0e7db07a269bbf304e65186f89ab629a691374fa7b8a9067e686ff5f32dd22",
-   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数；E2 DirectML后端枚举扩展（第四推理路径）；feedback P0-1 OV2026：note_openvino_dirs/runtime 失败详情读写清零转发（E1 运行库随 runtime_dirs 提供的合同接线）"
-  },
-  {
-   "path": "crates/vision/src/sdk/runtime/devices.rs",
-   "previousSha256": null,
-   "sha256": "ca0288eeb12658fe73a202b2f3a6dc4264405d7fbf9ffcc39d718546b7fd7983",
-   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
-  },
-  {
-   "path": "crates/vision/src/sdk/selection.rs",
-   "previousSha256": null,
-   "sha256": "db05dc3ecfa8c223f3ff427dbe86b83bdc245b3320f1c2838428cb5619c31395",
-   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
-  },
-  {
-   "path": "crates/vision/src/sdk/selection_tests.rs",
-   "previousSha256": null,
-   "sha256": "fec7f590db03da01250ebc87565fbf5763175a5b77f5417ea9af9a95923f9cfc",
-   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
-  },
-  {
-   "path": "crates/vision/src/sdk/session.rs",
-   "previousSha256": null,
-   "sha256": "dc26268694a44926b6a0499e3fece03a5e5a6f4d983bdad0a44af524e3c0c8d4",
-   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；E2 DirectML后端枚举扩展（第四推理路径）"
-  },
-  {
-   "path": "crates/vision-ffi/Cargo.toml",
-   "previousSha256": "21100d26118bea4e9987e2b8ed9ae9994556fffd30aee76b84d69f95aca9251c",
-   "sha256": "d389582d52ccc85e879cdad63d2a5e0f0092efe773773b15ef7267ef62c58c56",
-   "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/mod.rs",
-   "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "38a78bcd1106516b1f0bac476bf81c9efdee87ca545de5ed86c8bced352157d7",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied；feedback P0-1 OV2026：intern_detail 诊断文本驻留（'static CStr，按内容去重，旧详情指针不失效）；v0.3.3 previous SHA-256 97615fd1c93cc9b16b58bcdd329e12d2b143530d706f66f65a76750186651a12：intern_detail 委托 sdk-support::diagnostics::intern 收敛双实现（审计 D 委托）"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/state.rs",
-   "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
-   "sha256": "a3b1ee40f7dd73b230d6568b637cbcadff6133e76b8bdd91eaa4986a7071beda",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/hardware.rs",
-   "previousSha256": null,
-   "sha256": "ff4638f43af4d339442d43d86e48bc051dc49feb4a0d711850803f123e2ec290",
-   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
-  },
-  {
-   "path": "crates/vision/src/sdk/prepare.rs",
-   "previousSha256": "bf97f1899375ee41dd7bbea511d067d50aa67c239f92d3b139094b3c856ba4a0",
-   "sha256": "cc1133fcbdf08405ec22300b67cdd218ddf45ef60cbfd2f1b875aae96879bd89",
-   "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
-  },
-  {
-   "path": "crates/vision/src/sdk/prepare/reference.rs",
-   "previousSha256": null,
-   "sha256": "8c1ab84b5d8d25dc07ba90459297d47a2593e61a680c8b59610a9c4ab2d44837",
-   "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
-  },
-  {
-   "path": "crates/vision/src/sdk/prepare/tests.rs",
-   "previousSha256": null,
-   "sha256": "5fb6243dee273586fbcdb107788710c689cde6d528b423f2ae9c650b370411e4",
-   "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/native/reconfigure.rs",
@@ -370,15 +526,21 @@
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/tests.rs",
+   "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode/storage_tests.rs",
    "previousSha256": null,
-   "sha256": "e91ada22b09db0c2dfeb98bd1fae302d582a42ffb77a6affba8dfbae1334d7bd",
+   "sha256": "0b4a1593c6bbc61b907593a7646650c514586cb2dcf90d3ca81394af56a0634b",
+   "reason": "R3 RTSP queue and receipt-time fixed backing capacity within existing credits, eviction before insertion; unchanged final timing window, epoch/sampling policies and C ABI, native loopback protection checks"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/live_sampling_tests.rs",
+   "previousSha256": null,
+   "sha256": "1dff2ea71bff7af14dfc8afae40a919045891824e2f447dd9160473426217a8b",
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/hub/sampling.rs",
+   "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/tests.rs",
    "previousSha256": null,
-   "sha256": "7d9bc97db3d8c2ae1e7a83e5ec6943be6f667038f914f2d0fde229cc5083e0ea",
+   "sha256": "e91ada22b09db0c2dfeb98bd1fae302d582a42ffb77a6affba8dfbae1334d7bd",
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
@@ -388,10 +550,88 @@
    "reason": "Reviewed R2 strict capped sampling cadence and sampled-only stale-picture coalescing; three interleaved H264 DLL pairs, exact real-clock selection bounds, lifecycle and codec regressions; full matrices and soak remain open"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/live_sampling_tests.rs",
+   "path": "crates/camera-ffi/src/subscriptions/hub/registry.rs",
    "previousSha256": null,
-   "sha256": "1dff2ea71bff7af14dfc8afae40a919045891824e2f447dd9160473426217a8b",
+   "sha256": "af5fe425c9fc8b47e3c480d0d87172ff7001744f4c833294dd16662929216cac",
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/registry/tests.rs",
+   "previousSha256": null,
+   "sha256": "969aba453abca53bfd465a1ec10200c1abba53deb5245830f0ba6c1b2375a463",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/sampling.rs",
+   "previousSha256": null,
+   "sha256": "7d9bc97db3d8c2ae1e7a83e5ec6943be6f667038f914f2d0fde229cc5083e0ea",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
+   "previousSha256": null,
+   "sha256": "738e7bce1b863e01c4bd6b98ea60eac7d2e45d4820a0deeb674b5f433daf8a20",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/mod.rs",
+   "previousSha256": "cf7026d12712755a490489533af4bd2b050930df7061e646682e8c961a1428b5",
+   "sha256": "8bafaa9e6c998f05299bcee383f1c3c0af91aa3a17d0e300a812295f1574f2ac",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green；v0.3.1 audit fix applied; previous SHA-256 a0fa24e035198cd19b87bb3c2996ce946d9bd0147850923630187b32a19fdda3: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/pixels.rs",
+   "previousSha256": "df1471666e1cabb774f93d3cdba8689c0ff97bb017473951c5d4d88b8576b111",
+   "sha256": "09f802b354d49bac3a143d4d1edc65c2bce8b0bf1d8df95667dccb567d431606",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/queue.rs",
+   "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
+   "sha256": "d1e251231129ecd463686f794f576b0a2d66d933f8dce3abcf3575e2a4615baf",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied; previous SHA-256 5fbb04ecc9498f9b4ca6cb5d3a4cb2bc3bae7fba9f28c8d18e23d98e95b3d387: FILE source stage 1 (P1-8): file-source backpressure (wait not drop) + PULL drain returns streamEnded"
+  },
+  {
+   "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
+   "previousSha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c",
+   "sha256": "cb0881cdf074e727987bc0afc25f8c6e02125f72c7df6d84849e218ba9cfaf7c",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+  },
+  {
+   "path": "crates/camera-ffi/src/telemetry.rs",
+   "previousSha256": "750ec6a77e681771f38c9f269b233971ecbab34124a5a5ad99464e753540ea9a",
+   "sha256": "0cce70bb18bb342508fca6daff849c9c0e4dab955de9644b2335f7cb76ee8bc2",
+   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+  },
+  {
+   "path": "crates/camera-ffi/src/threads.rs",
+   "previousSha256": null,
+   "sha256": "9e30f85cbc022953f2e27ddb0f201ce04b3ee44a271e547d2352b32541d91a57",
+   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+  },
+  {
+   "path": "crates/sdk-abi/src/base.rs",
+   "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
+   "sha256": "458e72f7a1de24831b749408e1bb9031eae012d24fa2e0ab2b5e0e003b67cc73",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green; previous SHA-256 ed745163f8eca8d05480d57b490dd0afb4954f84b1429bc9d73e051f075c977c: FILE source stage 1 (P1-8): AM_SRC_FILE/AM_SRC_EOF enum constants via generate-rust-abi"
+  },
+  {
+   "path": "crates/sdk-abi/src/constants.rs",
+   "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
+   "sha256": "42631ad9a378f34cb9943e15e8b5a18421b6ea7213aff26b2385963df4b393de",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied"
+  },
+  {
+   "path": "crates/sdk-abi/src/defaults.rs",
+   "previousSha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
+   "sha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
+   "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition"
+  },
+  {
+   "path": "crates/sdk-abi/src/fields_2.rs",
+   "previousSha256": "186054fbc46c1ab5460b6c616d25be2c731c9ff098c8a395f1130ef6d9861786",
+   "sha256": "e09a97f2b6f165abd2b9f96d953c7121cf7bf3e7a7609f791dec7fa13efbbf69",
+   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
   },
   {
    "path": "crates/sdk-abi/src/fields_4.rs",
@@ -418,6 +658,18 @@
    "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
   },
   {
+   "path": "crates/sdk-abi/src/fields_8.rs",
+   "previousSha256": null,
+   "sha256": "c2bd93f7a4ea04aafa075cda6ca4e3f71bc4fc63b1c98aed6842155cec9ed69e",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_2.rs",
+   "previousSha256": "16d44dc4cd219a590b0758d145807d22dfbb96aa6689ce67ce2fd6e0c1849c3f",
+   "sha256": "8dde66cadf79f7a3b956f80acdc39c6560b7ec2d9b324036ec4bee52a3b1cd7d",
+   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+  },
+  {
    "path": "crates/sdk-abi/src/layout_4.rs",
    "previousSha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36",
    "sha256": "a0ed43b04687515c76252ae02057b32b4379492f97f1ea2099256b843dc5283e",
@@ -440,6 +692,30 @@
    "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
    "sha256": "d56443bb96c63f556ba69e723dc9b52d5295a027857b3cd09510cd25f8143371",
    "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_8.rs",
+   "previousSha256": null,
+   "sha256": "0c580a60f6c8566c80242fd70e868d665d4feca225d13154abf3b8947f4d3db9",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_tests.rs",
+   "previousSha256": "960b3f8654a66e4b75735436c1bab9919e8ef00297def9e2651ca8ea913247f4",
+   "sha256": "c9fd76a6ce2371fa0b7a6d1c5d0511549dcca9eb911227badaf9833d9cc79972",
+   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+  },
+  {
+   "path": "crates/sdk-abi/src/lib.rs",
+   "previousSha256": "5ae46b1dd32bc386bbc0e7b6d4e11d7ded4eee838ba9a811aaeaa2d2147a8db3",
+   "sha256": "86258c64d9de0b606555c5905a0f8bc2b140dbb02c5ed17fe6162b57d72e5213",
+   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+  },
+  {
+   "path": "crates/sdk-abi/src/types_2.rs",
+   "previousSha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4",
+   "sha256": "cbf3aa43969519b5d953d67865cee198915d5371ee50c5299ba0674bc5bf96aa",
+   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
   },
   {
    "path": "crates/sdk-abi/src/types_4.rs",
@@ -466,310 +742,46 @@
    "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
   },
   {
-   "path": "crates/vision-ffi/src/inference/models.rs",
-   "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-   "sha256": "eb22f7c5460d556aa4b1c98afda4b2f7987057a913f378e31c5efaa76eeb37d4",
-   "reason": "Fix backend policy bound 2->4 (E1/E2 backends were unreachable via amv_model_load public entry; caught by pre-integration comparison testing); workspace 408 green；feedback P0-1 OV2026：模型加载重扫 runtime_dirs 登记、backendStrictUnavailable 失败经 amv_get_last_error 携带检测版本/期望线（登记哈希对应 682b86e 提交的 P0-1 hunk；并行批次同文件的 intra_threads 详情 hunk 落地时须另行链式更新本条）；feedback batch A: intra_threads out-of-range detail lands, chained update per note"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/results.rs",
-   "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
-   "sha256": "6065cda85e9ea38d8cc419b6d9e29150aad2e9704aca43ce4c6af22d1bc6c9d7",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
-   "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-   "sha256": "e8daaaba403c39d0e1523b48c268469b0da4ece58452412895be22992de6faca",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/selected_exports.rs",
+   "path": "crates/sdk-abi/src/types_8.rs",
    "previousSha256": null,
-   "sha256": "f17e19e0de80f411788a423330fa8145dbc3ac2251b35a831795030082faa80b",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+   "sha256": "30c5d3cd4eb42dc6d7b8c81e3581684f2a7687f81c8748d12e0b16612c9ea50a",
+   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
   },
   {
-   "path": "crates/vision-ffi/src/inference/selection.rs",
+   "path": "crates/sdk-support/build.rs",
    "previousSha256": null,
-   "sha256": "9d6fd74dacb1b4595327114209511b845524d7151a4c08b9b607cfaa5b28d963",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+   "sha256": "aa4733ecf9efe019339f8b8641ee7df33fd3a673ffdd39d113b4ed1d6257125b",
+   "reason": "运行时版本取 Cargo 版本并嵌入实际构建身份；仅本地修复及定向验证"
   },
   {
-   "path": "crates/vision-ffi/src/inference/selection_tests.rs",
-   "previousSha256": null,
-   "sha256": "b1edcb767f854415d8595d7f809c8f27dd63df9dd51fd863b332ba23b2a969e6",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
-  },
-  {
-   "path": "crates/vision-ffi/src/lib.rs",
-   "previousSha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847",
-   "sha256": "65fe4d0115e899b6c6d2de9caa44cb3f6aef76e3cd3bb9250680644d2400cd7c",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；v0.3.1 audit fix applied"
-  },
-  {
-   "path": "crates/am-camera/src/media/sdk_io/tests.rs",
-   "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
-   "sha256": "078e2737a0b0ac167a3ac685eaa13df9c48a2b0d9835be14e18f3444be1b4000",
-   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior; previous SHA-256 f3b581fe29ed15a9…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); realigned 8b44b546 (fmt)"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
-   "previousSha256": "515897059c2a19e3105e027fb9699f5be7e03277a4f0b308c13e9acb61e20e8b",
-   "sha256": "825d64643d01ae516e8027a17e22b9cf98d6ad0b9832bf14a424bf00dd44973b",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/budget.rs",
-   "previousSha256": null,
-   "sha256": "bc6b870b363689d0ced31d58a2b1331f92437c93a5253e129c9a45a95f4f949d",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/src/media/h264/fanout.rs",
-   "previousSha256": "54bf768ac934f5f3c1da1473d9f2f5c43aa59cc60ad509488dbb5ad25bd7600d",
-   "sha256": "d748829ab29ab68636e61de369f3dd7567fab1d01a327b9abc9f87129b65ca0c",
-   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
-  },
-  {
-   "path": "crates/am-camera/src/media/h264/fanout/tests.rs",
-   "previousSha256": null,
-   "sha256": "df22aafebe9dce7c8fce3c1b027121f9ab6a67c71279a627ad8615fce984f931",
-   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
-  },
-  {
-   "path": "crates/am-camera/src/media/h264/session_tests.rs",
-   "previousSha256": "d8268827e64df362ad31d296425d7e644a8a5c8f8c2f23f41c1d84e3f1fa8ad4",
-   "sha256": "d18a42ac1b0f27405f2fa55d7b91c7478600b6977136b1389f7e4cb5253c2b55",
-   "reason": "R3 reviewed Rust H264Hub payload/item caps, keyframe-safe resync, terminal drain and lost-close-wakeup regression; C ABI unchanged；CI环境跳过标注补登；FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/state.rs",
-   "previousSha256": "359e0f5443f1420f6adcadc3c72897babc78cbd0227843ae6bd6fa309a389be5",
-   "sha256": "0a1a3dd54d796b455a8bc70b615b375532b274ec9b463fd0fe23824e2bd53dc9",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/continuous.rs",
-   "previousSha256": "bc8b0357394d01e8833ae5c69a708c92de019e156056825a1f836374b1dc0ced",
-   "sha256": "a53d1506480b93531d5b3ce0a53d5e1e0e1ae9a974192e815fa6d5489d7d0a83",
-   "reason": "Reviewed continuous-capture beat fix (in-flight freshness fast path returned stale frame every other beat halving GET cadence; single-subscriber transparent + fixed-grid scheduler); local fixture interval ~target verified; workspace green; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/io.rs",
-   "previousSha256": "4204dcb3ecebe86b53ac7d3b8b8a5bbd83c8a3dbf5352b798b43fad908312c18",
-   "sha256": "01d8cf15cf812a31fddd0d17ffde78abc9fcd6db0f3c83ffefc41e4d88e82a71",
-   "reason": "R8 reviewed bad-image-data fault observability (decode failure -> RECONNECT_WAIT + NETWORK fault via camera.badImageData; five fault modes locally reproduced, baddata gap closed); workspace green; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/io/tests.rs",
-   "previousSha256": null,
-   "sha256": "e2e4b32a62f882a1909e04cacb543008c4032e36afc07af222e8c515ba4fcc95",
-   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
-   "previousSha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c",
-   "sha256": "cb0881cdf074e727987bc0afc25f8c6e02125f72c7df6d84849e218ba9cfaf7c",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
-  },
-  {
-   "path": "crates/am-camera/src/media/sdk_io/nal.rs",
-   "previousSha256": "a5363ffc037e76ebb56bb5fceec8afbd8993176fc4c5e8d1fcfa25eef02bca04",
-   "sha256": "2cede55f775104380811c09721a92900871a21eea4dee6ee709ca8644f5761ed",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 0f454d2da4b10d4f…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
-  },
-  {
-   "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
-   "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
-   "sha256": "7e809ece96d9d0dcc76800afcff2451fe5ef0bc42d808079232abdeba282d7ab",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 3eb540ed21b0f814…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 fd5dd301999b09ce…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
-  },
-  {
-   "path": "crates/camera-ffi/src/probe.rs",
-   "previousSha256": "6f760a9de14fa8822b394de33ed3d0230c1000a54ce574597f95a3de09b278b0",
-   "sha256": "017519e6739f668edb4aba6ccbe09b2399dc7302682451b27e1d73a8114df8b1",
-   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged; previous SHA-256 4cb2ab79d52af6ddec6660e23c8a495d6c7b3db91e15c17bd92e270b19230165: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/notify.rs",
-   "previousSha256": "9d8ae3ede7d71496b040f9bc53068cf7da8b06b06c1f72d7cf3a5a4b8c4f6a05",
-   "sha256": "3a6114995c2245c96fac973ad9f9c5d34988ad81f3600ec10bc98b2e5f706d7b",
-   "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化；extended-audit F7/F9 fix applied"
-  },
-  {
-   "path": "crates/camera-ffi/src/reader.rs",
-   "previousSha256": null,
-   "sha256": "917997b26679882571eef4b3c1ed038b546a62e52d4108c07c2e0f82bcdafd9d",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 8ab8930a->917997b2 (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
-  },
-  {
-   "path": "crates/camera-ffi/src/reader/tests.rs",
-   "previousSha256": null,
-   "sha256": "dae23c8ca58d5e799ac03cd6da52ca550cdb52f03398100516377842a2a5395f",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 5eddf830->dae23c8c (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/notify/queue.rs",
-   "previousSha256": null,
-   "sha256": "e3f55b6669bbebae98496cbf4fc69755a84823d2acc0d3d2e7bb7636f26fdbcf",
-   "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/notify/tests.rs",
-   "previousSha256": null,
-   "sha256": "f767d8be236d273a2895ef91c61dcf70bddc1433a7d8c4186fb049b720c78f9a",
-   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
-  },
-  {
-   "path": "crates/camera-ffi/src/sources/events.rs",
-   "previousSha256": "b286bced772ab175d578db3cd9efc1c85ad5054c9d7bb9757f9f9b2ab71a5c71",
-   "sha256": "0ac4712b70c778215912b32c44d6f2e59045fb0e232cd2e075196d76441f8edc",
-   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
-  },
-  {
-   "path": "crates/camera-ffi/src/sources/events/queue.rs",
-   "previousSha256": null,
-   "sha256": "77e1e79bbb9e66a609eb4d06c3ee91bd44053417bd4c3f2bf9c413b6330765ed",
-   "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
-  },
-  {
-   "path": "crates/camera-ffi/src/sources/events/tests.rs",
-   "previousSha256": null,
-   "sha256": "3897be512782cbeb0c57f2af74164eb71a78c9790d3d90458742a58c7f6d2046",
-   "reason": "R3媒体事件固定队列预付、空闲容量计费、丢旧留新与忙回调保护、注册/排空回收；C ABI不变"
-  },
-  {
-   "path": "crates/am-camera/src/media/codec/nal.rs",
-   "previousSha256": null,
-   "sha256": "b133059487aa1b6bcb6833a9814e788622d87283c9f8fda57abcf52ae359ff58",
-   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/tests/nal_visit.rs",
-   "previousSha256": null,
-   "sha256": "912177c287a35c380f86d316548e820e93489dbd5481fe7461baca4d0ec65ecd",
-   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/decoder/retained.rs",
-   "previousSha256": null,
-   "sha256": "0853d5f2dada5c99f4513848d787cd4a67c07dc61a9c1dd95cdc33f450251f9d",
-   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/decoder/retained/tests.rs",
-   "previousSha256": null,
-   "sha256": "d9d69fa71f7809319f1a9db548e129c9a1f718edecb567c007b2d8f22335d843",
-   "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/decoder/buffers.rs",
-   "previousSha256": null,
-   "sha256": "5ffd55419110a3851f4b9ac95a24033ac617e068db63a34b9033d4678386630e",
-   "reason": "R3 prepay bounded standalone decoder input/timing metadata, retain idle storage and reset overlap credits; native low-control-budget/ownership and deterministic release checks, C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode/storage_tests.rs",
-   "previousSha256": null,
-   "sha256": "0b4a1593c6bbc61b907593a7646650c514586cb2dcf90d3ca81394af56a0634b",
-   "reason": "R3 RTSP queue and receipt-time fixed backing capacity within existing credits, eviction before insertion; unchanged final timing window, epoch/sampling policies and C ABI, native loopback protection checks"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/continuous/storage_tests.rs",
-   "previousSha256": null,
-   "sha256": "021364c10eeb0aceea64aae4e1d3df3a3588caab8cebf97fe3900ff8796c477b",
-   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/storage.rs",
-   "previousSha256": null,
-   "sha256": "dc318e48a84274045f65aee2df218bfbb60c50b5ea5383f395e92dd10db5be29",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
-   "previousSha256": null,
-   "sha256": "8a90a7095afb698051bd46cb8f887db0765a0e02dcc753f94572aec3aea238e6",
-   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/records.rs",
-   "previousSha256": null,
-   "sha256": "196c89948593d1d7b9463e51fb5397806921f8f6f8c8ec6aa3ee289f9920b5a6",
-   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/records/tests.rs",
-   "previousSha256": null,
-   "sha256": "9e3f74bfcce1d8a952a514a2743b6496f3488a2ec30882550065037b2cc59bb4",
-   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/mod.rs",
-   "previousSha256": "06e627ce0ef87393b7c8fd5320f6c65466bc7c154f3d50285ead3b98bd76b981",
-   "sha256": "fc75cfb123619f83ce769e56b8253a26e79ad95dcde52bf0de13aac58898b1ec",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/requests.rs",
-   "previousSha256": "0b8b6901fb88baf76225e8f6bdf43d218304fe1c00ff39591f06360983ce2e2a",
-   "sha256": "0a0e19252b9cafffa0233f11e50d4b4ebe2f202dddc6f749f0a5b4f09b2ce19c",
-   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/tables.rs",
-   "previousSha256": null,
-   "sha256": "579c0968e81aa2914af49a7c2bf35cb2acac269c73ee1299ba066471cb18cbb6",
-   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/tables/tests.rs",
-   "previousSha256": null,
-   "sha256": "1dcf609fc691939e2d924b48f4841afb5f3af68d9f2738a850f213dadc1ed7eb",
-   "reason": "Reviewed R3 capture record/coalescing/cadence/consumer/subscription backing storage and Flight body credits; overlap/idle ownership, terminal cache failure and closed-index reuse; native loopback and quota tests, C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/sources/credentials.rs",
-   "previousSha256": "ea9e85be771b9ff1fece47e3e0921b6d8354bdce182a2f8fd665f9c2886f9106",
-   "sha256": "0e2265a4ab7e3489aefe93478214d120cdd1d7f55aba76ba457ebb4393e88862",
-   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
-  },
-  {
-   "path": "crates/camera-ffi/src/telemetry.rs",
-   "previousSha256": "750ec6a77e681771f38c9f269b233971ecbab34124a5a5ad99464e753540ea9a",
-   "sha256": "0cce70bb18bb342508fca6daff849c9c0e4dab955de9644b2335f7cb76ee8bc2",
-   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
-  },
-  {
-   "path": "crates/camera-ffi/src/threads.rs",
-   "previousSha256": null,
-   "sha256": "9e30f85cbc022953f2e27ddb0f201ce04b3ee44a271e547d2352b32541d91a57",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
-  },
-  {
-   "path": "crates/sdk-support/src/lib.rs",
-   "previousSha256": "1cd2b9e675a0871b578701daa6271848a7da6957da1a71e046b022d54c789128",
-   "sha256": "69dcd28d00d96c9ee03ef2418097efa77c7f047969a360ab23f219e2b5d96298",
-   "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证；R3域索引/隔离/关闭存储收口"
-  },
-  {
-   "path": "crates/sdk-support/src/services.rs",
-   "previousSha256": null,
-   "sha256": "7384cf47cb5555ef8d3a66bb4b30e5fd68f56f6fdb336f9e5a10bf82423a0063",
-   "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证"
-  },
-  {
-   "path": "crates/sdk-support/tests/services.rs",
-   "previousSha256": null,
-   "sha256": "8ed991bee050dc38f15d812434ff14b8a3a8fab4261669054e6c01eb0a66570a",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+   "path": "crates/sdk-support/src/args.rs",
+   "previousSha256": "a1a193ca7c4703aa6b96063f76612bb95a09b29b8811f7aede5cbae28331faca",
+   "sha256": "24c15439331378b5cb020ca46a59edf121140c7a85d5aee25eff786bed861fc8",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；feedback batch A"
   },
   {
    "path": "crates/sdk-support/src/buffers.rs",
    "previousSha256": "650696bb44414130b9d506eeb69a6313de9c4e3a079b27c4e61edc1b02a0e73c",
    "sha256": "140bd75eda8f31460208189b6409e68d2439730a597abb51f79105ceeef446cc",
    "reason": "R3域句柄/Buffer固定索引、隔离区及关闭快照，补分配失败/并发与机制量化"
+  },
+  {
+   "path": "crates/sdk-support/src/common.rs",
+   "previousSha256": "f7b20e9c0ec6b67a5622de4dacd32a2c3002d214834a7aabc2c2dd09da2175bc",
+   "sha256": "6dea3a9efe037d75a75443cdc6317eeffe48e7fa86f6bc203a83cd1938067c1a",
+   "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication；feedback batch A"
+  },
+  {
+   "path": "crates/sdk-support/src/context.rs",
+   "previousSha256": "5bbc555780e27a91f722499d4012582970535cd96ac8da7dc5a34a2a9c88a170",
+   "sha256": "6dcdaaeaaad4633491ed70c16aa58ceca795713004cfb9c772e6e7dea3170695",
+   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；feedback batch A"
+  },
+  {
+   "path": "crates/sdk-support/src/diagnostics.rs",
+   "previousSha256": "fd3806e1adc1ed4e02d37db6a038b0213f99c4b4578568172036a94394a18c40",
+   "sha256": "18e8544f4bb055cc47f737ac0440d109d9e26841626fe3d835f320ee36348ab7",
+   "reason": "v0.3.2 batch D：诊断动态详情驻留机制下沉 sdk-support（intern 内容去重进程保活 + Detail::dynamic），键纪律修订为稳定 key 与动态详情并存；新增驻留单测，sdk-support 测试绿"
   },
   {
    "path": "crates/sdk-support/src/handles.rs",
@@ -784,70 +796,22 @@
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
+   "path": "crates/sdk-support/src/lib.rs",
+   "previousSha256": "1cd2b9e675a0871b578701daa6271848a7da6957da1a71e046b022d54c789128",
+   "sha256": "69dcd28d00d96c9ee03ef2418097efa77c7f047969a360ab23f219e2b5d96298",
+   "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证；R3域索引/隔离/关闭存储收口"
+  },
+  {
    "path": "crates/sdk-support/src/registry.rs",
    "previousSha256": null,
    "sha256": "0fd9a277da17537e139759d26aa8f42479fc1a925687dc06c128b32e17629e35",
    "reason": "R3域句柄/Buffer固定索引、隔离区及关闭快照，补分配失败/并发与机制量化"
   },
   {
-   "path": "crates/am-camera/src/media/h264/session.rs",
-   "previousSha256": "f2d5ad0b3a6992502c3ff8c5d35d4fd9702211a4ac171e015b2f6f97b46506dd",
-   "sha256": "a2fcd2f85461d375c3c1b39c47dfabd35ef4dc7506c291409def9fe1d406fdbb",
-   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
-  },
-  {
-   "path": "crates/am-camera/src/media/h264/session/budget_tests.rs",
+   "path": "crates/sdk-support/src/services.rs",
    "previousSha256": null,
-   "sha256": "91d3c634da10dddbd5f25dce279982f6271a94401a1b24a798b7b4a5eba78fbc",
-   "reason": "R3 Rust H264Hub有界源/工作占位、原Core退订与退出清理验证"
-  },
-  {
-   "path": "crates/camera-ffi/src/sources/api.rs",
-   "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
-   "sha256": "ea39c3fff5458331476236428a1642d8954c9244ee09f20fff4cd54a2e662acb",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 1291d75a38ed26b393e1552101ec1c547f5ae8387ad0886992383c1227906600: FILE source stage 1 (P1-8): AM_SRC_FILE entry constraints (creds/provider null, stream_kind empty, path validation with dynamic detail)"
-  },
-  {
-   "path": "crates/camera-ffi/src/probe/planning.rs",
-   "previousSha256": null,
-   "sha256": "a44b11cc84054c725c44e209d47b2ca3db963b825b1a5fc713a1111bea9992e4",
-   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/probe/storage.rs",
-   "previousSha256": null,
-   "sha256": "48cb49990c40af44119a79d106b2dac13bdc1dafda65203bade98e8718b117b1",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
-  },
-  {
-   "path": "crates/camera-ffi/src/probe/tests.rs",
-   "previousSha256": null,
-   "sha256": "b74d373dfb8f4386bacda369316facf701b0c50802b49e09208417a2e2d9626a",
-   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/frames/registry_tests.rs",
-   "previousSha256": null,
-   "sha256": "40f1bad19523640d6492b4e3627dc97854ec383bd1939abc282e02e8012e0354",
-   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/hub/registry.rs",
-   "previousSha256": null,
-   "sha256": "af5fe425c9fc8b47e3c480d0d87172ff7001744f4c833294dd16662929216cac",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
-  },
-  {
-   "path": "crates/camera-ffi/src/subscriptions/hub/registry/tests.rs",
-   "previousSha256": null,
-   "sha256": "969aba453abca53bfd465a1ec10200c1abba53deb5245830f0ba6c1b2375a463",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
-  },
-  {
-   "path": "crates/sdk-support/src/args.rs",
-   "previousSha256": "a1a193ca7c4703aa6b96063f76612bb95a09b29b8811f7aede5cbae28331faca",
-   "sha256": "24c15439331378b5cb020ca46a59edf121140c7a85d5aee25eff786bed861fc8",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；feedback batch A"
+   "sha256": "7384cf47cb5555ef8d3a66bb4b30e5fd68f56f6fdb336f9e5a10bf82423a0063",
+   "reason": "R3固定Context服务登记和关闭存储，补两库接线及分配/失败/关闭验证"
   },
   {
    "path": "crates/sdk-support/src/shared/api.rs",
@@ -874,22 +838,76 @@
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
+   "path": "crates/sdk-support/src/shared/tests.rs",
+   "previousSha256": "9de8d0ab9e97d398306574a959543b4f61482806547f4d18e70ae803f8bbf9dc",
+   "sha256": "55ac6d3071d517de3303a654e59d98eeba7c3b59b1327f64637400e923036612",
+   "reason": "R2 1.5b新增共享池多槽/借用记录耗尽、等待中关闭打断与归还复用定向测试，仅测试代码"
+  },
+  {
    "path": "crates/sdk-support/src/shared/wire.rs",
    "previousSha256": "f094c593ebda7526975f63a6edfb716eb3960da9e2cf9afea4ce3efd82e90bf2",
    "sha256": "02ac99429adcbe453433e2e5569be97ee0725778058261c807095582273804e9",
    "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
   },
   {
-   "path": "crates/camera-ffi/src/sources/snapshot.rs",
+   "path": "crates/sdk-support/tests/services.rs",
    "previousSha256": null,
-   "sha256": "a604dd43932a19c7f301b7ccb08cdecf96e5b35d20d01a0e934854d42b4d0d34",
-   "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+   "sha256": "8ed991bee050dc38f15d812434ff14b8a3a8fab4261669054e6c01eb0a66570a",
+   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
   },
   {
-   "path": "crates/camera-ffi/src/sources/snapshot/tests.rs",
+   "path": "crates/sdk-support/tests/version.rs",
    "previousSha256": null,
-   "sha256": "e7beb15143add0364c19b19d4ff500ae4c23faef8f94ff72735a8510e14d2fbf",
-   "reason": "R3 reviewed bounded model metadata ownership/fallible allocations and borrowed per-Run validation; fixed source snapshots with measured small-case cost; integrated 339 tests and real CPU/RTSP regression, C ABI unchanged"
+   "sha256": "6d6fff6e9a79f1d497f06ea9e12eb3eaf0edc347ba36728ad90099673e41cceb",
+   "reason": "Reviewed local ABI 1.1 probe/report extension; legacy 1.0 initialization, unchanged layouts, bounded cached metadata and native/language verification; no publication"
+  },
+  {
+   "path": "crates/vision-ffi/Cargo.toml",
+   "previousSha256": "21100d26118bea4e9987e2b8ed9ae9994556fffd30aee76b84d69f95aca9251c",
+   "sha256": "d389582d52ccc85e879cdad63d2a5e0f0092efe773773b15ef7267ef62c58c56",
+   "reason": "H5 reviewed explicit C inference probe, bounded cached report and atomic runtime readiness; native C/C#/Python, CPU proof, budget/close and workspace regression; legacy layouts unchanged; no publication"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/backends.rs",
+   "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
+   "sha256": "e4c38717763756400cd99fac6722d006a90e0b64efde780e26e396f8828e41b3",
+   "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证；E2 DirectML后端枚举扩展（第四推理路径）；v0.3.1 audit fix applied；feedback P0-1 OV2026：amv_init 侧 runtime_dirs 扫描登记 OpenVINO 运行库目录"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/batch_exports.rs",
+   "previousSha256": "13de2cdb439cdcf8b2ce2df3553db2834b68c30028cc537cfed9cfd60ef3fee8",
+   "sha256": "399f419aecbb2dca9a29326953381a03988d01dc08cd2943ae0fcb169e35e306",
+   "reason": "自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/batching_exports.rs",
+   "previousSha256": null,
+   "sha256": "0bbef4354646b946143331ac3614d5bbfe419036f410e3a6da79cce2a88a1f44",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/hardware.rs",
+   "previousSha256": null,
+   "sha256": "ff4638f43af4d339442d43d86e48bc051dc49feb4a0d711850803f123e2ec290",
+   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/input.rs",
+   "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
+   "sha256": "951a06740226028f14404f5368d8520c6269beb4a8a7c80bc9ee885081f90598",
+   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged；v0.3.1 audit fix applied"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/mod.rs",
+   "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
+   "sha256": "38a78bcd1106516b1f0bac476bf81c9efdee87ca545de5ed86c8bced352157d7",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied；feedback P0-1 OV2026：intern_detail 诊断文本驻留（'static CStr，按内容去重，旧详情指针不失效）；v0.3.3 previous SHA-256 97615fd1c93cc9b16b58bcdd329e12d2b143530d706f66f65a76750186651a12：intern_detail 委托 sdk-support::diagnostics::intern 收敛双实现（审计 D 委托）"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/models.rs",
+   "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
+   "sha256": "eb22f7c5460d556aa4b1c98afda4b2f7987057a913f378e31c5efaa76eeb37d4",
+   "reason": "Fix backend policy bound 2->4 (E1/E2 backends were unreachable via amv_model_load public entry; caught by pre-integration comparison testing); workspace 408 green；feedback P0-1 OV2026：模型加载重扫 runtime_dirs 登记、backendStrictUnavailable 失败经 amv_get_last_error 携带检测版本/期望线（登记哈希对应 682b86e 提交的 P0-1 hunk；并行批次同文件的 intra_threads 详情 hunk 落地时须另行链式更新本条）；feedback batch A: intra_threads out-of-range detail lands, chained update per note"
   },
   {
    "path": "crates/vision-ffi/src/inference/models/metadata.rs",
@@ -904,76 +922,160 @@
    "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
   },
   {
-   "path": "crates/vision/src/sdk/model/validation_tests.rs",
+   "path": "crates/vision-ffi/src/inference/notify.rs",
+   "previousSha256": "9d8ae3ede7d71496b040f9bc53068cf7da8b06b06c1f72d7cf3a5a4b8c4f6a05",
+   "sha256": "3a6114995c2245c96fac973ad9f9c5d34988ad81f3600ec10bc98b2e5f706d7b",
+   "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化；extended-audit F7/F9 fix applied"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/notify/queue.rs",
    "previousSha256": null,
-   "sha256": "c66b81b5f2659f4f0c2ecafa43208152e5f53e3a9f5e6f731bf0f1424a37a166",
-   "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
+   "sha256": "e3f55b6669bbebae98496cbf4fc69755a84823d2acc0d3d2e7bb7636f26fdbcf",
+   "reason": "R3推理通知固定队列存储预付、空闲容量持续计费、活项与关闭屏障及注册失败回收；无C ABI变化"
   },
   {
-   "path": "crates/camera-ffi/src/hardware/tests.rs",
+   "path": "crates/vision-ffi/src/inference/notify/tests.rs",
    "previousSha256": null,
-   "sha256": "490c46c1718cde2b41b96d49c8c05e844d0b96c85734571ba80b5767fb075c4d",
-   "reason": "有界硬解后端支持状态，分离未检查和不支持，定向验证并记录 Rust 结构迁移"
+   "sha256": "f767d8be236d273a2895ef91c61dcf70bddc1433a7d8c4186fb049b720c78f9a",
+   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
   },
   {
-   "path": "crates/vision/src/sdk/model/source.rs",
+   "path": "crates/vision-ffi/src/inference/records.rs",
    "previousSha256": null,
-   "sha256": "5e6c721a587cfb5f8edcb6c213206a43ba2f722ed32c7711da0c8425a385770e",
-   "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
+   "sha256": "196c89948593d1d7b9463e51fb5397806921f8f6f8c8ec6aa3ee289f9920b5a6",
+   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change"
   },
   {
-   "path": "crates/vision-ffi/src/inference/backends.rs",
-   "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
-   "sha256": "e4c38717763756400cd99fac6722d006a90e0b64efde780e26e396f8828e41b3",
-   "reason": "旧C后端矩阵改读显式探测缓存，区分未知与已确认无设备，合同和定向验证；E2 DirectML后端枚举扩展（第四推理路径）；v0.3.1 audit fix applied；feedback P0-1 OV2026：amv_init 侧 runtime_dirs 扫描登记 OpenVINO 运行库目录"
+   "path": "crates/vision-ffi/src/inference/records/tests.rs",
+   "previousSha256": null,
+   "sha256": "9e3f74bfcce1d8a952a514a2743b6496f3488a2ec30882550065037b2cc59bb4",
+   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
   },
   {
-   "path": "crates/vision/src/sdk/runtime/windows.rs",
-   "previousSha256": "ba36722147e2c0fc2fc3fde42ca49ecfbff0341fbda370b3106e0101683b5a4d",
-   "sha256": "8d350d1f90fba1e31be42cc7f8a6e25ede5939c15a6c2aa4e45e6448c8a4de59",
-   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
+   "path": "crates/vision-ffi/src/inference/results.rs",
+   "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
+   "sha256": "6065cda85e9ea38d8cc419b6d9e29150aad2e9704aca43ce4c6af22d1bc6c9d7",
+   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
   },
   {
-   "path": "crates/am-camera/src/media/pixel_ops.rs",
-   "previousSha256": "2fc653613c87e0029abeeb2da9dbd9bd2ade18152d3f4cb90dc54ae441c69526",
-   "sha256": "8d71366c21a5812dc280ab9bd430e8ac122d8d95dbf142dba1278ff9f3b690e7",
-   "reason": "最近邻像素缩放按通道复制，逐字节对拍与局部 A/A 量化，其他语义不变；R2 1.4 SIMD决策：定点重写被256^3穷举否决（半整数边界rgb(7,39,43)），保留f64路径改进程级RG表，逐位一致由穷举对拍保证"
+   "path": "crates/vision-ffi/src/inference/scheduler.rs",
+   "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
+   "sha256": "7f4d1b4f1d60708ce060af2c0b29c638502402661ab9f9bb92dc6755c70870c8",
+   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；blind-spot/poison fix applied"
   },
   {
-   "path": "crates/sdk-support/src/shared/tests.rs",
-   "previousSha256": "9de8d0ab9e97d398306574a959543b4f61482806547f4d18e70ae803f8bbf9dc",
-   "sha256": "55ac6d3071d517de3303a654e59d98eeba7c3b59b1327f64637400e923036612",
-   "reason": "R2 1.5b新增共享池多槽/借用记录耗尽、等待中关闭打断与归还复用定向测试，仅测试代码"
+   "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
+   "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
+   "sha256": "f3fac25e46de9930b6d8d0efc9f0e05ac7a06db7d1126ae039ea7668504c3951",
+   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
   },
   {
-   "path": "crates/vision-ffi/src/inference/batch_exports.rs",
-   "previousSha256": "13de2cdb439cdcf8b2ce2df3553db2834b68c30028cc537cfed9cfd60ef3fee8",
-   "sha256": "399f419aecbb2dca9a29326953381a03988d01dc08cd2943ae0fcb169e35e306",
-   "reason": "自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+   "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
+   "previousSha256": null,
+   "sha256": "8cf83b5d0c45f9d488d66f48b0ee411458206641e3767af9bc7f18900fbb9c00",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；extended-audit F1/F6 fix applied"
   },
   {
-   "path": "crates/am-camera/src/media/h264/codec_probe_tests.rs",
-   "previousSha256": "75e5b9af10fe151d4f223b4e3d2435745ebdc64a9b3c542d88562e7b4a1c6fc9",
-   "sha256": "543c11c84889d15661d6458440ca6c2e36c7238b393eaf657f8be86484454367",
-   "reason": "FFmpeg门槛测试标注为环境跳过（CI无运行库），适配CI上线"
+   "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
+   "previousSha256": null,
+   "sha256": "9862b532b45757fe814f3079d0475668722694e97cd26a0b516216f3e4dc1510",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
   },
   {
-   "path": "crates/am-camera/src/media/rtsp_tests.rs",
-   "previousSha256": "95612225fa8ea084f57daf874a6b8772baddab37be8e3d3eb36ab4fb08310978",
-   "sha256": "bdf319483cfec1d0381fdbfc1752308222a0607f9d7dbb27809ce399e6262da7",
-   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
+   "path": "crates/vision-ffi/src/inference/scheduler/budget.rs",
+   "previousSha256": null,
+   "sha256": "bc6b870b363689d0ced31d58a2b1331f92437c93a5253e129c9a45a95f4f949d",
+   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
   },
   {
-   "path": "crates/vision/src/lib.rs",
-   "previousSha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1",
-   "sha256": "25bbad0d888988d49d63b88269057480c1562783e93d88489d8e12eb4bcd739b",
-   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+   "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
+   "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
+   "sha256": "96fa6067e31481320fde10e61788df328095771ff299d6b8fe391ccef7b86fb1",
+   "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
   },
   {
-   "path": "crates/vision/src/backend.rs",
-   "previousSha256": "2a547cf15326cd01e70a96633cd80e0705070de034a58128c5380c571708d348",
-   "sha256": "21862eca35ad850cfc4302fb5840c5eab00e185e7e9147f9668020f3f9dce024",
-   "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+   "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
+   "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
+   "sha256": "e8daaaba403c39d0e1523b48c268469b0da4ece58452412895be22992de6faca",
+   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
+   "previousSha256": null,
+   "sha256": "9c7730a0cf821c1e46eae00f8a90e19c6dc1c86e0b58f13af62d268b96e80884",
+   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
+   "previousSha256": null,
+   "sha256": "8a90a7095afb698051bd46cb8f887db0765a0e02dcc753f94572aec3aea238e6",
+   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/scheduler/storage.rs",
+   "previousSha256": null,
+   "sha256": "dc318e48a84274045f65aee2df218bfbb60c50b5ea5383f395e92dd10db5be29",
+   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/scheduler/tests.rs",
+   "previousSha256": "515897059c2a19e3105e027fb9699f5be7e03277a4f0b308c13e9acb61e20e8b",
+   "sha256": "825d64643d01ae516e8027a17e22b9cf98d6ad0b9832bf14a424bf00dd44973b",
+   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/selected_exports.rs",
+   "previousSha256": null,
+   "sha256": "f17e19e0de80f411788a423330fa8145dbc3ac2251b35a831795030082faa80b",
+   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/selection_tests.rs",
+   "previousSha256": null,
+   "sha256": "b1edcb767f854415d8595d7f809c8f27dd63df9dd51fd863b332ba23b2a969e6",
+   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/selection.rs",
+   "previousSha256": null,
+   "sha256": "9d6fd74dacb1b4595327114209511b845524d7151a4c08b9b607cfaa5b28d963",
+   "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/state.rs",
+   "previousSha256": "02f60c1f980df11b5fcf944e21fc69efd857885620dd8160cb24a1460296fd55",
+   "sha256": "a3b1ee40f7dd73b230d6568b637cbcadff6133e76b8bdd91eaa4986a7071beda",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/swap_exports.rs",
+   "previousSha256": null,
+   "sha256": "46e1674fded610d673711a15e9d6182845f998701a7064bfa56b14ce0d6ba104",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied (issues #2-#8)；extended-audit F1/F6 fix applied"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/swap_tests.rs",
+   "previousSha256": null,
+   "sha256": "2cf48ebe2c0a3f80ff1b52d36db0a4893fd72731acf418fbd8ab44ca08eb8219",
+   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/telemetry_tests.rs",
+   "previousSha256": null,
+   "sha256": "c33db7e4d6e630a43bfbc50d64c394db90bbf19ad357ec9c969490876284b517",
+   "reason": "Add GPU audit stats exposure tests covering increment visibility and context-scoped snapshot agreement with struct_size negotiation check"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/telemetry.rs",
+   "previousSha256": "b7a710d039ea04839abbfe4079bd8727936afc72da2763860d503d22c9836be9",
+   "sha256": "61e18d854364ecd0e80742d5a1190d134f173f9411a122c7eca108eea9b200e8",
+   "reason": "Expose GPU staging audit counters via context stats: amv_get_stats reads the vision-layer pipeline audit snapshot and fills tail-appended am_stats_t fields gpu_inputs/gpu_copies_per_frame (context-scoped); unit tests green; C ABI tail append negotiated by struct_size"
+  },
+  {
+   "path": "crates/vision-ffi/src/lib.rs",
+   "previousSha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847",
+   "sha256": "65fe4d0115e899b6c6d2de9caa44cb3f6aef76e3cd3bb9250680644d2400cd7c",
+   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；v0.3.1 audit fix applied"
   },
   {
    "path": "crates/vision-types/src/lib.rs",
@@ -988,142 +1090,34 @@
    "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
   },
   {
-   "path": "crates/sdk-abi/src/fields_2.rs",
-   "previousSha256": "186054fbc46c1ab5460b6c616d25be2c731c9ff098c8a395f1130ef6d9861786",
-   "sha256": "e09a97f2b6f165abd2b9f96d953c7121cf7bf3e7a7609f791dec7fa13efbbf69",
-   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+   "path": "crates/vision/resources/profiles.json",
+   "previousSha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
+   "sha256": "64e7597a591fb4f90c5c0d355e57314ebb3fc16ab784bc72cea0ef7cb22d6c89",
+   "reason": "vocab V1: dual-input example profile + detect layout/coordForm declarations"
   },
   {
-   "path": "crates/sdk-abi/src/layout_2.rs",
-   "previousSha256": "16d44dc4cd219a590b0758d145807d22dfbb96aa6689ce67ce2fd6e0c1849c3f",
-   "sha256": "8dde66cadf79f7a3b956f80acdc39c6560b7ec2d9b324036ec4bee52a3b1cd7d",
-   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+   "path": "crates/vision/src/backend.rs",
+   "previousSha256": "2a547cf15326cd01e70a96633cd80e0705070de034a58128c5380c571708d348",
+   "sha256": "21862eca35ad850cfc4302fb5840c5eab00e185e7e9147f9668020f3f9dce024",
+   "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
   },
   {
-   "path": "crates/sdk-abi/src/types_2.rs",
-   "previousSha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4",
-   "sha256": "cbf3aa43969519b5d953d67865cee198915d5371ee50c5299ba0674bc5bf96aa",
-   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
-  },
-  {
-   "path": "crates/sdk-abi/src/layout_tests.rs",
-   "previousSha256": "960b3f8654a66e4b75735436c1bab9919e8ef00297def9e2651ca8ea913247f4",
-   "sha256": "c9fd76a6ce2371fa0b7a6d1c5d0511549dcca9eb911227badaf9833d9cc79972",
-   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
-  },
-  {
-   "path": "crates/sdk-abi/src/lib.rs",
-   "previousSha256": "5ae46b1dd32bc386bbc0e7b6d4e11d7ded4eee838ba9a811aaeaa2d2147a8db3",
-   "sha256": "86258c64d9de0b606555c5905a0f8bc2b140dbb02c5ed17fe6162b57d72e5213",
-   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/input.rs",
-   "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "951a06740226028f14404f5368d8520c6269beb4a8a7c80bc9ee885081f90598",
-   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged；v0.3.1 audit fix applied"
-  },
-  {
-   "path": "crates/sdk-abi/src/defaults.rs",
-   "previousSha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
-   "sha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
-   "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition"
-  },
-  {
-   "path": "crates/camera-ffi/src/captures/images.rs",
-   "previousSha256": "6363e851b83c2b4ce3f1aa40c87200ebf552a5926c41182b919afaf035a4a504",
-   "sha256": "ea42751b434a616158c87a533aa20928b10a446d864a784c1c43f72b55fd8367",
-   "reason": "Reviewed default frame budget raise 96->128MiB with cpu-frame scratch precision 8->7 B/px (2160p downstream feedback); workspace green; C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/src/media/sdk_io/http.rs",
-   "previousSha256": "aae6ff0df8b1d113d1f37468120e40ca7e03ca8d437b2763d7e66f1cd9a9c468",
-   "sha256": "74543d5e7daa9401c3aa0cb9c4ff6fc9f9a75b364ec08c42ced31c32bf70aa96",
-   "reason": "R7 mjpeg/multipart module registrations (pub mod lines); C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/Cargo.toml",
-   "previousSha256": "c49aef7faba6a39e41250fd91227ae9e9849714740e0f3b264abc9fd847fe6af",
-   "sha256": "cf6ac395b20cade41c473700199eb64101631d81cebd05fa52a14ffab648b7d0",
-   "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/telemetry.rs",
-   "previousSha256": "b7a710d039ea04839abbfe4079bd8727936afc72da2763860d503d22c9836be9",
-   "sha256": "61e18d854364ecd0e80742d5a1190d134f173f9411a122c7eca108eea9b200e8",
-   "reason": "Expose GPU staging audit counters via context stats: amv_get_stats reads the vision-layer pipeline audit snapshot and fills tail-appended am_stats_t fields gpu_inputs/gpu_copies_per_frame (context-scoped); unit tests green; C ABI tail append negotiated by struct_size"
-  },
-  {
-   "path": "crates/vision-ffi/src/inference/telemetry_tests.rs",
+   "path": "crates/vision/src/engine/mod.rs",
    "previousSha256": null,
-   "sha256": "c33db7e4d6e630a43bfbc50d64c394db90bbf19ad357ec9c969490876284b517",
-   "reason": "Add GPU audit stats exposure tests covering increment visibility and context-scoped snapshot agreement with struct_size negotiation check"
+   "sha256": "aadb67004958f905e019f84390f4f428cd954375f59167f02e081f6795ecfd01",
+   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg.rs",
+   "path": "crates/vision/src/engine/openvino.rs",
    "previousSha256": null,
-   "sha256": "84f4f37760c904f22632e7fcc5391e23fa23efe489d9a8a342a605fdb8557d03",
-   "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
+   "sha256": "4de7046c7eb77bdff0b321b155d3e68a2dfb3bafdef5aeb87feddf08341b4ec5",
+   "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）"
   },
   {
-   "path": "crates/am-camera/src/media/mjpeg.rs",
+   "path": "crates/vision/src/engine/ov_sys.rs",
    "previousSha256": null,
-   "sha256": "83f669b722388db7788cc793376842c3d0169dc3618a292a83b057fef6c3adb6",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only"
-  },
-  {
-   "path": "crates/am-camera/src/media/multipart.rs",
-   "previousSha256": null,
-   "sha256": "aadaf2063faee67e285bbc06c3ac7e7ce7eaf163af3bd9479ffbde480a5ec870",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/src/media/codec/gpu_frame.rs",
-   "previousSha256": null,
-   "sha256": "25c2337672a276af0ea8e44132c3d24bbe3c0459690f649e43991eb5de2983c7",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
-  },
-  {
-   "path": "crates/am-camera/src/media/sdk_io/mod.rs",
-   "previousSha256": "9ffebd6aa0082b136524436ac07fe0b64859478261df18b621ae0da4e7295cc4",
-   "sha256": "8538541ddd7c17e045a646642521135a6b71ad67c637f767505875979eb88ea2",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged; previous SHA-256 69c91c57a1c753770ac9fda5c2b2b734ce2b6d82d4bdc60e5c7b24ad5a002c30: FILE source stage 1 (P1-8): validate_file_path + FileCheckError (path/os_error detail)"
-  },
-  {
-   "path": "crates/am-camera/tests/jpeg_bench.rs",
-   "previousSha256": null,
-   "sha256": "84a3b03db3b576c7948d0ffec34fbaff0c71cafcdd1f9c2fd3f0ed19b8d607d4",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
-  },
-  {
-   "path": "crates/camera-ffi/src/decoder/gpu_pool.rs",
-   "previousSha256": null,
-   "sha256": "a3c20a76c3b906909cca32f64d47794dd329109f609a27a69fd26757a9bcf1df",
-   "reason": "R9 reviewed gpu frame desc/texture query exports implementation (contract-declared in M2b 2.6a, implementation was missed; Box<GpuFrame> handle dual to release from_raw); DLL export verified; C ABI unchanged；v0.3.1 audit fix applied (issue A1: exports hardened to notSupported until GPU closed-loop lands)"
-  },
-  {
-   "path": "crates/camera-ffi/src/decoder/gpu_pool_tests.rs",
-   "previousSha256": null,
-   "sha256": "f164364bf3f77e74e71c62464533b988a95a6e0462788ff9178e2d81ae7eded7",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
-  },
-  {
-   "path": "crates/sdk-abi/src/fields_8.rs",
-   "previousSha256": null,
-   "sha256": "c2bd93f7a4ea04aafa075cda6ca4e3f71bc4fc63b1c98aed6842155cec9ed69e",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
-  },
-  {
-   "path": "crates/sdk-abi/src/layout_8.rs",
-   "previousSha256": null,
-   "sha256": "0c580a60f6c8566c80242fd70e868d665d4feca225d13154abf3b8947f4d3db9",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
-  },
-  {
-   "path": "crates/sdk-abi/src/types_8.rs",
-   "previousSha256": null,
-   "sha256": "30c5d3cd4eb42dc6d7b8c81e3581684f2a7687f81c8748d12e0b16612c9ea50a",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "761ef16deb9d51266658dd2c822298994ea2c9cd28a9ed457f8007809e64549d",
+   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）"
   },
   {
    "path": "crates/vision/src/gpu/cuda_sys.rs",
@@ -1144,16 +1138,16 @@
    "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
   },
   {
-   "path": "crates/vision/src/gpu/interop.rs",
-   "previousSha256": null,
-   "sha256": "3ef8be725f90c8a3c4a74f6023b70869b33749b08f8eb90c380b83c8a4624c64",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；v0.3.1 audit fix applied (issues #2-#8)"
-  },
-  {
    "path": "crates/vision/src/gpu/interop_tests.rs",
    "previousSha256": null,
    "sha256": "225e040f6ff48ff1238312f200980783bd6fb52a69addf11da5bb023f8df1eec",
    "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+  },
+  {
+   "path": "crates/vision/src/gpu/interop.rs",
+   "previousSha256": null,
+   "sha256": "3ef8be725f90c8a3c4a74f6023b70869b33749b08f8eb90c380b83c8a4624c64",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；v0.3.1 audit fix applied (issues #2-#8)"
   },
   {
    "path": "crates/vision/src/gpu/iobinding.rs",
@@ -1180,10 +1174,34 @@
    "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
   },
   {
-   "path": "crates/vision/src/sdk/batching.rs",
-   "previousSha256": null,
-   "sha256": "9a45fa9c21a071939ad2d4bed1696dae0b993c27060859881d58ddac38635da0",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "path": "crates/vision/src/lib.rs",
+   "previousSha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1",
+   "sha256": "25bbad0d888988d49d63b88269057480c1562783e93d88489d8e12eb4bcd739b",
+   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+  },
+  {
+   "path": "crates/vision/src/profiles/mod.rs",
+   "previousSha256": "b6e62092631732545a31cd3365cb795d4e14a4f973d1785a26a16a3a58126121",
+   "sha256": "e487410453e5f21d903ef9b830587768e3682977b87c403fbbfda2188691d5f5",
+   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+  },
+  {
+   "path": "crates/vision/src/profiles/registry.rs",
+   "previousSha256": "83124c5222843b2e0f4d39257809f8d4d8fa6aadf69a2539301de02a036d9570",
+   "sha256": "3d8c5632aa9c61f65f19d1bbd58adeec7ee05802f3b8453c5c5e1c99bc1ebbd0",
+   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+  },
+  {
+   "path": "crates/vision/src/profiles/results.rs",
+   "previousSha256": "695cf736746db76a07955d2d499b097d02931810adbb22e932f76724baec6810",
+   "sha256": "198337d7b9de4f8464381b05c7c517ab9cecbbf73048dbe8a5badede7d771a53",
+   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+  },
+  {
+   "path": "crates/vision/src/profiles/tests.rs",
+   "previousSha256": "737db32a00d880747c847bace27ebdd638785fa5cd2a3348fbbe1e0d6d7e38f1",
+   "sha256": "2e4a9002ceab5f05210f1eeefb6e67787be3513c6fa4c7c31bdb2237d988888e",
+   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
   },
   {
    "path": "crates/vision/src/sdk/batching_tests.rs",
@@ -1192,76 +1210,94 @@
    "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
   },
   {
-   "path": "crates/vision-ffi/src/inference/batching_exports.rs",
+   "path": "crates/vision/src/sdk/batching.rs",
    "previousSha256": null,
-   "sha256": "0bbef4354646b946143331ac3614d5bbfe419036f410e3a6da79cce2a88a1f44",
+   "sha256": "9a45fa9c21a071939ad2d4bed1696dae0b993c27060859881d58ddac38635da0",
    "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
   },
   {
-   "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
-   "previousSha256": null,
-   "sha256": "8cf83b5d0c45f9d488d66f48b0ee411458206641e3767af9bc7f18900fbb9c00",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；extended-audit F1/F6 fix applied"
+   "path": "crates/vision/src/sdk/mod.rs",
+   "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
+   "sha256": "64322fe73350cb0d3c3c0b49c3d473cd8a9d1058f5e29c52887544f0d6f827ac",
+   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
   },
   {
-   "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
-   "previousSha256": null,
-   "sha256": "9862b532b45757fe814f3079d0475668722694e97cd26a0b516216f3e4dc1510",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "path": "crates/vision/src/sdk/model.rs",
+   "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
+   "sha256": "86e2df6876266cbdf927efd7eaa279984c2a247cd735f5ce9db97f4b9f7246e3",
+   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only; previous SHA-256 c6471dd66954bc66…: vocab V1: B1 decode_head layout/coordForm parameterization (transposed|row-major × cxcywh|xyxy) + A3 dual-input profile validation with expected/actual detail"
   },
   {
-   "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg/tests.rs",
+   "path": "crates/vision/src/sdk/model/source.rs",
    "previousSha256": null,
-   "sha256": "dee79e1d5ca1e2429dfa29fed423488eabedac04d890dba8e1b9608410ebc0b8",
-   "reason": "R7 reconnect test + test module split to independent file (production code byte-identical, repo pattern); workspace 389 green"
+   "sha256": "5e6c721a587cfb5f8edcb6c213206a43ba2f722ed32c7711da0c8425a385770e",
+   "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification"
   },
   {
-   "path": "crates/vision/src/engine/ov_sys.rs",
+   "path": "crates/vision/src/sdk/model/validation_tests.rs",
    "previousSha256": null,
-   "sha256": "761ef16deb9d51266658dd2c822298994ea2c9cd28a9ed457f8007809e64549d",
-   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）"
+   "sha256": "68a1d2aba4be7dd8e94b9e826b9199fc505dfbb8ae22aab56602ff03bbe33bf7",
+   "reason": "R3 bounded model file read from opened handle, mutation and size error handling; memory-source borrow avoids SDK-owned model byte copy, with scoped native CPU verification; previous SHA-256 c66b81b5f2659f4f…: vocab V1: B1 decode_head layout/coordForm parameterization (transposed|row-major × cxcywh|xyxy) + A3 dual-input profile validation with expected/actual detail"
   },
   {
-   "path": "crates/vision/src/engine/openvino.rs",
-   "previousSha256": null,
-   "sha256": "4de7046c7eb77bdff0b321b155d3e68a2dfb3bafdef5aeb87feddf08341b4ec5",
-   "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）"
+   "path": "crates/vision/src/sdk/prepare.rs",
+   "previousSha256": "bf97f1899375ee41dd7bbea511d067d50aa67c239f92d3b139094b3c856ba4a0",
+   "sha256": "cc1133fcbdf08405ec22300b67cdd218ddf45ef60cbfd2f1b875aae96879bd89",
+   "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
   },
   {
-   "path": "crates/vision/src/engine/mod.rs",
+   "path": "crates/vision/src/sdk/prepare/reference.rs",
    "previousSha256": null,
-   "sha256": "aadb67004958f905e019f84390f4f428cd954375f59167f02e081f6795ecfd01",
+   "sha256": "8c1ab84b5d8d25dc07ba90459297d47a2593e61a680c8b59610a9c4ab2d44837",
+   "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+  },
+  {
+   "path": "crates/vision/src/sdk/prepare/tests.rs",
+   "previousSha256": null,
+   "sha256": "5fb6243dee273586fbcdb107788710c689cde6d528b423f2ae9c650b370411e4",
+   "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+  },
+  {
+   "path": "crates/vision/src/sdk/runtime.rs",
+   "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
+   "sha256": "bc0e7db07a269bbf304e65186f89ab629a691374fa7b8a9067e686ff5f32dd22",
+   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数；E2 DirectML后端枚举扩展（第四推理路径）；feedback P0-1 OV2026：note_openvino_dirs/runtime 失败详情读写清零转发（E1 运行库随 runtime_dirs 提供的合同接线）"
+  },
+  {
+   "path": "crates/vision/src/sdk/runtime/devices.rs",
+   "previousSha256": null,
+   "sha256": "ca0288eeb12658fe73a202b2f3a6dc4264405d7fbf9ffcc39d718546b7fd7983",
+   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication"
+  },
+  {
+   "path": "crates/vision/src/sdk/runtime/windows.rs",
+   "previousSha256": "ba36722147e2c0fc2fc3fde42ca49ecfbff0341fbda370b3106e0101683b5a4d",
+   "sha256": "8d350d1f90fba1e31be42cc7f8a6e25ede5939c15a6c2aa4e45e6448c8a4de59",
+   "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数"
+  },
+  {
+   "path": "crates/vision/src/sdk/selection_tests.rs",
+   "previousSha256": null,
+   "sha256": "fec7f590db03da01250ebc87565fbf5763175a5b77f5417ea9af9a95923f9cfc",
+   "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+  },
+  {
+   "path": "crates/vision/src/sdk/selection.rs",
+   "previousSha256": null,
+   "sha256": "db05dc3ecfa8c223f3ff427dbe86b83bdc245b3320f1c2838428cb5619c31395",
    "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
   },
   {
-   "path": "crates/vision-ffi/src/inference/swap_exports.rs",
+   "path": "crates/vision/src/sdk/session.rs",
    "previousSha256": null,
-   "sha256": "46e1674fded610d673711a15e9d6182845f998701a7064bfa56b14ce0d6ba104",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；v0.3.1 audit fix applied (issues #2-#8)；extended-audit F1/F6 fix applied"
+   "sha256": "dc26268694a44926b6a0499e3fece03a5e5a6f4d983bdad0a44af524e3c0c8d4",
+   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；E2 DirectML后端枚举扩展（第四推理路径）"
   },
   {
-   "path": "crates/vision-ffi/src/inference/swap_tests.rs",
-   "previousSha256": null,
-   "sha256": "2cf48ebe2c0a3f80ff1b52d36db0a4893fd72731acf418fbd8ab44ca08eb8219",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
-  },
-  {
-   "path": "crates/am-camera/src/media/h264/codec_probe.rs",
-   "previousSha256": "e99211213a5743e53a1b437216b62fe3ea8c1d7458310907db449a23b9935ff6",
-   "sha256": "c7a961840da79fe16035465db872b0587129b7d1af44d6be29c60873848bc295",
-   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge"
-  },
-  {
-   "path": "crates/am-camera/src/media/rtsp.rs",
-   "previousSha256": "610f0fc2def67f708d706af1447f7c32788671674b2437fa8013e3ec917ef21f",
-   "sha256": "835a8c2ee108c3c753962a32792c4c1d9648e9aa7a693a1567195fe1f0b78397",
-   "reason": "rs-probe merge batch: bounded RTSP probe + fair overlay delivery (fanout 14 directed tests); verified on codex branch, PM-audited merge；v0.3.1 audit fix applied"
-  },
-  {
-   "path": "crates/sdk-support/src/diagnostics.rs",
-   "previousSha256": "fd3806e1adc1ed4e02d37db6a038b0213f99c4b4578568172036a94394a18c40",
-   "sha256": "18e8544f4bb055cc47f737ac0440d109d9e26841626fe3d835f320ee36348ab7",
-   "reason": "v0.3.2 batch D：诊断动态详情驻留机制下沉 sdk-support（intern 内容去重进程保活 + Detail::dynamic），键纪律修订为稳定 key 与动态详情并存；新增驻留单测，sdk-support 测试绿"
+   "path": "crates/vision/src/sdk/tests.rs",
+   "previousSha256": "b6d218fb9ef81420ecd2582a180ab63b574cd406220d2b9492e12e7266e8f157",
+   "sha256": "ff4572beced4b1e48d86d526ff4b3190a5b55f2ec4ec3688cb032cb241f6869d",
+   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
   }
  ]
 }

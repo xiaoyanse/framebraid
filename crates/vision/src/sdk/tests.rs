@@ -24,7 +24,12 @@ fn five_profiles_execute_real_cpu_and_memory_model() {
         color_matrix: 0,
         color_range: 0,
     };
-    for (profile, file) in profiles::all().unwrap().iter().zip(files) {
+    for (profile, file) in profiles::all()
+        .unwrap()
+        .iter()
+        .filter(|p| p.sample_sha256 != "ignore")
+        .zip(files)
+    {
         let mut model = Model::load(
             ModelSource::Path(&directory.join(file)),
             Some(&profile.id),

@@ -39,10 +39,22 @@
       "outputs": [{ "name": "output0", "shape": [1, 84, 8400] }],
       "preprocess": "letterbox-rgb-div255-nchw",
       "classes": 80,
+      "postprocess": { "layout": "transposed", "coordForm": "cxcywh" },
       "confidence": 0.25,
       "nmsIou": 0.7,
       "nmsMetric": "axis-aligned-iou",
       "maxDet": 300
+    },
+    {
+      "id": "detect-yolo-world-head-v1",
+      "task": "detect",
+      "decoder": "raw-affinity",
+      "sampleSha256": "ignore",
+      "inputs": [
+        { "name": "images", "shape": ["batch", 3, 640, 640], "ranges": { "batch": [1, 1] } },
+        { "name": "text_embeddings", "shape": ["num_prompts", 512], "ranges": { "num_prompts": [1, 8192] } }
+      ],
+      "outputs": [{ "name": "output0", "shape": [1, 8400] }]
     },
     {
       "id": "classify-yolo11n-prob-v1",
