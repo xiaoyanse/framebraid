@@ -102,6 +102,7 @@ fn detect_nms_is_class_aware_and_maps_out_letterbox() {
         &[tensor(&p.outputs[0], &head)],
         mapping(),
         Options::default(),
+        None,
     )
     .unwrap();
     let Output::Detect(found) = result.output else {
@@ -124,6 +125,7 @@ fn classification_keeps_probabilities_and_accepts_cropped_non_square_image() {
         &[tensor(&p.outputs[0], &values)],
         mapping(),
         Options::default(),
+        None,
     )
     .unwrap();
     let Output::Classify(found) = result.output else {
@@ -137,7 +139,8 @@ fn classification_keeps_probabilities_and_accepts_cropped_non_square_image() {
         &p.id,
         &[tensor(&p.outputs[0], &values)],
         mapping(),
-        Options::default()
+        Options::default(),
+        None
     )
     .is_err());
 }
@@ -152,6 +155,7 @@ fn pose_keeps_existing_coco17_decoder() {
         &[tensor(&p.outputs[0], &values)],
         mapping(),
         Options::default(),
+        None,
     )
     .unwrap();
     let Output::Pose(found) = result.output else {
@@ -181,7 +185,7 @@ fn segment_uses_logit_zero_not_half_and_packs_lsb_padding() {
         tensor(&p.outputs[0], &head),
         tensor(&p.outputs[1], &prototypes),
     ];
-    let result = decode(&p.id, &views, map, Options::default()).unwrap();
+    let result = decode(&p.id, &views, map, Options::default(), None).unwrap();
     let Output::Segment(found) = result.output else {
         panic!("wrong task")
     };
@@ -194,11 +198,11 @@ fn segment_uses_logit_zero_not_half_and_packs_lsb_padding() {
         mask_budget_bytes: 17,
         ..Options::default()
     };
-    assert!(decode(&p.id, &views, map, options)
+    assert!(decode(&p.id, &views, map, options, None)
         .unwrap_err()
         .0
         .contains("resourceExhausted"));
-    assert!(decode(&p.id, &views[..1], map, Options::default()).is_err());
+    assert!(decode(&p.id, &views[..1], map, Options::default(), None).is_err());
 }
 
 #[test]
@@ -221,6 +225,7 @@ fn obb_vertices_follow_frozen_non_square_example_and_probiou_nms() {
         &[tensor(&p.outputs[0], &head)],
         map,
         Options::default(),
+        None,
     )
     .unwrap();
     let Output::Obb(found) = result.output else {
@@ -245,12 +250,13 @@ fn invalid_tensor_identity_shape_and_nonfinite_values_fail_before_decoding() {
         shape: &p.outputs[0].shape,
         values: &head,
     };
-    assert!(decode(&p.id, &[wrong], mapping(), Options::default()).is_err());
+    assert!(decode(&p.id, &[wrong], mapping(), Options::default(), None).is_err());
     assert!(decode(
         &p.id,
         &[tensor(&p.outputs[0], &head[..3])],
         mapping(),
-        Options::default()
+        Options::default(),
+        None
     )
     .is_err());
     head[0] = f32::NAN;
@@ -258,7 +264,8 @@ fn invalid_tensor_identity_shape_and_nonfinite_values_fail_before_decoding() {
         &p.id,
         &[tensor(&p.outputs[0], &head)],
         mapping(),
-        Options::default()
+        Options::default(),
+        None
     )
     .is_err());
     assert!(decode(
@@ -268,7 +275,124 @@ fn invalid_tensor_identity_shape_and_nonfinite_values_fail_before_decoding() {
             width: 0,
             ..mapping()
         },
-        Options::default()
+        Options::default(),
+        None
     )
     .is_err());
+}
+
+#[test]
+fn affinity_decode_merges_within_entry_and_keeps_hits() {
+    use super::results::{decode_affinity, VocabLayout};
+    let spec = TensorSpec {
+        name: "output0".into(),
+        shape: vec![7, 4],
+    };
+    let profile = super::Profile {
+        id: "affinity-test".into(),
+        task: Task::Detect,
+        sample_sha256: String::new(),
+        input: TensorSpec {
+            name: "images".into(),
+            shape: vec![1, 3, 640, 640],
+        },
+        inputs: vec![
+            TensorSpec {
+                name: "images".into(),
+                shape: vec![1, 3, 640, 640],
+            },
+            TensorSpec {
+                name: "text_embeddings".into(),
+                shape: vec![0, 512],
+            },
+        ],
+        outputs: vec![spec],
+        classes: None,
+        postprocess: Default::default(),
+    };
+    let layout = VocabLayout {
+        entries: vec![("hand".into(), 2), ("glove".into(), 1)],
+    };
+    // transposed 布局：行 0..3 坐标，行 4..6 = 提示词分（hand p0/p1、glove p0）
+    let mut head = vec![0.0f32; 7 * 4];
+    let mut put = |anchor: usize, row: usize, v: f32| head[row * 4 + anchor] = v;
+    // anchor 0：同一框，hand 两词命中（0.9/0.8）→ 组内合并留 0.9（prompt 0）
+    for row in 0..4 {
+        put(0, row, [320.0, 320.0, 300.0, 180.0][row]);
+    }
+    put(0, 4, 0.9);
+    put(0, 5, 0.8);
+    // anchor 1：与 anchor 0 近重合（IoU>0.7），hand 词 1（0.85）→ 跨 anchor 组内合并（留 0.9）
+    for row in 0..4 {
+        put(1, row, [321.0, 320.0, 300.0, 180.0][row]);
+    }
+    put(1, 5, 0.85);
+    // anchor 2：与 anchor 0 同框但 glove 组（0.7）→ 组间独立保留
+    for row in 0..4 {
+        put(2, row, [320.0, 320.0, 300.0, 180.0][row]);
+    }
+    put(2, 6, 0.7);
+    // anchor 3：低于阈值
+    for row in 0..4 {
+        put(3, row, [100.0, 100.0, 50.0, 50.0][row]);
+    }
+    put(3, 4, 0.1);
+    let (detections, hits) =
+        decode_affinity(&profile, &[&head], mapping(), Options::default(), &layout).unwrap();
+    assert_eq!(detections.len(), 2, "{detections:?}");
+    assert_eq!(detections[0].class_id, 0, "hand 组最高分");
+    assert_eq!(detections[0].confidence, 0.9);
+    assert_eq!(detections[1].class_id, 1, "glove 组独立保留");
+    assert_eq!(detections[1].confidence, 0.7);
+    assert_eq!(hits.len(), 2);
+    assert_eq!((hits[0].entry_index, hits[0].prompt_index), (0, 0));
+    assert_eq!((hits[1].entry_index, hits[1].prompt_index), (1, 0));
+}
+
+#[test]
+fn affinity_decode_rejects_short_head_and_bad_score() {
+    use super::results::{decode_affinity, VocabLayout};
+    let profile = super::Profile {
+        id: "affinity-short".into(),
+        task: Task::Detect,
+        sample_sha256: String::new(),
+        input: TensorSpec {
+            name: "images".into(),
+            shape: vec![1, 3, 640, 640],
+        },
+        inputs: vec![],
+        outputs: vec![TensorSpec {
+            name: "output0".into(),
+            shape: vec![6, 4], // 4 坐标+2 词也放不下 3 行词表
+        }],
+        classes: None,
+        postprocess: Default::default(),
+    };
+    let layout = VocabLayout {
+        entries: vec![("a".into(), 1), ("b".into(), 1), ("c".into(), 1)],
+    };
+    let head = vec![0.0f32; 24];
+    let error = decode_affinity(&profile, &[&head], mapping(), Options::default(), &layout)
+        .err()
+        .unwrap()
+        .0;
+    assert!(error.contains("affinityHead"), "{error}");
+    // 分数越界（>1）拒绝
+    let profile_ok = super::Profile {
+        outputs: vec![TensorSpec {
+            name: "output0".into(),
+            shape: vec![7, 4],
+        }],
+        ..profile
+    };
+    let mut bad = vec![0.0f32; 28];
+    for row in 0..4 {
+        bad[row * 4] = [320.0, 320.0, 300.0, 180.0][row]; // anchor0 合法坐标
+    }
+    bad[4 * 4] = 1.5; // anchor0 prompt0 分 1.5
+    let error = decode_affinity(&profile_ok, &[&bad], mapping(), Options::default(), &layout)
+        .err()
+        .unwrap()
+        .0;
+    assert!(error.contains("classProbabilityExpected"), "{error}");
 }

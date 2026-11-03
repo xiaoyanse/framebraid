@@ -400,6 +400,6 @@ Keep path models and external weights trusted and unchanged throughout loading. 
 
 输入维度和类型匹配不能证明文本嵌入空间与检测头配对。异源文本塔可能产生集中于 letterbox 填充带的假框，未归一化图像可能产生饱和假分；实测背景见 `docs/EXTENSION_CAPABILITIES.md`。模型制作者负责确认图像预处理和文本塔与检测头配套，SDK 当前不提供嵌入空间健康度探测。
 
-运行期词表绑定走 `amv_vocab_bind`（合同 dual-dll-abi.md §4.1 开放词汇段）：文本塔独立加载为 `task=text-encoder` 档案模型，调用方用配对 tokenizer 预先化词（SDK 不内置 tokenizer）；绑定后检测模型图像入口推理自动注入嵌入，重复调用即换词表，结果按逻辑类目输出并附组内提示词命中明细（`vocab_hits`）。
+运行期词表绑定走 `amv_vocab_bind`（合同 dual-dll-abi.md §4.1 开放词汇段）：文本塔独立加载为 `task=text-encoder` 档案模型，调用方用配对 tokenizer 预先化词（SDK 不内置 tokenizer）；绑定后检测模型图像入口推理自动注入嵌入，重复调用即换词表，结果按逻辑类目输出并附组内提示词命中明细（`vocab_hits`——组内跨提示词命中合并为单框保留最高分，明细保留原始命中词索引供业务过滤，同框不同类目各自独立输出不去重）。
 
 

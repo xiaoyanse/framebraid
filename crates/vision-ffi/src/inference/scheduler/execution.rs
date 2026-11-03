@@ -369,6 +369,10 @@ fn decode_prediction(
                 mask_budget_bytes: reserve.saturating_sub(raw_bytes + 512 * 1024),
                 ..Options::default()
             },
+            // GPU/批量共用的独立解码入口无词汇上下文：亲和头档案在此路径明确
+            // 拒绝（decode 内 affinity&&vocab 缺失 → profileUnsupported），与注入层
+            // 的 vocabNotBound 分工一致。
+            None,
         )
         .map_err(error)?,
     ))
@@ -470,9 +474,13 @@ fn run(
     // 未绑定时按合同拒绝（vocabNotBound）；单输入/RAW 模型零影响。引用切片组装
     // 免图像张量复制（run_ref 语义与 run 一致）。
     let vocab_tensor: am_vision_core::sdk::TensorData;
+    let vocab_layout: Option<am_vision_core::profiles::VocabLayout>;
     let mut infer_inputs: Vec<&am_vision_core::sdk::TensorData> =
         prepared.tensors().iter().collect();
-    if session.profile.is_some_and(|p| p.inputs.len() > 1) {
+    if session
+        .profile
+        .is_some_and(|p| p.inputs.len() > 1 && p.classes.is_none())
+    {
         let snapshot = model
             .vocab
             .read()
@@ -482,7 +490,10 @@ fn run(
             return Err(AM_ERR_VISION_VOCAB_NOT_BOUND);
         };
         vocab_tensor = vocab.injection_tensor(&session.inputs[1]).map_err(error)?;
+        vocab_layout = Some(vocab.layout());
         infer_inputs.push(&vocab_tensor);
+    } else {
+        vocab_layout = None;
     }
     let output = session.run_ref(&infer_inputs, reserve);
     model.refresh_selection(session);
@@ -525,6 +536,7 @@ fn run(
                     mask_budget_bytes: reserve.saturating_sub(raw_bytes + 512 * 1024),
                     ..Options::default()
                 },
+                vocab_layout.as_ref(),
             )
             .map_err(error)?,
         )

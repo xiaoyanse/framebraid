@@ -76,6 +76,7 @@ fn five_profiles_execute_real_cpu_and_memory_model() {
                 top: m.top,
             },
             Options::default(),
+            None,
         )
         .unwrap();
         assert_eq!(prediction.width, 320);

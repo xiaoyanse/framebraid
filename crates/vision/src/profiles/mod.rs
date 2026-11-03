@@ -6,7 +6,8 @@ mod results;
 
 pub use registry::{all, find, release_for_sdk_unload, Profile, Task, TensorSpec};
 pub use results::{
-    ClassScore, Detection, Output, Prediction, RotatedDetection, Segment, TensorView,
+    ClassScore, Detection, Output, Prediction, RotatedDetection, Segment, TensorView, VocabHit,
+    VocabLayout, VocabResult,
 };
 
 use crate::{preprocess::Mapping, Error, Result};
@@ -80,14 +81,24 @@ impl ImageMapping {
 }
 
 /// 只接受档案规定的命名f32输出，不根据形状猜任务，也不把缺失原型当检测框返回。
+/// `vocab`（A2）：双输入 detect 档案（classes 未声明、亲和头形态）绑定词表后的
+/// 布局——提供时走亲和解码（组内去重+命中明细）；其余路径为 None 零影响。
 pub fn decode(
     profile_id: &str,
     tensors: &[TensorView<'_>],
     mapping: ImageMapping,
     options: Options,
+    vocab: Option<&results::VocabLayout>,
 ) -> Result<Prediction> {
     let profile = find(profile_id)?;
-    if profile.task == Task::Detect && profile.classes.is_none() {
+    let affinity =
+        profile.task == Task::Detect && profile.classes.is_none() && profile.inputs.len() > 1;
+    if profile.task == Task::Detect && profile.classes.is_none() && !affinity {
+        return Err(Error("vision.profileUnsupported".into()));
+    }
+    if affinity && vocab.is_none() {
+        // 未绑定的亲和头档案无类别语义（画像 classes 未声明），解码通道前置拒绝；
+        // 推理注入层已在更早处以 vocabNotBound 拦截，此处为纯后处理独立入口的兜底。
         return Err(Error("vision.profileUnsupported".into()));
     }
     if !options.confidence.is_finite()
@@ -127,6 +138,7 @@ pub fn decode(
         }
         ordered.push(actual.values);
     }
+    let mut vocab_hits = None;
     let output = match profile.task {
         Task::Pose => {
             let map = Mapping {
@@ -141,6 +153,15 @@ pub fn decode(
             Output::Pose(detections)
         }
         Task::Classify => Output::Classify(results::classify(ordered[0], options.top_k)?),
+        Task::Detect if affinity && let Some(layout) = vocab => {
+            let (detections, hits) =
+                results::decode_affinity(profile, &ordered, mapping, options, layout)?;
+            vocab_hits = Some(results::VocabResult {
+                hits,
+                labels: layout.entries.iter().map(|(l, _)| l.clone()).collect(),
+            });
+            Output::Detect(detections)
+        }
         task => results::decode_head(task, profile, &ordered, mapping, options)?,
     };
     Ok(Prediction {
@@ -148,6 +169,7 @@ pub fn decode(
         width: mapping.width,
         height: mapping.height,
         output,
+        vocab_hits,
     })
 }
 

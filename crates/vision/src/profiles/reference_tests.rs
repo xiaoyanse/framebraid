@@ -94,7 +94,7 @@ fn independent_fast_nms_chain_rejects_greedy_substitution() {
         nms_iou: reference.threshold,
         ..Options::default()
     };
-    let result = decode(&profile.id, &views, map, options).unwrap();
+    let result = decode(&profile.id, &views, map, options, None).unwrap();
     let Output::Obb(found) = result.output else {
         panic!("wrong task")
     };
@@ -153,7 +153,7 @@ fn independent_bilinear_crop_unpad_nearest_mask_matches_every_bit() {
         left: mask.left,
         top: mask.top,
     };
-    let result = decode(&profile.id, &views, mapping, Options::default()).unwrap();
+    let result = decode(&profile.id, &views, mapping, Options::default(), None).unwrap();
     let Output::Segment(found) = result.output else {
         panic!("wrong task")
     };

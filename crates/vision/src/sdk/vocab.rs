@@ -35,6 +35,12 @@ impl VocabEmbedding {
     pub fn total_rows(&self) -> usize {
         self.row_ranges.last().map_or(0, |(_, end)| *end)
     }
+    /// 解码用布局（A2）：条目表（label, prompt_rows），行区间由前缀和确定。
+    pub fn layout(&self) -> crate::profiles::VocabLayout {
+        crate::profiles::VocabLayout {
+            entries: self.entries.clone(),
+        }
+    }
     /// 构造注入检测模型第二输入的张量：shape=[total_rows, dim]（动态首维取实际值）、
     /// dtype/名字取检测档案第二输入声明（F32 嵌入）。
     pub fn injection_tensor(&self, declared: &super::TensorInfo) -> Result<TensorData> {
