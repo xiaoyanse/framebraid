@@ -129,7 +129,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 
 文件默认按最快速度读取，订阅队列满时背压；EOF 状态为 `AM_SRC_EOF`（7），队列仍可按序排空，PULL 排空后返回 `AM_ERR_CAMERA_STREAM_ENDED`（517）。调用方仍须显式关闭源。阶段 2 的 seek、倍速和循环正在开发，文件夹具和运行库验证结果另行记录。
 
-订阅启动后可调用 `amc_source_seek(source, 1500.0, AM_SEEK_EXACT, &position_ms)`；跳转会清空旧队列并发出 RESYNC。时长尚未就绪时返回 `sdk.tryAgain`。倍速通过 `amc_source_set_rate` 设置，正无穷恢复最快速度；`amc_source_set_loop` 控制循环。详见 ABI 合同。
+订阅启动后可调用 `amc_source_seek(source, 1500.0, AM_SEEK_EXACT, &position_ms)`；跳转会清空旧队列并发出 RESYNC。容器时长经 `amc_source_get_duration` 查询；时长尚未就绪时返回 `sdk.tryAgain`。倍速通过 `amc_source_set_rate` 设置，正无穷恢复最快速度；`amc_source_set_loop` 控制循环。详见 ABI 合同。
 
 - Windows x64、x64 调用进程。C# 编译指定 `x64`，Python 使用 64 位版本。
 - 需要兼容的 Microsoft Visual C++ 2015–2022 Redistributable x64。已有兼容版本无需重装；缺失时使用 [Microsoft 官方安装入口](https://aka.ms/vs/17/release/vc_redist.x64.exe)，核实安装程序签名。不要复制其他电脑的 System32 DLL。
