@@ -85,6 +85,9 @@ typedef struct am_pose_detection_s am_pose_detection_t;
 typedef struct am_pose_result_s am_pose_result_t;
 typedef struct am_detect_box_s am_detect_box_t;
 typedef struct am_detect_result_s am_detect_result_t;
+typedef struct am_vocab_entry_s am_vocab_entry_t;
+typedef struct am_vocab_hit_s am_vocab_hit_t;
+typedef struct am_vocab_hit_map_s am_vocab_hit_map_t;
 typedef struct am_classify_entry_s am_classify_entry_t;
 typedef struct am_classify_result_s am_classify_result_t;
 typedef struct am_roi_map_s am_roi_map_t;
@@ -242,6 +245,7 @@ typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DON
 #define AM_ERR_VISION_RESULT_EXPIRED INT32_C(1030)
 #define AM_ERR_VISION_REQUEST_STATE_INVALID INT32_C(1031)
 #define AM_ERR_VISION_INSUFFICIENT_BATCH_REJECTED INT32_C(1032)
+#define AM_ERR_VISION_VOCAB_NOT_BOUND INT32_C(1033)
 #define AMC_CAP_ENCODED_H264 (UINT64_C(1) << 0)
 #define AMC_CAP_ENCODED_H265 (UINT64_C(1) << 1)
 #define AMC_CAP_DECODE_H264 (UINT64_C(1) << 2)
@@ -976,7 +980,9 @@ typedef struct am_batching_stats_s {   /* 累计只读计数；关闭状态查�
 } am_batching_stats_t;
 
 typedef enum am_task_e { AM_TASK_NONE = 0, AM_TASK_POSE, AM_TASK_DETECT, AM_TASK_CLASSIFY,
-                         AM_TASK_SEGMENT, AM_TASK_OBB, AM_TASK_GENERIC } am_task_e;
+                         AM_TASK_SEGMENT, AM_TASK_OBB, AM_TASK_GENERIC,
+                         AM_TASK_TEXT_ENCODER = 7 } am_task_e; /* 尾部追加（A1）：文本塔档案
+                         专用（单 ids 输入→单嵌入输出，§4.1 开放词汇段） */
 typedef struct am_preprocess_meta_s {  /* 实际前处理变换回填（P8 重写）：统一映射
                                           orig = (dst - pad) / scale + crop，供坐标复核 */
   uint32_t struct_size;
@@ -1011,6 +1017,25 @@ typedef struct am_detect_box_s {
   float bounds[4]; float confidence; int32_t class_id; const char* class_name_utf8;
 } am_detect_box_t;
 typedef struct am_detect_result_s { uint32_t count; const am_detect_box_t* boxes; } am_detect_result_t;
+
+/* ---- 开放词汇（A1/A2，§4.1）---- */
+typedef struct am_vocab_entry_s {  /* 词表条目：逻辑类目 × token 化提示词矩阵（行主序）；
+                                       tokenization 归调用方（与文本塔配对的 tokenizer）*/
+  uint32_t struct_size;            /* 须为 sizeof(am_vocab_entry_t) */ /* explicit */
+  const char* label_utf8;          /* 逻辑类目显示名（结果按此输出）；非空且全表唯一 */
+  const int64_t* token_ids;        /* token_rows × token_cols 行主序 */
+  uint32_t token_rows;             /* 提示词数（组内，1..64） */ /* zero=invalid */
+  uint32_t token_cols;             /* 每词 token 数（=文本塔档案 seq_len） */ /* zero=invalid */
+} am_vocab_entry_t;
+typedef struct am_vocab_hit_s {    /* 单框命中明细：与 detect.boxes 同序 */
+  int32_t entry_index;             /* 命中条目（=box.class_id）；0=首条目（合法索引） */ /* zero=default */
+  int32_t prompt_index;            /* 组内提示词行号；0=首词（合法索引）；组内合并框=保留的最高分命中词 */ /* zero=default */
+} am_vocab_hit_t;
+typedef struct am_vocab_hit_map_s {
+  uint32_t struct_size;            /* 须为 sizeof(am_vocab_hit_map_t) */ /* explicit */
+  uint32_t count;                  /* = 同次结果 detect.boxes 元素数；0=无命中框 */ /* zero=default */
+  const am_vocab_hit_t* hits;
+} am_vocab_hit_map_t;
 
 typedef struct am_classify_entry_s {  /* 档案声明 logits 或已 softmax，两者不混同 */
   int32_t class_id; const char* class_name_utf8; float logit, probability; uint32_t has_probability;
@@ -1077,6 +1102,9 @@ typedef struct amv_result_s {   /* 结构化五类+原始张量双出口；JSON 
   uint32_t raw_output_count;       /* 命名原始张量出口（复核用） */
   const am_tensor_out_t* raw_outputs;
   int64_t infer_start_ms, infer_end_ms;   /* 耗时分段（可观测） */
+  const am_vocab_hit_map_t* vocab_hits;   /* 开放词汇命中明细（A2，P2 尾部追加）：仅绑定词表的
+                                             detect 结果非 NULL，与 detect.boxes 同序；旧消费者
+                                             按 struct_size 忽略 */
 } amv_result_t;
 
 typedef struct am_realtime_policy_s {

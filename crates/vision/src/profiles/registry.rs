@@ -10,6 +10,10 @@ pub enum Task {
     Classify,
     Segment,
     Obb,
+    /// 文本塔档案（A1，§4.1 开放词汇）：单 ids 输入 [batch, seq_len]（batch 动态）→
+    /// 单嵌入输出 [batch, embed_dim]；仅接受 pad 即可正确编码的模型（无 mask 输入）。
+    #[serde(rename = "text-encoder")]
+    TextEncoder,
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -164,6 +168,28 @@ fn parse(json: &str) -> std::result::Result<Registry, String> {
                 }
             }
         }
+        if profile.task == Task::TextEncoder {
+            // A1 档案约束：单输入 2 维（batch 动态=0）× 单输出 2 维；多输入/输出、
+            // 3 维起（含 mask 类第二输入）不在文本塔档案范围。
+            let input = &profile.input.shape;
+            let output = profile.outputs.first().map(|o| o.shape.as_slice());
+            let valid = profile.inputs.len() == 1
+                && profile.outputs.len() == 1
+                && input.len() == 2
+                && input[0] == 0
+                && input[1] > 0
+                && output.is_some_and(|o| o.len() == 2 && o[0] == 0 && o[1] > 0);
+            if !valid {
+                return Err(format!(
+                    "vision.profileMismatch|task=text-encoder,input={input:?},outputs={:?}",
+                    profile
+                        .outputs
+                        .iter()
+                        .map(|o| o.shape.as_slice())
+                        .collect::<Vec<_>>()
+                ));
+            }
+        }
     }
     Ok(registry)
 }
@@ -178,6 +204,21 @@ pub fn find(id: &str) -> Result<&'static Profile> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn text_encoder_profile_shape_constraints() {
+        let good = r#"{"profiles":[{"id":"t","task":"text-encoder","sampleSha256":"ignore","input":{"name":"input_ids","shape":["batch",77]},"outputs":[{"name":"text_embeddings","shape":["batch",512]}]}]}"#;
+        assert!(parse(good).is_ok());
+        // 多输入（含 mask 类第二输入）不在文本塔档案范围
+        let masked = r#"{"profiles":[{"id":"t","task":"text-encoder","sampleSha256":"ignore","inputs":[{"name":"input_ids","shape":["batch",77]},{"name":"attention_mask","shape":["batch",77]}],"outputs":[{"name":"text_embeddings","shape":["batch",512]}]}]}"#;
+        let error = parse(masked).err().unwrap();
+        assert!(error.contains("task=text-encoder"), "{error}");
+        // 3 维输出（序列级输出而非池化嵌入）拒绝
+        let seq_out = r#"{"profiles":[{"id":"t","task":"text-encoder","sampleSha256":"ignore","input":{"name":"input_ids","shape":["batch",77]},"outputs":[{"name":"last_hidden","shape":["batch",77,512]}]}]}"#;
+        assert!(parse(seq_out).err().is_some());
+        // 固定 batch 维（无动态）拒绝——词表条目数运行期决定
+        let fixed = r#"{"profiles":[{"id":"t","task":"text-encoder","sampleSha256":"ignore","input":{"name":"input_ids","shape":[1,77]},"outputs":[{"name":"text_embeddings","shape":["batch",512]}]}]}"#;
+        assert!(parse(fixed).err().is_some());
+    }
     #[test]
     fn inputs_precede_legacy_input_and_bad_head_shape_is_rejected() {
         let json = r#"{"profiles":[{"id":"x","task":"detect","sampleSha256":"ignore","input":{"name":"old","shape":[1]},"inputs":[{"name":"images","shape":[1,3,640,640]},{"name":"text","shape":["n",512]}],"outputs":[{"name":"o","shape":[1,9,7]}],"classes":4}]}"#;

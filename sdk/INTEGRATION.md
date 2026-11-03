@@ -129,7 +129,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 
 文件默认按最快速度读取，订阅队列满时背压；EOF 状态为 `AM_SRC_EOF`（7），队列仍可按序排空，PULL 排空后返回 `AM_ERR_CAMERA_STREAM_ENDED`（517）。调用方仍须显式关闭源。阶段 2 的 seek、倍速和循环正在开发，文件夹具和运行库验证结果另行记录。
 
-订阅启动后可调用 `amc_source_seek(source, 1500.0, AM_SEEK_EXACT, &position_ms)`；跳转会清空旧队列并发出 RESYNC。时长尚未就绪时返回 `sdk.tryAgain`。倍速通过 `amc_source_set_rate` 设置，正无穷恢复最快速度；`amc_source_set_loop` 控制循环。详见 ABI 合同。
+订阅启动后可调用 `amc_source_seek(source, 1500.0, AM_SEEK_EXACT, &position_ms)`；跳转会清空旧队列并发出 RESYNC。容器时长经 `amc_source_get_duration` 查询；时长尚未就绪时返回 `sdk.tryAgain`。倍速通过 `amc_source_set_rate` 设置，正无穷恢复最快速度；`amc_source_set_loop` 控制循环。详见 ABI 合同。
 
 - Windows x64、x64 调用进程。C# 编译指定 `x64`，Python 使用 64 位版本。
 - 需要兼容的 Microsoft Visual C++ 2015–2022 Redistributable x64。已有兼容版本无需重装；缺失时使用 [Microsoft 官方安装入口](https://aka.ms/vs/17/release/vc_redist.x64.exe)，核实安装程序签名。不要复制其他电脑的 System32 DLL。
@@ -399,4 +399,7 @@ Keep path models and external weights trusted and unchanged throughout loading. 
 # 开放词汇模型的嵌入配对
 
 输入维度和类型匹配不能证明文本嵌入空间与检测头配对。异源文本塔可能产生集中于 letterbox 填充带的假框，未归一化图像可能产生饱和假分；实测背景见 `docs/EXTENSION_CAPABILITIES.md`。模型制作者负责确认图像预处理和文本塔与检测头配套，SDK 当前不提供嵌入空间健康度探测。
+
+运行期词表绑定走 `amv_vocab_bind`（合同 dual-dll-abi.md §4.1 开放词汇段）：文本塔独立加载为 `task=text-encoder` 档案模型，调用方用配对 tokenizer 预先化词（SDK 不内置 tokenizer）；绑定后检测模型图像入口推理自动注入嵌入，重复调用即换词表，结果按逻辑类目输出并附组内提示词命中明细（`vocab_hits`）。
+
 

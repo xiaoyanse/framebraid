@@ -150,6 +150,15 @@ pub(super) fn validate_input_data(expected: &[TensorInfo], inputs: &[TensorData]
     }
     Ok(())
 }
+fn validate_input_data_refs(expected: &[TensorInfo], inputs: &[&TensorData]) -> Result<()> {
+    validate_infos(expected, inputs.iter().map(|v| &v.info))?;
+    for value in inputs {
+        if byte_count(value.info.dtype, &value.info.shape)? != value.bytes().len() {
+            return Err(Error("vision.inputBytesMismatch".into()));
+        }
+    }
+    Ok(())
+}
 fn element(dtype: u32) -> Result<TensorElementType> {
     match dtype {
         0 => Ok(TensorElementType::Float32),
@@ -352,11 +361,28 @@ impl Model {
             &inputs.iter().map(|v| v.info.clone()).collect::<Vec<_>>(),
         )
     }
+    fn validate_input_refs(&self, inputs: &[&TensorData]) -> Result<()> {
+        validate_input_data_refs(&self.inputs, inputs)?;
+        super::batch::validate_count(
+            self.batch,
+            &inputs.iter().map(|v| v.info.clone()).collect::<Vec<_>>(),
+        )
+    }
     pub fn run(&mut self, inputs: &[TensorData], output_budget: usize) -> Result<Vec<TensorData>> {
+        let refs = inputs.iter().collect::<Vec<_>>();
+        self.run_ref(&refs, output_budget)
+    }
+    /// 引用态输入执行（A1 词汇注入路径）：图像张量借用、嵌入张量拥有，
+    /// 组成引用切片免大张量复制；run 语义与此完全一致。
+    pub fn run_ref(
+        &mut self,
+        inputs: &[&TensorData],
+        output_budget: usize,
+    ) -> Result<Vec<TensorData>> {
         if matches!(&self.engine, ModelEngine::Ov(_)) {
-            return self.run_openvino(inputs, output_budget);
+            return self.run_openvino_ref(inputs, output_budget);
         }
-        self.validate_inputs(inputs)?;
+        self.validate_input_refs(inputs)?;
         let values = inputs
             .iter()
             .map(|v| {
@@ -391,6 +417,20 @@ impl Model {
             }
         };
         Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)
+    }
+
+    /// OV 引擎的引用输入路径：首版经临时副本（语义正确性优先；ORT 主路径零复制，
+    /// OV 路径的免拷贝直传列后续增强——与 GPU 帧直传增强同批）。
+    fn run_openvino_ref(
+        &mut self,
+        inputs: &[&TensorData],
+        output_budget: usize,
+    ) -> Result<Vec<TensorData>> {
+        let owned = inputs
+            .iter()
+            .map(|v| TensorData::new(v.info.clone(), v.bytes()))
+            .collect::<Result<Vec<_>>>()?;
+        self.run_openvino(&owned, output_budget)
     }
 
     /// OpenVINO 路径：校验 → 引擎推理 → 批检查 → 观察计数，语义对齐 ORT run。

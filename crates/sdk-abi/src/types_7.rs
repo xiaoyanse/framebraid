@@ -7,6 +7,48 @@ pub struct am_detect_result_t {
     pub boxes: *const am_detect_box_t,
 }
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_vocab_entry_t {
+    pub struct_size: u32,
+    pub label_utf8: *const c_char,
+    pub token_ids: *const i64,
+    pub token_rows: u32,
+    pub token_cols: u32,
+}
+impl Default for am_vocab_entry_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            label_utf8: Default::default(),
+            token_ids: Default::default(),
+            token_rows: Default::default(),
+            token_cols: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_vocab_hit_t {
+    pub entry_index: i32,
+    pub prompt_index: i32,
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_vocab_hit_map_t {
+    pub struct_size: u32,
+    pub count: u32,
+    pub hits: *const am_vocab_hit_t,
+}
+impl Default for am_vocab_hit_map_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            count: Default::default(),
+            hits: Default::default(),
+        }
+    }
+}
+#[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct am_classify_entry_t {
     pub class_id: i32,
@@ -60,72 +102,4 @@ pub struct am_obb_instance_t {
     pub confidence: f32,
     pub class_id: i32,
     pub angle_normalized: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_obb_result_t {
-    pub count: u32,
-    pub instances: *const am_obb_instance_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct amv_result_t {
-    pub struct_size: u32,
-    pub request_id: u64,
-    pub task: am_task_e,
-    pub frame: *const am_frame_assoc_t,
-    pub model: am_model_identity_t,
-    pub execution: am_backend_actual_t,
-    pub transform: *const am_preprocess_meta_t,
-    pub pose: am_pose_result_t,
-    pub detect: am_detect_result_t,
-    pub classify: am_classify_result_t,
-    pub segment: am_segment_result_t,
-    pub obb: am_obb_result_t,
-    pub raw_output_count: u32,
-    pub raw_outputs: *const am_tensor_out_t,
-    pub infer_start_ms: i64,
-    pub infer_end_ms: i64,
-}
-impl Default for amv_result_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            request_id: Default::default(),
-            task: Default::default(),
-            frame: Default::default(),
-            model: Default::default(),
-            execution: Default::default(),
-            transform: Default::default(),
-            pose: Default::default(),
-            detect: Default::default(),
-            classify: Default::default(),
-            segment: Default::default(),
-            obb: Default::default(),
-            raw_output_count: Default::default(),
-            raw_outputs: Default::default(),
-            infer_start_ms: Default::default(),
-            infer_end_ms: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_realtime_policy_t {
-    pub struct_size: u32,
-    pub max_inflight: u32,
-    pub replace_oldest: u32,
-    pub slot_count: u32,
-    pub fair_round_robin: u32,
-}
-impl Default for am_realtime_policy_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            max_inflight: Default::default(),
-            replace_oldest: Default::default(),
-            slot_count: Default::default(),
-            fair_round_robin: Default::default(),
-        }
-    }
 }

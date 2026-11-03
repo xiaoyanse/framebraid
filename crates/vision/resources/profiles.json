@@ -57,6 +57,13 @@
       "outputs": [{ "name": "output0", "shape": [1, 8400] }]
     },
     {
+      "id": "text-encoder-clip-embed-v1",
+      "task": "text-encoder",
+      "sampleSha256": "ignore",
+      "input": { "name": "input_ids", "shape": ["batch", 77], "ranges": { "batch": [1, 64] } },
+      "outputs": [{ "name": "text_embeddings", "shape": ["batch", 512] }]
+    },
+    {
       "id": "classify-yolo11n-prob-v1",
       "task": "classify",
       "decoder": "yolo11-classify-prob-v1",

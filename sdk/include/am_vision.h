@@ -42,6 +42,8 @@ AM_API am_status_t amv_infer_tensors_sync(amv_model_t* model, uint32_t input_cou
 AM_API am_status_t amv_infer_tensors_async(amv_model_t* model, uint32_t input_count,
                                            const am_tensor_in_t* inputs, const am_infer_params_t* params,
                                            uint64_t* out_request_id);
+AM_API am_status_t amv_vocab_bind(amv_model_t* detector, amv_model_t* text_encoder,
+                                  const am_vocab_entry_t* entries, uint32_t entry_count);
 AM_API am_status_t amv_infer_batch(amv_model_t* model, uint32_t item_count, const am_batch_item_t* items,
                                    const am_batch_options_t* options, am_batch_receipt_t* out_receipt);
 AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);

@@ -612,8 +612,8 @@
   {
    "path": "crates/sdk-abi/src/base.rs",
    "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-   "sha256": "4a3577939db7de51b1850b9ff442e59661a38cfef33a1abf5d2d2fad0dbe6224",
-   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
+   "sha256": "3ef27a85a83e87e0ca501efbf5e31d7ccc5390c80527a995fcbb95fe1e3e1d81",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/sdk-abi/src/constants.rs",
@@ -654,14 +654,14 @@
   {
    "path": "crates/sdk-abi/src/fields_7.rs",
    "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-   "sha256": "5c9a846a944e202920f57d2853010e41343691c04744153d28dddda0cb2e4480",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "7fdc2478908e104d387384e502d89eeee2529ab3f4107617887d996d50dd21e1",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/sdk-abi/src/fields_8.rs",
    "previousSha256": null,
-   "sha256": "c2bd93f7a4ea04aafa075cda6ca4e3f71bc4fc63b1c98aed6842155cec9ed69e",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "dae6f0b64d52578cc0ab3d10e185b072fa1ccf4ad02fa191fdfbc42f2a8235a8",
+   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
   },
   {
    "path": "crates/sdk-abi/src/layout_2.rs",
@@ -690,14 +690,14 @@
   {
    "path": "crates/sdk-abi/src/layout_7.rs",
    "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-   "sha256": "d56443bb96c63f556ba69e723dc9b52d5295a027857b3cd09510cd25f8143371",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "53dc4c7b360a253157dd6c772f881285c4f660e96f0d2481672bcb3b868dfdbb",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/sdk-abi/src/layout_8.rs",
    "previousSha256": null,
-   "sha256": "0c580a60f6c8566c80242fd70e868d665d4feca225d13154abf3b8947f4d3db9",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "9361c76aef37e1988b7a34467ca3150798a1fbcdce3b768c0ac793434e4c1766",
+   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
   },
   {
    "path": "crates/sdk-abi/src/layout_tests.rs",
@@ -738,14 +738,14 @@
   {
    "path": "crates/sdk-abi/src/types_7.rs",
    "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-   "sha256": "222c711ccd6129103da9c9fcd52afe0592cb64a254ef99ca8741436947c26b0f",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "9e8aa8085c1734e6eae10c0e93d16fdfbaba5b0759c37d589ac2c095ef5732c5",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/sdk-abi/src/types_8.rs",
    "previousSha256": null,
-   "sha256": "30c5d3cd4eb42dc6d7b8c81e3581684f2a7687f81c8748d12e0b16612c9ea50a",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "4e6740c4595d85c1e22ce194d2c781a94ad836c0a44066e4ea8ea4c7f70458ba",
+   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
   },
   {
    "path": "crates/sdk-support/build.rs",
@@ -906,8 +906,8 @@
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
    "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-   "sha256": "eb22f7c5460d556aa4b1c98afda4b2f7987057a913f378e31c5efaa76eeb37d4",
-   "reason": "Fix backend policy bound 2->4 (E1/E2 backends were unreachable via amv_model_load public entry; caught by pre-integration comparison testing); workspace 408 green；feedback P0-1 OV2026：模型加载重扫 runtime_dirs 登记、backendStrictUnavailable 失败经 amv_get_last_error 携带检测版本/期望线（登记哈希对应 682b86e 提交的 P0-1 hunk；并行批次同文件的 intra_threads 详情 hunk 落地时须另行链式更新本条）；feedback batch A: intra_threads out-of-range detail lands, chained update per note"
+   "sha256": "a32d1809c7fab42f1d42d9b36cf4cafddd3a89059dbefb0aa09d316fcf616057",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision-ffi/src/inference/models/metadata.rs",
@@ -990,8 +990,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "96fa6067e31481320fde10e61788df328095771ff299d6b8fe391ccef7b86fb1",
-   "reason": "M2b reviewed GPU frame input ABI extension (enum/struct/generator), CUDA interop lifecycle with counted map, handwritten PTX preprocess kernel (YUV-domain, detection-level parity), IOBinding input, amv GPU dispatch; real NVIDIA e2e verified; C ABI unchanged"
+   "sha256": "0956a8f2089605f6c7a3177c67e0dc1be9b6821127c706be3af0197fc3b53f2a",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
@@ -1056,8 +1056,8 @@
   {
    "path": "crates/vision-ffi/src/inference/swap_tests.rs",
    "previousSha256": null,
-   "sha256": "2cf48ebe2c0a3f80ff1b52d36db0a4893fd72731acf418fbd8ab44ca08eb8219",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green"
+   "sha256": "27a30324a090b646f367153620f0cab444245a4ab15624c81c10bb906103ace1",
+   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
   },
   {
    "path": "crates/vision-ffi/src/inference/telemetry_tests.rs",
@@ -1092,8 +1092,8 @@
   {
    "path": "crates/vision/resources/profiles.json",
    "previousSha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
-   "sha256": "64e7597a591fb4f90c5c0d355e57314ebb3fc16ab784bc72cea0ef7cb22d6c89",
-   "reason": "vocab V1: dual-input example profile + detect layout/coordForm declarations"
+   "sha256": "eeaff524f2794a3981a925dbbbc6803cf0938fd1a388b0357cd84c653acc8551",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision/src/backend.rs",
@@ -1188,8 +1188,8 @@
   {
    "path": "crates/vision/src/profiles/registry.rs",
    "previousSha256": "83124c5222843b2e0f4d39257809f8d4d8fa6aadf69a2539301de02a036d9570",
-   "sha256": "3d8c5632aa9c61f65f19d1bbd58adeec7ee05802f3b8453c5c5e1c99bc1ebbd0",
-   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+   "sha256": "608691e57386e548ff0d01df36dc26d41047157190592e7fece47e70200e8e4e",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision/src/profiles/results.rs",
@@ -1200,8 +1200,8 @@
   {
    "path": "crates/vision/src/profiles/tests.rs",
    "previousSha256": "737db32a00d880747c847bace27ebdd638785fa5cd2a3348fbbe1e0d6d7e38f1",
-   "sha256": "2e4a9002ceab5f05210f1eeefb6e67787be3513c6fa4c7c31bdb2237d988888e",
-   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+   "sha256": "c72ef951e87e71f543ceb6d215e7736c099203e413683d8dbcf033d5c66e9595",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision/src/sdk/batching_tests.rs",
@@ -1218,14 +1218,14 @@
   {
    "path": "crates/vision/src/sdk/mod.rs",
    "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-   "sha256": "64322fe73350cb0d3c3c0b49c3d473cd8a9d1058f5e29c52887544f0d6f827ac",
-   "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+   "sha256": "0e249c4fce2900ebbb9f20c484a6b9dc520a9013d65a77a636945ec0030a1687",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision/src/sdk/model.rs",
    "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-   "sha256": "86e2df6876266cbdf927efd7eaa279984c2a247cd735f5ce9db97f4b9f7246e3",
-   "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only; previous SHA-256 c6471dd66954bc66…: vocab V1: B1 decode_head layout/coordForm parameterization (transposed|row-major × cxcywh|xyxy) + A3 dual-input profile validation with expected/actual detail"
+   "sha256": "3887720ac62db221c058eefe3c3e22a5f85dcfb1bacbef5a4bbe81250f73af30",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   },
   {
    "path": "crates/vision/src/sdk/model/source.rs",
@@ -1298,6 +1298,330 @@
    "previousSha256": "b6d218fb9ef81420ecd2582a180ab63b574cd406220d2b9492e12e7266e8f157",
    "sha256": "ff4572beced4b1e48d86d526ff4b3190a5b55f2ec4ec3688cb032cb241f6869d",
    "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+  },
+  {
+   "path": "crates/am-camera/src/credentials.rs",
+   "previousSha256": "a745311850526fedbabbd6d51b58455439b55f682362dc806418336e2cd9fca1",
+   "sha256": "a745311850526fedbabbd6d51b58455439b55f682362dc806418336e2cd9fca1",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/device_addresses.rs",
+   "previousSha256": "d14971d24c825159f81b8f6bf6f9244a4d7e1ed3f3e64af866c158b681622314",
+   "sha256": "d14971d24c825159f81b8f6bf6f9244a4d7e1ed3f3e64af866c158b681622314",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/frame_budget.rs",
+   "previousSha256": "b729ce5ae29ede66c1616403062b7863051966c90aa6c99dd899221010d74706",
+   "sha256": "b729ce5ae29ede66c1616403062b7863051966c90aa6c99dd899221010d74706",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/lib.rs",
+   "previousSha256": "61c76e37b10df84909e9c17cf3ab07b9319a98d6fa4f5f8949a86e52c9ad584a",
+   "sha256": "61c76e37b10df84909e9c17cf3ab07b9319a98d6fa4f5f8949a86e52c9ad584a",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/annexb.rs",
+   "previousSha256": "6034431a91a2b7d2929c0718924dfd69aefa9cc8db4b4b5e36687aaf650d2164",
+   "sha256": "6034431a91a2b7d2929c0718924dfd69aefa9cc8db4b4b5e36687aaf650d2164",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/annexb_tests.rs",
+   "previousSha256": "44aaaca15d37d693ef94628e9f38ab10d532749a4035d8fbe5896dfbd1abf073",
+   "sha256": "44aaaca15d37d693ef94628e9f38ab10d532749a4035d8fbe5896dfbd1abf073",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/mod.rs",
+   "previousSha256": "dd4f77dfb5770a2165ad08cd37c844709ff31549e83f67b2896c7a909439ce0a",
+   "sha256": "dd4f77dfb5770a2165ad08cd37c844709ff31549e83f67b2896c7a909439ce0a",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/protocol.rs",
+   "previousSha256": "259d6af3dba2efc96e70f5a5dffa280f5f1751dd340824cf7ea4d55543638eec",
+   "sha256": "259d6af3dba2efc96e70f5a5dffa280f5f1751dd340824cf7ea4d55543638eec",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/h264/protocol_tests.rs",
+   "previousSha256": "8b0b0336cb9792bda6e2c5f1c401a2243732b8d601f167fdebafb088d7c5f8b4",
+   "sha256": "8b0b0336cb9792bda6e2c5f1c401a2243732b8d601f167fdebafb088d7c5f8b4",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/digest.rs",
+   "previousSha256": "a9534b6d66f3a1686b5118fd602f005670af4afe7596b5c2dd5fc4484c68a0a9",
+   "sha256": "a9534b6d66f3a1686b5118fd602f005670af4afe7596b5c2dd5fc4484c68a0a9",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/sdk_io/quiet.rs",
+   "previousSha256": "cc4236d04e3f8aa3ce3eff66d2f1aa986600e9f73b3b34cc2db5d33fdd943ac4",
+   "sha256": "cc4236d04e3f8aa3ce3eff66d2f1aa986600e9f73b3b34cc2db5d33fdd943ac4",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/testdata/probe_source.mp4",
+   "previousSha256": "67b6202d84fc721a5e49922c0f05fc58f6df0d2a8f605d8b2dc3f515bd3e3e73",
+   "sha256": "67b6202d84fc721a5e49922c0f05fc58f6df0d2a8f605d8b2dc3f515bd3e3e73",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/am-camera/src/media/testkit.rs",
+   "previousSha256": "5dc60b6a904f330af301438a5911621f7b1602c2b207376b52f57c0686a11d9d",
+   "sha256": "5dc60b6a904f330af301438a5911621f7b1602c2b207376b52f57c0686a11d9d",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/camera-ffi/src/frames/scale.rs",
+   "previousSha256": "16bf39ddd9d60bfbf5dd69ca4b312d4033483edec585d546143244836adb4065",
+   "sha256": "16bf39ddd9d60bfbf5dd69ca4b312d4033483edec585d546143244836adb4065",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/camera-ffi/src/shared.rs",
+   "previousSha256": "2e2d31afdcc35fa5f080749a8507fb6ad6b8f61795d5531ad045a581659254fa",
+   "sha256": "2e2d31afdcc35fa5f080749a8507fb6ad6b8f61795d5531ad045a581659254fa",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/Cargo.toml",
+   "previousSha256": "858fd74d0573f70efc0809300e24a26fcaf4a0ea6a7ad176160c3c09a23306e8",
+   "sha256": "858fd74d0573f70efc0809300e24a26fcaf4a0ea6a7ad176160c3c09a23306e8",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/fields_0.rs",
+   "previousSha256": "a9c425ae03eee144ccc727a3682ac5afa558d106079f9f7530ebb42d348f1eb0",
+   "sha256": "a9c425ae03eee144ccc727a3682ac5afa558d106079f9f7530ebb42d348f1eb0",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/fields_1.rs",
+   "previousSha256": "e93befe355fc3ccbf40f3b7dfa8cfd207c596077518a6decc53c10bb19fadcf5",
+   "sha256": "e93befe355fc3ccbf40f3b7dfa8cfd207c596077518a6decc53c10bb19fadcf5",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/fields_3.rs",
+   "previousSha256": "0f66d439447c9ca88bcb32ac26e304e0e2c814f886596d0bdcdac717b90005d6",
+   "sha256": "0f66d439447c9ca88bcb32ac26e304e0e2c814f886596d0bdcdac717b90005d6",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_0.rs",
+   "previousSha256": "0f4636b38abc0d04c1d8b4eeb71f51edca3e11567848801c01948b9d9222fd38",
+   "sha256": "0f4636b38abc0d04c1d8b4eeb71f51edca3e11567848801c01948b9d9222fd38",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_1.rs",
+   "previousSha256": "dbc818b12ccafd7b20de73177ba568762d4d3d8a734e3a128e9d7bdbd1e447f2",
+   "sha256": "dbc818b12ccafd7b20de73177ba568762d4d3d8a734e3a128e9d7bdbd1e447f2",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_3.rs",
+   "previousSha256": "19b58ed267449c1ff76cef89aa0a637f926da99bb8e509cc01e1181bd2b89101",
+   "sha256": "19b58ed267449c1ff76cef89aa0a637f926da99bb8e509cc01e1181bd2b89101",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/status.rs",
+   "previousSha256": "ed890ce2b1436fe4eddfc02f24a661c0b1f50feae46f4d35229467ac46701092",
+   "sha256": "5c9a995cdaa6bf76efde113938ca33b92dd0630571ff536faba7225cf1a96a81",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/types_0.rs",
+   "previousSha256": "038dae871224fdc5d0d3e46aa96507f7f52fe6998bb0d323d92a6223be68346e",
+   "sha256": "038dae871224fdc5d0d3e46aa96507f7f52fe6998bb0d323d92a6223be68346e",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/types_1.rs",
+   "previousSha256": "13e131fe0c9e3d3bffccce1a1c09e6934f355cb3df37f5c10616f0f58b1c8605",
+   "sha256": "13e131fe0c9e3d3bffccce1a1c09e6934f355cb3df37f5c10616f0f58b1c8605",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-abi/src/types_3.rs",
+   "previousSha256": "78c9b9d99e55fb2c9860417ae501fa474ad8b9b564dd05f62e439a59e28cd804",
+   "sha256": "78c9b9d99e55fb2c9860417ae501fa474ad8b9b564dd05f62e439a59e28cd804",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/Cargo.toml",
+   "previousSha256": "6be9d5a6c2528016b54c7e85685e783f5c02bc0770905b5da7568e7604196e2f",
+   "sha256": "6be9d5a6c2528016b54c7e85685e783f5c02bc0770905b5da7568e7604196e2f",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/callbacks.rs",
+   "previousSha256": "b091c8f2754d5e25c45b11f88686556b0d880e415025cb1c9cb00b2b73cf7143",
+   "sha256": "b091c8f2754d5e25c45b11f88686556b0d880e415025cb1c9cb00b2b73cf7143",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/clock.rs",
+   "previousSha256": "679a146954e7967a638b919d6a1664d5da932f7ae9266ca2057d0acc0e9f0561",
+   "sha256": "679a146954e7967a638b919d6a1664d5da932f7ae9266ca2057d0acc0e9f0561",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/queues.rs",
+   "previousSha256": "91edae3b6b5462063a8ee220ae867cee3cfa7a021a5b9dfc89c53eb287c085d2",
+   "sha256": "91edae3b6b5462063a8ee220ae867cee3cfa7a021a5b9dfc89c53eb287c085d2",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/shared/layout.rs",
+   "previousSha256": "789b5818f979d4f63cd3eb0d8d6d9e9d16575b403065c805c7a5d145ce72e8a9",
+   "sha256": "789b5818f979d4f63cd3eb0d8d6d9e9d16575b403065c805c7a5d145ce72e8a9",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/shared/mod.rs",
+   "previousSha256": "48e64876ca9eac334af490586f807d5d61a9416f5d377ee54362417664f0ea4b",
+   "sha256": "48e64876ca9eac334af490586f807d5d61a9416f5d377ee54362417664f0ea4b",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/shared/windows.rs",
+   "previousSha256": "4e13ce57c3b4e646643e92f23e45a499a60c171d5c8b2a78643b5e10a1a6305a",
+   "sha256": "4e13ce57c3b4e646643e92f23e45a499a60c171d5c8b2a78643b5e10a1a6305a",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/sdk-support/src/unload.rs",
+   "previousSha256": "7eb6bc0096734f3b8b3dc06925383a281b394f4792f5523fb94ca83a2f337c30",
+   "sha256": "7eb6bc0096734f3b8b3dc06925383a281b394f4792f5523fb94ca83a2f337c30",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/exports.rs",
+   "previousSha256": "e9853356a47e62016d9375fee9f0299bbdb849968e68387892797bff713e3b59",
+   "sha256": "9862c0fbd81d11e2286b15fe1858c923aeb7872cca65d9b345233e350aa57512",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/receipt.rs",
+   "previousSha256": "862959662f9e0f346fd2c769d5c8bdd088892c0218aadaabb536f5e3b329d41a",
+   "sha256": "862959662f9e0f346fd2c769d5c8bdd088892c0218aadaabb536f5e3b329d41a",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/submission.rs",
+   "previousSha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
+   "sha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/tensor_exports.rs",
+   "previousSha256": "b14f5f571b65da62dbd5eaa8a7764e5267bee8f263b1efe0613076ddd8eb4b1e",
+   "sha256": "b14f5f571b65da62dbd5eaa8a7764e5267bee8f263b1efe0613076ddd8eb4b1e",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/tensors.rs",
+   "previousSha256": "b4d4ac1f7b3b6dee75ee037f283dadf9dce7a36b63e5ca1ea9acb441fcd6a433",
+   "sha256": "b4d4ac1f7b3b6dee75ee037f283dadf9dce7a36b63e5ca1ea9acb441fcd6a433",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-ffi/src/shared.rs",
+   "previousSha256": "9e0d2605f4b5a03d6ed219e2bc2a428f62d4e1f99429a84dd8ed78ba01c06475",
+   "sha256": "9e0d2605f4b5a03d6ed219e2bc2a428f62d4e1f99429a84dd8ed78ba01c06475",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision-types/Cargo.toml",
+   "previousSha256": "50169f8e7023f7d255c5f6a8c7c643cffd9d23e9c2db06575bae3387778ffd37",
+   "sha256": "50169f8e7023f7d255c5f6a8c7c643cffd9d23e9c2db06575bae3387778ffd37",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/examples/inspect.rs",
+   "previousSha256": "5c2a9c34cfac269bd25f375585ac2cabe2657acb2de7a7718b95c7730f75dc3e",
+   "sha256": "5c2a9c34cfac269bd25f375585ac2cabe2657acb2de7a7718b95c7730f75dc3e",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/resources/postprocess-reference-v1.json",
+   "previousSha256": "18a031c335253a921a10658d3dac393297540b85b3d963f98968fd33941b0344",
+   "sha256": "18a031c335253a921a10658d3dac393297540b85b3d963f98968fd33941b0344",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/decode.rs",
+   "previousSha256": "6cf60088ede9c62a5e67beec8d7f9c34b92ff7d5782091decfd927ae3d440d70",
+   "sha256": "6cf60088ede9c62a5e67beec8d7f9c34b92ff7d5782091decfd927ae3d440d70",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/executor.rs",
+   "previousSha256": "cacc684d33a56c5463c4fd581f63bfa4cf581944bcdb7d870dcb38da7740807d",
+   "sha256": "cacc684d33a56c5463c4fd581f63bfa4cf581944bcdb7d870dcb38da7740807d",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/preprocess.rs",
+   "previousSha256": "862780607e9ac840fd83934450c78107e4aa69238bb5308fdf0cc929c213796f",
+   "sha256": "862780607e9ac840fd83934450c78107e4aa69238bb5308fdf0cc929c213796f",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/profiles/geometry.rs",
+   "previousSha256": "fcead75f15fb66de02825ed5f5cf63d9ac09e45f5200460ee2ef5af217347d30",
+   "sha256": "fcead75f15fb66de02825ed5f5cf63d9ac09e45f5200460ee2ef5af217347d30",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/profiles/mask.rs",
+   "previousSha256": "1455890ba644762d297f50fa303228672ec1ae8953e47b446af8f1cc428728c5",
+   "sha256": "1455890ba644762d297f50fa303228672ec1ae8953e47b446af8f1cc428728c5",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/profiles/reference_tests.rs",
+   "previousSha256": "dbaf880a923bb3f9b7e9cdb0246e460b3840d89a63f440f56465e79fd0d43452",
+   "sha256": "dbaf880a923bb3f9b7e9cdb0246e460b3840d89a63f440f56465e79fd0d43452",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/sdk/batch.rs",
+   "previousSha256": "72e6da94b4e9c6bab50563d695a07361b1c5b7114f08d22a7c7f7602ea1eb331",
+   "sha256": "72e6da94b4e9c6bab50563d695a07361b1c5b7114f08d22a7c7f7602ea1eb331",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/sdk/batch_tests.rs",
+   "previousSha256": "59d042dbbee19fdd01582b9603f3446500df66b0924ae175a01becd3458d98e2",
+   "sha256": "59d042dbbee19fdd01582b9603f3446500df66b0924ae175a01becd3458d98e2",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/sdk/encoded.rs",
+   "previousSha256": "609c23435ddf9a8847387407f10a6eb307a14a0fe6de79be34a2441b3e941907",
+   "sha256": "609c23435ddf9a8847387407f10a6eb307a14a0fe6de79be34a2441b3e941907",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/sdk/onnx.rs",
+   "previousSha256": "47704d0b9849a11b9c42cb9ae95def8c59a4be2c337e36e371f053a5c6174b7f",
+   "sha256": "47704d0b9849a11b9c42cb9ae95def8c59a4be2c337e36e371f053a5c6174b7f",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/sdk/pixels.rs",
+   "previousSha256": "9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e",
+   "sha256": "9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
   }
  ]
 }
