@@ -75,7 +75,7 @@ fn detect_head_four_layout_coordinate_combinations() {
 
 #[test]
 fn registry_is_five_explicit_profiles_not_shape_guessing() {
-    assert_eq!(all().unwrap().len(), 6);
+    assert_eq!(all().unwrap().len(), 7);
     for profile in all()
         .unwrap()
         .iter()
