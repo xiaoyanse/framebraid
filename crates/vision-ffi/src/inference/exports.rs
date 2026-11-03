@@ -91,6 +91,103 @@ pub unsafe extern "C" fn amv_model_close(
     })
 }
 #[no_mangle]
+/// 开放词汇词表绑定（A1/A2，§4.1）：tokenization 归调用方；文本塔前向在新嵌入
+/// 计算成功后原子换代（失败保持原绑定）。锁序固定 encoder→detector（detector
+/// 短锁仅取档案维度，无反向持锁路径）。
+pub unsafe extern "C" fn amv_vocab_bind(
+    detector: *mut amv_model_t,
+    text_encoder: *mut amv_model_t,
+    entries: *const am_vocab_entry_t,
+    entry_count: u32,
+) -> i32 {
+    use am_vision_core::profiles::Task;
+    status(crate::domain(), detector as usize, || unsafe {
+        am_sdk_support::callbacks::reject_reentry()?;
+        let detector_entry = crate::domain().get(detector as usize)?;
+        let detector_handle = detector_entry.data::<ModelHandle>()?;
+        if entries.is_null() || entry_count == 0 {
+            if entries.is_null() && entry_count != 0 {
+                return Err(AM_ERR_SDK_NULL_ARGUMENT);
+            }
+            // 解绑（entries=NULL 或 count=0）：清快照，此后双输入模型推理 vocabNotBound
+            let mut slot = detector_handle
+                .vocab
+                .write()
+                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+            *slot = std::sync::Arc::new(None);
+            return Ok(());
+        }
+        if entry_count as usize > am_vision_core::sdk::vocab::MAX_ENTRIES {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let encoder_entry = crate::domain().get(text_encoder as usize)?;
+        let encoder_handle = encoder_entry.data::<ModelHandle>()?;
+        // 条目读取与基础校验（struct_size/UTF-8 label/rows·cols 范围/cols 全表一致）
+        let mut specs = Vec::with_capacity(entry_count as usize);
+        let mut tokens: Vec<i64> = Vec::new();
+        let mut cols: Option<usize> = None;
+        for index in 0..entry_count as usize {
+            let raw = args::read(entries.add(index), size_of::<am_vocab_entry_t>())?;
+            if raw.token_rows == 0
+                || raw.token_rows as usize > am_vision_core::sdk::vocab::MAX_PROMPTS_PER_ENTRY
+                || raw.token_cols == 0
+            {
+                return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+            }
+            args::pointer(raw.token_ids)?;
+            let label = args::string(raw.label_utf8)?;
+            let current = raw.token_cols as usize;
+            if cols.is_some_and(|c| c != current) {
+                return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+            }
+            cols = Some(current);
+            let count = raw.token_rows as usize * current;
+            let slice = std::slice::from_raw_parts(raw.token_ids, count);
+            tokens.extend_from_slice(slice);
+            specs.push(am_vision_core::sdk::vocab::EntrySpec {
+                label,
+                token_rows: raw.token_rows,
+            });
+        }
+        am_vision_core::sdk::vocab::validate(&specs).map_err(super::error)?;
+        // detector 前置校验（短锁）：PROFILE 双输入 detect 档案；取第二输入嵌入维度
+        let detector_dim = {
+            let session = lock(&detector_handle.session)?;
+            let model = session.as_ref().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+            if !model
+                .profile
+                .is_some_and(|p| p.task == Task::Detect && p.inputs.len() > 1)
+            {
+                return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+            }
+            let dim = model.inputs[1].shape[1];
+            if dim <= 0 {
+                return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
+            }
+            dim as usize
+        };
+        // 文本塔编码（长锁，失败原绑定保持）
+        let snapshot = {
+            let mut session = lock(&encoder_handle.session)?;
+            let encoder = session.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+            am_vision_core::sdk::vocab::encode(
+                encoder,
+                &specs,
+                &tokens,
+                cols.unwrap_or(0),
+                Some(detector_dim),
+            )
+            .map_err(super::error)?
+        };
+        let mut slot = detector_handle
+            .vocab
+            .write()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+        *slot = std::sync::Arc::new(Some(snapshot));
+        Ok(())
+    })
+}
+#[no_mangle]
 pub unsafe extern "C" fn amv_infer_image_async(
     model: *mut amv_model_t,
     p: *const am_image_input_t,

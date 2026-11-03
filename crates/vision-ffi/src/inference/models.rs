@@ -7,7 +7,7 @@ use std::{
     path::Path,
     sync::{
         atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
-        Arc, Mutex,
+        Arc, Mutex, RwLock,
     },
 };
 
@@ -23,6 +23,9 @@ pub struct ModelHandle {
     pub policy: Mutex<am_realtime_policy_t>,
     pub permit: Mutex<Option<scheduler::ModelPermit>>,
     pub notify: Arc<super::notify::Notify>,
+    /// 开放词汇词表快照（A1，§4.1）：bind 原子换代（写锁换 Arc），推理读锁快照——
+    /// 在途请求用旧嵌入完成，新请求用新嵌入。
+    pub vocab: RwLock<Arc<Option<am_vision_core::sdk::VocabEmbedding>>>,
 }
 impl Managed for ModelHandle {
     fn as_any(&self) -> &dyn Any {
@@ -412,6 +415,7 @@ unsafe fn load_inner(
         }),
         permit: Mutex::new(Some(permit)),
         notify: Arc::default(),
+        vocab: RwLock::new(Arc::new(None)),
     });
     let key = crate::domain().insert(ctx, handle.clone())?;
     handle.info.key.store(key, Ordering::Release);

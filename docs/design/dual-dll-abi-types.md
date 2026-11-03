@@ -1073,6 +1073,7 @@ typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文�
 | vision | runtimeMissing / runtimeLoadFailed / gpuRuntimeMissing | 1027 / 1028 / 1029 |
 | vision | resultExpired / requestStateInvalid | 1030 / 1031 |
 | vision | insufficientBatchRejected | 1032（P6 三轮新增：固定批量轴尾项不足整批，明确拒绝不以 SPLIT 单帧提交） |
+| vision | vocabNotBound | 1033（A1 新增：PROFILE 双输入 detect 档案未绑定词表即推理，缺第二输入） |
 
 数值冻结后字符串名经 `am?_status_name` 查询保持稳定；重试属性（R/M/N）见主文件 §7。
 

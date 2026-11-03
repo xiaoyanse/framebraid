@@ -465,7 +465,26 @@ fn run(
     }
     let charge = model.state.charge(reserve)?;
     let start = am_sdk_support::clock::monotonic_ms();
-    let output = session.run(prepared.tensors(), reserve);
+    // A1 词汇注入（§4.1）：PROFILE 双输入 detect 档案（YOLO-World 头形态）的第二
+    // 输入由词表嵌入快照自动填充——在途请求快照后执行，换代不影响已开始推理；
+    // 未绑定时按合同拒绝（vocabNotBound）；单输入/RAW 模型零影响。引用切片组装
+    // 免图像张量复制（run_ref 语义与 run 一致）。
+    let vocab_tensor: am_vision_core::sdk::TensorData;
+    let mut infer_inputs: Vec<&am_vision_core::sdk::TensorData> =
+        prepared.tensors().iter().collect();
+    if session.profile.is_some_and(|p| p.inputs.len() > 1) {
+        let snapshot = model
+            .vocab
+            .read()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+            .clone();
+        let Some(vocab) = snapshot.as_ref() else {
+            return Err(AM_ERR_VISION_VOCAB_NOT_BOUND);
+        };
+        vocab_tensor = vocab.injection_tensor(&session.inputs[1]).map_err(error)?;
+        infer_inputs.push(&vocab_tensor);
+    }
+    let output = session.run_ref(&infer_inputs, reserve);
     model.refresh_selection(session);
     let raw = output.map_err(error)?;
     let prediction = if let Some(profile) = session.profile {

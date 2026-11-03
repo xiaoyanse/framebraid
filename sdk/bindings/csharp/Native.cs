@@ -40,6 +40,7 @@ namespace AmrtSdk {
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_object_destroy(IntPtr h);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_model_load(IntPtr h, IntPtr p, out IntPtr model);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_model_close(IntPtr h, uint timeout, out uint state);
+        [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_vocab_bind(IntPtr detector, IntPtr textEncoder, IntPtr entries, uint entryCount);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_infer_image_sync(IntPtr h, IntPtr image, IntPtr p, out IntPtr result, out ulong request);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_infer_image_async(IntPtr h, IntPtr image, IntPtr p, out ulong request);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_result_fetch(IntPtr h, ulong id, out IntPtr result);

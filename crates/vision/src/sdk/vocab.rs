@@ -12,8 +12,8 @@ const DTYPE_I64: u32 = 2;
 pub const MAX_ENTRIES: usize = 256;
 pub const MAX_PROMPTS_PER_ENTRY: usize = 64;
 
-pub struct EntrySpec<'a> {
-    pub label: &'a str,
+pub struct EntrySpec {
+    pub label: String,
     pub token_rows: u32,
 }
 
@@ -35,24 +35,41 @@ impl VocabEmbedding {
     pub fn total_rows(&self) -> usize {
         self.row_ranges.last().map_or(0, |(_, end)| *end)
     }
+    /// 构造注入检测模型第二输入的张量：shape=[total_rows, dim]（动态首维取实际值）、
+    /// dtype/名字取检测档案第二输入声明（F32 嵌入）。
+    pub fn injection_tensor(&self, declared: &super::TensorInfo) -> Result<TensorData> {
+        let rows = self.total_rows();
+        // SAFETY：f32 切片到字节的平台表示转换（引擎输入同序）。
+        let raw = unsafe {
+            std::slice::from_raw_parts(self.matrix.as_ptr().cast::<u8>(), self.matrix.len() * 4)
+        };
+        TensorData::new(
+            super::TensorInfo {
+                name: declared.name.clone(),
+                dtype: declared.dtype,
+                shape: vec![rows as i64, self.dim as i64],
+            },
+            raw,
+        )
+    }
 }
 
 /// 校验词表结构（不触模型）：label 非空且全表唯一、条目数与组内行数在合同区间。
-pub fn validate(entries: &[EntrySpec<'_>]) -> Result<()> {
+pub fn validate(entries: &[EntrySpec]) -> Result<()> {
     if entries.is_empty() || entries.len() > MAX_ENTRIES {
         return Err(Error(format!(
             "sdk.invalidArgument|field=entry_count,value={},range=1..{MAX_ENTRIES}",
             entries.len()
         )));
     }
-    let mut seen = HashSet::with_capacity(entries.len());
+    let mut seen = HashSet::<&str>::with_capacity(entries.len());
     for (index, entry) in entries.iter().enumerate() {
         if entry.label.is_empty() {
             return Err(Error(format!(
                 "sdk.invalidArgument|field=label,index={index},reason=empty"
             )));
         }
-        if !seen.insert(entry.label) {
+        if !seen.insert(entry.label.as_str()) {
             return Err(Error(format!(
                 "sdk.invalidArgument|field=label,index={index},reason=duplicate,value={}",
                 entry.label
@@ -95,7 +112,7 @@ pub fn encoder_signature(encoder: &Model) -> Result<(String, usize, usize)> {
 ///（合同：与检测档案第二输入 embed 维失配拒绝）。
 pub fn encode(
     encoder: &mut Model,
-    entries: &[EntrySpec<'_>],
+    entries: &[EntrySpec],
     tokens: &[i64],
     cols: usize,
     detector_dim: Option<usize>,
@@ -186,14 +203,14 @@ mod tests {
     #[test]
     fn validate_rejects_empty_duplicate_and_overflow() {
         assert!(validate(&[EntrySpec {
-            label: "hand",
+            label: "hand".to_string(),
             token_rows: 1
         }])
         .is_ok());
         let err = validate(&[]).err().unwrap().0;
         assert!(err.contains("entry_count"), "{err}");
         let err = validate(&[EntrySpec {
-            label: "",
+            label: "".to_string(),
             token_rows: 1,
         }])
         .err()
@@ -202,11 +219,11 @@ mod tests {
         assert!(err.contains("reason=empty"), "{err}");
         let err = validate(&[
             EntrySpec {
-                label: "a",
+                label: "a".to_string(),
                 token_rows: 1,
             },
             EntrySpec {
-                label: "a",
+                label: "a".to_string(),
                 token_rows: 2,
             },
         ])
@@ -215,7 +232,7 @@ mod tests {
         .0;
         assert!(err.contains("reason=duplicate"), "{err}");
         let err = validate(&[EntrySpec {
-            label: "a",
+            label: "a".to_string(),
             token_rows: 0,
         }])
         .err()
@@ -224,7 +241,7 @@ mod tests {
         assert!(err.contains("token_rows"), "{err}");
         let many: Vec<EntrySpec> = (0..=MAX_ENTRIES)
             .map(|i| EntrySpec {
-                label: Box::leak(format!("l{i}").into_boxed_str()),
+                label: format!("l{i}"),
                 token_rows: 1,
             })
             .collect();

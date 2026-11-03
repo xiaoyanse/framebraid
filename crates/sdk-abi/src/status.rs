@@ -74,6 +74,7 @@ pub const AM_ERR_VISION_GPU_RUNTIME_MISSING: am_status_t = 1029;
 pub const AM_ERR_VISION_RESULT_EXPIRED: am_status_t = 1030;
 pub const AM_ERR_VISION_REQUEST_STATE_INVALID: am_status_t = 1031;
 pub const AM_ERR_VISION_INSUFFICIENT_BATCH_REJECTED: am_status_t = 1032;
+pub const AM_ERR_VISION_VOCAB_NOT_BOUND: am_status_t = 1033;
 pub fn status_name(status: am_status_t) -> Option<&'static core::ffi::CStr> {
     match status {
         0 => Some(c"sdk.ok"),
@@ -150,6 +151,7 @@ pub fn status_name(status: am_status_t) -> Option<&'static core::ffi::CStr> {
         1030 => Some(c"vision.resultExpired"),
         1031 => Some(c"vision.requestStateInvalid"),
         1032 => Some(c"vision.insufficientBatchRejected"),
+        1033 => Some(c"vision.vocabNotBound"),
         _ => None,
     }
 }
