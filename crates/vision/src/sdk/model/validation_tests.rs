@@ -90,7 +90,7 @@ fn borrowed_validation_preserves_duplicate_dtype_shape_and_length_failures() {
         validate_input_data(std::slice::from_ref(&spec), std::slice::from_ref(&input))
             .unwrap_err()
             .0,
-        "vision.dtypeMismatch"
+        "vision.dtypeMismatch|input=x,expected=uint8,actual=float32"
     );
     input.info.dtype = 4;
     input.info.shape = vec![8193];
@@ -112,4 +112,44 @@ fn borrowed_validation_preserves_duplicate_dtype_shape_and_length_failures() {
         validate_input_infos(&values, &values).unwrap_err().0,
         "vision.inputNameUnknown"
     );
+}
+
+#[test]
+fn dual_input_validation_reports_expected_and_actual() {
+    let expected = vec![
+        TensorInfo {
+            name: "images".into(),
+            dtype: 0,
+            shape: vec![-1, 3, 640, 640],
+        },
+        TensorInfo {
+            name: "text_embeddings".into(),
+            dtype: 0,
+            shape: vec![-1, 512],
+        },
+    ];
+    let mut actual = vec![
+        TensorInfo {
+            name: "images".into(),
+            dtype: 0,
+            shape: vec![1, 3, 640, 640],
+        },
+        TensorInfo {
+            name: "text_embeddings".into(),
+            dtype: 0,
+            shape: vec![4, 512],
+        },
+    ];
+    validate_input_infos(&expected, &actual).unwrap();
+    actual[1].dtype = 3;
+    assert!(validate_input_infos(&expected, &actual)
+        .unwrap_err()
+        .0
+        .contains("expected=float32,actual=int32"));
+    actual[1].dtype = 0;
+    actual[0].shape[1] = 4;
+    assert!(validate_input_infos(&expected, &actual)
+        .unwrap_err()
+        .0
+        .contains("input=images,dim=1,expected=3,actual=4"));
 }

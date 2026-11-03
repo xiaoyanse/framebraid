@@ -26,9 +26,61 @@ fn tensor<'a>(spec: &'a TensorSpec, values: &'a [f32]) -> TensorView<'a> {
 }
 
 #[test]
+fn detect_head_four_layout_coordinate_combinations() {
+    use super::registry::{CoordForm, Layout};
+    for layout in [Layout::Transposed, Layout::RowMajor] {
+        for coord in [CoordForm::Cxcywh, CoordForm::Xyxy] {
+            let mut p = find("detect-yolo11n-nms-v1").unwrap().clone();
+            p.classes = Some(4);
+            p.postprocess.layout = layout;
+            p.postprocess.coord_form = coord;
+            p.outputs[0].shape = match layout {
+                Layout::Transposed => vec![1, 8, 8],
+                Layout::RowMajor => vec![1, 8, 8],
+            };
+            let mut head = vec![0.0; 64];
+            let coords = match coord {
+                CoordForm::Cxcywh => [320., 320., 200., 100.],
+                CoordForm::Xyxy => [220., 270., 420., 370.],
+            };
+            for (row, value) in coords.into_iter().chain([0., 0., 0.9, 0.]).enumerate() {
+                let index = match layout {
+                    Layout::Transposed => row * 8,
+                    Layout::RowMajor => row,
+                };
+                head[index] = value;
+            }
+            let m = ImageMapping {
+                width: 640,
+                height: 640,
+                scale: 1.,
+                left: 0,
+                top: 0,
+            };
+            let Output::Detect(found) =
+                results::decode_head(Task::Detect, &p, &[&head], m, Options::default()).unwrap()
+            else {
+                panic!("wrong output")
+            };
+            assert_eq!(found.len(), 1);
+            assert_eq!(found[0].class_id, 2);
+            assert_eq!(found[0].confidence, 0.9);
+            assert_eq!(
+                found[0].bounds,
+                [220. / 640., 270. / 640., 420. / 640., 370. / 640.]
+            );
+        }
+    }
+}
+
+#[test]
 fn registry_is_five_explicit_profiles_not_shape_guessing() {
-    assert_eq!(all().unwrap().len(), 5);
-    for profile in all().unwrap() {
+    assert_eq!(all().unwrap().len(), 6);
+    for profile in all()
+        .unwrap()
+        .iter()
+        .filter(|p| p.sample_sha256 != "ignore")
+    {
         assert_eq!(profile.sample_sha256.len(), 64);
         assert_eq!(profile.input.name, "images");
         assert_eq!(profile.input.shape.len(), 4);

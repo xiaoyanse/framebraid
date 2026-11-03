@@ -394,3 +394,7 @@ Local ABI 1.1 r10: check `AMC_CAP_WORKER_BUDGET`, then use `amc_get_worker_budge
 文件模型及其外部权重应在整个加载调用期间保持可信且不被修改或替换。SDK预检查按已打开文件句柄读取，检查阶段的SDK自有副本不超过256 MiB；ORT文件入口会重新按路径打开，SDK无法保证ORT看到相同文件或约束其内部读取。内存模型在同步加载返回前需保持字节有效且不可变，返回后调用方可释放或修改；不支持外部权重的限制保持不变。
 
 Keep path models and external weights trusted and unchanged throughout loading. SDK preflight reads at most 256 MiB from an opened handle, but ORT reopens the path; the SDK cannot guarantee an identical file or cap ORT internal reads. Memory model bytes must remain valid and unchanged until synchronous loading returns; callers may release or modify them afterwards. External weights remain unsupported for memory models.
+# 开放词汇模型的嵌入配对
+
+输入维度和类型匹配不能证明文本嵌入空间与检测头配对。异源文本塔可能产生集中于 letterbox 填充带的假框，未归一化图像可能产生饱和假分；实测背景见 `docs/EXTENSION_CAPABILITIES.md`。模型制作者负责确认图像预处理和文本塔与检测头配套，SDK 当前不提供嵌入空间健康度探测。
+

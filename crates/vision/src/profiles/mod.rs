@@ -87,6 +87,9 @@ pub fn decode(
     options: Options,
 ) -> Result<Prediction> {
     let profile = find(profile_id)?;
+    if profile.task == Task::Detect && profile.classes.is_none() {
+        return Err(Error("vision.profileUnsupported".into()));
+    }
     if !options.confidence.is_finite()
         || !(0.0..=1.0).contains(&options.confidence)
         || !options.nms_iou.is_finite()

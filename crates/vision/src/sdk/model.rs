@@ -103,14 +103,35 @@ fn validate_infos<'a>(
             return Err(Error("vision.inputNameUnknown".into()));
         }
         if actual.dtype != spec.dtype {
-            return Err(Error("vision.dtypeMismatch".into()));
+            let dtype = |d| match d {
+                0 => "float32",
+                1 => "float16",
+                2 => "int64",
+                3 => "int32",
+                4 => "uint8",
+                _ => "unknown",
+            };
+            return Err(Error(format!(
+                "vision.dtypeMismatch|input={},expected={},actual={}",
+                spec.name,
+                dtype(spec.dtype),
+                dtype(actual.dtype)
+            )));
         }
         if actual.shape.len() != spec.shape.len() {
-            return Err(Error("vision.inputShapeMismatch".into()));
+            return Err(Error(format!(
+                "vision.inputShapeMismatch|input={},expected_rank={},actual_rank={}",
+                spec.name,
+                spec.shape.len(),
+                actual.shape.len()
+            )));
         }
-        for (&a, &e) in actual.shape.iter().zip(&spec.shape) {
+        for (dim, (&a, &e)) in actual.shape.iter().zip(&spec.shape).enumerate() {
             if a <= 0 || (e >= 0 && a != e) {
-                return Err(Error("vision.inputShapeMismatch".into()));
+                return Err(Error(format!(
+                    "vision.inputShapeMismatch|input={},dim={dim},expected={e},actual={a}",
+                    spec.name
+                )));
             }
             if e < 0 && a > 8192 {
                 return Err(Error("vision.dynamicRangeExceeded".into()));
@@ -278,16 +299,18 @@ impl Model {
                             actual.iter().any(|a| {
                                 a.name == e.name
                                     && a.dtype == 0
-                                    && a.shape
-                                        .iter()
-                                        .copied()
-                                        .eq(e.shape.iter().map(|d| *d as i64))
+                                    && a.shape.iter().copied().zip(&e.shape).all(|(a, d)| {
+                                        if *d == 0 {
+                                            a < 0
+                                        } else {
+                                            a == *d as i64
+                                        }
+                                    })
+                                    && a.shape.len() == e.shape.len()
                             })
                         })
                 };
-                if !matches(&inputs, std::slice::from_ref(&profile.input))
-                    || !matches(&outputs, &profile.outputs)
-                {
+                if !matches(&inputs, &profile.inputs) || !matches(&outputs, &profile.outputs) {
                     return Err(Error("vision.formatIncompatible".into()));
                 }
             }

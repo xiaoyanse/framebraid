@@ -1,4 +1,8 @@
-use super::{geometry, mask, ImageMapping, Options, Profile, Task};
+use super::{
+    geometry, mask,
+    registry::{CoordForm, Layout},
+    ImageMapping, Options, Profile, Task,
+};
 use crate::{Error, PoseDetection, Result};
 use serde::Serialize;
 
@@ -99,13 +103,24 @@ pub(super) fn decode_head(
     let classes = profile
         .classes
         .ok_or_else(|| Error("vision.profileUnsupported".into()))?;
-    let anchors = profile.outputs[0].shape[2];
+    let shape = &profile.outputs[0].shape;
+    let anchors = match profile.postprocess.layout {
+        Layout::Transposed => shape[shape.len() - 1],
+        Layout::RowMajor => shape[shape.len() - 2],
+    };
     let head = outputs[0];
+    let rows = head.len() / anchors;
     let mut candidates = Vec::new();
     for anchor in 0..anchors {
+        let at = |row| {
+            head[match profile.postprocess.layout {
+                Layout::Transposed => row * anchors + anchor,
+                Layout::RowMajor => anchor * rows + row,
+            }]
+        };
         let mut best = (0usize, 0.0f32);
         for class in 0..classes {
-            let score = head[(4 + class) * anchors + anchor];
+            let score = at(4 + class);
             if !(0.0..=1.0).contains(&score) {
                 return Err(Error(
                     "vision.formatIncompatible|classProbabilityExpected".into(),
@@ -118,26 +133,33 @@ pub(super) fn decode_head(
         if best.1 <= options.confidence {
             continue;
         }
-        let xywh = [
-            head[anchor],
-            head[anchors + anchor],
-            head[2 * anchors + anchor],
-            head[3 * anchors + anchor],
-        ];
+        let coords = [at(0), at(1), at(2), at(3)];
+        let xywh = match profile.postprocess.coord_form {
+            CoordForm::Cxcywh => coords,
+            CoordForm::Xyxy => [
+                (coords[0] + coords[2]) / 2.0,
+                (coords[1] + coords[3]) / 2.0,
+                coords[2] - coords[0],
+                coords[3] - coords[1],
+            ],
+        };
         if xywh.iter().any(|value| value.abs() > 1_000_000.0) {
             return Err(Error("vision.inferenceFailed|boxRangeInvalid".into()));
         }
         if xywh[2] <= 0.0 || xywh[3] <= 0.0 {
             continue;
         }
-        let bounds = [
-            xywh[0] - xywh[2] / 2.0,
-            xywh[1] - xywh[3] / 2.0,
-            xywh[0] + xywh[2] / 2.0,
-            xywh[1] + xywh[3] / 2.0,
-        ];
+        let bounds = match profile.postprocess.coord_form {
+            CoordForm::Xyxy => coords,
+            CoordForm::Cxcywh => [
+                xywh[0] - xywh[2] / 2.0,
+                xywh[1] - xywh[3] / 2.0,
+                xywh[0] + xywh[2] / 2.0,
+                xywh[1] + xywh[3] / 2.0,
+            ],
+        };
         let angle = if task == Task::Obb {
-            head[(4 + classes) * anchors + anchor]
+            at(4 + classes)
         } else {
             0.0
         };
