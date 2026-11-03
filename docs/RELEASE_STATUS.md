@@ -1,7 +1,11 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.3.2**（2026-11-03 发布，C ABI 1.1，[Release](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)；二进制构建提交 5181b39，tag 提交 76a3084 仅文档变更）。历史版本 [v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.4.0**（2026-11-03 发布，C ABI 1.1 不变，兼容新增）。历史版本 [v0.3.2](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)、[v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
+
+## v0.4.0 验证状态快照
+
+FILE 本地文件源（P1-8 阶段 1）+ 开放词汇首批（A3+B1）+ v0.3.3 制度批次三合一功能版。**三源真机回归**（新 DLL，`.local/tests/v040-regression/`）：RTSP transport 三 codec（H.264/H.265 D3D11VA verified + MJPEG CPU，16 包/慢订阅者重同步/时间基/RA 真实像素全绿）+ ISAPI 抓图全场景（jpegExact/生命周期/推拉互斥/回调屏障）；FILE 源 EOF 全链集成测试通过（真机 FFmpeg，29 包 PULL→EOF→排空 streamEnded→三段式关闭）。Rust 回归 428 项零失败；check-boundary 过闸（含 vocab 批新增 5 条目）。Framing 的 is_avcc 链自洽判定（P1-8 修复）对三源行为等价已由上述回归实证。运行库版本：FFmpeg s5-encode（avcodec-63）。
 
 ## v0.3.2 验证状态快照
 
