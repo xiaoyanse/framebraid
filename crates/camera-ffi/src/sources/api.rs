@@ -227,6 +227,113 @@ pub unsafe extern "C" fn amc_source_get_status(
     })
 }
 #[no_mangle]
+pub unsafe extern "C" fn amc_source_seek(
+    src: *mut amc_source_t,
+    target_ms: f64,
+    mode: u32,
+    out_position_ms: *mut f64,
+) -> i32 {
+    status(domain(), src as usize, || {
+        am_sdk_support::callbacks::reject_reentry()?;
+        let active = domain().active(src as usize)?;
+        let source = active.data::<Source>()?;
+        if !source.shared.file {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        if mode > 2 || !target_ms.is_finite() || target_ms < 0.0 {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let hub = source
+            .shared
+            .stream
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+            .clone()
+            .ok_or(AM_ERR_SDK_TRY_AGAIN)?;
+        match hub.request_file_seek(target_ms, mode) {
+            Some(Ok(position)) => {
+                if !out_position_ms.is_null() {
+                    unsafe { out_position_ms.write(position) };
+                }
+                Ok(())
+            }
+            Some(Err(_)) => Err(AM_ERR_SDK_NOT_SUPPORTED),
+            None => Err(AM_ERR_SDK_DEADLINE_EXCEEDED),
+        }
+    })
+}
+#[no_mangle]
+pub unsafe extern "C" fn amc_source_get_duration(src: *mut amc_source_t, out_ms: *mut f64) -> i32 {
+    status(domain(), src as usize, || {
+        am_sdk_support::callbacks::reject_reentry()?;
+        let active = domain().active(src as usize)?;
+        let source = active.data::<Source>()?;
+        if !source.shared.file {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        args::pointer(out_ms)?;
+        let hub = source
+            .shared
+            .stream
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+            .clone()
+            .ok_or(AM_ERR_SDK_TRY_AGAIN)?;
+        let duration = hub.file_duration();
+        if duration < 0 {
+            return Err(AM_ERR_SDK_TRY_AGAIN);
+        }
+        unsafe { out_ms.write(duration as f64) };
+        Ok(())
+    })
+}
+#[no_mangle]
+pub unsafe extern "C" fn amc_source_set_rate(src: *mut amc_source_t, rate: f64) -> i32 {
+    status(domain(), src as usize, || {
+        am_sdk_support::callbacks::reject_reentry()?;
+        let active = domain().active(src as usize)?;
+        let source = active.data::<Source>()?;
+        if !source.shared.file {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        if rate <= 0.0 || rate.is_nan() {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let hub = source
+            .shared
+            .stream
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+            .clone()
+            .ok_or(AM_ERR_SDK_TRY_AGAIN)?;
+        hub.set_file_rate(rate);
+        Ok(())
+    })
+}
+#[no_mangle]
+pub unsafe extern "C" fn amc_source_set_loop(src: *mut amc_source_t, enabled: u32) -> i32 {
+    status(domain(), src as usize, || {
+        am_sdk_support::callbacks::reject_reentry()?;
+        let active = domain().active(src as usize)?;
+        let source = active.data::<Source>()?;
+        if !source.shared.file {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        if enabled > 1 {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let hub = source
+            .shared
+            .stream
+            .lock()
+            .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?
+            .clone()
+            .ok_or(AM_ERR_SDK_TRY_AGAIN)?;
+        hub.set_file_loop(enabled == 1);
+        Ok(())
+    })
+}
+#[no_mangle]
 pub unsafe extern "C" fn amc_source_set_reconnect_policy(
     src: *mut amc_source_t,
     policy: *const am_reconnect_policy_t,

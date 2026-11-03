@@ -97,6 +97,9 @@ type AvformatOpenInputFn = unsafe extern "C" fn(
 type AvformatFindStreamInfoFn =
     unsafe extern "C" fn(*mut AVFormatContext, *mut core::ffi::c_void) -> c_int;
 type AvformatCloseInputFn = unsafe extern "C" fn(*mut *mut AVFormatContext);
+type AvformatSeekFileFn =
+    unsafe extern "C" fn(*mut AVFormatContext, c_int, i64, i64, i64, c_int) -> c_int;
+type AvformatFlushFn = unsafe extern "C" fn(*mut AVFormatContext) -> c_int;
 type AvformatAllocContextFn = unsafe extern "C" fn() -> *mut AVFormatContext;
 // dict（libavutil/dict.h）：RTSP 打开选项（超时/TCP 传输）
 type AvDictSetFn = unsafe extern "C" fn(
@@ -232,6 +235,8 @@ pub struct FfmpegApi {
     pub avformat_open_input: AvformatOpenInputFn,
     pub avformat_find_stream_info: AvformatFindStreamInfoFn,
     pub avformat_close_input: AvformatCloseInputFn,
+    pub avformat_seek_file: AvformatSeekFileFn,
+    pub avformat_flush: AvformatFlushFn,
     pub av_read_frame: AvReadFrameFn,
     pub av_find_best_stream: AvFindBestStreamFn,
     pub av_guess_frame_rate: AvGuessFrameRateFn,
@@ -523,6 +528,8 @@ impl FfmpegApi {
                 avformat_open_input: get_fn(avformat, b"avformat_open_input\0")?,
                 avformat_find_stream_info: get_fn(avformat, b"avformat_find_stream_info\0")?,
                 avformat_close_input: get_fn(avformat, b"avformat_close_input\0")?,
+                avformat_seek_file: get_fn(avformat, b"avformat_seek_file\0")?,
+                avformat_flush: get_fn(avformat, b"avformat_flush\0")?,
                 av_read_frame: get_fn(avformat, b"av_read_frame\0")?,
                 av_find_best_stream: get_fn(avformat, b"av_find_best_stream\0")?,
                 av_guess_frame_rate: get_fn(avformat, b"av_guess_frame_rate\0")?,

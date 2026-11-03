@@ -8,6 +8,7 @@ use am_camera_core::media::{
     codec::{CpuDecoder, VideoCodec},
     sdk_io::{IoError, StreamInfo},
 };
+use std::sync::atomic::AtomicI64;
 use std::thread::JoinHandle;
 mod consume;
 mod registry;
@@ -27,7 +28,20 @@ struct SessionStamp {
     credentials: u32,
 }
 
+#[derive(Clone, Copy)]
+pub(super) struct SeekCommand {
+    pub target_ms: f64,
+    pub mode: u32,
+}
+
 pub struct Hub {
+    pub(super) seek_request: Mutex<Option<SeekCommand>>,
+    pub(super) seek_reply: Mutex<Option<std::result::Result<f64, IoError>>>,
+    pub(super) seek_done: Condvar,
+    pub(super) file_rate: Mutex<f64>,
+    pub(super) rate_epoch: AtomicU64,
+    pub(super) file_loop: AtomicBool,
+    pub(super) file_duration_ms: AtomicI64,
     pub(super) source: Weak<SharedSource>,
     pub(super) subscribers: Mutex<Subscribers>,
     pub(super) codec: AtomicU32,
@@ -47,6 +61,73 @@ pub struct Hub {
     pixel_block: Option<Arc<pipeline::Block>>,
 }
 impl Hub {
+    #[allow(dead_code)] // Wired to the public control API in the next integration step.
+    pub fn request_file_seek(
+        &self,
+        target_ms: f64,
+        mode: u32,
+    ) -> Option<std::result::Result<f64, IoError>> {
+        let mut request = self.seek_request.lock().ok()?;
+        *self.seek_reply.lock().ok()? = None;
+        *request = Some(SeekCommand { target_ms, mode });
+        let (_request, _) = self
+            .seek_done
+            .wait_timeout(request, Duration::from_secs(5))
+            .ok()?;
+        self.seek_reply.lock().ok()?.take()
+    }
+    #[allow(dead_code)]
+    pub fn set_file_rate(&self, rate: f64) {
+        if let Ok(mut value) = self.file_rate.lock() {
+            *value = rate;
+        }
+        self.rate_epoch.fetch_add(1, Ordering::AcqRel);
+    }
+    #[allow(dead_code)]
+    pub fn set_file_loop(&self, enabled: bool) {
+        self.file_loop.store(enabled, Ordering::Release);
+    }
+    pub fn file_duration(&self) -> i64 {
+        self.file_duration_ms.load(Ordering::Acquire)
+    }
+    pub(super) fn has_pending_seek(&self) -> bool {
+        self.seek_request
+            .lock()
+            .is_ok_and(|request| request.is_some())
+    }
+    fn take_seek(&self) -> Option<SeekCommand> {
+        self.seek_request.lock().ok()?.take()
+    }
+    fn complete_seek(&self, outcome: std::result::Result<f64, IoError>) {
+        if let Ok(mut request) = self.seek_request.lock() {
+            *request = None;
+            if let Ok(mut reply) = self.seek_reply.lock() {
+                *reply = Some(outcome);
+                self.seek_done.notify_all();
+            }
+        }
+    }
+    fn seek_target(&self, target: f64) -> f64 {
+        let duration = self.file_duration();
+        target.clamp(
+            0.0,
+            if duration < 0 {
+                f64::MAX
+            } else {
+                duration as f64
+            },
+        )
+    }
+    fn seek_resync(&self, source: &SharedSource, reason: &'static std::ffi::CStr) {
+        self.reset_subscribers();
+        source.event(
+            AM_EVENT_ENCODED_RESYNC,
+            AM_EVENT_SCOPE_ALL_CONSUMERS,
+            0,
+            AM_FAULT_NONE as u32,
+            reason,
+        );
+    }
     fn now(&self) -> Instant {
         #[cfg(test)]
         if let Some(clock) = &self.clock {
@@ -65,6 +146,13 @@ impl Hub {
         let hub = slot
             .get_or_insert_with(|| {
                 Arc::new(Self {
+                    seek_request: Mutex::new(None),
+                    seek_reply: Mutex::new(None),
+                    seek_done: Condvar::new(),
+                    file_rate: Mutex::new(f64::INFINITY),
+                    rate_epoch: AtomicU64::new(0),
+                    file_loop: AtomicBool::new(false),
+                    file_duration_ms: AtomicI64::new(-1),
                     source: Arc::downgrade(source),
                     subscribers: Mutex::default(),
                     codec: AtomicU32::new(0),
@@ -387,7 +475,9 @@ impl Hub {
         times: &VecDeque<(i64, i64)>,
         stamp: SessionStamp,
     ) -> std::result::Result<(), IoError> {
-        self.emit_decoded_checked::<EARLY_SAMPLING>(source, cpu, info, subs, times, stamp, None)
+        self.emit_decoded_checked::<EARLY_SAMPLING>(
+            source, cpu, info, subs, times, stamp, None, None,
+        )
     }
     #[allow(clippy::too_many_arguments)]
     fn emit_decoded_checked<const EARLY_SAMPLING: bool>(
@@ -398,6 +488,7 @@ impl Hub {
         subs: &Snapshot,
         times: &VecDeque<(i64, i64)>,
         stamp: SessionStamp,
+        drop_before_pts: Option<i64>,
         mut delivery: Option<&mut pipeline::Delivery<'_>>,
     ) -> std::result::Result<(), IoError> {
         loop {
@@ -408,6 +499,11 @@ impl Hub {
             let Some(next) = cpu.peek().map_err(|_| IoError::Invalid)? else {
                 break;
             };
+            if drop_before_pts.is_some_and(|limit| next.pts < limit) {
+                cpu.discard_frame().map_err(|_| IoError::Invalid)?;
+                // EXACT filtering is timeline semantics, unlike superseded resource drops.
+                continue;
+            }
             {
                 let _guard = lock(&self.configuration).map_err(|_| IoError::Resource)?;
                 if !self.current(source, stamp)

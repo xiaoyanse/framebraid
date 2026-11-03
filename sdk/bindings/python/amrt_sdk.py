@@ -321,6 +321,11 @@ AM_SRC_DEVICE_REF = 2
 AM_SRC_MJPEG_URL = 3
 AM_SRC_FILE = 4
 
+am_seek_mode_e = c_int32
+AM_SEEK_KEYFRAME_BEFORE = 0
+AM_SEEK_KEYFRAME_AFTER = 1
+AM_SEEK_EXACT = 2
+
 am_source_state_e = c_int32
 AM_SRC_WAITING_CREDENTIALS = 0
 AM_SRC_CONNECTING = 1
@@ -329,6 +334,7 @@ AM_SRC_RECONNECT_WAIT = 3
 AM_SRC_AUTH_WAITING = 4
 AM_SRC_CLOSING = 5
 AM_SRC_CLOSED = 6
+AM_SRC_EOF = 7
 
 am_fault_class_e = c_int32
 AM_FAULT_NONE = 0
@@ -1479,6 +1485,10 @@ FUNCTIONS = {
     "amc_source_close": (am_status_t, [POINTER(amc_source_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amc_source_get_status": (am_status_t, [POINTER(amc_source_t), POINTER(am_source_status_t)]),
     "amc_source_set_reconnect_policy": (am_status_t, [POINTER(amc_source_t), POINTER(am_reconnect_policy_t)]),
+    "amc_source_seek": (am_status_t, [POINTER(amc_source_t), c_double, c_uint32, POINTER(c_double)]),
+    "amc_source_get_duration": (am_status_t, [POINTER(amc_source_t), POINTER(c_double)]),
+    "amc_source_set_rate": (am_status_t, [POINTER(amc_source_t), c_double]),
+    "amc_source_set_loop": (am_status_t, [POINTER(amc_source_t), c_uint32]),
     "amc_subscribe_encoded": (am_status_t, [POINTER(amc_source_t), POINTER(am_encoded_sub_desc_t), POINTER(POINTER(amc_encoded_sub_t))]),
     "amc_encoded_unsubscribe": (am_status_t, [POINTER(amc_encoded_sub_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amc_encoded_set_callback": (am_status_t, [POINTER(amc_encoded_sub_t), am_encoded_cb_fn, c_void_p]),

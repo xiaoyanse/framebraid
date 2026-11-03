@@ -60,8 +60,8 @@
   {
    "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
    "previousSha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592",
-   "sha256": "cbd17618b1420348c94106eda67d2071e66479810e2842ee38bb585164b19470",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green；v0.3.2 batch D：FFmpeg 版本不匹配失败携带检测/期望主版本（FfmpegLoadError.version 字段，具体库名作 component），workspace 207 绿"
+   "sha256": "2150b3ccba803802c3697bf97faf182db3c28d2be889c6040b87bda80c88c25b",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
@@ -180,14 +180,14 @@
   {
    "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
    "previousSha256": "2b58e9388876c08c0bac992a6983f9e8ef55087f0e09e89c576840bd7edddced",
-   "sha256": "7e809ece96d9d0dcc76800afcff2451fe5ef0bc42d808079232abdeba282d7ab",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 b716e596cf3058f7447db585ea7c8884b34658e6d2e05bd89be5453eb0d16794: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 3eb540ed21b0f814…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 fd5dd301999b09ce…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+   "sha256": "3050322f7b0d16b608e10449fd84d14facebf02e81ea7a7fc60a151f1cef50d8",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/am-camera/src/media/sdk_io/tests.rs",
    "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
-   "sha256": "078e2737a0b0ac167a3ac685eaa13df9c48a2b0d9835be14e18f3444be1b4000",
-   "reason": "Windows HTTP fixture explicitly switches accepted socket to blocking reads; preserves assertions and production capture behavior; previous SHA-256 f3b581fe29ed15a9…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); realigned 8b44b546 (fmt)"
+   "sha256": "6c8110810b325e53f96b350310fdfded4452fba71c427268dfe369328dc27589",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/am-camera/tests/jpeg_bench.rs",
@@ -402,8 +402,8 @@
   {
    "path": "crates/camera-ffi/src/reader.rs",
    "previousSha256": null,
-   "sha256": "917997b26679882571eef4b3c1ed038b546a62e52d4108c07c2e0f82bcdafd9d",
-   "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; realigned 8ab8930a->917997b2 (FILE fix batch: Reader file-mode entry, BudgetedReader passthrough, subscribe guard, subscriber-wait)"
+   "sha256": "c12d86cdd4b24207a2ed4ffb396bfd09342298f5a06ae32cbfad4f2ea21ace13",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/reader/tests.rs",
@@ -414,8 +414,8 @@
   {
    "path": "crates/camera-ffi/src/sources/api.rs",
    "previousSha256": "841e4ee17a261cf3174d213728d5b46d6fd14397986fdd9004e577d273c5ddc1",
-   "sha256": "ea39c3fff5458331476236428a1642d8954c9244ee09f20fff4cd54a2e662acb",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 1291d75a38ed26b393e1552101ec1c547f5ae8387ad0886992383c1227906600: FILE source stage 1 (P1-8): AM_SRC_FILE entry constraints (creds/provider null, stream_kind empty, path validation with dynamic detail)"
+   "sha256": "bc7a7dfd9325c7a57d94414478e948416d2f43de52d2a07ba20aa73aedfeb106",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/sources/credentials.rs",
@@ -468,20 +468,20 @@
   {
    "path": "crates/camera-ffi/src/sources/tests.rs",
    "previousSha256": "fe71c967664d88c30de9c724b58906010eddeeb09eeb089a0d50f314e727f706",
-   "sha256": "3c5165886006281d029cfd9d0c3c5ec98d6dc9ab397387a4b7bb98461acb55e8",
-   "reason": "R3 bounded borrowed hardware-report serialization; F2 against 5734e78 adds FILE argument and path diagnostics tests plus ignored FFmpeg EOF fixture, no production changes; prior reviewed sha256 de7f6ee519b068e9b3ad970a97acc1a0a43cfae1be23c0a0793dd673a14b1e19; previous SHA-256 534bf22ce06608e9b824923c5628970ec8a19e7a3b69f09a7487903c1415e92a: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes; previous SHA-256 e180f238b8387310…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+   "sha256": "8d940793040e00c6eda875cf934ebef9eab152c566e904873d5f8be0d8fadcf9",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub.rs",
    "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-   "sha256": "726d94c494eaec1e07072cbbbb16c0ab50eada8a91f5268d21370cebfffc10d8",
-   "reason": "R7 reviewed mjpeg source lifecycle wiring (kind dispatch, mjpeg flag in SharedSource/reuse, stream loop in hub with local multipart server integration test); workspace green; C ABI enum addition only; previous SHA-256 55533f9a713df4ae9fbe5a86fca4c6969d0398fef617be720e630dcb4ceb5546: FILE source stage 1 (P1-8): file::run worker branch + mod decl; previous SHA-256 016308746821951ae14926fa4c54ba2deda948a81a4d37124446e0a6a540170e: FILE source stage 1 fix batch: Reader file-mode entry (skip rtsp validation/credential injection), BudgetedReader file passthrough, subscribe credential guard for file sources, subscriber-wait before demux, test fixes"
+   "sha256": "8f5ceecbf04fdf9d829e96c910b5fb0b3dbd016af3c0a225adfd06b8a15e9c6f",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
    "previousSha256": null,
-   "sha256": "aed148423cc551a9e47569ab6cd2329c9cc0484d71fc8686a8fd6c4333b2e41f",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change; previous SHA-256 c5edf5e1f4bd4f48cd703f60d274fe84e41dc6c06b41b9081ffc6589f0124ac0: FILE source stage 1 (P1-8): EOF returns Ok for file sources (terminal instead of reconnect); previous SHA-256 362c5bff840b2f23…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets); previous SHA-256 2e7f49e9724233d0…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+   "sha256": "39b5e4d2c9f0429b5952bf2fba4e4f1dab65fb4b8b06db5723b2862b4fcb2e11",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/mjpeg.rs",
@@ -516,14 +516,14 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/pipeline.rs",
    "previousSha256": null,
-   "sha256": "9d55635621ae509ea239e65047597682cd3b6e5b2e1d4d44ce1a2fb83ca0694b",
-   "reason": "Reviewed ABI1.1 r10 Media Context shared worker admission for eight C ABI paths, live/peak observations, scoped pixel pre-admission and bounded probe groups; native quota/isolation/Closing/RTSP and language checks; no existing layout change"
+   "sha256": "538ead2a2b7b9d25c17917d66759bec7648275c0b91ad3a816a045a3ad2fe1b9",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode.rs",
    "previousSha256": null,
-   "sha256": "85b4806fad045d3d716447f86f3b1c0d9377b21e35c8b0a0929f72c0d2a2d55f",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "30b8aedd56484bbf8f88a7219bf143b1bb0e9e2364eb282ed2da9ab92c818c77",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/decode/storage_tests.rs",
@@ -534,14 +534,14 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/live_sampling_tests.rs",
    "previousSha256": null,
-   "sha256": "1dff2ea71bff7af14dfc8afae40a919045891824e2f447dd9160473426217a8b",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "e7d404a48c52c377d55eee9c7e214576a65afea12b5c4e5ec1c49575c235074e",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/tests.rs",
    "previousSha256": null,
-   "sha256": "e91ada22b09db0c2dfeb98bd1fae302d582a42ffb77a6affba8dfbae1334d7bd",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "b9e048313f449c38800c08508217d23100aff6badfdc90ba05fae7d23a488561",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/pipeline/timing_tests.rs",
@@ -570,8 +570,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/hub/tests.rs",
    "previousSha256": null,
-   "sha256": "738e7bce1b863e01c4bd6b98ea60eac7d2e45d4820a0deeb674b5f433daf8a20",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "aed89a3aa2ebf37589842e31f271abe60bbe4280c26ef7801a6551de12ef8046",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/mod.rs",
@@ -588,8 +588,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/queue.rs",
    "previousSha256": "d096c1baf715737e4a2ce08a33902ad7496e91f6c0e9a7dcf457d0415b952bfa",
-   "sha256": "d1e251231129ecd463686f794f576b0a2d66d933f8dce3abcf3575e2a4615baf",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change；blind-spot/poison fix applied; previous SHA-256 5fbb04ecc9498f9b4ca6cb5d3a4cb2bc3bae7fba9f28c8d18e23d98e95b3d387: FILE source stage 1 (P1-8): file-source backpressure (wait not drop) + PULL drain returns streamEnded"
+   "sha256": "59503847417243debeaeaf71afbbd9e9a0ec55b15452f05801873925d8b480f0",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
@@ -612,8 +612,8 @@
   {
    "path": "crates/sdk-abi/src/base.rs",
    "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-   "sha256": "458e72f7a1de24831b749408e1bb9031eae012d24fa2e0ab2b5e0e003b67cc73",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green; previous SHA-256 ed745163f8eca8d05480d57b490dd0afb4954f84b1429bc9d73e051f075c977c: FILE source stage 1 (P1-8): AM_SRC_FILE/AM_SRC_EOF enum constants via generate-rust-abi"
+   "sha256": "4a3577939db7de51b1850b9ff442e59661a38cfef33a1abf5d2d2fad0dbe6224",
+   "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
   },
   {
    "path": "crates/sdk-abi/src/constants.rs",

@@ -26,6 +26,10 @@ AM_API am_status_t amc_source_open(amc_context_t* ctx, const am_source_desc_t* d
 AM_API am_status_t amc_source_close(amc_source_t* src, uint32_t timeout_ms, am_lifecycle_state_t* out_state);
 AM_API am_status_t amc_source_get_status(amc_source_t* src, am_source_status_t* out_status);
 AM_API am_status_t amc_source_set_reconnect_policy(amc_source_t* src, const am_reconnect_policy_t* policy);
+AM_API am_status_t amc_source_seek(amc_source_t* src, double target_ms, uint32_t mode, double* out_position_ms);
+AM_API am_status_t amc_source_get_duration(amc_source_t* src, double* out_ms);
+AM_API am_status_t amc_source_set_rate(amc_source_t* src, double rate);
+AM_API am_status_t amc_source_set_loop(amc_source_t* src, uint32_t enabled);
 AM_API am_status_t amc_subscribe_encoded(amc_source_t* src, const am_encoded_sub_desc_t* desc, amc_encoded_sub_t** out_sub);
 AM_API am_status_t amc_encoded_unsubscribe(amc_encoded_sub_t* sub, uint32_t timeout_ms, am_lifecycle_state_t* out_state);
 AM_API am_status_t amc_encoded_set_callback(amc_encoded_sub_t* sub, am_encoded_cb_fn cb, void* user_data);

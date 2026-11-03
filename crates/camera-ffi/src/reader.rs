@@ -65,6 +65,12 @@ impl BudgetedReader {
     pub fn info(&self) -> &StreamInfo {
         self.reader.info()
     }
+    pub fn duration_ms(&self) -> i64 {
+        self.reader.duration_ms()
+    }
+    pub fn seek(&mut self, target_ms: i64, backward: bool) -> Result<(), IoError> {
+        self.reader.seek(target_ms, backward)
+    }
     pub fn read_packet(&mut self) -> Result<Option<(Packet, Charge)>, IoError> {
         if self.failed {
             return Err(IoError::Closed);

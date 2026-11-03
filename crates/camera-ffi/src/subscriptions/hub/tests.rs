@@ -220,6 +220,13 @@ pub(in crate::subscriptions) fn fixture() -> (
     let nanos = Arc::new(AtomicU64::new(0));
     let tick = nanos.clone();
     let hub = Arc::new(Hub {
+        seek_request: Mutex::new(None),
+        seek_reply: Mutex::new(None),
+        seek_done: Condvar::new(),
+        file_rate: Mutex::new(f64::INFINITY),
+        rate_epoch: AtomicU64::new(0),
+        file_loop: AtomicBool::new(false),
+        file_duration_ms: AtomicI64::new(-1),
         source: Arc::downgrade(&source),
         subscribers: Mutex::default(),
         codec: AtomicU32::new(AM_CODEC_H264),

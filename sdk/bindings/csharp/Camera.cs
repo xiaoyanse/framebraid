@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace AmrtSdk {
+    public enum SeekMode : uint { KeyframeBefore = 0, KeyframeAfter = 1, Exact = 2 }
     public static class ImagePreprocessing {
         public static am_raw_preprocess_t StretchRgb(uint width, uint height) {
             am_raw_preprocess_t value = Arena.Sized<am_raw_preprocess_t>();
@@ -51,7 +52,14 @@ namespace AmrtSdk {
                 IntPtr raw; SdkException.Check(Diagnostics.Initialize(false, arena.Struct(p), out raw), "initialize camera"); return raw;
             }
         }
-        // stream：null 按协议取默认；FILE 须使用低层 am_source_desc_t，本方法仅支持 RTSP/ISAPI。
+        public CameraSource OpenFile(string path) {
+            lock (Gate) using (Arena arena = new Arena()) {
+                am_source_desc_t desc = Arena.Sized<am_source_desc_t>();
+                desc.kind = AmSrcFile; desc.url_utf8 = arena.Utf8(path);
+                IntPtr source; Diagnostics.Check(Native.amc_source_open(Raw, arena.Struct(desc), out source), "open file", Raw, false); return new CameraSource(this, source);
+            }
+        }
+        // stream：null 按协议取默认；本方法仅支持 RTSP/ISAPI。
         public CameraSource OpenSource(string url, string user, string password, bool rtsp, string stream = null) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_source_desc_t desc = Arena.Sized<am_source_desc_t>();
@@ -76,6 +84,10 @@ namespace AmrtSdk {
         }
     }
     public sealed class CameraSource : OwnedResource {
+        public double Seek(double targetMs, SeekMode mode) { lock (Gate) { double position; Diagnostics.Check(Native.amc_source_seek(Raw, targetMs, (uint)mode, out position), "seek source", Raw, false); return position; } }
+        public double DurationMs { get { lock (Gate) { double duration; Diagnostics.Check(Native.amc_source_get_duration(Raw, out duration), "get source duration", Raw, false); return duration; } } }
+        public void SetRate(double rate) { lock (Gate) { Diagnostics.Check(Native.amc_source_set_rate(Raw, rate), "set source rate", Raw, false); } }
+        public void SetLoop(bool enabled) { lock (Gate) { Diagnostics.Check(Native.amc_source_set_loop(Raw, enabled ? 1U : 0U), "set source loop", Raw, false); } }
         public string GetDecodeHardwareReport() { lock (Gate) { return HardwareReports.Read(Raw); } }
         public void SetDecodePolicy(bool softwareOnly) {
             lock (Gate) {

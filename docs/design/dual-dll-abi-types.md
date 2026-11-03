@@ -259,6 +259,10 @@ typedef struct amc_capability_s {
 typedef enum am_source_kind_e { AM_SRC_RTSP_URL = 0, AM_SRC_ISAPI_URL = 1,
                                 AM_SRC_DEVICE_REF = 2, AM_SRC_MJPEG_URL = 3,
                                 AM_SRC_FILE = 4 } am_source_kind_e;
+typedef enum am_seek_mode_e { AM_SEEK_KEYFRAME_BEFORE = 0, AM_SEEK_KEYFRAME_AFTER = 1,
+                              AM_SEEK_EXACT = 2 } am_seek_mode_e; /* FILE 阶段 2（§2.4）：
+                              目标前/后最近关键帧；EXACT=帧侧解码丢弃至目标帧、编码侧从
+                              落点关键帧后首个 pts>=target 的包起发 */
 typedef struct am_source_desc_s {
   uint32_t struct_size, kind;      /* am_source_kind_e */
   const char* url_utf8;            /* RTSP/ISAPI 具体地址；DEVICE_REF 时=宿主已解析的具体流地址

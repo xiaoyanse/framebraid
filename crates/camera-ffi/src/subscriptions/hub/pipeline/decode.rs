@@ -201,6 +201,7 @@ impl<'a> Worker<'a> {
             &subscribers,
             &self.times,
             self.stamp,
+            job.drop_before_pts,
             Some(delivery),
         )?;
         if !sent {
@@ -214,6 +215,7 @@ impl<'a> Worker<'a> {
                 &subscribers,
                 &self.times,
                 self.stamp,
+                job.drop_before_pts,
                 Some(delivery),
             )?;
         }

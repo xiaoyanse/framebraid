@@ -68,6 +68,10 @@ impl Hub {
         });
         let info = &stream.info;
         let mut file_first_packet = source.file;
+        let mut exact_until: Option<i64> = None;
+        let mut pending_landing = false;
+        let mut pace_base: Option<(f64, Instant)> = None;
+        let mut last_rate_epoch = 0u64;
         std::thread::scope(|scope| {
             let mut execution = pipeline::Execution::new(scope, self, source, stamp);
             let mut pixel_config: Option<Arc<pipeline::Configuration>> = None;
@@ -76,12 +80,94 @@ impl Hub {
                     // FILE 源读到文件尾为预期终态（P1-8）：正常返回，由调用侧置 AM_SRC_EOF；
                     // 流源维持断流语义触发外层重连。
                     if source.file {
+                        if pending_landing {
+                            self.complete_seek(Ok(self.file_duration() as f64));
+                            pending_landing = false;
+                        }
+                        if self.file_loop.load(Ordering::Acquire) && reader.seek(0, true).is_ok() {
+                            self.seek_resync(source, c"camera.fileLoop");
+                            exact_until = None;
+                            pace_base = None;
+                            file_first_packet = true;
+                            continue;
+                        }
                         return Ok(());
                     }
                     return Err(IoError::Network);
                 };
                 // 局部变量逆序析构，早退也先释放包缓冲再退额度。
                 let (charge, packet) = (owned.1, owned.0);
+                if source.file {
+                    if let Some(cmd) = self.take_seek() {
+                        let target = self.seek_target(cmd.target_ms);
+                        match reader.seek(target as i64, cmd.mode != 1) {
+                            Ok(()) => {
+                                self.seek_resync(source, c"camera.seek");
+                                exact_until = (cmd.mode == 2).then_some(
+                                    (target * info.time_base_den as f64
+                                        / (info.time_base_num as f64 * 1000.0))
+                                        as i64,
+                                );
+                                pending_landing = cmd.mode != 2;
+                                if cmd.mode == 2 {
+                                    self.complete_seek(Ok(target));
+                                }
+                                pace_base = None;
+                                file_first_packet = true;
+                                // 成功：当前包属旧时间轴，丢弃重读落点。
+                                continue;
+                            }
+                            Err(error) => {
+                                // 失败：时间轴未变，当前包仍属顺序读流——照常投递
+                                //（FILE 背压不丢帧合同；失败仅见于损坏容器）。
+                                self.complete_seek(Err(error));
+                            }
+                        }
+                    }
+                    let packet_pts_ms = packet.pts as f64 * 1000.0 * info.time_base_num as f64
+                        / info.time_base_den as f64;
+                    if pending_landing {
+                        self.complete_seek(Ok(packet_pts_ms));
+                        pending_landing = false;
+                    }
+                    let epoch = self.rate_epoch.load(Ordering::Acquire);
+                    let rate = self.file_rate.lock().map_or(f64::INFINITY, |rate| *rate);
+                    if epoch != last_rate_epoch {
+                        pace_base = None;
+                        last_rate_epoch = epoch;
+                    }
+                    if rate.is_finite() && rate > 0.0 {
+                        match pace_base {
+                            None => pace_base = Some((packet_pts_ms, Instant::now())),
+                            Some((t0, w0)) => {
+                                if let Some(due) = Duration::try_from_secs_f64(
+                                    ((packet_pts_ms - t0).max(0.0) / 1000.0) / rate,
+                                )
+                                .ok()
+                                .and_then(|d| w0.checked_add(d))
+                                {
+                                    while Instant::now() < due {
+                                        if source.stop.load(Ordering::Acquire)
+                                            || self.has_pending_seek()
+                                            || self.rate_epoch.load(Ordering::Acquire) != epoch
+                                        {
+                                            break;
+                                        }
+                                        std::thread::sleep(
+                                            due.saturating_duration_since(Instant::now())
+                                                .min(Duration::from_millis(20)),
+                                        );
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        pace_base = None;
+                    }
+                    if self.has_pending_seek() {
+                        continue;
+                    }
+                }
                 if !self.current(source, stamp) {
                     return Err(IoError::Closed);
                 }
@@ -169,11 +255,12 @@ impl Hub {
                     _charge: charge,
                 });
                 let subscribers = self.list();
+                let encoded_drop = exact_until.is_some_and(|u| data.abi.pts < u);
                 if !self.current(source, stamp) {
                     return Err(IoError::Closed);
                 }
                 for sub in subscribers.iter() {
-                    if matches!(sub.kind, Kind::Encoded { .. }) {
+                    if !encoded_drop && matches!(sub.kind, Kind::Encoded { .. }) {
                         sub.enqueue(Item::Encoded(data.clone()));
                     }
                 }
@@ -211,6 +298,7 @@ impl Hub {
                 }
                 if let Some(config) = pixel_config.as_ref() {
                     if let Err(code) = execution.submit(pipeline::Job {
+                        drop_before_pts: exact_until,
                         packet: data,
                         config: config.clone(),
                         received,
