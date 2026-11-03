@@ -27,6 +27,9 @@ pub struct ResultBuffer {
     keypoints: Vec<Vec<am_keypoint_t>>,
     pose: Vec<am_pose_detection_t>,
     detect: Vec<am_detect_box_t>,
+    vocab_hits: Vec<am_vocab_hit_t>,
+    hit_map: Option<Box<am_vocab_hit_map_t>>,
+    vocab_labels: Vec<CString>,
     classify: Vec<am_classify_entry_t>,
     segment: Vec<am_segment_instance_t>,
     masks: Vec<Vec<u8>>,
@@ -101,6 +104,9 @@ impl ResultBuffer {
             keypoints: Vec::new(),
             pose: Vec::new(),
             detect: Vec::new(),
+            vocab_hits: Vec::new(),
+            hit_map: None,
+            vocab_labels: Vec::new(),
             classify: Vec::new(),
             segment: Vec::new(),
             masks: Vec::new(),
@@ -108,7 +114,9 @@ impl ResultBuffer {
             _charge: charge,
             external: std::sync::Mutex::new(0),
         };
-        let task = match prediction.map(|p| p.output) {
+        let mut prediction = prediction;
+        let mut vocab = prediction.take().map(|p| (p.output, p.vocab_hits));
+        let task = match vocab.take().map(|(output, _)| output) {
             Some(Output::Pose(v)) => {
                 for p in v {
                     let points = p
@@ -131,15 +139,50 @@ impl ResultBuffer {
                 AM_TASK_POSE
             }
             Some(Output::Detect(v)) => {
-                data.detect = v
-                    .into_iter()
-                    .map(|p| am_detect_box_t {
-                        bounds: p.bounds,
-                        confidence: p.confidence,
-                        class_id: p.class_id as i32,
-                        class_name_utf8: std::ptr::null(),
-                    })
-                    .collect();
+                // A2/A4：vocab 路径 class_name=条目 label（A4 显示名分离），非 vocab null。
+                if let Some(vocab) = vocab.as_ref().and_then(|(_, hits)| hits.as_ref()) {
+                    data.vocab_labels = vocab
+                        .labels
+                        .iter()
+                        .map(|l| CString::new(l.as_str()))
+                        .collect::<std::result::Result<Vec<_>, _>>()
+                        .map_err(|_| AM_ERR_VISION_IO_UNSUPPORTED)?;
+                    data.vocab_hits = vocab
+                        .hits
+                        .iter()
+                        .map(|h| am_vocab_hit_t {
+                            entry_index: h.entry_index as i32,
+                            prompt_index: h.prompt_index as i32,
+                        })
+                        .collect();
+                    data.detect = v
+                        .iter()
+                        .map(|p| am_detect_box_t {
+                            bounds: p.bounds,
+                            confidence: p.confidence,
+                            class_id: p.class_id as i32,
+                            class_name_utf8: data.vocab_labels[p.class_id as usize].as_ptr(),
+                        })
+                        .collect();
+                    let mut map = Box::new(am_vocab_hit_map_t {
+                        struct_size: size_of::<am_vocab_hit_map_t>() as u32,
+                        count: data.vocab_hits.len() as u32,
+                        hits: data.vocab_hits.as_ptr(),
+                    });
+                    // 指针在填 value.vocab_hits 前定型（Vec 后续不再增长）。
+                    map.hits = data.vocab_hits.as_ptr();
+                    data.hit_map = Some(map);
+                } else {
+                    data.detect = v
+                        .into_iter()
+                        .map(|p| am_detect_box_t {
+                            bounds: p.bounds,
+                            confidence: p.confidence,
+                            class_id: p.class_id as i32,
+                            class_name_utf8: std::ptr::null(),
+                        })
+                        .collect();
+                }
                 AM_TASK_DETECT
             }
             Some(Output::Classify(v)) => {
@@ -238,6 +281,7 @@ impl ResultBuffer {
             raw_outputs: data.views.as_ptr(),
             infer_start_ms: start,
             infer_end_ms: end,
+            vocab_hits: data.hit_map.as_deref().map_or(std::ptr::null(), |v| v),
             ..Default::default()
         });
         let size = data

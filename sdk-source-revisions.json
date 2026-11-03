@@ -954,8 +954,8 @@
   {
    "path": "crates/vision-ffi/src/inference/results.rs",
    "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
-   "sha256": "6065cda85e9ea38d8cc419b6d9e29150aad2e9704aca43ce4c6af22d1bc6c9d7",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+   "sha256": "68650b1706c41a258cdbe43fd8c85ff9412636f1222eac66ee645f7402557430",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
@@ -990,8 +990,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "0956a8f2089605f6c7a3177c67e0dc1be9b6821127c706be3af0197fc3b53f2a",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "919067c67ee15746225bdcd27cd39b1cda925501af69cfe6b9839230d9ff4998",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
@@ -1182,8 +1182,8 @@
   {
    "path": "crates/vision/src/profiles/mod.rs",
    "previousSha256": "b6e62092631732545a31cd3365cb795d4e14a4f973d1785a26a16a3a58126121",
-   "sha256": "e487410453e5f21d903ef9b830587768e3682977b87c403fbbfda2188691d5f5",
-   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+   "sha256": "13e5eb85ea27e94e7cd058c81305fdce298715f560977b8b59a244a324dac3a2",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/vision/src/profiles/registry.rs",
@@ -1194,14 +1194,14 @@
   {
    "path": "crates/vision/src/profiles/results.rs",
    "previousSha256": "695cf736746db76a07955d2d499b097d02931810adbb22e932f76724baec6810",
-   "sha256": "198337d7b9de4f8464381b05c7c517ab9cecbbf73048dbe8a5badede7d771a53",
-   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+   "sha256": "8c46cb5205f0016dd87bb8022d4f0f426cdf6510a042d3fa98d903e3f6bbd0f5",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/vision/src/profiles/tests.rs",
    "previousSha256": "737db32a00d880747c847bace27ebdd638785fa5cd2a3348fbbe1e0d6d7e38f1",
-   "sha256": "c72ef951e87e71f543ceb6d215e7736c099203e413683d8dbcf033d5c66e9595",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "1e5849f5c5eb9312b94d8a98d6d906f59caf76767decc1c7ada74fc09e3abcee",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/vision/src/sdk/batching_tests.rs",
@@ -1296,8 +1296,8 @@
   {
    "path": "crates/vision/src/sdk/tests.rs",
    "previousSha256": "b6d218fb9ef81420ecd2582a180ab63b574cd406220d2b9492e12e7266e8f157",
-   "sha256": "ff4572beced4b1e48d86d526ff4b3190a5b55f2ec4ec3688cb032cb241f6869d",
-   "reason": "vocab V1: B1 layout/coordForm + A3 dual-input validation"
+   "sha256": "8e8b242d5c71d84df77549781df499b1fa8212256d0e99d1bbfbcb708d374713",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/am-camera/src/credentials.rs",
@@ -1590,8 +1590,8 @@
   {
    "path": "crates/vision/src/profiles/reference_tests.rs",
    "previousSha256": "dbaf880a923bb3f9b7e9cdb0246e460b3840d89a63f440f56465e79fd0d43452",
-   "sha256": "dbaf880a923bb3f9b7e9cdb0246e460b3840d89a63f440f56465e79fd0d43452",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "63c354f68c56ed25fe1d5d545cd098031c96ed23d7db0313a7f0be41c22e1550",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
   },
   {
    "path": "crates/vision/src/sdk/batch.rs",
