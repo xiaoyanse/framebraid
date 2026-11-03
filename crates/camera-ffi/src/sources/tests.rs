@@ -2,6 +2,159 @@ use super::{api::*, *};
 use std::time::{Duration, Instant};
 
 #[test]
+fn file_controls_reject_non_file_sources() {
+    let mut fixture = Fixture::new();
+    let source = fixture.open(std::ptr::null(), std::ptr::null(), 0) as *mut amc_source_t;
+    let mut position = 0.0;
+    assert_eq!(
+        unsafe { amc_source_seek(source, 0.0, 0, &mut position) },
+        AM_ERR_SDK_NOT_SUPPORTED
+    );
+    assert_eq!(
+        unsafe { amc_source_get_duration(source, &mut position) },
+        AM_ERR_SDK_NOT_SUPPORTED
+    );
+    assert_eq!(
+        unsafe { amc_source_set_rate(source, 1.0) },
+        AM_ERR_SDK_NOT_SUPPORTED
+    );
+    assert_eq!(
+        unsafe { amc_source_set_loop(source, 1) },
+        AM_ERR_SDK_NOT_SUPPORTED
+    );
+}
+
+#[test]
+#[ignore = "requires AM_RT_FFMPEG_DIR and AM_SDK_SEEK_SAMPLE"]
+fn file_seek_modes_rate_and_eof_revival() {
+    use std::ffi::CString;
+    let directory = CString::new(std::env::var("AM_RT_FFMPEG_DIR").unwrap()).unwrap();
+    let sample = CString::new(std::env::var("AM_SDK_SEEK_SAMPLE").unwrap()).unwrap();
+    let dirs = [directory.as_ptr()];
+    let params = amc_init_params_t {
+        abi_version: AM_ABI_VERSION,
+        runtime_dirs_utf8: dirs.as_ptr(),
+        runtime_dir_count: 1,
+        ..Default::default()
+    };
+    let ctx = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+    let desc = am_source_desc_t {
+        kind: AM_SRC_FILE as u32,
+        url_utf8: sample.as_ptr(),
+        ..Default::default()
+    };
+    let mut source = std::ptr::null_mut();
+    assert_eq!(unsafe { amc_source_open(ctx as _, &desc, &mut source) }, 0);
+    let sub_desc = am_encoded_sub_desc_t {
+        mode: AM_SUB_PULL,
+        codec_mask: AM_CODEC_H264,
+        ..Default::default()
+    };
+    let mut sub = std::ptr::null_mut();
+    let deadline = Instant::now() + Duration::from_secs(10);
+    loop {
+        let result =
+            unsafe { crate::subscriptions::amc_subscribe_encoded(source, &sub_desc, &mut sub) };
+        if result == 0 {
+            break;
+        }
+        assert_eq!(result, AM_ERR_CAMERA_PROBE_PENDING);
+        assert!(Instant::now() < deadline);
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    for rate in [0.0, -1.0, f64::NEG_INFINITY, f64::NAN] {
+        assert_eq!(
+            unsafe { amc_source_set_rate(source, rate) },
+            AM_ERR_SDK_INVALID_ARGUMENT
+        );
+    }
+    assert_eq!(unsafe { amc_source_set_rate(source, f64::INFINITY) }, 0);
+    let mut position = 0.0;
+    for (mode, min, max) in [(0, 1000.0, 1500.0), (1, 1500.0, 2000.1)] {
+        assert_eq!(
+            unsafe { amc_source_seek(source, 1500.0, mode, &mut position) },
+            0
+        );
+        assert!(
+            position >= min && position < max,
+            "mode={mode} position={position}"
+        );
+    }
+    assert_eq!(
+        unsafe { amc_source_seek(source, 1500.0, 2, &mut position) },
+        0
+    );
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut first = true;
+    loop {
+        assert!(Instant::now() < deadline);
+        let mut packet = std::ptr::null_mut();
+        let result = unsafe { crate::subscriptions::amc_encoded_pull(sub, 100, &mut packet) };
+        if result == AM_ERR_CAMERA_STREAM_ENDED {
+            break;
+        }
+        if result == AM_ERR_SDK_DEADLINE_EXCEEDED {
+            continue;
+        }
+        assert_eq!(result, 0);
+        if first {
+            let p = unsafe { &*packet };
+            assert!(
+                (p.pts as f64) * (p.time_base_num as f64) * 1000.0 / (p.time_base_den as f64)
+                    >= 1500.0
+            );
+            first = false;
+        }
+        assert_eq!(
+            unsafe { crate::subscriptions::amc_encoded_packet_release(packet) },
+            0
+        );
+    }
+    assert!(!first);
+    assert_eq!(unsafe { amc_source_seek(source, 0.0, 0, &mut position) }, 0);
+    let mut packet = std::ptr::null_mut();
+    assert_eq!(
+        unsafe { crate::subscriptions::amc_encoded_pull(sub, 2000, &mut packet) },
+        0
+    );
+    assert_eq!(
+        unsafe { crate::subscriptions::amc_encoded_packet_release(packet) },
+        0
+    );
+    assert_eq!(unsafe { amc_source_set_loop(source, 1) }, 0);
+    assert_eq!(unsafe { amc_source_seek(source, 0.0, 0, &mut position) }, 0);
+    let deadline = Instant::now() + Duration::from_secs(30);
+    let mut starts = 0;
+    while starts < 2 {
+        assert!(Instant::now() < deadline, "loop did not replay");
+        let mut packet = std::ptr::null_mut();
+        let result = unsafe { crate::subscriptions::amc_encoded_pull(sub, 100, &mut packet) };
+        if result == AM_ERR_SDK_DEADLINE_EXCEEDED {
+            continue;
+        }
+        assert_eq!(result, 0);
+        let p = unsafe { &*packet };
+        if (p.pts as f64) * (p.time_base_num as f64) * 1000.0 / (p.time_base_den as f64) < 1.0 {
+            starts += 1;
+        }
+        assert_eq!(
+            unsafe { crate::subscriptions::amc_encoded_packet_release(packet) },
+            0
+        );
+    }
+    let mut lifecycle = 0;
+    assert_eq!(
+        unsafe { crate::subscriptions::amc_encoded_unsubscribe(sub, 2000, &mut lifecycle) },
+        0
+    );
+    domain().destroy(sub as usize).unwrap();
+    assert_eq!(unsafe { amc_source_close(source, 2000, &mut lifecycle) }, 0);
+    domain().destroy(source as usize).unwrap();
+    domain().close(ctx, 2000).unwrap();
+    domain().destroy(ctx).unwrap();
+}
+
+#[test]
 fn file_source_rejects_credentials_provider_and_stream_kind() {
     let f = Fixture::new();
     let creds = am_credential_data_t::default();

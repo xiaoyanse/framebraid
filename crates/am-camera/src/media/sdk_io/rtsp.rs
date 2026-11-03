@@ -50,6 +50,8 @@ struct StreamPrefix {
     codecpar: *mut AVCodecParameters,
     priv_data: *mut core::ffi::c_void,
     time_base: AVRational,
+    start_time: i64,
+    duration: i64,
 }
 pub struct Reader {
     api: Arc<FfmpegApi>,
@@ -60,6 +62,8 @@ pub struct Reader {
     stream: i32,
     info: StreamInfo,
     framing: Framing,
+    file: bool,
+    duration_ms: i64,
     /// 文件模式首包标记（P1-8）：文件起点视为随机访问点，首包强制按关键帧
     /// 输出——Framing 据此在首包前置参数集，Gate 才能就绪（MP4 demux 的 KEY
     /// 标志不可靠且参数集在带外 extradata，与 RTSP 带内语义不同）。
@@ -155,6 +159,8 @@ impl Reader {
                 extradata: Vec::new(),
             },
             framing: Framing::new(1, &[])?,
+            file,
+            duration_ms: -1,
             file_first: file,
             _quiet: quiet,
         };
@@ -245,6 +251,13 @@ impl Reader {
             if timebase.num <= 0 || timebase.den <= 0 {
                 return Err(IoError::Unsupported);
             }
+            let duration = (*stream.cast::<StreamPrefix>()).duration;
+            if duration >= 0 {
+                reader.duration_ms = duration
+                    .saturating_mul(1000)
+                    .saturating_mul(i64::from(timebase.num))
+                    / i64::from(timebase.den);
+            }
             let rate = (reader.api.av_guess_frame_rate)(reader.fmt, stream, std::ptr::null_mut());
             reader.info = StreamInfo {
                 codec,
@@ -270,6 +283,49 @@ impl Reader {
     }
     pub fn info(&self) -> &StreamInfo {
         &self.info
+    }
+    pub fn duration_ms(&self) -> i64 {
+        self.duration_ms
+    }
+    /// 文件模式按时间戳定位关键帧；流模式和无法定位的容器返回 Unsupported。
+    pub fn seek(&mut self, target_ms: i64, backward: bool) -> Result<(), IoError> {
+        if !self.file || self.info.time_base_num == 0 || self.info.time_base_den == 0 {
+            return Err(IoError::Unsupported);
+        }
+        let target = target_ms.max(0);
+        let target = if self.duration_ms >= 0 {
+            target.min(self.duration_ms)
+        } else {
+            target
+        };
+        let ts = target.saturating_mul(i64::from(self.info.time_base_den))
+            / (i64::from(self.info.time_base_num) * 1000);
+        self.interrupt.deadline.set(
+            Instant::now()
+                .checked_add(self.timeout)
+                .ok_or(IoError::Invalid)?,
+        );
+        self.check()?;
+        // avformat_seek_file uses the timestamp bounds for direction; its backward flag is ignored.
+        // SAFETY: the format context belongs exclusively to this reader.
+        let rc = unsafe {
+            (self.api.avformat_seek_file)(
+                self.fmt,
+                self.stream,
+                if backward { i64::MIN } else { ts },
+                ts,
+                if backward { ts } else { i64::MAX },
+                0,
+            )
+        };
+        if rc != 0 {
+            return Err(IoError::Unsupported);
+        }
+        unsafe {
+            (self.api.avformat_flush)(self.fmt);
+        }
+        self.file_first = true;
+        Ok(())
     }
     /// 当前SDK配置Vec的保留容量；不含原生库、allocator和协议对象开销。
     pub fn retained_buffer_bytes(&self) -> usize {

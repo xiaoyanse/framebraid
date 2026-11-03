@@ -5,6 +5,8 @@
 
 ## v0.4.0 验证状态快照
 
+FILE 阶段 2 seek、时长、倍速和循环正在开发，尚未完成验收。
+
 FILE 本地文件源（P1-8 阶段 1）+ 开放词汇首批（A3+B1）+ v0.3.3 制度批次三合一功能版。**三源真机回归**（新 DLL，`.local/tests/v040-regression/`）：RTSP transport 三 codec（H.264/H.265 D3D11VA verified + MJPEG CPU，16 包/慢订阅者重同步/时间基/RA 真实像素全绿）+ ISAPI 抓图全场景（jpegExact/生命周期/推拉互斥/回调屏障）；FILE 源 EOF 全链集成测试通过（真机 FFmpeg，29 包 PULL→EOF→排空 streamEnded→三段式关闭）。Rust 回归 428 项零失败；check-boundary 过闸（含 vocab 批新增 5 条目）。Framing 的 is_avcc 链自洽判定（P1-8 修复）对三源行为等价已由上述回归实证。运行库版本：FFmpeg s5-encode（avcodec-63）。
 
 ## v0.3.2 验证状态快照

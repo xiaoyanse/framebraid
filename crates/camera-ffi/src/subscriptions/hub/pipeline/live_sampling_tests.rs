@@ -91,6 +91,7 @@ fn run(codec: u32, first: &str, alternate: &str) {
                     config: config.clone(),
                     received: am_sdk_support::clock::monotonic_ms(),
                     epoch: 0,
+                    drop_before_pts: None,
                 })
                 .unwrap();
             // 25/42ms交替，输入仍约30FPS；不借用虚拟时钟放宽deadline。

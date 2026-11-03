@@ -26,7 +26,7 @@ The local direct C decoder now selects hardware and admits CPU recovery ([verifi
 | Build / 构建 | Rust sources and two DLL targets / Rust 源码及双 DLL 目标 | Local Windows Release candidate verified within recorded scope / 本地 Windows Release 已限定范围验证 |
 | Languages / 语言 | Recorded C/C++17/C#/Python calls / 已记录实调 | Java not delivered / 不交付 Java |
 | Media / 媒体 | ISAPI, RTSP H.264/H.265/MJPEG, standalone H.264/H.265 | Camera/FPS/recovery depend on workload and configuration / 相机、帧率、恢复依负载配置 |
-| Local FILE / 本地文件（unreleased） | Initial acceptance scope: MP4 H.264/H.265 / 首版验收口径 | EOF is terminal; PULL drains then returns streamEnded; no seek. Fixture verification remains separate / EOF 终态，PULL 排空后返回 streamEnded；无 seek，夹具实测另计 |
+| Local FILE / 本地文件（unreleased） | Initial acceptance scope: MP4 H.264/H.265 / 首版验收口径 | EOF and PULL draining; seek, rate and loop in development, fixture verification pending / EOF 与 PULL 排空；定位、倍速及循环开发中，夹具验证待完成 |
 | Direct decoder / 独立解码 | Complete Annex B AU / 完整 Annex B AU | Caller assembles fragments/converts packetization / 调用方装配分片与转换封装 |
 | Vision / 推理 | Five fixed profile families and supported RAW tensor paths / 五类限定档案及支持的 RAW 张量 | Exact dtype/shape/export contracts; not all YOLO / 非全版本 YOLO |
 | Acceleration / 加速 | CPU/OpenVINO/CUDA selection APIs | Local candidate validates CPU, not GPU/hardware decoding / 当前候选仅验 CPU |

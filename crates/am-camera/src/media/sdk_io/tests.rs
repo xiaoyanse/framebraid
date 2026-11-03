@@ -207,3 +207,63 @@ fn reader_file_mode_reads_first_packet() {
     );
     assert!(packets > 0, "file must yield packets before EOF");
 }
+
+#[test]
+#[ignore = "显式设置 AM_RT_FFMPEG_DIR 与 AM_SDK_SEEK_SAMPLE（真实多 GOP MP4）"]
+fn reader_seek_moves_to_keyframe() {
+    let ffmpeg = std::env::var("AM_RT_FFMPEG_DIR").unwrap();
+    let sample = std::env::var("AM_SDK_SEEK_SAMPLE").unwrap();
+    let api = std::sync::Arc::new(
+        crate::media::ffmpeg_lib::FfmpegApi::load_from(std::path::Path::new(&ffmpeg)).unwrap(),
+    );
+    let secret = Secret {
+        username: String::new(),
+        password: String::new(),
+    };
+    let mut reader = super::rtsp::Reader::open_with_budget(
+        api,
+        &sample,
+        &secret,
+        std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false)),
+        Duration::from_secs(5),
+        |_| Ok(()),
+        true,
+    )
+    .unwrap();
+    assert!((3900..=4100).contains(&reader.duration_ms()));
+    let num = i64::from(reader.info().time_base_num);
+    let den = i64::from(reader.info().time_base_den);
+    let pts_ms = |pts: i64| pts * 1000 * num / den;
+    let has_idr = |data: &[u8]| {
+        data.windows(5)
+            .any(|w| w[..4] == [0, 0, 0, 1] && w[4] & 31 == 5)
+    };
+    reader.seek(1500, true).unwrap();
+    let packet = reader.read_packet().unwrap().unwrap();
+    assert!(has_idr(&packet.data), "backward packet must contain an IDR");
+    assert!(
+        packet.keyframe && (1000..=1499).contains(&pts_ms(packet.pts)),
+        "backward pts={}",
+        pts_ms(packet.pts)
+    );
+    reader.seek(1500, false).unwrap();
+    let packet = reader.read_packet().unwrap().unwrap();
+    assert!(has_idr(&packet.data), "forward packet must contain an IDR");
+    assert!(
+        packet.keyframe && (1501..=2000).contains(&pts_ms(packet.pts)),
+        "forward pts={}",
+        pts_ms(packet.pts)
+    );
+    reader.seek(0, true).unwrap();
+    let mut previous = i64::MIN;
+    for index in 0..5 {
+        let packet = reader.read_packet().unwrap().unwrap();
+        let pts = pts_ms(packet.pts);
+        if index == 0 {
+            assert!(packet.keyframe && (0..=99).contains(&pts));
+            assert!(has_idr(&packet.data), "first packet must contain an IDR");
+        }
+        assert!(pts >= previous, "pts {pts} follows {previous}");
+        previous = pts;
+    }
+}

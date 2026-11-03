@@ -18,6 +18,7 @@ fn job(source: &SharedSource, config: &Arc<Configuration>, seq: u64, key: bool) 
         config: config.clone(),
         received: seq as i64,
         epoch: 0,
+        drop_before_pts: None,
     }
 }
 pub(super) fn config(source: &SharedSource) -> Arc<Configuration> {

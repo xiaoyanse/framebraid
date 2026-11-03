@@ -368,6 +368,9 @@ impl Subscription {
                         if source.stop.load(Ordering::Acquire) {
                             return;
                         }
+                        if self.hub.upgrade().is_some_and(|hub| hub.has_pending_seek()) {
+                            return;
+                        }
                         if d.queue.len() < self.maximum
                             && d.bytes.saturating_add(size) <= self.max_bytes
                         {

@@ -68,6 +68,8 @@ pub(super) fn run(hub: &Arc<Hub>) {
                 }
                 hub.codec
                     .store(reader.info().codec, std::sync::atomic::Ordering::Release);
+                hub.file_duration_ms
+                    .store(reader.duration_ms(), std::sync::atomic::Ordering::Release);
                 source.report(
                     AM_SRC_LIVE as u32,
                     AM_FAULT_KEYFRAME_WAIT as u32,
@@ -90,7 +92,45 @@ pub(super) fn run(hub: &Arc<Hub>) {
                 if source.stop.load(std::sync::atomic::Ordering::Acquire) {
                     return;
                 }
-                hub.consume(&source, &mut reader, stamp)
+                loop {
+                    match hub.consume(&source, &mut reader, stamp) {
+                        Ok(()) => finish(&source, AM_FAULT_NONE as u32, c"camera.fileEnded"),
+                        Err(error) => break Err(error),
+                    }
+                    loop {
+                        if !hub.current(&source, stamp) {
+                            break;
+                        }
+                        if let Some(cmd) = hub.take_seek() {
+                            let target = hub.seek_target(cmd.target_ms);
+                            match reader.seek(target as i64, cmd.mode != 1) {
+                                Ok(()) => {
+                                    source.report(
+                                        AM_SRC_LIVE as u32,
+                                        AM_FAULT_KEYFRAME_WAIT as u32,
+                                        c"camera.seeking",
+                                    );
+                                    source.event(
+                                        AM_EVENT_STATE_CHANGED,
+                                        AM_EVENT_SCOPE_SOURCE,
+                                        0,
+                                        AM_FAULT_NONE as u32,
+                                        c"camera.seek",
+                                    );
+                                    hub.seek_resync(&source, c"camera.seek");
+                                    // EOF revival has no packet yet; report the clamped request as its landing.
+                                    hub.complete_seek(Ok(target));
+                                    break;
+                                }
+                                Err(error) => hub.complete_seek(Err(error)),
+                            }
+                        }
+                        std::thread::sleep(Duration::from_millis(20));
+                    }
+                    if !hub.current(&source, stamp) {
+                        break Err(IoError::Closed);
+                    }
+                }
             }
             // 打开失败（不存在/损坏/非容器）在 validate_file_path 已挡掉大部分；
             // demux 层失败为永久性（文件不会因等待变好），直接终态。

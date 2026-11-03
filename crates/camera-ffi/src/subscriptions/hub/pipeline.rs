@@ -39,6 +39,7 @@ pub(super) struct Configuration {
     pub _charge: Charge,
 }
 pub(super) struct Job {
+    pub drop_before_pts: Option<i64>,
     pub packet: Arc<queue::Payload>,
     pub config: Arc<Configuration>,
     pub received: i64,

@@ -20,6 +20,10 @@ namespace AmrtSdk {
         [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_object_destroy(IntPtr h);
         [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_source_open(IntPtr h, IntPtr p, out IntPtr source);
         [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_source_close(IntPtr h, uint timeout, out uint state);
+        [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_source_seek(IntPtr h, double targetMs, uint mode, out double positionMs);
+        [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_source_get_duration(IntPtr h, out double durationMs);
+        [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_source_set_rate(IntPtr h, double rate);
+        [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_source_set_loop(IntPtr h, uint enabled);
         [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_capture_sync(IntPtr h, IntPtr p, out IntPtr image);
         [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_image_release(IntPtr h);
         [DllImport("am_camera.dll", CallingConvention=Convention)] internal static extern int amc_subscribe_frames(IntPtr h, IntPtr p, out IntPtr sub);
