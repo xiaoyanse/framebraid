@@ -990,8 +990,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "919067c67ee15746225bdcd27cd39b1cda925501af69cfe6b9839230d9ff4998",
-   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
+   "sha256": "5fee1d44abd071cbb676bc6e1b8141d8e5ce425b6a62243cbd01df39c6c06f19",
+   "reason": "audit L1 hardening: defensive rank/dimension checks on run_gpu shape indexing and PROFILE mapping fallback (panic-free narrow to explicit rejects)"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",

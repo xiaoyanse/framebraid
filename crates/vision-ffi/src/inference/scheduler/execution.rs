@@ -219,6 +219,11 @@ fn run_gpu(
     let name = session.inputs[0].name.clone();
     let (input_w, input_h) = {
         let shape = &session.inputs[0].shape;
+        // L1 防御（审计 2026-11-01）：rank<2 下溢/负维 as u32 巨值转明确拒绝——
+        // 正常加载（byte_count 拒非正维）后恒走 Ok 路径，仅异常错误码语义收窄。
+        if shape.len() < 2 || shape[shape.len() - 1] <= 0 || shape[shape.len() - 2] <= 0 {
+            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
+        }
         let last = shape.len() - 1;
         (shape[last] as u32, shape[last - 1] as u32)
     };
@@ -404,11 +409,14 @@ fn run(
     let mapping = prepared.transform();
     let m = mapping.unwrap_or_else(|| {
         let shape = &session.inputs[0].shape;
-        let (width, height) = if session.profile.is_some() {
-            (shape[3] as u32, shape[2] as u32)
-        } else {
-            (0, 0)
-        };
+        // L1 防御（审计 2026-11-01）：PROFILE 档案输入恒为 NCHW rank4（档案校验），
+        // 异常 shape 不下标越界——按未知尺寸 0 走既有拒绝链。
+        let (width, height) =
+            if session.profile.is_some() && shape.len() == 4 && shape[2] > 0 && shape[3] > 0 {
+                (shape[3] as u32, shape[2] as u32)
+            } else {
+                (0, 0)
+            };
         am_vision_core::sdk::ImageTransform {
             width,
             height,
