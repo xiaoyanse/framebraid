@@ -1,6 +1,12 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_cascade_hit_t {
+    pub primary_index: i32,
+    pub roi: [f32; 4],
+}
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct am_cascade_result_t {
     pub struct_size: u32,
@@ -189,15 +195,4 @@ impl Default for am_preprocess_meta_t {
             valid: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_tensor_out_t {
-    pub name: *const c_char,
-    pub dtype: u32,
-    pub shape: *const i64,
-    pub shape_len: u32,
-    pub data: *const c_void,
-    pub data_size: u64,
-    pub is_contiguous: u32,
 }

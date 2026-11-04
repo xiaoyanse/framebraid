@@ -1,6 +1,41 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_decoder_input_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_decoder_input_t>(), 40);
+    assert_eq!(core::mem::align_of::<am_decoder_input_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_input_t, struct_size),
+        0,
+        "am_decoder_input_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_input_t, flags),
+        4,
+        "am_decoder_input_t.flags"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_input_t, size),
+        8,
+        "am_decoder_input_t.size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_input_t, data),
+        16,
+        "am_decoder_input_t.data"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_input_t, pts),
+        24,
+        "am_decoder_input_t.pts"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_input_t, dts),
+        32,
+        "am_decoder_input_t.dts"
+    );
+}
+#[test]
 fn am_decoder_status_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_decoder_status_t>(), 32);
     assert_eq!(core::mem::align_of::<am_decoder_status_t>(), 8);
@@ -353,25 +388,5 @@ fn am_backend_row_t_matches_c() {
         core::mem::offset_of!(am_backend_row_t, note_utf8),
         24,
         "am_backend_row_t.note_utf8"
-    );
-}
-#[test]
-fn am_backend_matrix_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_backend_matrix_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_backend_matrix_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_backend_matrix_t, struct_size),
-        0,
-        "am_backend_matrix_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_matrix_t, row_count),
-        4,
-        "am_backend_matrix_t.row_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_matrix_t, rows),
-        8,
-        "am_backend_matrix_t.rows"
     );
 }

@@ -1,6 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_cascade_hit_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_cascade_hit_t>(), 20);
+    assert_eq!(core::mem::align_of::<am_cascade_hit_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_hit_t, primary_index),
+        0,
+        "am_cascade_hit_t.primary_index"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_hit_t, roi),
+        4,
+        "am_cascade_hit_t.roi"
+    );
+}
+#[test]
 fn am_cascade_result_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_cascade_result_t>(), 32);
     assert_eq!(core::mem::align_of::<am_cascade_result_t>(), 8);
@@ -328,45 +343,5 @@ fn am_preprocess_meta_t_matches_c() {
         core::mem::offset_of!(am_preprocess_meta_t, valid),
         44,
         "am_preprocess_meta_t.valid"
-    );
-}
-#[test]
-fn am_tensor_out_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_tensor_out_t>(), 56);
-    assert_eq!(core::mem::align_of::<am_tensor_out_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, name),
-        0,
-        "am_tensor_out_t.name"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, dtype),
-        8,
-        "am_tensor_out_t.dtype"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, shape),
-        16,
-        "am_tensor_out_t.shape"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, shape_len),
-        24,
-        "am_tensor_out_t.shape_len"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, data),
-        32,
-        "am_tensor_out_t.data"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, data_size),
-        40,
-        "am_tensor_out_t.data_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_out_t, is_contiguous),
-        48,
-        "am_tensor_out_t.is_contiguous"
     );
 }

@@ -2,6 +2,17 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_tensor_out_t {
+    pub name: *const c_char,
+    pub dtype: u32,
+    pub shape: *const i64,
+    pub shape_len: u32,
+    pub data: *const c_void,
+    pub data_size: u64,
+    pub is_contiguous: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_keypoint_t {
     pub x: f32,
     pub y: f32,
@@ -90,20 +101,4 @@ impl Default for am_vocab_entry_t {
 pub struct am_vocab_hit_t {
     pub entry_index: i32,
     pub prompt_index: i32,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_vocab_hit_map_t {
-    pub struct_size: u32,
-    pub count: u32,
-    pub hits: *const am_vocab_hit_t,
-}
-impl Default for am_vocab_hit_map_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            count: Default::default(),
-            hits: Default::default(),
-        }
-    }
 }

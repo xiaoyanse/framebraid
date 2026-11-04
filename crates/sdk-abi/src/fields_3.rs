@@ -1,5 +1,33 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_decoder_input_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_decoder_input_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_decoder_input_t, flags),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_decoder_input_t, size),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_decoder_input_t, data),
+            core::mem::size_of::<*const u8>(),
+        ),
+        (
+            core::mem::offset_of!(am_decoder_input_t, pts),
+            core::mem::size_of::<i64>(),
+        ),
+        (
+            core::mem::offset_of!(am_decoder_input_t, dts),
+            core::mem::size_of::<i64>(),
+        ),
+    ];
+}
 impl AbiLayout for am_decoder_status_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -281,22 +309,6 @@ impl AbiLayout for am_backend_row_t {
         (
             core::mem::offset_of!(am_backend_row_t, note_utf8),
             core::mem::size_of::<*const c_char>(),
-        ),
-    ];
-}
-impl AbiLayout for am_backend_matrix_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_backend_matrix_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_matrix_t, row_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_matrix_t, rows),
-            core::mem::size_of::<*const am_backend_row_t>(),
         ),
     ];
 }

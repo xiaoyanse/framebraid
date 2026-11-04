@@ -367,6 +367,16 @@
         "transform": 80
       }
     },
+    "am_frame_encode_opts_t": {
+      "size": 32,
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "format": 4,
+        "quality": 8,
+        "reserved": 12
+      }
+    },
     "am_scale_preset_t": {
       "size": 8,
       "align": 4,

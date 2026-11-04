@@ -2,6 +2,14 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_backend_actual_t {
+    pub actual: u32,
+    pub device_utf8: *const c_char,
+    pub subgraph_cpu_nodes: i32,
+    pub fallback_reason_utf8: *const c_char,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_model_identity_t {
     pub model_uid: u64,
     pub model_version: u32,
@@ -210,10 +218,4 @@ impl Default for am_cascade_request_t {
             secondary_confidence: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_cascade_hit_t {
-    pub primary_index: i32,
-    pub roi: [f32; 4],
 }

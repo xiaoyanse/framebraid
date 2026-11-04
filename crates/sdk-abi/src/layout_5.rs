@@ -1,6 +1,31 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_backend_actual_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_backend_actual_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_backend_actual_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_backend_actual_t, actual),
+        0,
+        "am_backend_actual_t.actual"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_actual_t, device_utf8),
+        8,
+        "am_backend_actual_t.device_utf8"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_actual_t, subgraph_cpu_nodes),
+        16,
+        "am_backend_actual_t.subgraph_cpu_nodes"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_actual_t, fallback_reason_utf8),
+        24,
+        "am_backend_actual_t.fallback_reason_utf8"
+    );
+}
+#[test]
 fn am_model_identity_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_model_identity_t>(), 24);
     assert_eq!(core::mem::align_of::<am_model_identity_t>(), 8);
@@ -368,20 +393,5 @@ fn am_cascade_request_t_matches_c() {
         core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
         36,
         "am_cascade_request_t.secondary_confidence"
-    );
-}
-#[test]
-fn am_cascade_hit_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_cascade_hit_t>(), 20);
-    assert_eq!(core::mem::align_of::<am_cascade_hit_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_hit_t, primary_index),
-        0,
-        "am_cascade_hit_t.primary_index"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_hit_t, roi),
-        4,
-        "am_cascade_hit_t.roi"
     );
 }

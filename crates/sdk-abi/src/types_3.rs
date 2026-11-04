@@ -2,6 +2,28 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_decoder_input_t {
+    pub struct_size: u32,
+    pub flags: u32,
+    pub size: u64,
+    pub data: *const u8,
+    pub pts: i64,
+    pub dts: i64,
+}
+impl Default for am_decoder_input_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            flags: Default::default(),
+            size: Default::default(),
+            data: Default::default(),
+            pts: Default::default(),
+            dts: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_decoder_status_t {
     pub struct_size: u32,
     pub state: am_decoder_state_e,
@@ -201,20 +223,4 @@ pub struct am_backend_row_t {
     pub provider_loadable: u32,
     pub verified: u32,
     pub note_utf8: *const c_char,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_backend_matrix_t {
-    pub struct_size: u32,
-    pub row_count: u32,
-    pub rows: *const am_backend_row_t,
-}
-impl Default for am_backend_matrix_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            row_count: Default::default(),
-            rows: Default::default(),
-        }
-    }
 }

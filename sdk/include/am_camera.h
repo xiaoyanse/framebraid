@@ -96,6 +96,8 @@ AM_API am_status_t amc_encoder_receive(amc_encoder_t* enc, uint32_t timeout_ms,
 AM_API am_status_t amc_encoder_drain(amc_encoder_t* enc);
 AM_API am_status_t amc_encoder_close(amc_encoder_t* enc, uint32_t timeout_ms,
     am_lifecycle_state_t* out_state);
+AM_API am_status_t amc_frame_encode(amc_context_t* ctx, const am_pixel_view_t* frame,
+    const am_frame_encode_opts_t* opts, uint8_t* out, uint64_t capacity, uint64_t* out_size);
 AM_API am_status_t amc_archive_open(amc_context_t* ctx, const char* path_utf8,
     const am_encoder_config_t* enc_cfg, uint32_t segment_frames, amc_archive_t** out);
 AM_API am_status_t amc_archive_write(amc_archive_t* arch, const am_pixel_view_t* frame);

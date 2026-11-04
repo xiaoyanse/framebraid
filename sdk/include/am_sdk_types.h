@@ -40,6 +40,7 @@ typedef struct am_encoded_sub_desc_s am_encoded_sub_desc_t;
 typedef struct am_frame_view_s am_frame_view_t;
 typedef struct am_spatial_transform_s am_spatial_transform_t;
 typedef struct am_frame_meta_s am_frame_meta_t;
+typedef struct am_frame_encode_opts_s am_frame_encode_opts_t;
 typedef struct am_scale_preset_s am_scale_preset_t;
 typedef struct am_frame_sub_desc_s am_frame_sub_desc_t;
 typedef struct am_decoder_config_s am_decoder_config_t;
@@ -632,6 +633,13 @@ typedef struct am_frame_meta_s {   /* B12 独立帧身份：不假设一包一�
   uint32_t clock_quality;    /* am_clock_quality_e（P5）：设备时钟→本地单调钟的映射质量 */
   am_spatial_transform_t transform;
 } am_frame_meta_t;
+/* ---- 单帧图像导出（§2.11，与流编码器共享编码底座但无句柄生命周期）---- */
+typedef struct am_frame_encode_opts_s {
+  uint32_t struct_size;
+  uint32_t format;        /* AM_ENCODE_JPEG=1 / AM_ENCODE_PNG=2 */
+  uint32_t quality;       /* JPEG 质量 1..100；0=85 默认；PNG 忽略 */ /* zero=default */
+  uint32_t reserved[5];   /* 必须清零（首版无扩展字段） */
+} am_frame_encode_opts_t;
 /* 时间原点（P5）：全部 *_at_ms 为同机单调时基毫秒（Windows 使用原始 QPC/frequency 换算，
    不扣减进程/ctx 启动点；Unix CLOCK_MONOTONIC 的平台实现后续验证）；跨 DLL/跨进程不改原点；captured_at_ms=设备时钟
    经映射换算结果（映射质量见 clock_quality），未知=INT64_MIN，不把外推冒充同步 */

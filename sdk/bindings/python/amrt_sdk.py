@@ -79,6 +79,9 @@ class am_spatial_transform_t(Structure):
 class am_frame_meta_t(Structure):
     pass
 
+class am_frame_encode_opts_t(Structure):
+    pass
+
 class am_scale_preset_t(Structure):
     pass
 
@@ -600,9 +603,11 @@ am_spatial_transform_t._fields_ = [
     ("valid", c_uint32),
 ]
 
-am_scale_preset_t._fields_ = [
-    ("width", c_uint32),
-    ("height", c_uint32),
+am_frame_encode_opts_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("format", c_uint32),
+    ("quality", c_uint32),
+    ("reserved", c_uint32 * 5),
 ]
 
 am_decoder_config_t._fields_ = [
@@ -1349,6 +1354,23 @@ am_segment_result_t._fields_ = [
     ("instances", POINTER(am_segment_instance_t)),
 ]
 
+am_scale_preset_t._fields_ = [
+    ("width", c_uint32),
+    ("height", c_uint32),
+]
+
+am_model_info_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("identity", am_model_identity_t),
+    ("load_mode", c_uint32),
+    ("input_count", c_uint32),
+    ("output_count", c_uint32),
+    ("inputs", POINTER(am_io_spec_t)),
+    ("outputs", POINTER(am_io_spec_t)),
+    ("native_batch", c_uint32),
+    ("execution", am_backend_actual_t),
+]
+
 am_frame_sub_desc_t._fields_ = [
     ("struct_size", c_uint32),
     ("pixel_format", c_uint32),
@@ -1364,18 +1386,6 @@ am_frame_sub_desc_t._fields_ = [
 am_pose_result_t._fields_ = [
     ("count", c_uint32),
     ("detections", POINTER(am_pose_detection_t)),
-]
-
-am_model_info_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("identity", am_model_identity_t),
-    ("load_mode", c_uint32),
-    ("input_count", c_uint32),
-    ("output_count", c_uint32),
-    ("inputs", POINTER(am_io_spec_t)),
-    ("outputs", POINTER(am_io_spec_t)),
-    ("native_batch", c_uint32),
-    ("execution", am_backend_actual_t),
 ]
 
 amv_result_t._fields_ = [
@@ -1645,6 +1655,7 @@ FUNCTIONS = {
     "amc_encoder_receive": (am_status_t, [POINTER(amc_encoder_t), c_uint32, POINTER(POINTER(am_encoded_packet_t))]),
     "amc_encoder_drain": (am_status_t, [POINTER(amc_encoder_t)]),
     "amc_encoder_close": (am_status_t, [POINTER(amc_encoder_t), c_uint32, POINTER(am_lifecycle_state_t)]),
+    "amc_frame_encode": (am_status_t, [POINTER(amc_context_t), POINTER(am_pixel_view_t), POINTER(am_frame_encode_opts_t), POINTER(c_uint8), c_uint64, POINTER(c_uint64)]),
     "amc_archive_open": (am_status_t, [POINTER(amc_context_t), c_char_p, POINTER(am_encoder_config_t), c_uint32, POINTER(POINTER(amc_archive_t))]),
     "amc_archive_write": (am_status_t, [POINTER(amc_archive_t), POINTER(am_pixel_view_t)]),
     "amc_archive_close": (am_status_t, [POINTER(amc_archive_t), c_uint32, POINTER(am_lifecycle_state_t)]),

@@ -630,74 +630,74 @@
   {
    "path": "crates/sdk-abi/src/fields_2.rs",
    "previousSha256": "186054fbc46c1ab5460b6c616d25be2c731c9ff098c8a395f1130ef6d9861786",
-   "sha256": "e09a97f2b6f165abd2b9f96d953c7121cf7bf3e7a7609f791dec7fa13efbbf69",
-   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+   "sha256": "7cc650497b2e5e9488c536026aaaf92eee116f51195dcc2a70294c0e8ffcdcfe",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/fields_4.rs",
    "previousSha256": "264a66eedc78912e040c20c5df24d9a03387273120f1a3e46c202b1a053ab556",
-   "sha256": "28d17523160abbc2cee41a1ac3f9cd311f314ab30b84710742934f31c3d9150b",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "b247b07bce47f3fed4afb7b77080f3584938f9a39e69f0b8952722e32a792f81",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/fields_5.rs",
    "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-   "sha256": "04417ec4e60203e0ed5fd1f484a242ed7b588ff4f9933e27f292cde0feaf476a",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "6e0076f07beb8674d522397d827e6f124dd3d9bb12a8d0f4b019294252ba0ced",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/fields_6.rs",
    "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-   "sha256": "9bce0a7268d338668ad695462ea7527b26e421c973f0118749d03409212cf77a",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
+   "sha256": "94a077d608a41d73b6fd8cb8556f2eca3cc359c826bfd749f1fd4e0091428ceb",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/fields_7.rs",
    "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-   "sha256": "df61b61c212201d2d49a89bc301ac8d6ecc4f56052694d824ff5f1fc22708520",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "acd7e65355b82e5f38d7d0b325bcbc7c845690f14c9888f7042ecfa080531aa7",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/fields_8.rs",
    "previousSha256": null,
-   "sha256": "eee0646f499e9cccac86fbe83b8b693f0e897804bf96fa14840de17fe13ef23e",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "f57cbc92572d0bfe770b2c98863f839e68dd459e6b487762871d324a31bd2863",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_2.rs",
    "previousSha256": "16d44dc4cd219a590b0758d145807d22dfbb96aa6689ce67ce2fd6e0c1849c3f",
-   "sha256": "8dde66cadf79f7a3b956f80acdc39c6560b7ec2d9b324036ec4bee52a3b1cd7d",
-   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+   "sha256": "14bd82da191adde72fc6a09a3ecb24f114d96bbe0e80de51a706c852bf22cc26",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_4.rs",
    "previousSha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36",
-   "sha256": "a0ed43b04687515c76252ae02057b32b4379492f97f1ea2099256b843dc5283e",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "57ef8c0cb46871b548f2cd9a86c455bb39361b4579a58ea4021aa601ae79d6dd",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_5.rs",
    "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-   "sha256": "535fb945b1880abb62e58bed14e6faf376d0df8a530af756ab481dd8f30f248a",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "abcd71819612ecc59a00a960bfd91057eedc24e0fe15051b30dd183bab1ca151",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_6.rs",
    "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-   "sha256": "7299173ccc342d050d7a9087f1f6501a1dcdc9e23dc30c45e3410df3f28f37a8",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
+   "sha256": "01eec91bde1f2e707e34b9d0270f3f46b8fdc6c3f1f5a7d4feb5bb1c226c7616",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_7.rs",
    "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-   "sha256": "0ae8c55655f19ea90a392aae1994619c983e2a738004ba54b424c08947faf88d",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "0abde924eb65da94d85b4c25603bc917b1f5201ffd989b7ec22090432bb44a47",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_8.rs",
    "previousSha256": null,
-   "sha256": "1008d8537f65a2d2c155c8a87f274564077a2a0318646bf822019b3e0ee3a479",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "6e90ac65ab49a1831c1749d8f478771c515900f11a9e0ac4bcf662678ae8aa66",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_tests.rs",
@@ -714,38 +714,38 @@
   {
    "path": "crates/sdk-abi/src/types_2.rs",
    "previousSha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4",
-   "sha256": "cbf3aa43969519b5d953d67865cee198915d5371ee50c5299ba0674bc5bf96aa",
-   "reason": "M2a reviewed GPU frame ABI compatible extension generator output (structure/constants/layout assertions); generator --check clean; C ABI unchanged"
+   "sha256": "ace455035a49265501c8ca1d0bbbb5aafdc824c06de5eb25e0071cb7a2b24dca",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/types_4.rs",
    "previousSha256": "941040d1aaae58ec6e04e58aad256d3b80608e27ec6f7051992a2ffcb2146d36",
-   "sha256": "bfeffd0ec12748dbe4b3860f574d61b1382b009a10d491ed003bf1485deea630",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "66a1be2670fe30eec4da3908ecfdfa94bebdd7c0543deefcd5f2c35cd0043990",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/types_5.rs",
    "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-   "sha256": "551237172f0c7e54c8f02f57f054baaa3da303818b5bc3b157780a457dd4c79b",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "d89e23c9c8c02949f5c7ab6a9f520a1c9f68039e46e2b0a2a84fa80d70613496",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/types_6.rs",
    "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-   "sha256": "226a4f838cd2f1c90f36d79d51378fefd9d257ad8e33a9d8de354cc895c7e989",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
+   "sha256": "bec174a7807d5d98e9eaf24a4530301027bb8994f660bfc4d05ae2df404ca526",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/types_7.rs",
    "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-   "sha256": "610a15316feff66e40a57f4e44a5985092053c8d20c957509814b8c8070550c6",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "04e48bd068b6bc965951e7f1b2a02f8abdf74723be5c437e4b94bf771e0ce3c8",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/types_8.rs",
    "previousSha256": null,
-   "sha256": "50f50c48a3c9afd1ef1a080ed2925ace2003f92a04c32ad4647127c9ab42bfd5",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "1d620c5b5b22042e1ea2b9156291b4c58eb800ee8fa4c230954afe4be04deeb8",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-support/build.rs",
@@ -1410,8 +1410,8 @@
   {
    "path": "crates/sdk-abi/src/fields_3.rs",
    "previousSha256": "0f66d439447c9ca88bcb32ac26e304e0e2c814f886596d0bdcdac717b90005d6",
-   "sha256": "0f66d439447c9ca88bcb32ac26e304e0e2c814f886596d0bdcdac717b90005d6",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "b613277cddd5e13a11f9a9044b93caa4bd0a8b682cd7f07d6523985bff5a5623",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_0.rs",
@@ -1428,8 +1428,8 @@
   {
    "path": "crates/sdk-abi/src/layout_3.rs",
    "previousSha256": "19b58ed267449c1ff76cef89aa0a637f926da99bb8e509cc01e1181bd2b89101",
-   "sha256": "19b58ed267449c1ff76cef89aa0a637f926da99bb8e509cc01e1181bd2b89101",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "aba4f86f6f315f72c95ed819c79bd95a4a370f80d041ebd02c4b8cded8f45ac6",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/status.rs",
@@ -1452,8 +1452,8 @@
   {
    "path": "crates/sdk-abi/src/types_3.rs",
    "previousSha256": "78c9b9d99e55fb2c9860417ae501fa474ad8b9b564dd05f62e439a59e28cd804",
-   "sha256": "78c9b9d99e55fb2c9860417ae501fa474ad8b9b564dd05f62e439a59e28cd804",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "43f777599265837397dbcaa3fe3c7b6c5cbd6c7157cde80322683fe140a9fb39",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-support/Cargo.toml",
@@ -1644,20 +1644,20 @@
   {
    "path": "crates/sdk-abi/src/fields_9.rs",
    "previousSha256": null,
-   "sha256": "822a79dfcd73384271141c8e814c4244271ed9694cf2b657fd52ab40bb008847",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "c2bd93f7a4ea04aafa075cda6ca4e3f71bc4fc63b1c98aed6842155cec9ed69e",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/layout_9.rs",
    "previousSha256": null,
-   "sha256": "10b56146b7723293329a05cc95e515911d3687709c8711ced1a2fad13d8ed1e7",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "0c580a60f6c8566c80242fd70e868d665d4feca225d13154abf3b8947f4d3db9",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/sdk-abi/src/types_9.rs",
    "previousSha256": null,
-   "sha256": "0003c6139d53c0fc5865a5bf6c1e0f544cf05d0dae3492eafb0d28e246901850",
-   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+   "sha256": "30c5d3cd4eb42dc6d7b8c81e3581684f2a7687f81c8748d12e0b16612c9ea50a",
+   "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
   },
   {
    "path": "crates/vision/src/sdk/tracker.rs",

@@ -1,5 +1,17 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_cascade_hit_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_cascade_hit_t, primary_index),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_hit_t, roi),
+            core::mem::size_of::<[f32; 4]>(),
+        ),
+    ];
+}
 impl AbiLayout for am_cascade_result_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -260,38 +272,6 @@ impl AbiLayout for am_preprocess_meta_t {
         ),
         (
             core::mem::offset_of!(am_preprocess_meta_t, valid),
-            core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_tensor_out_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_tensor_out_t, name),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, dtype),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, shape),
-            core::mem::size_of::<*const i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, shape_len),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, data),
-            core::mem::size_of::<*const c_void>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, data_size),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_out_t, is_contiguous),
             core::mem::size_of::<u32>(),
         ),
     ];

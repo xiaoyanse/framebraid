@@ -1,5 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_backend_matrix_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_backend_matrix_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_backend_matrix_t, row_count),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_backend_matrix_t, rows),
+            core::mem::size_of::<*const am_backend_row_t>(),
+        ),
+    ];
+}
 impl AbiLayout for am_backend_candidate_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -241,26 +257,6 @@ impl AbiLayout for am_io_spec_t {
         (
             core::mem::offset_of!(am_io_spec_t, dyn_max),
             core::mem::size_of::<*const i64>(),
-        ),
-    ];
-}
-impl AbiLayout for am_backend_actual_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_backend_actual_t, actual),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_actual_t, device_utf8),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_actual_t, subgraph_cpu_nodes),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_actual_t, fallback_reason_utf8),
-            core::mem::size_of::<*const c_char>(),
         ),
     ];
 }

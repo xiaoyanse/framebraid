@@ -258,6 +258,26 @@ impl AbiLayout for am_frame_meta_t {
         ),
     ];
 }
+impl AbiLayout for am_frame_encode_opts_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_frame_encode_opts_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_frame_encode_opts_t, format),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_frame_encode_opts_t, quality),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_frame_encode_opts_t, reserved),
+            core::mem::size_of::<[u32; 5]>(),
+        ),
+    ];
+}
 impl AbiLayout for am_scale_preset_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -359,34 +379,6 @@ impl AbiLayout for am_decoder_config_t {
         (
             core::mem::offset_of!(am_decoder_config_t, reserved),
             core::mem::size_of::<[u32; 4]>(),
-        ),
-    ];
-}
-impl AbiLayout for am_decoder_input_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_decoder_input_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_decoder_input_t, flags),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_decoder_input_t, size),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_decoder_input_t, data),
-            core::mem::size_of::<*const u8>(),
-        ),
-        (
-            core::mem::offset_of!(am_decoder_input_t, pts),
-            core::mem::size_of::<i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_decoder_input_t, dts),
-            core::mem::size_of::<i64>(),
         ),
     ];
 }

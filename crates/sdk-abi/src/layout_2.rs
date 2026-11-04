@@ -291,6 +291,31 @@ fn am_frame_meta_t_matches_c() {
     );
 }
 #[test]
+fn am_frame_encode_opts_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_frame_encode_opts_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_frame_encode_opts_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_frame_encode_opts_t, struct_size),
+        0,
+        "am_frame_encode_opts_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_encode_opts_t, format),
+        4,
+        "am_frame_encode_opts_t.format"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_encode_opts_t, quality),
+        8,
+        "am_frame_encode_opts_t.quality"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_frame_encode_opts_t, reserved),
+        12,
+        "am_frame_encode_opts_t.reserved"
+    );
+}
+#[test]
 fn am_scale_preset_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_scale_preset_t>(), 8);
     assert_eq!(core::mem::align_of::<am_scale_preset_t>(), 4);
@@ -418,40 +443,5 @@ fn am_decoder_config_t_matches_c() {
         core::mem::offset_of!(am_decoder_config_t, reserved),
         64,
         "am_decoder_config_t.reserved"
-    );
-}
-#[test]
-fn am_decoder_input_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_decoder_input_t>(), 40);
-    assert_eq!(core::mem::align_of::<am_decoder_input_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_decoder_input_t, struct_size),
-        0,
-        "am_decoder_input_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_decoder_input_t, flags),
-        4,
-        "am_decoder_input_t.flags"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_decoder_input_t, size),
-        8,
-        "am_decoder_input_t.size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_decoder_input_t, data),
-        16,
-        "am_decoder_input_t.data"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_decoder_input_t, pts),
-        24,
-        "am_decoder_input_t.pts"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_decoder_input_t, dts),
-        32,
-        "am_decoder_input_t.dts"
     );
 }

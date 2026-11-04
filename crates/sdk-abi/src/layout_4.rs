@@ -1,6 +1,26 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_backend_matrix_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_backend_matrix_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_backend_matrix_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_backend_matrix_t, struct_size),
+        0,
+        "am_backend_matrix_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_matrix_t, row_count),
+        4,
+        "am_backend_matrix_t.row_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_matrix_t, rows),
+        8,
+        "am_backend_matrix_t.rows"
+    );
+}
+#[test]
 fn am_backend_candidate_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_backend_candidate_t>(), 8);
     assert_eq!(core::mem::align_of::<am_backend_candidate_t>(), 4);
@@ -303,30 +323,5 @@ fn am_io_spec_t_matches_c() {
         core::mem::offset_of!(am_io_spec_t, dyn_max),
         48,
         "am_io_spec_t.dyn_max"
-    );
-}
-#[test]
-fn am_backend_actual_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_backend_actual_t>(), 32);
-    assert_eq!(core::mem::align_of::<am_backend_actual_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_backend_actual_t, actual),
-        0,
-        "am_backend_actual_t.actual"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_actual_t, device_utf8),
-        8,
-        "am_backend_actual_t.device_utf8"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_actual_t, subgraph_cpu_nodes),
-        16,
-        "am_backend_actual_t.subgraph_cpu_nodes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_actual_t, fallback_reason_utf8),
-        24,
-        "am_backend_actual_t.fallback_reason_utf8"
     );
 }

@@ -1,6 +1,22 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_backend_matrix_t {
+    pub struct_size: u32,
+    pub row_count: u32,
+    pub rows: *const am_backend_row_t,
+}
+impl Default for am_backend_matrix_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            row_count: Default::default(),
+            rows: Default::default(),
+        }
+    }
+}
+#[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct am_backend_candidate_t {
     pub backend: u32,
@@ -185,12 +201,4 @@ impl Default for am_io_spec_t {
             dyn_max: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_backend_actual_t {
-    pub actual: u32,
-    pub device_utf8: *const c_char,
-    pub subgraph_cpu_nodes: i32,
-    pub fallback_reason_utf8: *const c_char,
 }

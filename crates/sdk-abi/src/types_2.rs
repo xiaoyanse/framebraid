@@ -153,6 +153,24 @@ impl Default for am_frame_meta_t {
     }
 }
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_frame_encode_opts_t {
+    pub struct_size: u32,
+    pub format: u32,
+    pub quality: u32,
+    pub reserved: [u32; 5],
+}
+impl Default for am_frame_encode_opts_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            format: Default::default(),
+            quality: Default::default(),
+            reserved: [Default::default(); 5],
+        }
+    }
+}
+#[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct am_scale_preset_t {
     pub width: u32,
@@ -217,28 +235,6 @@ impl Default for am_decoder_config_t {
             queue_max_items: Default::default(),
             queue_max_bytes: Default::default(),
             reserved: [Default::default(); 4],
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_decoder_input_t {
-    pub struct_size: u32,
-    pub flags: u32,
-    pub size: u64,
-    pub data: *const u8,
-    pub pts: i64,
-    pub dts: i64,
-}
-impl Default for am_decoder_input_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            flags: Default::default(),
-            size: Default::default(),
-            data: Default::default(),
-            pts: Default::default(),
-            dts: Default::default(),
         }
     }
 }
