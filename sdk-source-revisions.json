@@ -894,14 +894,14 @@
   {
    "path": "crates/vision-ffi/src/inference/input.rs",
    "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "951a06740226028f14404f5368d8520c6269beb4a8a7c80bc9ee885081f90598",
-   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged；v0.3.1 audit fix applied"
+   "sha256": "bb84613964f61629295e2cd07a3db57477b91f8e116bec89253e8622a2e55de9",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "38a78bcd1106516b1f0bac476bf81c9efdee87ca545de5ed86c8bced352157d7",
-   "reason": "M5 reviewed model hot swap (handle-rebind architecture preserving in-flight semantics; 8-thread sustained inference across swap zero failures; AM_SWAP_DETACH generator constant); workspace 397 green；blind-spot/poison fix applied；feedback P0-1 OV2026：intern_detail 诊断文本驻留（'static CStr，按内容去重，旧详情指针不失效）；v0.3.3 previous SHA-256 97615fd1c93cc9b16b58bcdd329e12d2b143530d706f66f65a76750186651a12：intern_detail 委托 sdk-support::diagnostics::intern 收敛双实现（审计 D 委托）"
+   "sha256": "58aac7c4ecab6615cb63681ad2a7c62411daaa56b03b70423c47e18b23df458f",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
   },
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
@@ -954,8 +954,8 @@
   {
    "path": "crates/vision-ffi/src/inference/results.rs",
    "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
-   "sha256": "68650b1706c41a258cdbe43fd8c85ff9412636f1222eac66ee645f7402557430",
-   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
+   "sha256": "c6c76f0febd4105c12ee4d761c7cdd76dc834237ab4819ee65687517ba614124",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
@@ -1092,8 +1092,8 @@
   {
    "path": "crates/vision/resources/profiles.json",
    "previousSha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
-   "sha256": "eeaff524f2794a3981a925dbbbc6803cf0938fd1a388b0357cd84c653acc8551",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "26efdfa07766fcdb470b5b0f3bbbf935937de2816f34e84711ecf7bf4a3ab5b4",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
   },
   {
    "path": "crates/vision/src/backend.rs",
@@ -1182,8 +1182,8 @@
   {
    "path": "crates/vision/src/profiles/mod.rs",
    "previousSha256": "b6e62092631732545a31cd3365cb795d4e14a4f973d1785a26a16a3a58126121",
-   "sha256": "13e5eb85ea27e94e7cd058c81305fdce298715f560977b8b59a244a324dac3a2",
-   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
+   "sha256": "93e2ed4e889dd396ec685aca1816fac47192f9490ab2a62c529b360c8143d12b",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
   },
   {
    "path": "crates/vision/src/profiles/registry.rs",
@@ -1224,8 +1224,8 @@
   {
    "path": "crates/vision/src/sdk/model.rs",
    "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-   "sha256": "3887720ac62db221c058eefe3c3e22a5f85dcfb1bacbef5a4bbe81250f73af30",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "108a820cdba96b5bfd17c25ffad93aded21664da0c17b045edba20308398bb76",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
   },
   {
    "path": "crates/vision/src/sdk/model/source.rs",

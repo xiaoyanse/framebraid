@@ -5,7 +5,7 @@
 
 ## v0.5.0 验证状态快照
 
-FILE 阶段 2（seek/duration/rate/loop，合同 §2.4 阶段 2 段，接入方两轮确认锁定）+ 开放词汇 A1+A2+A4（`amv_vocab_bind` 词表绑定+亲和解码+命中明细，合同 §4.1，接入方六点确认含 pad 约束）+ 审计清偿批（P1/P3/L1/L2 修复+测试盲区 9 项回归锁，七项合同语义全过未发现真缺陷）。**验证**：workspace 447 项测试零失败（437 常规+10 真机门）；真机门——camera 侧 14+12 passed（含 seek 三模式/EOF 复活/循环重放/EXACT 过滤集成、FILE EOF 全链），1 项 D3D11 并行 flaky 单跑通过（既有已知非回归），8 项回环 RTSP/native 隔离库环境缺与基线一致；clippy 零告警；check-boundary 270 全绿（指纹链式更新）；四机器闸门（bindings/doc-coverage/zero-semantics/freeze）过。C ABI `AM_ABI_VERSION` 65538。运行库版本：FFmpeg s5-encode（avcodec-63）。vocab 真机双模型端到端（合成 onnx 文本塔+亲和头）未随本版（合成单测覆盖解码与绑定校验链，端到端列 v0.5.x 补验）。
+FILE 阶段 2（seek/duration/rate/loop，合同 §2.4 阶段 2 段，接入方两轮确认锁定）+ 开放词汇 A1+A2+A4（`amv_vocab_bind` 词表绑定+亲和解码+命中明细，合同 §4.1，接入方六点确认含 pad 约束）+ 审计清偿批（P1/P3/L1/L2 修复+测试盲区 9 项回归锁，七项合同语义全过未发现真缺陷）。**验证**：workspace 447 项测试零失败（437 常规+10 真机门）；真机门——camera 侧 14+12 passed（含 seek 三模式/EOF 复活/循环重放/EXACT 过滤集成、FILE EOF 全链），1 项 D3D11 并行 flaky 单跑通过（既有已知非回归），8 项回环 RTSP/native 隔离库环境缺与基线一致；**vocab 双模型端到端已验**（合成 Gather 常量表文本塔+Mul 广播亲和头，真实 ORT：bind→注入→组内合并→hits/class_name→re-bind 换词全断言过；过程中修出三个集成缺口——load 动态维/图像入口双输入放行/hits 所有权，见提交 2e7a723）；clippy 零告警；check-boundary 270 全绿（指纹链式更新）；四机器闸门（bindings/doc-coverage/zero-semantics/freeze）过。C ABI `AM_ABI_VERSION` 65538。运行库版本：FFmpeg s5-encode（avcodec-63）。
 
 ## v0.4.0 验证状态快照
 
