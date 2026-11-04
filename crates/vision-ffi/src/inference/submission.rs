@@ -1,35 +1,47 @@
-use super::{input, tensors};
+use super::{cascade, input, tensors};
 use am_sdk_support::{abi::*, Result};
-use am_vision_core::sdk::{ImageTransform, TensorData};
+use am_vision_core::sdk::{cascade::MAX_ROIS, ImageTransform, TensorData};
 pub type TensorSignature = Vec<(String, u32, Vec<i64>)>;
 
 pub enum Plan {
     Image(Box<input::Plan>),
     Tensors(tensors::Plan),
+    /// ROI 级联（C1 §4.1）：一级图像计划 + 二级执行载荷；图像只 capture 一次
+    /// （BORROW_RETAINED 语义沿用一级计划）。
+    Cascade(Box<input::Plan>, cascade::CascadeJob),
 }
 impl Plan {
     pub fn cost(&self) -> usize {
         match self {
             Self::Image(p) => p.cost,
             Self::Tensors(p) => p.cost,
+            // 一级 + 二级输入面 + 二级 preprocess 尺寸×ROI 上限粗估（逐 ROI
+            // 顺序复用同一份中转缓冲，估算不叠满 16 份张量）。
+            Self::Cascade(p, job) => p.cost.saturating_add(job.secondary_cost).saturating_add(
+                job.secondary_preprocess.width as usize
+                    * job.secondary_preprocess.height as usize
+                    * MAX_ROIS,
+            ),
         }
     }
     pub fn params(&self) -> am_infer_params_t {
         match self {
             Self::Image(p) => p.params,
             Self::Tensors(p) => p.params,
+            Self::Cascade(p, _) => p.params,
         }
     }
     pub fn native_extra(&self) -> usize {
         match self {
-            Self::Image(_) => 0,
+            Self::Image(_) | Self::Cascade(..) => 0,
             Self::Tensors(p) => p.native_extra(),
         }
     }
     pub fn signature(&self, name: &str) -> TensorSignature {
         match self {
             Self::Tensors(p) => p.signature(),
-            Self::Image(p) => {
+            // 级联签名取一级前处理（攒批窗口已按计划类型关断，此臂仅为穷尽）。
+            Self::Image(p) | Self::Cascade(p, _) => {
                 let v = p.preprocess;
                 let shape = if v.nhwc {
                     vec![1, v.height as i64, v.width as i64, 3]
@@ -44,12 +56,17 @@ impl Plan {
         match self {
             Self::Image(p) => Ok(Input::Image(Box::new(unsafe { p.capture() }?))),
             Self::Tensors(p) => Ok(Input::Tensors(unsafe { p.capture() }?)),
+            Self::Cascade(p, job) => Ok(Input::Cascade(
+                Box::new(unsafe { p.capture() }?),
+                job.clone(),
+            )),
         }
     }
 }
 pub enum Input {
     Image(Box<input::Input>),
     Tensors(tensors::Input),
+    Cascade(Box<input::Input>, cascade::CascadeJob),
 }
 pub enum Prepared<'a> {
     Image(TensorData, ImageTransform),
@@ -60,6 +77,7 @@ impl Input {
         match self {
             Self::Image(v) => v.assoc,
             Self::Tensors(v) => v.assoc,
+            Self::Cascade(v, _) => v.assoc,
         }
     }
     pub fn prepare(&self, name: &str, budget: usize) -> Result<Prepared<'_>> {
@@ -69,6 +87,8 @@ impl Input {
                 Ok(Prepared::Image(tensor, mapping))
             }
             Self::Tensors(v) => Ok(Prepared::Tensors(&v.tensors)),
+            // 级联在 run() 入口即分派到 run_cascade（自带一级 prepare），不经此处。
+            Self::Cascade(..) => Err(AM_ERR_SDK_INTERNAL_ERROR),
         }
     }
 }

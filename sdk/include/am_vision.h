@@ -36,6 +36,12 @@ AM_API am_status_t amv_infer_image_sync(amv_model_t* model, const am_image_input
                                         uint64_t* out_request_id);
 AM_API am_status_t amv_infer_image_async(amv_model_t* model, const am_image_input_t* input,
                                          const am_infer_params_t* params, uint64_t* out_request_id);
+AM_API am_status_t amv_infer_cascade_sync(amv_model_t* primary, amv_model_t* secondary,
+    const am_image_input_t* input, const am_cascade_request_t* cascade,
+    const am_infer_params_t* params, amv_result_t** out_result, uint64_t* out_request_id);
+AM_API am_status_t amv_infer_cascade_async(amv_model_t* primary, amv_model_t* secondary,
+    const am_image_input_t* input, const am_cascade_request_t* cascade,
+    const am_infer_params_t* params, uint64_t* out_request_id);
 AM_API am_status_t amv_infer_tensors_sync(amv_model_t* model, uint32_t input_count,
                                           const am_tensor_in_t* inputs, const am_infer_params_t* params,
                                           amv_result_t** out_result, uint64_t* out_request_id);

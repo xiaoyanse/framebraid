@@ -311,127 +311,77 @@ fn am_image_input_t_matches_c() {
     );
 }
 #[test]
-fn am_infer_params_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_infer_params_t>(), 48);
-    assert_eq!(core::mem::align_of::<am_infer_params_t>(), 8);
+fn am_cascade_rule_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_cascade_rule_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_cascade_rule_t>(), 4);
     assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, struct_size),
+        core::mem::offset_of!(am_cascade_rule_t, struct_size),
         0,
-        "am_infer_params_t.struct_size"
+        "am_cascade_rule_t.struct_size"
     );
     assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, confidence_threshold),
+        core::mem::offset_of!(am_cascade_rule_t, source_class_id),
         4,
-        "am_infer_params_t.confidence_threshold"
+        "am_cascade_rule_t.source_class_id"
     );
     assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, nms_iou_threshold),
+        core::mem::offset_of!(am_cascade_rule_t, expand),
         8,
-        "am_infer_params_t.nms_iou_threshold"
+        "am_cascade_rule_t.expand"
     );
     assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, max_det),
+        core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
         12,
-        "am_infer_params_t.max_det"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, sync_deadline_ms),
-        16,
-        "am_infer_params_t.sync_deadline_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, slot_key),
-        24,
-        "am_infer_params_t.slot_key"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, raw_preprocess),
-        32,
-        "am_infer_params_t.raw_preprocess"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_infer_params_t, reserved),
-        40,
-        "am_infer_params_t.reserved"
+        "am_cascade_rule_t.min_roi_size"
     );
 }
 #[test]
-fn am_tensor_in_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_tensor_in_t>(), 64);
-    assert_eq!(core::mem::align_of::<am_tensor_in_t>(), 8);
+fn am_cascade_request_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_cascade_request_t>(), 40);
+    assert_eq!(core::mem::align_of::<am_cascade_request_t>(), 8);
     assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, name),
+        core::mem::offset_of!(am_cascade_request_t, struct_size),
         0,
-        "am_tensor_in_t.name"
+        "am_cascade_request_t.struct_size"
     );
     assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, dtype),
+        core::mem::offset_of!(am_cascade_request_t, static_rois),
         8,
-        "am_tensor_in_t.dtype"
+        "am_cascade_request_t.static_rois"
     );
     assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, shape),
+        core::mem::offset_of!(am_cascade_request_t, static_roi_count),
         16,
-        "am_tensor_in_t.shape"
+        "am_cascade_request_t.static_roi_count"
     );
     assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, shape_len),
+        core::mem::offset_of!(am_cascade_request_t, rules),
         24,
-        "am_tensor_in_t.shape_len"
+        "am_cascade_request_t.rules"
     );
     assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, data),
+        core::mem::offset_of!(am_cascade_request_t, rule_count),
         32,
-        "am_tensor_in_t.data"
+        "am_cascade_request_t.rule_count"
     );
     assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, data_size),
-        40,
-        "am_tensor_in_t.data_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, flags),
-        48,
-        "am_tensor_in_t.flags"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_tensor_in_t, assoc),
-        56,
-        "am_tensor_in_t.assoc"
+        core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
+        36,
+        "am_cascade_request_t.secondary_confidence"
     );
 }
 #[test]
-fn am_batch_item_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_batch_item_t>(), 48);
-    assert_eq!(core::mem::align_of::<am_batch_item_t>(), 8);
+fn am_cascade_hit_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_cascade_hit_t>(), 20);
+    assert_eq!(core::mem::align_of::<am_cascade_hit_t>(), 4);
     assert_eq!(
-        core::mem::offset_of!(am_batch_item_t, struct_size),
+        core::mem::offset_of!(am_cascade_hit_t, primary_index),
         0,
-        "am_batch_item_t.struct_size"
+        "am_cascade_hit_t.primary_index"
     );
     assert_eq!(
-        core::mem::offset_of!(am_batch_item_t, image),
-        8,
-        "am_batch_item_t.image"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_item_t, tensor_count),
-        16,
-        "am_batch_item_t.tensor_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_item_t, tensors),
-        24,
-        "am_batch_item_t.tensors"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_item_t, slot_key),
-        32,
-        "am_batch_item_t.slot_key"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batch_item_t, raw_preprocess),
-        40,
-        "am_batch_item_t.raw_preprocess"
+        core::mem::offset_of!(am_cascade_hit_t, roi),
+        4,
+        "am_cascade_hit_t.roi"
     );
 }

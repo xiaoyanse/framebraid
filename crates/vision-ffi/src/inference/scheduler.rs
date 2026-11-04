@@ -248,7 +248,9 @@ enum Payload {
 // params中raw_preprocess不跨线程使用，接受前已复制进Input；其余字段是纯值。
 unsafe impl Send for Job {}
 pub unsafe fn submit(entry: Arc<Entry>, plan: Plan) -> Result<u64> {
-    let result = unsafe { admission::submit(entry.clone(), &[&plan], false, false, true, None) };
+    // 级联（C1）不进自适应攒批窗口：ROI 逐项执行与原生组批语义不兼容。
+    let auto = !matches!(plan, Plan::Cascade(..));
+    let result = unsafe { admission::submit(entry.clone(), &[&plan], false, false, auto, None) };
     if result
         .as_ref()
         .is_err_and(|e| matches!(*e, AM_ERR_SDK_QUEUE_FULL | AM_ERR_SDK_RESOURCE_EXHAUSTED))

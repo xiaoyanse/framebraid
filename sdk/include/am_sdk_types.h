@@ -71,6 +71,10 @@ typedef struct am_gpu_frame_desc_s am_gpu_frame_desc_t;
 typedef struct am_gpu_frame_stats_s am_gpu_frame_stats_t;
 typedef struct am_gpu_frame_ref_s am_gpu_frame_ref_t;
 typedef struct am_image_input_s am_image_input_t;
+typedef struct am_cascade_rule_s am_cascade_rule_t;
+typedef struct am_cascade_request_s am_cascade_request_t;
+typedef struct am_cascade_hit_s am_cascade_hit_t;
+typedef struct am_cascade_result_s am_cascade_result_t;
 typedef struct am_infer_params_s am_infer_params_t;
 typedef struct am_tensor_in_s am_tensor_in_t;
 typedef struct am_batch_item_s am_batch_item_t;
@@ -925,6 +929,32 @@ typedef struct am_image_input_s {
   const am_gpu_frame_ref_t* gpu;   /* kind=GPU_FRAME（M2b）：同进程 GPU 帧直传，
                                      借用至同步返回/异步接受（预处理在接受段完成） */
 } am_image_input_t;
+/* ---- ROI 级联推理（C1，§4.1a）---- */
+typedef struct am_cascade_rule_s {  /* 动态 ROI 规则：从一级结果生成二次推理区域 */
+  uint32_t struct_size;
+  int32_t source_class_id;        /* 一级命中此类别才生成 ROI；-1=全部一级框 */ /* zero=default(0=首类) */
+  float expand;                   /* 框外扩比例（相对框宽高各向外扩 expand/2；下游实证 0.15） */
+  float min_roi_size;             /* ROI 归一化最小边长（退化防护，小于则丢弃）；0=0.02 */
+} am_cascade_rule_t;
+typedef struct am_cascade_request_s { /* 级联请求：静态 ROI 与动态规则可并存 */
+  uint32_t struct_size;
+  const float* static_rois;       /* 静态 ROI 扁平数组（归一化 xyxy，每 ROI 连续 4 个
+                                     float，共 static_roi_count*4 个）；NULL=纯动态 */
+  uint32_t static_roi_count;      /* ≤16；0=无静态 */
+  const am_cascade_rule_t* rules; /* 动态规则数组；NULL=纯静态 */
+  uint32_t rule_count;            /* ≤16；0=无动态 */
+  float secondary_confidence;     /* 二级置信度阈值；0=继承 params.confidence_threshold */ /* zero=default */
+} am_cascade_request_t;
+typedef struct am_cascade_hit_s { /* 二级框来源明细（与 secondary 数组同序） */
+  int32_t primary_index;          /* 来源一级框索引；静态 ROI 来源=-1（无一级关联） */
+  float roi[4];                   /* 实际使用的 ROI（归一化 xyxy，含外扩后 clamp 图内） */
+} am_cascade_hit_t;
+typedef struct am_cascade_result_s {
+  uint32_t struct_size;
+  uint32_t secondary_count;       /* 二级框数（原图坐标）；0=无二级命中 */
+  const am_detect_box_t* secondary; /* 二级框：class 语义=二级模型，坐标=原图归一化 xyxy */
+  const am_cascade_hit_t* hits;   /* 与 secondary 同序；保留来源与 ROI 供业务裁决 */
+} am_cascade_result_t;
 typedef struct am_infer_params_s {
   uint32_t struct_size;
   float confidence_threshold;  /* 档案默认外的覆盖；越界 vision.confidenceRange */
@@ -1105,6 +1135,8 @@ typedef struct amv_result_s {   /* 结构化五类+原始张量双出口；JSON 
   const am_vocab_hit_map_t* vocab_hits;   /* 开放词汇命中明细（A2，P2 尾部追加）：仅绑定词表的
                                              detect 结果非 NULL，与 detect.boxes 同序；旧消费者
                                              按 struct_size 忽略 */
+  const am_cascade_result_t* cascade;     /* ROI 级联二级结果（C1，P2 尾部追加）：仅级联入口非 NULL；
+                                             一级结果仍在 detect；旧消费者按 struct_size 忽略 */
 } amv_result_t;
 
 typedef struct am_realtime_policy_s {

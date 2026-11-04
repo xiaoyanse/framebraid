@@ -375,6 +375,42 @@ impl Input {
             sdk::prepare(&image, name, self.preprocess, budget).map_err(error)
         }
     }
+    /// 原图像素访问（级联 C1）：view 平面直取或编码图解码一次，回调期间存活；
+    /// 与 prepare 同构但跳过前处理（ROI 裁剪需原图）。
+    pub fn with_pixels<R>(&self, f: impl FnOnce(&Pixels) -> R) -> Result<R> {
+        if let Some(view) = self.view {
+            let planes = (0..view.plane_count as usize)
+                .map(|i| unsafe {
+                    std::slice::from_raw_parts(view.planes[i], view.plane_size_bytes[i] as usize)
+                })
+                .collect();
+            let image = Pixels {
+                width: view.width,
+                height: view.height,
+                format: view.format,
+                planes,
+                strides: view.strides[..view.plane_count as usize]
+                    .iter()
+                    .map(|v| *v as usize)
+                    .collect(),
+                color_matrix: view.color_matrix,
+                color_range: view.color_range,
+            };
+            Ok(f(&image))
+        } else {
+            let decoded = sdk::encoded::decode(&self.encoded).map_err(error)?;
+            let image = Pixels {
+                width: decoded.width(),
+                height: decoded.height(),
+                format: AM_PF_RGB8 as u32,
+                planes: vec![decoded.as_raw()],
+                strides: vec![decoded.width() as usize * 3],
+                color_matrix: 0,
+                color_range: 0,
+            };
+            Ok(f(&image))
+        }
+    }
 }
 
 #[cfg(test)]

@@ -34,8 +34,20 @@ pub struct ResultBuffer {
     segment: Vec<am_segment_instance_t>,
     masks: Vec<Vec<u8>>,
     obb: Vec<am_obb_instance_t>,
+    cascade: Option<Box<am_cascade_result_t>>,
+    cascade_boxes: Vec<am_detect_box_t>,
+    cascade_hits: Vec<am_cascade_hit_t>,
+    cascade_labels: Vec<CString>,
     _charge: ResultCharge,
     external: std::sync::Mutex<usize>,
+}
+
+/// 级联二级输出（C1，§4.1）：二级框（原图归一化 xyxy，class 语义=二级模型）+
+/// 同序来源明细；labels 为 vocab 二级模型的条目显示名（非 vocab 为空）。
+pub struct CascadeData {
+    pub boxes: Vec<am_detect_box_t>,
+    pub hits: Vec<am_cascade_hit_t>,
+    pub labels: Vec<CString>,
 }
 // 出口只读，所有内部指针均由同一Arc中的堆缓冲保持。
 unsafe impl Send for ResultBuffer {}
@@ -54,6 +66,7 @@ impl ResultBuffer {
         mapping: Option<ImageTransform>,
         raw: Vec<TensorData>,
         prediction: Option<Prediction>,
+        cascade: Option<CascadeData>,
         start: i64,
         end: i64,
         charge: ResultCharge,
@@ -111,9 +124,25 @@ impl ResultBuffer {
             segment: Vec::new(),
             masks: Vec::new(),
             obb: Vec::new(),
+            cascade: None,
+            cascade_boxes: Vec::new(),
+            cascade_hits: Vec::new(),
+            cascade_labels: Vec::new(),
             _charge: charge,
             external: std::sync::Mutex::new(0),
         };
+        // 级联数据先落自有缓冲再取指针（Vec 随后不再增长，指针稳定）。
+        if let Some(c) = cascade {
+            data.cascade_boxes = c.boxes;
+            data.cascade_hits = c.hits;
+            data.cascade_labels = c.labels;
+            data.cascade = Some(Box::new(am_cascade_result_t {
+                struct_size: size_of::<am_cascade_result_t>() as u32,
+                secondary_count: data.cascade_boxes.len() as u32,
+                secondary: data.cascade_boxes.as_ptr(),
+                hits: data.cascade_hits.as_ptr(),
+            }));
+        }
         let mut prediction = prediction;
         // 先取 vocab 伴生数据（owned），output 随后按值分发——两者独立不互吞。
         let vocab = prediction.as_mut().and_then(|p| p.vocab_hits.take());
@@ -283,6 +312,7 @@ impl ResultBuffer {
             infer_start_ms: start,
             infer_end_ms: end,
             vocab_hits: data.hit_map.as_deref().map_or(std::ptr::null(), |v| v),
+            cascade: data.cascade.as_deref().map_or(std::ptr::null(), |v| v),
             ..Default::default()
         });
         let size = data
@@ -315,6 +345,14 @@ impl ResultBuffer {
             + vector_bytes(&data.classify)
             + vector_bytes(&data.segment)
             + vector_bytes(&data.obb)
+            + vector_bytes(&data.cascade_boxes)
+            + vector_bytes(&data.cascade_hits)
+            + vector_bytes(&data.cascade_labels)
+            + data
+                .cascade_labels
+                .iter()
+                .map(|l| l.as_bytes_with_nul().len())
+                .sum::<usize>()
             + data.profile.as_bytes_with_nul().len()
             + std::mem::size_of::<Self>()
             + 1024;
@@ -341,6 +379,15 @@ impl ResultBuffer {
         }
         if data.obb.is_empty() {
             data.value.obb.instances = std::ptr::null();
+        }
+        // 级联空数组同样不得暴露 dangling 指针（结果结构保留，count=0）。
+        if let Some(cascade) = data.cascade.as_deref_mut() {
+            if data.cascade_boxes.is_empty() {
+                cascade.secondary = std::ptr::null();
+            }
+            if data.cascade_hits.is_empty() {
+                cascade.hits = std::ptr::null();
+            }
         }
         Ok(Arc::new(data))
     }

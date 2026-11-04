@@ -1,6 +1,7 @@
 //! 可独立使用的数值模型会话；不读取宿主配置、不运行规则或报警。
 mod batch;
 pub mod batching;
+pub mod cascade;
 pub mod encoded;
 mod model;
 mod onnx;

@@ -21,6 +21,8 @@ pub(in crate::inference) fn agg_key(model: &ModelHandle, plan: &Plan) -> AggKey 
             Some(p.preprocess),
         ),
         Plan::Tensors(_) => (plan.signature(&model.info.input_specs[0].name), None),
+        // 级联不参与攒批（scheduler::submit 已按计划类型关断窗口），此臂仅为穷尽。
+        Plan::Cascade(..) => (plan.signature(&model.info.input_specs[0].name), None),
     }
 }
 

@@ -1,6 +1,6 @@
 #![allow(clippy::missing_safety_doc)]
 use super::{
-    input, lock,
+    cascade, input, lock,
     models::{self, ModelHandle},
     results::{self, ResultBuffer, Snapshot},
     scheduler,
@@ -227,6 +227,73 @@ pub unsafe extern "C" fn amv_infer_image_sync(
         let model = entry.data::<ModelHandle>()?;
         let plan = input::plan(model, p, params, false)?;
         submit_sync(entry.0.clone(), Plan::Image(Box::new(plan)), out, out_id)
+    })
+}
+#[no_mangle]
+/// ROI 级联推理（C1，§4.1）异步入口：两级独立句柄均须 PROFILE detect 档案；
+/// 请求解析校验见 cascade::parse；执行锁序与失败语义见 run_cascade。
+pub unsafe extern "C" fn amv_infer_cascade_async(
+    primary: *mut amv_model_t,
+    secondary: *mut amv_model_t,
+    p: *const am_image_input_t,
+    cascade_request: *const am_cascade_request_t,
+    params: *const am_infer_params_t,
+    out: *mut u64,
+) -> i32 {
+    status(crate::domain(), primary as usize, || unsafe {
+        am_sdk_support::callbacks::reject_reentry()?;
+        args::pointer(out)?;
+        out.write(0);
+        let entry = crate::domain().active(primary as usize)?;
+        let model = entry.data::<ModelHandle>()?;
+        let secondary_entry = crate::domain().active(secondary as usize)?;
+        let secondary_model = secondary_entry.data::<ModelHandle>()?;
+        let plan = cascade::plan(
+            model,
+            &secondary_entry.0,
+            secondary_model,
+            p,
+            cascade_request,
+            params,
+            true,
+        )?;
+        out.write(scheduler::submit(entry.0.clone(), plan)?);
+        Ok(())
+    })
+}
+#[no_mangle]
+/// ROI 级联推理（C1，§4.1）同步入口：submit_sync 同款截止语义。
+pub unsafe extern "C" fn amv_infer_cascade_sync(
+    primary: *mut amv_model_t,
+    secondary: *mut amv_model_t,
+    p: *const am_image_input_t,
+    cascade_request: *const am_cascade_request_t,
+    params: *const am_infer_params_t,
+    out: *mut *mut amv_result_t,
+    out_id: *mut u64,
+) -> i32 {
+    status(crate::domain(), primary as usize, || unsafe {
+        am_sdk_support::callbacks::reject_reentry()?;
+        args::pointer(out)?;
+        out.write(std::ptr::null_mut());
+        if !out_id.is_null() {
+            args::pointer(out_id)?;
+            out_id.write(0);
+        }
+        let entry = crate::domain().active(primary as usize)?;
+        let model = entry.data::<ModelHandle>()?;
+        let secondary_entry = crate::domain().active(secondary as usize)?;
+        let secondary_model = secondary_entry.data::<ModelHandle>()?;
+        let plan = cascade::plan(
+            model,
+            &secondary_entry.0,
+            secondary_model,
+            p,
+            cascade_request,
+            params,
+            false,
+        )?;
+        submit_sync(entry.0.clone(), plan, out, out_id)
     })
 }
 pub(super) unsafe fn submit_sync(

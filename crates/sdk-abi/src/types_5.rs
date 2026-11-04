@@ -173,61 +173,47 @@ impl Default for am_image_input_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct am_infer_params_t {
+pub struct am_cascade_rule_t {
     pub struct_size: u32,
-    pub confidence_threshold: f32,
-    pub nms_iou_threshold: f32,
-    pub max_det: u32,
-    pub sync_deadline_ms: u32,
-    pub slot_key: u64,
-    pub raw_preprocess: *const am_raw_preprocess_t,
-    pub reserved: [u32; 2],
+    pub source_class_id: i32,
+    pub expand: f32,
+    pub min_roi_size: f32,
 }
-impl Default for am_infer_params_t {
+impl Default for am_cascade_rule_t {
     fn default() -> Self {
         Self {
             struct_size: core::mem::size_of::<Self>() as u32,
-            confidence_threshold: Default::default(),
-            nms_iou_threshold: Default::default(),
-            max_det: Default::default(),
-            sync_deadline_ms: Default::default(),
-            slot_key: Default::default(),
-            raw_preprocess: Default::default(),
-            reserved: [Default::default(); 2],
+            source_class_id: Default::default(),
+            expand: Default::default(),
+            min_roi_size: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_cascade_request_t {
+    pub struct_size: u32,
+    pub static_rois: *const f32,
+    pub static_roi_count: u32,
+    pub rules: *const am_cascade_rule_t,
+    pub rule_count: u32,
+    pub secondary_confidence: f32,
+}
+impl Default for am_cascade_request_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            static_rois: Default::default(),
+            static_roi_count: Default::default(),
+            rules: Default::default(),
+            rule_count: Default::default(),
+            secondary_confidence: Default::default(),
         }
     }
 }
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
-pub struct am_tensor_in_t {
-    pub name: *const c_char,
-    pub dtype: u32,
-    pub shape: *const i64,
-    pub shape_len: u32,
-    pub data: *const c_void,
-    pub data_size: u64,
-    pub flags: u32,
-    pub assoc: *const am_frame_assoc_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_batch_item_t {
-    pub struct_size: u32,
-    pub image: *const am_image_input_t,
-    pub tensor_count: u32,
-    pub tensors: *const am_tensor_in_t,
-    pub slot_key: u64,
-    pub raw_preprocess: *const am_raw_preprocess_t,
-}
-impl Default for am_batch_item_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            image: Default::default(),
-            tensor_count: Default::default(),
-            tensors: Default::default(),
-            slot_key: Default::default(),
-            raw_preprocess: Default::default(),
-        }
-    }
+pub struct am_cascade_hit_t {
+    pub primary_index: i32,
+    pub roi: [f32; 4],
 }

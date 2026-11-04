@@ -1,6 +1,9 @@
 pub(crate) mod backends;
 mod batch_exports;
 mod batching_exports;
+mod cascade;
+#[cfg(test)]
+mod cascade_e2e_tests;
 mod exports;
 #[cfg(test)]
 mod exports_tests;

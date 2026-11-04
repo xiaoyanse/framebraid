@@ -642,26 +642,26 @@
   {
    "path": "crates/sdk-abi/src/fields_5.rs",
    "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-   "sha256": "757461b5e9e14d047177158f382561af7eb1b6d2b9bb63dc651cb7f214f4cfde",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "04417ec4e60203e0ed5fd1f484a242ed7b588ff4f9933e27f292cde0feaf476a",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/fields_6.rs",
    "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-   "sha256": "0ab9b8485c1d62e07c726b71ac4b47fd3f7432593e5fcba12928f6c1d103db39",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "b13d5fabbc6314049cb0603e8e4938773aa057fe3b8bfbd0ccc03bbee938c237",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/fields_7.rs",
    "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-   "sha256": "7fdc2478908e104d387384e502d89eeee2529ab3f4107617887d996d50dd21e1",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "c18cbad3e0bcfefd6c2d5010be81600720cb55b51b4779a55f7730c2cbd0a68a",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/fields_8.rs",
    "previousSha256": null,
-   "sha256": "dae6f0b64d52578cc0ab3d10e185b072fa1ccf4ad02fa191fdfbc42f2a8235a8",
-   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
+   "sha256": "1995c2b51a8dd45bf452e0ac00440b4b2a28665eae6748732332bdb9a0c86451",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/layout_2.rs",
@@ -678,26 +678,26 @@
   {
    "path": "crates/sdk-abi/src/layout_5.rs",
    "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-   "sha256": "39b16ff02cca085c0d3ffd6e2b595f3e558017cf76ee090334bebf6770da1921",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "535fb945b1880abb62e58bed14e6faf376d0df8a530af756ab481dd8f30f248a",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/layout_6.rs",
    "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-   "sha256": "27a4a0290ef005fcc677b0f91c197b504a8a6117ba7191f65657c4562ed2c513",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "e4e96a92eac74da93d0a2e97c1c90ba3a2c261a0313b274f26631fddc040c7c7",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/layout_7.rs",
    "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-   "sha256": "53dc4c7b360a253157dd6c772f881285c4f660e96f0d2481672bcb3b868dfdbb",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "5e7fd4480cdfb3c7706923b94b9cd3e249ca0fd8192d46a44c9fa7ac161ae834",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/layout_8.rs",
    "previousSha256": null,
-   "sha256": "9361c76aef37e1988b7a34467ca3150798a1fbcdce3b768c0ac793434e4c1766",
-   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
+   "sha256": "605fa2b6b6ab98633db6f692ca4dff94ce9aee75d4df1f976a463a7ff5c77f52",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/layout_tests.rs",
@@ -726,26 +726,26 @@
   {
    "path": "crates/sdk-abi/src/types_5.rs",
    "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-   "sha256": "f2e18b4b719fbd21c788591bbd629374b50479ee009876d8805009f07bb1be26",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "551237172f0c7e54c8f02f57f054baaa3da303818b5bc3b157780a457dd4c79b",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/types_6.rs",
    "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-   "sha256": "e6f801fe0da9111e8073c063600db9de841c222f7f341323742e2b5ffddf367e",
-   "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+   "sha256": "8374fbde869770b83fa06b5a4f58e24cdcbf1923a9a2a3b5153311791edb866a",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/types_7.rs",
    "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-   "sha256": "9e8aa8085c1734e6eae10c0e93d16fdfbaba5b0759c37d589ac2c095ef5732c5",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "46aa363732242e155ea5b380c29c54171c617517df52329a42a5ae56d0805a19",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-abi/src/types_8.rs",
    "previousSha256": null,
-   "sha256": "4e6740c4595d85c1e22ce194d2c781a94ad836c0a44066e4ea8ea4c7f70458ba",
-   "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
+   "sha256": "ecfb132d9094915eef01ba2286d8e9358ba999213518c7186151fc0e0a1c6101",
+   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
   },
   {
    "path": "crates/sdk-support/build.rs",
@@ -894,14 +894,14 @@
   {
    "path": "crates/vision-ffi/src/inference/input.rs",
    "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "bb84613964f61629295e2cd07a3db57477b91f8e116bec89253e8622a2e55de9",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
+   "sha256": "a162521a07c1d897d4ffc19d56c0154c8b5943e7d52e672be0ac1c5fa1792405",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "58aac7c4ecab6615cb63681ad2a7c62411daaa56b03b70423c47e18b23df458f",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
+   "sha256": "bd81db68fc231a8dea9a20d923b0d4a8e7c2892feab7b90400d070faadaeb3ef",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
@@ -954,14 +954,14 @@
   {
    "path": "crates/vision-ffi/src/inference/results.rs",
    "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
-   "sha256": "c6c76f0febd4105c12ee4d761c7cdd76dc834237ab4819ee65687517ba614124",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
+   "sha256": "d5434945ae6c15b895a6f0081c8c37c37cbba68b7e341880ea247b1cc02bb4a0",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
    "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-   "sha256": "7f4d1b4f1d60708ce060af2c0b29c638502402661ab9f9bb92dc6755c70870c8",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；blind-spot/poison fix applied"
+   "sha256": "2ac82bbec7e690c3142d4d0e5fbc712610b2dc2b9a5b6ac696d583d3b498aec7",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
@@ -972,8 +972,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
    "previousSha256": null,
-   "sha256": "8cf83b5d0c45f9d488d66f48b0ee411458206641e3767af9bc7f18900fbb9c00",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；extended-audit F1/F6 fix applied"
+   "sha256": "9657b20d73d7b149a45ff482fd7218dd15414cec9a386033710e72e8d667c612",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
@@ -990,14 +990,14 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "5fee1d44abd071cbb676bc6e1b8141d8e5ce425b6a62243cbd01df39c6c06f19",
-   "reason": "audit L1 hardening: defensive rank/dimension checks on run_gpu shape indexing and PROFILE mapping fallback (panic-free narrow to explicit rejects)"
+   "sha256": "a1f181d605371871b80301fa24d6570f92eb7b5aa8d953735f06e6db97a31ff7",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
    "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-   "sha256": "e8daaaba403c39d0e1523b48c268469b0da4ece58452412895be22992de6faca",
-   "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+   "sha256": "49236aad28df65eed0a772ed8255c00776415bc2205747e37fd23a5d737a598f",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -1218,8 +1218,8 @@
   {
    "path": "crates/vision/src/sdk/mod.rs",
    "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-   "sha256": "0e249c4fce2900ebbb9f20c484a6b9dc520a9013d65a77a636945ec0030a1687",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "1960d0145c2ccc579d07eaccd7b4c2a7051572182f37c034512b1dcd9c7d4608",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision/src/sdk/model.rs",
@@ -1506,8 +1506,8 @@
   {
    "path": "crates/vision-ffi/src/inference/exports.rs",
    "previousSha256": "e9853356a47e62016d9375fee9f0299bbdb849968e68387892797bff713e3b59",
-   "sha256": "9862c0fbd81d11e2286b15fe1858c923aeb7872cca65d9b345233e350aa57512",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "3b8034468840ac37d8f22c8ad269ea6a95ba466e936da0eefa1bba0652e861fd",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/receipt.rs",
@@ -1518,8 +1518,8 @@
   {
    "path": "crates/vision-ffi/src/inference/submission.rs",
    "previousSha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
-   "sha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "2921425799fe8022c7a0cb58d9f2cf17f49cdc8f83442a7fe3bef81e6d3d5b8d",
+   "reason": "cascade C1 impl"
   },
   {
    "path": "crates/vision-ffi/src/inference/tensor_exports.rs",
@@ -1622,6 +1622,24 @@
    "previousSha256": "9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e",
    "sha256": "9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e",
    "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+  },
+  {
+   "path": "crates/vision/src/sdk/cascade.rs",
+   "previousSha256": null,
+   "sha256": "ef5b407c6231be8a006d3e4eafeb7e7c386e06b01dda4b3ba998fa533b2ecd98",
+   "reason": "cascade C1 impl"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/cascade.rs",
+   "previousSha256": null,
+   "sha256": "941e78d01eb39856300cdb98489705717196db59fb5e4a4b276a102c4d6d550a",
+   "reason": "cascade C1 impl"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/cascade_e2e_tests.rs",
+   "previousSha256": null,
+   "sha256": "0d6646f1f9c5142f368ea267713d9d0e797b0f2c2834beea3951ec2b448274d0",
+   "reason": "cascade C1 impl"
   }
  ]
 }

@@ -336,103 +336,63 @@ impl AbiLayout for am_image_input_t {
         ),
     ];
 }
-impl AbiLayout for am_infer_params_t {
+impl AbiLayout for am_cascade_rule_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
-            core::mem::offset_of!(am_infer_params_t, struct_size),
+            core::mem::offset_of!(am_cascade_rule_t, struct_size),
             core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_infer_params_t, confidence_threshold),
+            core::mem::offset_of!(am_cascade_rule_t, source_class_id),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_rule_t, expand),
             core::mem::size_of::<f32>(),
         ),
         (
-            core::mem::offset_of!(am_infer_params_t, nms_iou_threshold),
+            core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
             core::mem::size_of::<f32>(),
         ),
+    ];
+}
+impl AbiLayout for am_cascade_request_t {
+    const FIELDS: &'static [(usize, usize)] = &[
         (
-            core::mem::offset_of!(am_infer_params_t, max_det),
+            core::mem::offset_of!(am_cascade_request_t, struct_size),
             core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_infer_params_t, sync_deadline_ms),
+            core::mem::offset_of!(am_cascade_request_t, static_rois),
+            core::mem::size_of::<*const f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_request_t, static_roi_count),
             core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_infer_params_t, slot_key),
-            core::mem::size_of::<u64>(),
+            core::mem::offset_of!(am_cascade_request_t, rules),
+            core::mem::size_of::<*const am_cascade_rule_t>(),
         ),
         (
-            core::mem::offset_of!(am_infer_params_t, raw_preprocess),
-            core::mem::size_of::<*const am_raw_preprocess_t>(),
+            core::mem::offset_of!(am_cascade_request_t, rule_count),
+            core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_infer_params_t, reserved),
-            core::mem::size_of::<[u32; 2]>(),
+            core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
+            core::mem::size_of::<f32>(),
         ),
     ];
 }
-impl AbiLayout for am_tensor_in_t {
+impl AbiLayout for am_cascade_hit_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
-            core::mem::offset_of!(am_tensor_in_t, name),
-            core::mem::size_of::<*const c_char>(),
+            core::mem::offset_of!(am_cascade_hit_t, primary_index),
+            core::mem::size_of::<i32>(),
         ),
         (
-            core::mem::offset_of!(am_tensor_in_t, dtype),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_in_t, shape),
-            core::mem::size_of::<*const i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_in_t, shape_len),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_in_t, data),
-            core::mem::size_of::<*const c_void>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_in_t, data_size),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_in_t, flags),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_tensor_in_t, assoc),
-            core::mem::size_of::<*const am_frame_assoc_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_batch_item_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_batch_item_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_item_t, image),
-            core::mem::size_of::<*const am_image_input_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_item_t, tensor_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_item_t, tensors),
-            core::mem::size_of::<*const am_tensor_in_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_item_t, slot_key),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batch_item_t, raw_preprocess),
-            core::mem::size_of::<*const am_raw_preprocess_t>(),
+            core::mem::offset_of!(am_cascade_hit_t, roi),
+            core::mem::size_of::<[f32; 4]>(),
         ),
     ];
 }

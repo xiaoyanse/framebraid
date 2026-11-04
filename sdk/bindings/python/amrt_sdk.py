@@ -172,6 +172,18 @@ class am_gpu_frame_ref_t(Structure):
 class am_image_input_t(Structure):
     pass
 
+class am_cascade_rule_t(Structure):
+    pass
+
+class am_cascade_request_t(Structure):
+    pass
+
+class am_cascade_hit_t(Structure):
+    pass
+
+class am_cascade_result_t(Structure):
+    pass
+
 class am_infer_params_t(Structure):
     pass
 
@@ -716,6 +728,18 @@ am_gpu_frame_stats_t._fields_ = [
     ("bytes_transferred_est", c_uint64),
 ]
 
+am_cascade_rule_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("source_class_id", c_int32),
+    ("expand", c_float),
+    ("min_roi_size", c_float),
+]
+
+am_cascade_hit_t._fields_ = [
+    ("primary_index", c_int32),
+    ("roi", c_float * 4),
+]
+
 am_tensor_in_t._fields_ = [
     ("name", c_char_p),
     ("dtype", c_uint32),
@@ -982,6 +1006,15 @@ am_gpu_frame_desc_t._fields_ = [
     ("assoc", am_frame_assoc_t),
 ]
 
+am_cascade_request_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("static_rois", POINTER(c_float)),
+    ("static_roi_count", c_uint32),
+    ("rules", POINTER(am_cascade_rule_t)),
+    ("rule_count", c_uint32),
+    ("secondary_confidence", c_float),
+]
+
 am_infer_params_t._fields_ = [
     ("struct_size", c_uint32),
     ("confidence_threshold", c_float),
@@ -1158,6 +1191,13 @@ am_gpu_frame_ref_t._fields_ = [
     ("assoc", POINTER(am_frame_assoc_t)),
 ]
 
+am_cascade_result_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("secondary_count", c_uint32),
+    ("secondary", POINTER(am_detect_box_t)),
+    ("hits", POINTER(am_cascade_hit_t)),
+]
+
 am_batching_stats_t._fields_ = [
     ("struct_size", c_uint32),
     ("abi_minor", c_uint32),
@@ -1329,6 +1369,7 @@ amv_result_t._fields_ = [
     ("infer_start_ms", c_int64),
     ("infer_end_ms", c_int64),
     ("vocab_hits", POINTER(am_vocab_hit_map_t)),
+    ("cascade", POINTER(am_cascade_result_t)),
 ]
 
 AM_ABI_VERSION = 65538
@@ -1597,6 +1638,8 @@ FUNCTIONS = {
     "amv_model_get_info": (am_status_t, [POINTER(amv_model_t), POINTER(am_model_info_t)]),
     "amv_infer_image_sync": (am_status_t, [POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),
     "amv_infer_image_async": (am_status_t, [POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
+    "amv_infer_cascade_sync": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_cascade_request_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),
+    "amv_infer_cascade_async": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_cascade_request_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
     "amv_infer_tensors_sync": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),
     "amv_infer_tensors_async": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
     "amv_vocab_bind": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_vocab_entry_t), c_uint32]),

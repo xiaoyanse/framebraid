@@ -758,6 +758,46 @@
         "gpu": 48
       }
     },
+    "am_cascade_rule_t": {
+      "size": 16,
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "source_class_id": 4,
+        "expand": 8,
+        "min_roi_size": 12
+      }
+    },
+    "am_cascade_request_t": {
+      "size": 40,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "static_rois": 8,
+        "static_roi_count": 16,
+        "rules": 24,
+        "rule_count": 32,
+        "secondary_confidence": 36
+      }
+    },
+    "am_cascade_hit_t": {
+      "size": 20,
+      "align": 4,
+      "offsets": {
+        "primary_index": 0,
+        "roi": 4
+      }
+    },
+    "am_cascade_result_t": {
+      "size": 24,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "secondary_count": 4,
+        "secondary": 8,
+        "hits": 16
+      }
+    },
     "am_infer_params_t": {
       "size": 48,
       "align": 8,
@@ -1020,7 +1060,7 @@
       }
     },
     "amv_result_t": {
-      "size": 216,
+      "size": 224,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -1039,7 +1079,8 @@
         "raw_outputs": 184,
         "infer_start_ms": 192,
         "infer_end_ms": 200,
-        "vocab_hits": 208
+        "vocab_hits": 208,
+        "cascade": 216
       }
     },
     "am_realtime_policy_t": {
