@@ -757,6 +757,11 @@ typedef struct am_cascade_result_s {
   uint32_t secondary_count;       /* 二级框数（原图坐标）；0=无二级命中 */
   const am_detect_box_t* secondary; /* 二级框：class 语义=二级模型，坐标=原图归一化 xyxy */
   const am_cascade_hit_t* hits;   /* 与 secondary 同序；保留来源与 ROI 供业务裁决 */
+  uint32_t skipped_count;         /* 被跳过的 ROI 数（单 ROI 推理/解码失败；二级句柄
+                                     关闭=全部跳过）；P2 尾部追加，旧读者经 struct_size
+                                     协商不读；三态：cascade=NULL 未级联 / 空+0 真无
+                                     命中 / skipped>0 有 ROI 未执行（可观测性，消费方
+                                     确认轮 2026-11-05 备注 1） */
 } am_cascade_result_t;
 typedef struct am_infer_params_s {
   uint32_t struct_size;

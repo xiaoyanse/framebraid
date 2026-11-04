@@ -18,6 +18,10 @@ impl AbiLayout for am_cascade_result_t {
             core::mem::offset_of!(am_cascade_result_t, hits),
             core::mem::size_of::<*const am_cascade_hit_t>(),
         ),
+        (
+            core::mem::offset_of!(am_cascade_result_t, skipped_count),
+            core::mem::size_of::<u32>(),
+        ),
     ];
 }
 impl AbiLayout for am_infer_params_t {

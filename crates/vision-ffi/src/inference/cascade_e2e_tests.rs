@@ -121,6 +121,7 @@ fn cascade_e2e_static_dynamic_confidence_full_flow() {
     let hit0 = unsafe { &*cascade.hits };
     assert_eq!(hit0.primary_index, -1, "static ROI has no primary source");
     near(&hit0.roi, static_rois, 1e-6, "static hit roi");
+    assert_eq!(cascade.skipped_count, 0, "healthy secondary skips nothing");
     unsafe { amv_result_release(out) };
     let _ = unsafe { amv_result_ack(ctx as _, id) };
 
@@ -199,6 +200,8 @@ fn cascade_e2e_static_dynamic_confidence_full_flow() {
     assert_eq!(cascade3.secondary_count, 0);
     assert!(cascade3.secondary.is_null(), "empty cascade nulls arrays");
     assert!(cascade3.hits.is_null());
+    // 三态可观测：无 ROI 生成（无匹配类）≠ 有 ROI 被跳过
+    assert_eq!(cascade3.skipped_count, 0, "no-ROI path is not skipped path");
     unsafe { amv_result_release(out3) };
     let _ = unsafe { amv_result_ack(ctx as _, id3) };
 

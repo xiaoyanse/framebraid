@@ -2,7 +2,7 @@
 use crate::*;
 #[test]
 fn am_cascade_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_cascade_result_t>(), 24);
+    assert_eq!(core::mem::size_of::<am_cascade_result_t>(), 32);
     assert_eq!(core::mem::align_of::<am_cascade_result_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_cascade_result_t, struct_size),
@@ -23,6 +23,11 @@ fn am_cascade_result_t_matches_c() {
         core::mem::offset_of!(am_cascade_result_t, hits),
         16,
         "am_cascade_result_t.hits"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_result_t, skipped_count),
+        24,
+        "am_cascade_result_t.skipped_count"
     );
 }
 #[test]

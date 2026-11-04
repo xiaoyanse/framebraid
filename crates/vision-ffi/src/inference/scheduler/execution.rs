@@ -748,10 +748,11 @@ fn run_cascade(
     let cascade_data = match (secondary_session, secondary_name.as_deref()) {
         (Some(s), Some(name)) => {
             let vocab = secondary_vocab.as_ref();
-            let (boxes, hits) = image
+            let (boxes, hits, skipped) = image
                 .with_pixels(|pixels| {
                     let mut boxes: Vec<am_detect_box_t> = Vec::new();
                     let mut hits: Vec<am_cascade_hit_t> = Vec::new();
+                    let mut skipped = 0usize;
                     for (roi, primary_index) in rois {
                         // 单 ROI 失败（前处理/推理/解码）跳过该 ROI，不废整批。
                         let sub = crop_roi(pixels, roi);
@@ -761,6 +762,7 @@ fn run_cascade(
                             job.secondary_preprocess,
                             limits.preprocess_budget_bytes as usize,
                         ) else {
+                            skipped += 1;
                             continue;
                         };
                         let mut infer_inputs: Vec<&sdk::TensorData> = vec![&tensor];
@@ -768,6 +770,7 @@ fn run_cascade(
                             infer_inputs.push(vocab_tensor);
                         }
                         let Ok(raw) = s.run_ref(&infer_inputs, reserve) else {
+                            skipped += 1;
                             continue;
                         };
                         if let Some(h) = secondary_handle {
@@ -783,11 +786,15 @@ fn run_cascade(
                             secondary_bytes,
                             vocab.map(|(_, l)| l),
                         ) else {
+                            skipped += 1;
                             continue;
                         };
                         let detections = match prediction.output {
                             profiles::Output::Detect(v) => v,
-                            _ => continue,
+                            _ => {
+                                skipped += 1;
+                                continue;
+                            }
                         };
                         for d in detections {
                             boxes.push(am_detect_box_t {
@@ -801,19 +808,22 @@ fn run_cascade(
                             hits.push(am_cascade_hit_t { primary_index, roi });
                         }
                     }
-                    (boxes, hits)
+                    (boxes, hits, skipped)
                 })
                 .unwrap_or_default();
             CascadeData {
                 boxes,
                 hits,
                 labels,
+                skipped,
             }
         }
         _ => CascadeData {
             boxes: Vec::new(),
             hits: Vec::new(),
             labels,
+            // 二级会话不可用（句柄关闭/锁失败/词表未绑）=ROI 全跳过（三态可观测）。
+            skipped: rois.len(),
         },
     };
     let end = am_sdk_support::clock::monotonic_ms();

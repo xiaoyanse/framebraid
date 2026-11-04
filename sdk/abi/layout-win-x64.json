@@ -789,13 +789,14 @@
       }
     },
     "am_cascade_result_t": {
-      "size": 24,
+      "size": 32,
       "align": 8,
       "offsets": {
         "struct_size": 0,
         "secondary_count": 4,
         "secondary": 8,
-        "hits": 16
+        "hits": 16,
+        "skipped_count": 24
       }
     },
     "am_infer_params_t": {

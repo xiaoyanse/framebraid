@@ -7,6 +7,7 @@ pub struct am_cascade_result_t {
     pub secondary_count: u32,
     pub secondary: *const am_detect_box_t,
     pub hits: *const am_cascade_hit_t,
+    pub skipped_count: u32,
 }
 impl Default for am_cascade_result_t {
     fn default() -> Self {
@@ -15,6 +16,7 @@ impl Default for am_cascade_result_t {
             secondary_count: Default::default(),
             secondary: Default::default(),
             hits: Default::default(),
+            skipped_count: Default::default(),
         }
     }
 }

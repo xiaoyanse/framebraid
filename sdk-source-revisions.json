@@ -648,8 +648,8 @@
   {
    "path": "crates/sdk-abi/src/fields_6.rs",
    "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-   "sha256": "b13d5fabbc6314049cb0603e8e4938773aa057fe3b8bfbd0ccc03bbee938c237",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "9bce0a7268d338668ad695462ea7527b26e421c973f0118749d03409212cf77a",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
   },
   {
    "path": "crates/sdk-abi/src/fields_7.rs",
@@ -684,8 +684,8 @@
   {
    "path": "crates/sdk-abi/src/layout_6.rs",
    "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-   "sha256": "e4e96a92eac74da93d0a2e97c1c90ba3a2c261a0313b274f26631fddc040c7c7",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "7299173ccc342d050d7a9087f1f6501a1dcdc9e23dc30c45e3410df3f28f37a8",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
   },
   {
    "path": "crates/sdk-abi/src/layout_7.rs",
@@ -732,8 +732,8 @@
   {
    "path": "crates/sdk-abi/src/types_6.rs",
    "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-   "sha256": "8374fbde869770b83fa06b5a4f58e24cdcbf1923a9a2a3b5153311791edb866a",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "226a4f838cd2f1c90f36d79d51378fefd9d257ad8e33a9d8de354cc895c7e989",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
   },
   {
    "path": "crates/sdk-abi/src/types_7.rs",
@@ -954,8 +954,8 @@
   {
    "path": "crates/vision-ffi/src/inference/results.rs",
    "previousSha256": "dfaa707d24d014f51b1ef0cd0f1e0844ef75e70fd6626ff8efaf1c84eeaf6ccd",
-   "sha256": "d5434945ae6c15b895a6f0081c8c37c37cbba68b7e341880ea247b1cc02bb4a0",
-   "reason": "cascade C1 impl"
+   "sha256": "d44e73fec025ba3e44f6a5ba05863aa90e9ba6f5ab627659a88f483b3bf67d79",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
@@ -990,8 +990,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "a1f181d605371871b80301fa24d6570f92eb7b5aa8d953735f06e6db97a31ff7",
-   "reason": "cascade C1 impl"
+   "sha256": "2613474a1c8381b9d913d5911f1015d92ab3708174da2ba307e48a1c3d39b5d2",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
@@ -1638,8 +1638,8 @@
   {
    "path": "crates/vision-ffi/src/inference/cascade_e2e_tests.rs",
    "previousSha256": null,
-   "sha256": "0d6646f1f9c5142f368ea267713d9d0e797b0f2c2834beea3951ec2b448274d0",
-   "reason": "cascade C1 impl"
+   "sha256": "dba58202197fc9dabef50bfacadfc4f09bc3242d050feb3f1ffca01791ac5cad",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
   }
  ]
 }

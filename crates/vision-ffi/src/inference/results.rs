@@ -48,6 +48,8 @@ pub struct CascadeData {
     pub boxes: Vec<am_detect_box_t>,
     pub hits: Vec<am_cascade_hit_t>,
     pub labels: Vec<CString>,
+    /// 被跳过的 ROI 数（可观测性三态：>0=有 ROI 未执行，句柄关闭=全跳过）。
+    pub skipped: usize,
 }
 // 出口只读，所有内部指针均由同一Arc中的堆缓冲保持。
 unsafe impl Send for ResultBuffer {}
@@ -141,6 +143,7 @@ impl ResultBuffer {
                 secondary_count: data.cascade_boxes.len() as u32,
                 secondary: data.cascade_boxes.as_ptr(),
                 hits: data.cascade_hits.as_ptr(),
+                skipped_count: c.skipped as u32,
             }));
         }
         let mut prediction = prediction;

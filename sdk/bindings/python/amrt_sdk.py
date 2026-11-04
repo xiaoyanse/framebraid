@@ -1196,6 +1196,7 @@ am_cascade_result_t._fields_ = [
     ("secondary_count", c_uint32),
     ("secondary", POINTER(am_detect_box_t)),
     ("hits", POINTER(am_cascade_hit_t)),
+    ("skipped_count", c_uint32),
 ]
 
 am_batching_stats_t._fields_ = [
