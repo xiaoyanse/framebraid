@@ -86,6 +86,71 @@ fn am_detect_box_t_matches_c() {
     );
 }
 #[test]
+fn am_track_params_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_track_params_t>(), 20);
+    assert_eq!(core::mem::align_of::<am_track_params_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_track_params_t, struct_size),
+        0,
+        "am_track_params_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_track_params_t, iou_threshold),
+        4,
+        "am_track_params_t.iou_threshold"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_track_params_t, ttl_frames),
+        8,
+        "am_track_params_t.ttl_frames"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_track_params_t, confirm_hits),
+        12,
+        "am_track_params_t.confirm_hits"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_track_params_t, max_tracks),
+        16,
+        "am_track_params_t.max_tracks"
+    );
+}
+#[test]
+fn am_tracked_box_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_tracked_box_t>(), 40);
+    assert_eq!(core::mem::align_of::<am_tracked_box_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_tracked_box_t, bounds),
+        0,
+        "am_tracked_box_t.bounds"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tracked_box_t, confidence),
+        16,
+        "am_tracked_box_t.confidence"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tracked_box_t, class_id),
+        20,
+        "am_tracked_box_t.class_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tracked_box_t, track_id),
+        24,
+        "am_tracked_box_t.track_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tracked_box_t, age_frames),
+        32,
+        "am_tracked_box_t.age_frames"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_tracked_box_t, hits),
+        36,
+        "am_tracked_box_t.hits"
+    );
+}
+#[test]
 fn am_detect_result_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_detect_result_t>(), 16);
     assert_eq!(core::mem::align_of::<am_detect_result_t>(), 8);
@@ -163,50 +228,5 @@ fn am_vocab_hit_map_t_matches_c() {
         core::mem::offset_of!(am_vocab_hit_map_t, hits),
         8,
         "am_vocab_hit_map_t.hits"
-    );
-}
-#[test]
-fn am_classify_entry_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_classify_entry_t>(), 32);
-    assert_eq!(core::mem::align_of::<am_classify_entry_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, class_id),
-        0,
-        "am_classify_entry_t.class_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, class_name_utf8),
-        8,
-        "am_classify_entry_t.class_name_utf8"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, logit),
-        16,
-        "am_classify_entry_t.logit"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, probability),
-        20,
-        "am_classify_entry_t.probability"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_entry_t, has_probability),
-        24,
-        "am_classify_entry_t.has_probability"
-    );
-}
-#[test]
-fn am_classify_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_classify_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_classify_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_classify_result_t, count),
-        0,
-        "am_classify_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_classify_result_t, entries),
-        8,
-        "am_classify_result_t.entries"
     );
 }

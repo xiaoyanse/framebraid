@@ -42,6 +42,12 @@ AM_API am_status_t amv_infer_cascade_sync(amv_model_t* primary, amv_model_t* sec
 AM_API am_status_t amv_infer_cascade_async(amv_model_t* primary, amv_model_t* secondary,
     const am_image_input_t* input, const am_cascade_request_t* cascade,
     const am_infer_params_t* params, uint64_t* out_request_id);
+AM_API am_status_t amv_tracker_create(amv_context_t* ctx, const am_track_params_t* params,
+                                      amv_tracker_t** out_tracker);
+AM_API am_status_t amv_tracker_update(amv_tracker_t* tracker, const am_detect_box_t* boxes,
+    uint32_t count, am_tracked_box_t* out, uint32_t out_capacity, uint32_t* out_written);
+AM_API am_status_t amv_tracker_reset(amv_tracker_t* tracker);
+AM_API am_status_t amv_tracker_close(amv_tracker_t* tracker);
 AM_API am_status_t amv_infer_tensors_sync(amv_model_t* model, uint32_t input_count,
                                           const am_tensor_in_t* inputs, const am_infer_params_t* params,
                                           amv_result_t** out_result, uint64_t* out_request_id);

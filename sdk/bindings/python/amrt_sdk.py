@@ -223,6 +223,12 @@ class am_pose_result_t(Structure):
 class am_detect_box_t(Structure):
     pass
 
+class am_track_params_t(Structure):
+    pass
+
+class am_tracked_box_t(Structure):
+    pass
+
 class am_detect_result_t(Structure):
     pass
 
@@ -311,6 +317,9 @@ class amc_stream_t(Structure):
     pass
 
 class amv_model_t(Structure):
+    pass
+
+class amv_tracker_t(Structure):
     pass
 
 class amc_shared_pool_t(Structure):
@@ -793,6 +802,15 @@ am_detect_box_t._fields_ = [
     ("class_name_utf8", c_char_p),
 ]
 
+am_tracked_box_t._fields_ = [
+    ("bounds", c_float * 4),
+    ("confidence", c_float),
+    ("class_id", c_uint32),
+    ("track_id", c_uint64),
+    ("age_frames", c_uint32),
+    ("hits", c_uint32),
+]
+
 am_vocab_entry_t._fields_ = [
     ("struct_size", c_uint32),
     ("label_utf8", c_char_p),
@@ -1043,9 +1061,17 @@ am_tensor_out_t._fields_ = [
     ("is_contiguous", c_uint32),
 ]
 
-am_detect_result_t._fields_ = [
-    ("count", c_uint32),
-    ("boxes", POINTER(am_detect_box_t)),
+am_track_params_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("iou_threshold", c_float),
+    ("ttl_frames", c_uint32),
+    ("confirm_hits", c_uint32),
+    ("max_tracks", c_uint32),
+]
+
+am_vocab_hit_t._fields_ = [
+    ("entry_index", c_int32),
+    ("prompt_index", c_int32),
 ]
 
 am_classify_result_t._fields_ = [
@@ -1208,9 +1234,9 @@ am_batching_stats_t._fields_ = [
     ("rejected_items", c_uint64),
 ]
 
-am_vocab_hit_t._fields_ = [
-    ("entry_index", c_int32),
-    ("prompt_index", c_int32),
+am_detect_result_t._fields_ = [
+    ("count", c_uint32),
+    ("boxes", POINTER(am_detect_box_t)),
 ]
 
 am_segment_instance_t._fields_ = [
@@ -1641,6 +1667,10 @@ FUNCTIONS = {
     "amv_infer_image_async": (am_status_t, [POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
     "amv_infer_cascade_sync": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_cascade_request_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),
     "amv_infer_cascade_async": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_image_input_t), POINTER(am_cascade_request_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
+    "amv_tracker_create": (am_status_t, [POINTER(amv_context_t), POINTER(am_track_params_t), POINTER(POINTER(amv_tracker_t))]),
+    "amv_tracker_update": (am_status_t, [POINTER(amv_tracker_t), POINTER(am_detect_box_t), c_uint32, POINTER(am_tracked_box_t), c_uint32, POINTER(c_uint32)]),
+    "amv_tracker_reset": (am_status_t, [POINTER(amv_tracker_t)]),
+    "amv_tracker_close": (am_status_t, [POINTER(amv_tracker_t)]),
     "amv_infer_tensors_sync": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(POINTER(amv_result_t)), POINTER(c_uint64)]),
     "amv_infer_tensors_async": (am_status_t, [POINTER(amv_model_t), c_uint32, POINTER(am_tensor_in_t), POINTER(am_infer_params_t), POINTER(c_uint64)]),
     "amv_vocab_bind": (am_status_t, [POINTER(amv_model_t), POINTER(amv_model_t), POINTER(am_vocab_entry_t), c_uint32]),

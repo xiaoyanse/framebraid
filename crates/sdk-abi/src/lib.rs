@@ -22,6 +22,8 @@ mod fields_7;
 
 mod fields_8;
 
+mod fields_9;
+
 mod types_0;
 pub use types_0::*;
 mod types_1;
@@ -40,6 +42,8 @@ mod types_7;
 pub use types_7::*;
 mod types_8;
 pub use types_8::*;
+mod types_9;
+pub use types_9::*;
 mod defaults;
 pub use defaults::*;
 mod constants;

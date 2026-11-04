@@ -862,6 +862,23 @@ typedef struct am_pose_result_s { uint32_t count; const am_pose_detection_t* det
 typedef struct am_detect_box_s {
   float bounds[4]; float confidence; int32_t class_id; const char* class_name_utf8;
 } am_detect_box_t;
+/* ---- 目标跟踪（SORT 级轻量关联，§4.1b）---- */
+typedef struct am_track_params_s { /* 跟踪器建档参数（create 时定值，运行期不变） */
+  uint32_t struct_size;
+  float iou_threshold;   /* 匹配 IoU 下限；0=0.3 */ /* zero=default */
+  uint32_t ttl_frames;   /* 轨迹丢失回收帧数（连续未命中该帧数后轨迹删除）；0=30 */
+  uint32_t confirm_hits; /* 新轨迹确认命中数（达到才输出；防误检闪烁）；0=3 */
+  uint32_t max_tracks;   /* 轨迹表容量上限（满表新目标不建档）；0=64 */
+} am_track_params_t;
+typedef struct am_tracked_box_s { /* 跟踪输出：喂入框+跟踪元数据（只输出当帧命中的已确认轨迹） */
+  float bounds[4];       /* 归一化 xyxy（喂入框原样，不做平滑改写） */
+  float confidence;      /* 当帧命中置信度（喂入值透传） */
+  uint32_t class_id;     /* 喂入框类别（喂入值透传；不透传 class_name 指针——喂入
+                             数组生命周期归调用方，输出不悬挂引用） */
+  uint64_t track_id;     /* 轨迹 ID（1 起单调递增，不复用；reset 后重新编号） */
+  uint32_t age_frames;   /* 轨迹建档以来经过的 update 帧数 */
+  uint32_t hits;         /* 轨迹累计命中帧数 */
+} am_tracked_box_t;
 typedef struct am_detect_result_s { uint32_t count; const am_detect_box_t* boxes; } am_detect_result_t;
 
 /* ---- 开放词汇（A1/A2，§4.1）---- */

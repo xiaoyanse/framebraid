@@ -68,6 +68,58 @@ impl AbiLayout for am_detect_box_t {
         ),
     ];
 }
+impl AbiLayout for am_track_params_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_track_params_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_track_params_t, iou_threshold),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_track_params_t, ttl_frames),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_track_params_t, confirm_hits),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_track_params_t, max_tracks),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
+impl AbiLayout for am_tracked_box_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_tracked_box_t, bounds),
+            core::mem::size_of::<[f32; 4]>(),
+        ),
+        (
+            core::mem::offset_of!(am_tracked_box_t, confidence),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_tracked_box_t, class_id),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_tracked_box_t, track_id),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_tracked_box_t, age_frames),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_tracked_box_t, hits),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_detect_result_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -129,42 +181,6 @@ impl AbiLayout for am_vocab_hit_map_t {
         (
             core::mem::offset_of!(am_vocab_hit_map_t, hits),
             core::mem::size_of::<*const am_vocab_hit_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_classify_entry_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_classify_entry_t, class_id),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, class_name_utf8),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, logit),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, probability),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_entry_t, has_probability),
-            core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_classify_result_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_classify_result_t, count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_classify_result_t, entries),
-            core::mem::size_of::<*const am_classify_entry_t>(),
         ),
     ];
 }

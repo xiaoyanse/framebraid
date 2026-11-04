@@ -612,8 +612,8 @@
   {
    "path": "crates/sdk-abi/src/base.rs",
    "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-   "sha256": "3ef27a85a83e87e0ca501efbf5e31d7ccc5390c80527a995fcbb95fe1e3e1d81",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "f030d45997abfcb7c6829eb5172826bade1e0c35dad0e261ede587c51173616f",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/constants.rs",
@@ -654,14 +654,14 @@
   {
    "path": "crates/sdk-abi/src/fields_7.rs",
    "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-   "sha256": "c18cbad3e0bcfefd6c2d5010be81600720cb55b51b4779a55f7730c2cbd0a68a",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "df61b61c212201d2d49a89bc301ac8d6ecc4f56052694d824ff5f1fc22708520",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/fields_8.rs",
    "previousSha256": null,
-   "sha256": "1995c2b51a8dd45bf452e0ac00440b4b2a28665eae6748732332bdb9a0c86451",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "eee0646f499e9cccac86fbe83b8b693f0e897804bf96fa14840de17fe13ef23e",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/layout_2.rs",
@@ -690,26 +690,26 @@
   {
    "path": "crates/sdk-abi/src/layout_7.rs",
    "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-   "sha256": "5e7fd4480cdfb3c7706923b94b9cd3e249ca0fd8192d46a44c9fa7ac161ae834",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "0ae8c55655f19ea90a392aae1994619c983e2a738004ba54b424c08947faf88d",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/layout_8.rs",
    "previousSha256": null,
-   "sha256": "605fa2b6b6ab98633db6f692ca4dff94ce9aee75d4df1f976a463a7ff5c77f52",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "1008d8537f65a2d2c155c8a87f274564077a2a0318646bf822019b3e0ee3a479",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/layout_tests.rs",
    "previousSha256": "960b3f8654a66e4b75735436c1bab9919e8ef00297def9e2651ca8ea913247f4",
-   "sha256": "c9fd76a6ce2371fa0b7a6d1c5d0511549dcca9eb911227badaf9833d9cc79972",
-   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+   "sha256": "3fe5c802809065b92c0dd1fba96edb93ac7625305d48e557756bfd409572a1a9",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/lib.rs",
    "previousSha256": "5ae46b1dd32bc386bbc0e7b6d4e11d7ded4eee838ba9a811aaeaa2d2147a8db3",
-   "sha256": "86258c64d9de0b606555c5905a0f8bc2b140dbb02c5ed17fe6162b57d72e5213",
-   "reason": "M2b reviewed generator output refresh (GPU frame ABI extension); C ABI unchanged"
+   "sha256": "462b436be2e14f4cf99dbcd6cfe0fd92ef351c70ab5c7847822897d127dcf8b0",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/types_2.rs",
@@ -738,14 +738,14 @@
   {
    "path": "crates/sdk-abi/src/types_7.rs",
    "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-   "sha256": "46aa363732242e155ea5b380c29c54171c617517df52329a42a5ae56d0805a19",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "610a15316feff66e40a57f4e44a5985092053c8d20c957509814b8c8070550c6",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-abi/src/types_8.rs",
    "previousSha256": null,
-   "sha256": "ecfb132d9094915eef01ba2286d8e9358ba999213518c7186151fc0e0a1c6101",
-   "reason": "cascade C1 batch: contract (amv_infer_cascade_sync/async + 4 structures + result tail cascade ptr) + regen (flat static_rois pointer, hit_t suffix fix, hand-registered layouts cross-checked by 92 layout_tests)"
+   "sha256": "50f50c48a3c9afd1ef1a080ed2925ace2003f92a04c32ad4647127c9ab42bfd5",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   },
   {
    "path": "crates/sdk-support/build.rs",
@@ -1640,6 +1640,24 @@
    "previousSha256": null,
    "sha256": "dba58202197fc9dabef50bfacadfc4f09bc3242d050feb3f1ffca01791ac5cad",
    "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
+  },
+  {
+   "path": "crates/sdk-abi/src/fields_9.rs",
+   "previousSha256": null,
+   "sha256": "822a79dfcd73384271141c8e814c4244271ed9694cf2b657fd52ab40bb008847",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+  },
+  {
+   "path": "crates/sdk-abi/src/layout_9.rs",
+   "previousSha256": null,
+   "sha256": "10b56146b7723293329a05cc95e515911d3687709c8711ced1a2fad13d8ed1e7",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+  },
+  {
+   "path": "crates/sdk-abi/src/types_9.rs",
+   "previousSha256": null,
+   "sha256": "0003c6139d53c0fc5865a5bf6c1e0f544cf05d0dae3492eafb0d28e246901850",
+   "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
   }
  ]
 }

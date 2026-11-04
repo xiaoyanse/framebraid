@@ -30,6 +30,36 @@ pub struct am_detect_box_t {
     pub class_name_utf8: *const c_char,
 }
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_track_params_t {
+    pub struct_size: u32,
+    pub iou_threshold: f32,
+    pub ttl_frames: u32,
+    pub confirm_hits: u32,
+    pub max_tracks: u32,
+}
+impl Default for am_track_params_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            iou_threshold: Default::default(),
+            ttl_frames: Default::default(),
+            confirm_hits: Default::default(),
+            max_tracks: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_tracked_box_t {
+    pub bounds: [f32; 4],
+    pub confidence: f32,
+    pub class_id: u32,
+    pub track_id: u64,
+    pub age_frames: u32,
+    pub hits: u32,
+}
+#[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct am_detect_result_t {
     pub count: u32,
@@ -76,19 +106,4 @@ impl Default for am_vocab_hit_map_t {
             hits: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_classify_entry_t {
-    pub class_id: i32,
-    pub class_name_utf8: *const c_char,
-    pub logit: f32,
-    pub probability: f32,
-    pub has_probability: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_classify_result_t {
-    pub count: u32,
-    pub entries: *const am_classify_entry_t,
 }

@@ -949,6 +949,29 @@
         "class_name_utf8": 24
       }
     },
+    "am_track_params_t": {
+      "size": 20,
+      "align": 4,
+      "offsets": {
+        "struct_size": 0,
+        "iou_threshold": 4,
+        "ttl_frames": 8,
+        "confirm_hits": 12,
+        "max_tracks": 16
+      }
+    },
+    "am_tracked_box_t": {
+      "size": 40,
+      "align": 8,
+      "offsets": {
+        "bounds": 0,
+        "confidence": 16,
+        "class_id": 20,
+        "track_id": 24,
+        "age_frames": 32,
+        "hits": 36
+      }
+    },
     "am_detect_result_t": {
       "size": 16,
       "align": 8,
