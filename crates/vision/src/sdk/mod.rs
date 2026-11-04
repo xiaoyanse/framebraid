@@ -10,6 +10,7 @@ mod prepare;
 pub mod runtime;
 pub mod selection;
 mod session;
+pub mod tracker;
 pub mod vocab;
 pub use batch::validate_count as validate_batch_count;
 pub use model::{byte_count, validate_input_infos, Model, ModelSource, TensorData, TensorInfo};

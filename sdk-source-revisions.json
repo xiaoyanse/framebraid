@@ -900,8 +900,8 @@
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "bd81db68fc231a8dea9a20d923b0d4a8e7c2892feab7b90400d070faadaeb3ef",
-   "reason": "cascade C1 impl"
+   "sha256": "7289926cb1efd7abc407bf60a8c3e7374f657a7a4a39696de480c11c399b42a6",
+   "reason": "cascade C1 impl; tracker impl (module wiring)"
   },
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
@@ -1218,8 +1218,8 @@
   {
    "path": "crates/vision/src/sdk/mod.rs",
    "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-   "sha256": "1960d0145c2ccc579d07eaccd7b4c2a7051572182f37c034512b1dcd9c7d4608",
-   "reason": "cascade C1 impl"
+   "sha256": "4233fc92d3fe089b27de6951fe61aa6b4c47fddaaae8d6849a7cab09727d9167",
+   "reason": "cascade C1 impl; tracker impl (module wiring)"
   },
   {
    "path": "crates/vision/src/sdk/model.rs",
@@ -1658,6 +1658,24 @@
    "previousSha256": null,
    "sha256": "0003c6139d53c0fc5865a5bf6c1e0f544cf05d0dae3492eafb0d28e246901850",
    "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+  },
+  {
+   "path": "crates/vision/src/sdk/tracker.rs",
+   "previousSha256": null,
+   "sha256": "0c3ade4f4730d938ac43bb9a4ea7d8c0c7eed46d244446afb15d00e1329a723c",
+   "reason": "tracker impl"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/tracker.rs",
+   "previousSha256": null,
+   "sha256": "5831c06c383595632ac59007c78a744b15a71ef56bf3488e809b040fc32d6609",
+   "reason": "tracker impl"
+  },
+  {
+   "path": "crates/vision-ffi/src/inference/tracker_tests.rs",
+   "previousSha256": null,
+   "sha256": "285b9d63f4242cda2e8f2bbfcef4caf3ffd77e4530d24d21e81d2bc386dcaefb",
+   "reason": "tracker impl"
   }
  ]
 }

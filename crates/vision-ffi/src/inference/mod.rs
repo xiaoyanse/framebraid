@@ -31,6 +31,9 @@ mod telemetry;
 mod telemetry_tests;
 mod tensor_exports;
 mod tensors;
+mod tracker;
+#[cfg(test)]
+mod tracker_tests;
 #[cfg(test)]
 mod vocab_e2e_tests;
 
