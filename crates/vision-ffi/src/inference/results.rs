@@ -115,8 +115,9 @@ impl ResultBuffer {
             external: std::sync::Mutex::new(0),
         };
         let mut prediction = prediction;
-        let mut vocab = prediction.take().map(|p| (p.output, p.vocab_hits));
-        let task = match vocab.take().map(|(output, _)| output) {
+        // 先取 vocab 伴生数据（owned），output 随后按值分发——两者独立不互吞。
+        let vocab = prediction.as_mut().and_then(|p| p.vocab_hits.take());
+        let task = match prediction.take().map(|p| p.output) {
             Some(Output::Pose(v)) => {
                 for p in v {
                     let points = p
@@ -140,7 +141,7 @@ impl ResultBuffer {
             }
             Some(Output::Detect(v)) => {
                 // A2/A4：vocab 路径 class_name=条目 label（A4 显示名分离），非 vocab null。
-                if let Some(vocab) = vocab.as_ref().and_then(|(_, hits)| hits.as_ref()) {
+                if let Some(vocab) = vocab.as_ref() {
                     data.vocab_labels = vocab
                         .labels
                         .iter()

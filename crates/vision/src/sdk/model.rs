@@ -302,24 +302,34 @@ impl Model {
                 ModelEngine::Ov(engine) => (engine.inputs.clone(), engine.outputs.clone(), 0),
             };
             if let Some(profile) = p {
-                let matches = |actual: &[TensorInfo], expected: &[profiles::TensorSpec]| {
-                    actual.len() == expected.len()
-                        && expected.iter().all(|e| {
-                            actual.iter().any(|a| {
-                                a.name == e.name
-                                    && a.dtype == 0
-                                    && a.shape.iter().copied().zip(&e.shape).all(|(a, d)| {
-                                        if *d == 0 {
-                                            a < 0
-                                        } else {
-                                            a == *d as i64
-                                        }
-                                    })
-                                    && a.shape.len() == e.shape.len()
+                // text-encoder 档案（A1）：ids 输入为 I64（dtype=2，合同 §4.1），
+                // 其余档案输入恒 F32；输出一律 F32。
+                let text_encoder = profile.task == profiles::Task::TextEncoder;
+                let matches =
+                    |actual: &[TensorInfo], expected: &[profiles::TensorSpec], input: bool| {
+                        actual.len() == expected.len()
+                            && expected.iter().all(|e| {
+                                actual.iter().any(|a| {
+                                    let dtype_ok =
+                                        a.dtype == 0 || (input && text_encoder && a.dtype == 2);
+                                    a.name == e.name
+                                        && dtype_ok
+                                        && a.shape.iter().copied().zip(&e.shape).all(|(a, d)| {
+                                            if *d == 0 {
+                                                // 动态维：符号维（a<0）或固定 1（native_batch=1
+                                                // 的单帧模型常态；world-head images 即此形态）
+                                                a < 0 || a == 1
+                                            } else {
+                                                a == *d as i64
+                                            }
+                                        })
+                                        && a.shape.len() == e.shape.len()
+                                })
                             })
-                        })
-                };
-                if !matches(&inputs, &profile.inputs) || !matches(&outputs, &profile.outputs) {
+                    };
+                if !matches(&inputs, &profile.inputs, true)
+                    || !matches(&outputs, &profile.outputs, false)
+                {
                     return Err(Error("vision.formatIncompatible".into()));
                 }
             }

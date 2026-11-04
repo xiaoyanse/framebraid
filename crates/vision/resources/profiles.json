@@ -22,8 +22,25 @@
         "dtype": "float32"
       },
       "sampleSha256": "80fb5f58a3f6ec18909427ecc74fec0910196c2d2e924659eaae6dea5857b957",
-      "input": { "name": "images", "shape": [1, 3, 640, 640] },
-      "outputs": [{ "name": "output0", "shape": [1, 300, 57] }],
+      "input": {
+        "name": "images",
+        "shape": [
+          1,
+          3,
+          640,
+          640
+        ]
+      },
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            300,
+            57
+          ]
+        }
+      ],
       "preprocess": "letterbox-rgb-div255-nchw",
       "keypoints": 17,
       "endToEnd": true,
@@ -35,11 +52,31 @@
       "task": "detect",
       "decoder": "yolo11-detect-nms-v1",
       "sampleSha256": "843c063303938d44dcb8cf814d8e8bf5aa31ecd51c156f80f56186bcf861d3cb",
-      "input": { "name": "images", "shape": [1, 3, 640, 640] },
-      "outputs": [{ "name": "output0", "shape": [1, 84, 8400] }],
+      "input": {
+        "name": "images",
+        "shape": [
+          1,
+          3,
+          640,
+          640
+        ]
+      },
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            84,
+            8400
+          ]
+        }
+      ],
       "preprocess": "letterbox-rgb-div255-nchw",
       "classes": 80,
-      "postprocess": { "layout": "transposed", "coordForm": "cxcywh" },
+      "postprocess": {
+        "layout": "transposed",
+        "coordForm": "cxcywh"
+      },
       "confidence": 0.25,
       "nmsIou": 0.7,
       "nmsMetric": "axis-aligned-iou",
@@ -51,25 +88,101 @@
       "decoder": "raw-affinity",
       "sampleSha256": "ignore",
       "inputs": [
-        { "name": "images", "shape": ["batch", 3, 640, 640], "ranges": { "batch": [1, 1] } },
-        { "name": "text_embeddings", "shape": ["num_prompts", 512], "ranges": { "num_prompts": [1, 8192] } }
+        {
+          "name": "images",
+          "shape": [
+            "batch",
+            3,
+            640,
+            640
+          ],
+          "ranges": {
+            "batch": [
+              1,
+              1
+            ]
+          }
+        },
+        {
+          "name": "text_embeddings",
+          "shape": [
+            "num_prompts",
+            512
+          ],
+          "ranges": {
+            "num_prompts": [
+              1,
+              8192
+            ]
+          }
+        }
       ],
-      "outputs": [{ "name": "output0", "shape": [1, 8400] }]
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            "rows",
+            8400
+          ],
+          "ranges": {
+            "rows": [
+              5,
+              16388
+            ]
+          }
+        }
+      ]
     },
     {
       "id": "text-encoder-clip-embed-v1",
       "task": "text-encoder",
       "sampleSha256": "ignore",
-      "input": { "name": "input_ids", "shape": ["batch", 77], "ranges": { "batch": [1, 64] } },
-      "outputs": [{ "name": "text_embeddings", "shape": ["batch", 512] }]
+      "input": {
+        "name": "input_ids",
+        "shape": [
+          "batch",
+          77
+        ],
+        "ranges": {
+          "batch": [
+            1,
+            64
+          ]
+        }
+      },
+      "outputs": [
+        {
+          "name": "text_embeddings",
+          "shape": [
+            "batch",
+            512
+          ]
+        }
+      ]
     },
     {
       "id": "classify-yolo11n-prob-v1",
       "task": "classify",
       "decoder": "yolo11-classify-prob-v1",
       "sampleSha256": "30a66094446e32a8bb40fd45022c6061ba4a4f464581cf4a6180dd20b4034432",
-      "input": { "name": "images", "shape": [1, 3, 224, 224] },
-      "outputs": [{ "name": "output0", "shape": [1, 1000] }],
+      "input": {
+        "name": "images",
+        "shape": [
+          1,
+          3,
+          224,
+          224
+        ]
+      },
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            1000
+          ]
+        }
+      ],
       "preprocess": "resize-short-edge-center-crop-rgb-div255-nchw",
       "classes": 1000,
       "hasProbability": true,
@@ -80,10 +193,33 @@
       "task": "segment",
       "decoder": "yolo11-segment-nms-v1",
       "sampleSha256": "9f04d0c8d03ca7ab505f857272ddcc76ee57ad2ad39f049829ed7c2fe604331e",
-      "input": { "name": "images", "shape": [1, 3, 640, 640] },
+      "input": {
+        "name": "images",
+        "shape": [
+          1,
+          3,
+          640,
+          640
+        ]
+      },
       "outputs": [
-        { "name": "output0", "shape": [1, 116, 8400] },
-        { "name": "output1", "shape": [1, 32, 160, 160] }
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            116,
+            8400
+          ]
+        },
+        {
+          "name": "output1",
+          "shape": [
+            1,
+            32,
+            160,
+            160
+          ]
+        }
       ],
       "preprocess": "letterbox-rgb-div255-nchw",
       "classes": 80,
@@ -106,8 +242,25 @@
       "task": "obb",
       "decoder": "yolo11-obb-probiou-v1",
       "sampleSha256": "fd5a3426804f6bb783ee7d1af10977073b11df99e3a435c28b9281ef6a2ff911",
-      "input": { "name": "images", "shape": [1, 3, 640, 640] },
-      "outputs": [{ "name": "output0", "shape": [1, 20, 8400] }],
+      "input": {
+        "name": "images",
+        "shape": [
+          1,
+          3,
+          640,
+          640
+        ]
+      },
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            1,
+            20,
+            8400
+          ]
+        }
+      ],
       "preprocess": "letterbox-rgb-div255-nchw",
       "classes": 15,
       "confidence": 0.25,
@@ -118,12 +271,24 @@
       "maxDet": 300
     }
   ],
-  "letterbox": { "fill": 114, "auto": false, "center": true },
+  "letterbox": {
+    "fill": 114,
+    "auto": false,
+    "center": true
+  },
   "classification": {
     "resize": "bilinear-short-edge-224",
     "crop": "center-224",
-    "mean": [0, 0, 0],
-    "std": [1, 1, 1]
+    "mean": [
+      0,
+      0,
+      0
+    ],
+    "std": [
+      1,
+      1,
+      1
+    ]
   },
   "referenceOutputs": "pending-runtime-validation"
 }

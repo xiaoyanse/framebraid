@@ -129,7 +129,19 @@ pub unsafe fn plan_item(
     {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
-    if model.info.inputs.len() != 1 || model.info.inputs[0].dtype != AM_DTYPE_F32 as u32 {
+    // 图像入口输入面：单输入 F32 模型，或双输入亲和头档案（A1：第二输入为词表
+    // 嵌入，由执行层注入，此处只校验图像输入）——未绑定的双输入亲和档案给
+    // vocabNotBound（比 ioUnsupported 语义准，与注入层同码）。
+    let dual_affinity = model.info.inputs.len() == 2
+        && model.info.inputs[0].dtype == AM_DTYPE_F32 as u32
+        && model.vocab.read().is_ok_and(|slot| slot.is_some());
+    if model.info.inputs.len() != 1 && !dual_affinity {
+        if model.info.inputs.len() == 2 {
+            return Err(AM_ERR_VISION_VOCAB_NOT_BOUND);
+        }
+        return Err(AM_ERR_VISION_IO_UNSUPPORTED);
+    }
+    if model.info.inputs[0].dtype != AM_DTYPE_F32 as u32 {
         return Err(AM_ERR_VISION_IO_UNSUPPORTED);
     }
     let spec = &model.info.inputs[0];

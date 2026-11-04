@@ -126,11 +126,19 @@ pub fn decode(
             return Err(Error("vision.outputShapeMismatch".into()));
         }
         let actual = matches[0];
-        let count = expected
+        // 动态维（档案声明 0=命名动态，如 world-head 输出行数=4+提示词数运行期才定）
+        // 逐维放宽：非零声明须精确相等，零声明跳过；元素数按实际形状复核。
+        let dims_ok = expected.shape.len() == actual.shape.len()
+            && expected
+                .shape
+                .iter()
+                .zip(actual.shape)
+                .all(|(&e, &a)| e == 0 || e == a);
+        let actual_count = actual
             .shape
             .iter()
-            .try_fold(1usize, |count, &dim| count.checked_mul(dim));
-        if actual.shape != expected.shape || count != Some(actual.values.len()) {
+            .try_fold(1usize, |c, &d| c.checked_mul(d));
+        if !dims_ok || actual_count != Some(actual.values.len()) {
             return Err(Error("vision.outputShapeMismatch".into()));
         }
         if actual.values.iter().any(|v| !v.is_finite()) {
