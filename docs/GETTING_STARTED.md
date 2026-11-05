@@ -99,3 +99,7 @@ SDK-owned results/frames need SDK release. Acknowledgement does not replace resu
 | No usable RTSP frames | Codec/capabilities, keyframes, reconnect generation and freshness |
 
 Do not fix loader errors with random DLL copies or silently change backends when dependencies are missing.
+
+## Beyond the first call
+
+Once the basic infer loop works: runtime [open-vocabulary binding](../sdk/INTEGRATION.md) (custom word lists without re-exporting weights), [ROI cascade](../sdk/INTEGRATION.md) (small-object detection via region upscaling), [cross-frame tracking](../sdk/INTEGRATION.md) (stable IDs for rule engines) and [single-frame export](../sdk/INTEGRATION.md) (evidence JPEG/PNG) compose into a full detection chain. Rust callers: see `examples/vision_cascade_tracker.rs`.

@@ -38,7 +38,10 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 
 | 领域 | 实测结果 |
 | --- | --- |
-| Rust 回归 | 384 项测试通过；clippy/fmt 零告警；CI 绿 |
+| Rust 回归 | 489 项测试通过；clippy/fmt 零告警；指纹闸门 282 文件 |
+| ROI 级联（下游实测） | 小目标全图直检 0.167→ROI 放大 0.461、检出框 7→15（靠区域放大而非整图提分辨率） |
+| 开放词汇端到端 | 绑定→自动注入→组内合并→命中明细→换词全断言过（真实 ORT 合成双模型） |
+| FILE seek（真机 FFmpeg） | 三档 seek/EOF 复活/循环重放/EXACT 过滤集成全绿 |
 | 硬解矩阵 | H.264/H.265 360p～4K（含 Main10）全部 D3D11VA 实测通过并含软件对照 |
 | 关键帧重同步 | 丢弃 GOP 前缀后在下一个 IDR 精确恢复，双策略一致 |
 | RTSP 故障处理 | 断流恢复、在途关闭、有界排空 4/4 用例通过 |
@@ -65,9 +68,10 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 ## Media SDK
 
 - RTSP H.264/H.265/MJPEG 接入；编码包与解码帧订阅。
-- 本地 FILE 源（未发布）：首版范围 MP4 H.264/H.265，支持 EOF 与队列排空；定位、倍速和循环功能开发中。
+- 本地 FILE 源（v0.5.0）：MP4 H.264/H.265 播放，EOF 与队列排空；**seek（关键帧前/后与 EXACT 三档）、时长、倍速与循环**——EOF 终态下 seek 可复活回放。
 - 独立 H.264/H.265 解码，输入须为**完整 Annex B 访问单元**；任意网络分片不是完整帧输入。
 - ISAPI HTTP Digest 抓图与有界连续采集；实际节拍取决于相机与网络。
+- **单帧 JPEG/PNG 导出**（v0.6.0）：`amc_frame_encode` 把宿主持有的任意像素视图编码为取证字节——无状态单次调用、全格式、容量不足报所需大小。
 - 拉取/回调接口、有界队列、元数据、缩放、像素转换与重连控制。
 - 显式硬件解码探测与自动后端选择（D3D11VA 优先、映射可用时 DXVA2、有界 CPU 回退）；每 Context 工作线程额度与活槽/峰值统计。硬件回读不保证比 CPU 更快，以实测合同为准。
 - Rust 高级 RTSP 入口 `Reader::open_with_budget`/`read_packet_with_budget` 可在 SDK 配置/包转换分配前预留工作区；`am_camera::media::codec::visit_access_units` 无需分配 NAL 列表即可检视 Annex B NAL 单元（仅在整体成功后提交调用方状态）。
@@ -80,6 +84,9 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 
 - ONNX Runtime 集成、图像预处理与结构化结果。
 - 五类**受约束模型档案**：Pose、Detect、Classify、Segment、OBB。
+- **开放词汇绑定**（v0.5.0）：`amv_vocab_bind` 把文本塔嵌入表绑定到双输入检测模型；运行期换词表原子生效，图像入口自动注入缓存嵌入，逐框命中明细（条目/提示词索引）支持业务过滤。tokenizer 配对归调用方。
+- **ROI 级联推理**（v0.6.0）：`amv_infer_cascade_sync/async` 一次调用完成全图一级检测→ROI 生成（静态+动态规则）→逐 ROI 裁剪放大→二级检测→坐标回映。两级模型独立句柄；单 ROI 失败跳过不废整批；`skipped_count` 可观测；vocab 模型可作二级。
+- **跨帧目标跟踪**（v0.6.0）：`amv_tracker_*`——与推理解耦的 SORT 级关联；确定性匹配、ID 单调不复用、确认/TTL 语义、输出透传不平滑。任意来源框可喂（检测结果、级联二级框、外部检测器）。
 - 支持 dtype/shape 合同内自定义模型的原始命名张量输入/输出。
 - 同步、异步与批量接口，状态、通知、确认与释放。
 - **自适应攒批**（v0.2.0）：显式启用、有界、默认关闭；将动态批量轴模型 AUTO 语义下兼容项聚合为单次物理批次。固定批量轴模型明确拒绝，不填伪样本。
@@ -134,7 +141,7 @@ Rust 专属硬件/性能示例在仓库 [`examples/`](examples/)；四语言接�
 
 ## 验证与边界
 
-v0.2.0 Windows x64 **Release 候选**通过 **384 项 workspace Rust 测试**（20 项环境门槛忽略）、生成器链零漂移、ABI 冻结（11 工件）与来源指纹边界检查（239 文件）。干净包验证覆盖 C/C++17/C#/Python 四语言示例与攒批实测链（包内 DLL 端到端）。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。五类模型中四类无本地权重未做端到端复跑；CUDA/OpenVINO 执行后端、现场流与长时验收如实登记未验。见 [v0.2.0 验证摘要](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0)（VALIDATION.md 资产）与[交付状态](docs/RELEASE_STATUS.md)。
+v0.6.0 Windows x64 发布通过 **489 项 workspace Rust 测试**（57 项环境门槛忽略、两遍稳定）、生成器链零漂移与来源指纹边界检查（**282 文件**）。干净包验证覆盖 C/C++17/C#/Python 四语言示例；级联与开放词汇 e2e 门在真实 ORT 上以合成双模型全断言过（坐标回映手算值）；FILE seek 集成在真机 FFmpeg 上全绿。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。真实两阶段开放词汇权重、CUDA/OpenVINO 执行后端、现场流与长时验收如实登记未验。见[交付状态](docs/RELEASE_STATUS.md)与 [v0.6.0 发布页](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.0)。
 
 源码检出不含运行库、权重、凭据、业务库与宿主 UI。Windows 包附带匹配的 CPU 运行库及其源码/许可材料。提取清单为历史来源记录，不是持续更新的发布清单；核心文件保持指纹核查。
 

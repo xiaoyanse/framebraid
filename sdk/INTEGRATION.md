@@ -127,7 +127,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 
 低层 `am_source_desc_t.kind = AM_SRC_FILE`（4），`url_utf8` 为 UTF-8 文件路径，可带 `file://` 前缀；不存在或不可读返回 `camera.urlInvalid`，详情包含路径和原因。`creds`、`provider` 必须为 NULL，`stream_kind_utf8` 仅允许 NULL 或空字符串。首版验收口径为 MP4 的 H.264/H.265，须配置 FFmpeg 运行库；C# 可使用 `OpenFile`，Python 高层 OpenSource 仅支持 RTSP/ISAPI，FILE 使用低层接口。
 
-文件默认按最快速度读取，订阅队列满时背压；EOF 状态为 `AM_SRC_EOF`（7），队列仍可按序排空，PULL 排空后返回 `AM_ERR_CAMERA_STREAM_ENDED`（517）。调用方仍须显式关闭源。阶段 2 的 seek、倍速和循环正在开发，文件夹具和运行库验证结果另行记录。
+文件默认按最快速度读取，订阅队列满时背压；EOF 状态为 `AM_SRC_EOF`（7），队列仍可按序排空，PULL 排空后返回 `AM_ERR_CAMERA_STREAM_ENDED`（517）。调用方仍须显式关闭源。阶段 2（seek/时长/倍速/循环）已随 v0.5.0 交付，用法见下节。
 
 订阅启动后可调用 `amc_source_seek(source, 1500.0, AM_SEEK_EXACT, &position_ms)`；跳转会清空旧队列并发出 RESYNC。容器时长经 `amc_source_get_duration` 查询；时长尚未就绪时返回 `sdk.tryAgain`。倍速通过 `amc_source_set_rate` 设置，正无穷恢复最快速度；`amc_source_set_loop` 控制循环。详见 ABI 合同。
 
@@ -401,5 +401,17 @@ Keep path models and external weights trusted and unchanged throughout loading. 
 输入维度和类型匹配不能证明文本嵌入空间与检测头配对。异源文本塔可能产生集中于 letterbox 填充带的假框，未归一化图像可能产生饱和假分；实测背景见 `docs/EXTENSION_CAPABILITIES.md`。模型制作者负责确认图像预处理和文本塔与检测头配套，SDK 当前不提供嵌入空间健康度探测。
 
 运行期词表绑定走 `amv_vocab_bind`（合同 dual-dll-abi.md §4.1 开放词汇段）：文本塔独立加载为 `task=text-encoder` 档案模型，调用方用配对 tokenizer 预先化词（SDK 不内置 tokenizer）；绑定后检测模型图像入口推理自动注入嵌入，重复调用即换词表，结果按逻辑类目输出并附组内提示词命中明细（`vocab_hits`——组内跨提示词命中合并为单框保留最高分，明细保留原始命中词索引供业务过滤，同框不同类目各自独立输出不去重）。
+
+### ROI 级联推理（C1，v0.6.0）
+
+`amv_infer_cascade_sync/async(primary, secondary, image, cascade, params)` 一次调用完成"全图一级检测 → ROI 生成 → 逐 ROI 裁剪放大 → 二级检测 → 坐标回映"。两级模型独立句柄（典型：一级防护服、二级手部），均须 detect 类档案；vocab 绑定模型可作二级。ROI 来源静态（归一化 xyxy 数组）与动态规则（类别过滤/外扩比例/最小尺寸）可并存，合计上限 16 超限按一级置信度截断。一级结果在 `detect` 主通道不变；二级框与来源明细（`hits`：来源一级框索引/静态=-1、实际 ROI）在 `amv_result_t.cascade`；`skipped_count>0` 表示有 ROI 未执行（二级句柄关闭=全跳过）。单 ROI 失败跳过不废整批；GPU 帧输入显式拒绝（ROI 裁剪需 CPU 像素）。Rust 直依赖调用形态见 `examples/vision_cascade_tracker.rs`。
+
+### 跨帧目标跟踪（v0.6.0）
+
+`amv_tracker_create/update/reset/close`——与推理解耦的 SORT 级关联：update 接受任意来源 `am_detect_box_t` 数组（检测结果、级联二级框、外部检测器），返回带 `track_id`（单调递增不复用）+`age_frames`/`hits` 的框。恒速预测+确定性 IoU 贪心匹配；`confirm_hits` 显式设 1 时建档帧当帧输出（业务自带时序确认场景）；TTL 内消失重现保 ID；输出为喂入值透传不平滑。参数上限合同冻结（ttl ≤ 10000、confirm ≤ 1000、max_tracks 1..4096）；update 调用序即帧序（跳帧/乱序调用方保证）。
+
+### 单帧图像导出（v0.6.0）
+
+`amc_frame_encode(ctx, pixel_view, opts, out, capacity, out_size)`——宿主持有的任意像素视图编码为 JPEG/PNG 字节（取证/快照/调试）。无状态单次调用不占编码器句柄；全像素格式（NV12 内部矩阵换算）；容量不足时 `out_size` 填所需大小并返回 `sdk.limitOutOfRange`（不返回半份），按值重试一次即得；输出上限 32MiB。
 
 

@@ -99,3 +99,7 @@ SDK 所有结果/帧用 SDK 释放，请求确认不代替结果释放。先关�
 | RTSP 没有可用帧 | 编码/能力、关键帧、重连代次及新鲜度 |
 
 不要随意复制其他电脑的 DLL，也不要缺依赖时静默切换后端。
+
+## 第一个调用之后
+
+基础推理链跑通后：运行期[开放词汇绑定](../sdk/INTEGRATION.md)（不重导权重换词表）、[ROI 级联](../sdk/INTEGRATION.md)（区域放大小目标检测）、[跨帧跟踪](../sdk/INTEGRATION.md)（规则引擎要的稳定 ID）与[单帧导出](../sdk/INTEGRATION.md)（取证 JPEG/PNG）可组合成完整检测链。Rust 调用方见 `examples/vision_cascade_tracker.rs`。

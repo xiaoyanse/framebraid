@@ -38,10 +38,13 @@ All figures come from recorded, reproducible runs on the release machine (Window
 
 | Area | Measured result |
 | --- | --- |
-| Rust regression | 384 tests passing; clippy/fmt clean; CI green |
+| Rust regression | 489 tests passing; clippy/fmt clean; source-fingerprint gate 282 files |
+| ROI cascade (downstream-measured) | Small-object score 0.167 → 0.461, boxes 7 → 15 via ROI upscaling, not whole-frame resolution |
+| Open-vocabulary e2e | bind → auto-injection → within-entry merge → hits/labels → re-bind, all asserted over real ORT (synthetic dual models) |
 | Hardware decode matrix | H.264/H.265 360p–4K (incl. Main10) all D3D11VA-verified with software controls |
 | Keyframe resync | Dropping a GOP prefix resumes exactly at the next IDR under both policies |
 | RTSP fault handling | Stream-loss resume, in-flight close, bounded drain — 4/4 cases |
+| FILE seek (real FFmpeg) | Three seek modes, EOF revival, loop replay and EXACT filter integration green |
 | NV12 conversion (1080p) | 8.8 → 6.8 ms/frame (−23%) with bit-exact output (2⁴⁸² exhaustive parity) |
 | Sampling cadence | 30 fps input effective delivery ≈ 29.5 fps (was ~16 before cadence fix) |
 | Tensor direct write | −4.9 MB temporary allocation per 640×640 preprocess |
@@ -65,9 +68,10 @@ The host owns device configuration, credential storage, business rules, persiste
 ## Media SDK
 
 - RTSP H.264/H.265/MJPEG handling; encoded-packet and decoded-frame subscriptions.
-- Local FILE source (unreleased): MP4 H.264/H.265 initial scope, EOF and queue draining; seek, rate and loop are in development.
+- Local FILE source (v0.5.0): MP4 H.264/H.265 playback with EOF and queue draining; **seek (keyframe-before/after, exact), duration, rate and loop** — seek works from the EOF terminal state (playback revival).
 - Standalone H.264/H.265 decoding from **complete Annex B access units**. Arbitrary network fragments are not complete-frame inputs.
 - ISAPI HTTP Digest snapshots and bounded continuous acquisition. Actual rate depends on the camera and network.
+- **Single-frame JPEG/PNG export** (v0.6.0): `amc_frame_encode` encodes any host-held pixel view to evidence bytes — stateless, all pixel formats, capacity-insufficient reports the required size.
 - Pull/callback interfaces, bounded queues, metadata, scaling, pixel conversion and reconnect controls.
 - Explicit hardware decode probing and automatic backend selection (D3D11VA preferred, DXVA2 where mapped, bounded CPU fallback); per-context worker budgets with live/peak statistics. Hardware readback is not guaranteed faster than CPU; consult the measured contracts.
 - Advanced Rust RTSP callers can use `Reader::open_with_budget` and `read_packet_with_budget` to reserve SDK configuration/framing workspace before allocation. Rust callers can also inspect Annex B NAL units with `am_camera::media::codec::visit_access_units` without allocating a NAL list; commit caller state only after overall success.
@@ -80,6 +84,9 @@ Check runtime capabilities and contracts. H.265 decoding does not imply browser 
 
 - ONNX Runtime integration, image preprocessing and structured results.
 - Five **constrained model profiles**: Pose, Detect, Classify, Segment and OBB.
+- **Open-vocabulary binding** (v0.5.0): `amv_vocab_bind` attaches a text-tower embedding table to dual-input detection models; runtime re-binding is atomic, image-path inference auto-injects the cached embeddings, per-box hit details (entry/prompt) support business filtering. Tokenizer pairing stays with the caller.
+- **ROI cascade inference** (v0.6.0): `amv_infer_cascade_sync/async` runs full-frame primary detect → ROI generation (static + dynamic rules) → per-ROI crop/upscale → secondary detect → coordinate mapping in one call. Two independent model handles; per-ROI failure skips without failing the batch; `skipped_count` observability; vocab-bound models may serve as the secondary stage.
+- **Cross-frame object tracking** (v0.6.0): `amv_tracker_*` — SORT-grade association decoupled from inference; deterministic matching, monotonic never-reused IDs, confirm/TTL semantics, unsmoothed pass-through output. Accepts boxes from any source (detect results, cascade secondary boxes, external detectors).
 - Raw named tensor inputs/outputs for custom models within supported dtype/shape contracts.
 - Synchronous, asynchronous and batch interfaces, status, notifications, acknowledgement and release.
 - **Adaptive batching** (v0.2.0): explicit, bounded, off by default; aggregates AUTO submissions of compatible items on dynamic-batch-axis models into single physical batches. Fixed-batch-axis models are rejected rather than padded.
@@ -134,7 +141,7 @@ See the [integration guide](sdk/INTEGRATION.md) and [ABI contracts](docs/design/
 
 ## Validation and boundaries
 
-The v0.2.0 Windows x64 **Release candidate** passed **384 workspace Rust tests** (20 environment-gated skipped), generator-chain zero-drift checks, ABI freeze (11 artifacts) and source-fingerprint boundary checks (239 files). Clean-package validation covers C/C++17/C#/Python examples plus the adaptive-batching live suite against the package's own DLLs. Hardware decode matrix (H.264/H.265, 360p–4K incl. Main10) is D3D11VA-verified with software controls; RTSP fault matrix (stream-loss resume, in-flight close) passed. Four of five real model classes were not rerun end-to-end (no local weights); CUDA/OpenVINO execution providers, field streams and long-duration acceptance remain registered as unverified. See the [v0.2.0 validation summary](https://github.com/xiaoyanse/framebraid/releases/tag/v0.2.0) (VALIDATION.md asset) and [status](docs/RELEASE_STATUS.md).
+The v0.6.0 Windows x64 release passed **489 workspace Rust tests** (57 environment-gated skipped, repeat-run stable), generator-chain zero-drift checks and source-fingerprint boundary checks (**282 files**). Clean-package validation covers C/C++17/C#/Python examples; cascade and open-vocabulary e2e gates run over real ORT with synthetic dual models (hand-computed coordinate assertions); FILE seek integration runs on real FFmpeg. Hardware decode matrix (H.264/H.265, 360p–4K incl. Main10) is D3D11VA-verified with software controls; RTSP fault matrix (stream-loss resume, in-flight close) passed. Real two-stage open-vocabulary weights, CUDA/OpenVINO execution providers, field streams and long-duration acceptance remain registered as unverified. See [status](docs/RELEASE_STATUS.md) and the [v0.6.0 release](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.0).
 
 The source checkout excludes runtime binaries, weights, credentials, business database and host UI. The separate Windows package includes matching CPU runtimes and their source/license materials. The extraction manifest is historical provenance, not a continuously updated release manifest; core files remain fingerprint-checked.
 
