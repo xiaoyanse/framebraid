@@ -30,7 +30,7 @@ The local direct C decoder now selects hardware and admits CPU recovery ([verifi
 | Build / 构建 | Rust sources and two DLL targets / Rust 源码及双 DLL 目标 | Local Windows Release candidate verified within recorded scope / 本地 Windows Release 已限定范围验证 |
 | Languages / 语言 | Recorded C/C++17/C#/Python calls / 已记录实调 | Java not delivered / 不交付 Java |
 | Media / 媒体 | ISAPI, RTSP H.264/H.265/MJPEG, standalone H.264/H.265 | Camera/FPS/recovery depend on workload and configuration / 相机、帧率、恢复依负载配置 |
-| Local FILE / 本地文件（unreleased） | Initial acceptance scope: MP4 H.264/H.265 / 首版验收口径 | EOF and PULL draining; seek, rate and loop in development, fixture verification pending / EOF 与 PULL 排空；定位、倍速及循环开发中，夹具验证待完成 |
+| Local FILE / 本地文件 | MP4 H.264/H.265 initial scope, shipped since v0.4.0 / 首版口径 MP4 H.264/H.265，v0.4.0 起随包 | Seek (three modes), duration, rate and loop shipped in v0.5.0 (real-FFmpeg integration green) / seek 三档、时长、倍速与循环已随 v0.5.0 交付（真机 FFmpeg 集成全绿） |
 | Direct decoder / 独立解码 | Complete Annex B AU / 完整 Annex B AU | Caller assembles fragments/converts packetization / 调用方装配分片与转换封装 |
 | Vision / 推理 | Five fixed profile families and supported RAW tensor paths / 五类限定档案及支持的 RAW 张量 | Exact dtype/shape/export contracts; not all YOLO / 非全版本 YOLO |
 | Acceleration / 加速 | CPU/OpenVINO/CUDA selection APIs | Local candidate validates CPU, not GPU/hardware decoding / 当前候选仅验 CPU |
@@ -58,6 +58,6 @@ This is a capability statement, not an additional license restriction. / 本文�
 
 Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hardware-20261026.md) covers shared policy, actual D3D11VA and CPU/MJPEG controls. Hardware availability is separate from speed; reader isolation, full hardware/pressure/soak acceptance and H5 remain open. Published v0.1.0 is unchanged. / 本地候选与旧公开CPU制品区分，H2整体未关闭。
 
-Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; Local r9 now adds ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports; accelerated inference and recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
+Bounded Rust model selection and explicit CUDA device discovery shipped since v0.2.0 (incl. ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports); accelerated-inference and runtime-recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / 有界模型选择与显式 CUDA 设备发现已随 v0.2.0 发布（含有序路径/内存 C 选择与 Python/C# 助手、逐模型/逐尝试报告）；加速推理与运行期恢复验收仍开放。
 
 Local ordered-selection validation / 本地有序选择验证: [H5 r9](verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.

@@ -49,7 +49,7 @@ The source checkout uses `sdk/include`, `sdk/bindings` and `sdk/examples`. Older
 
 Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hardware-20261026.md) covers shared policy, actual D3D11VA and CPU/MJPEG controls. Hardware availability is separate from speed; reader isolation, full hardware/pressure/soak acceptance and H5 remain open. Published v0.1.0 is unchanged. / 本地候选与旧公开CPU制品区分，H2整体未关闭。
 
-Local H5 core: bounded Rust model selection and explicit CUDA device discovery are implemented; CPU fallback/strict and native failure diagnostics tested. Explicit C inference device probes/cached reports are also available locally; C model-selection extensions, accelerated inference and recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / H5核心阶段已保存，未发布；不等于整包完成。
+Bounded Rust model selection and explicit CUDA device discovery shipped since v0.2.0 (incl. ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports); accelerated-inference and runtime-recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / 有界模型选择与显式 CUDA 设备发现已随 v0.2.0 发布（含有序路径/内存 C 选择与 Python/C# 助手、逐模型/逐尝试报告）；加速推理与运行期恢复验收仍开放。
 
 H5.0b本地探测报告与原生/语言回归详见[验证](verification/sdk-h5-inference-report-20261026.md)；新模型C策略、加速执行与恢复仍未完成。
 

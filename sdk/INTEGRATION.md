@@ -36,7 +36,7 @@ This Rust helper has bounded payload and item retention, keyframe-safe resynchro
 
 ## Local ordered model selection / 本地有序选择
 
-ABI1.1 r9未发布，须使用同提交DLL/绑定并检查`AMV_CAP_ORDERED_SELECTION`。路径和内存均可选择；最多3个(backend, device_id)候选，CPU=0、OpenVINO CPU=1、CUDA=2。`allow_fallback=false`只尝试首项；没有列CPU就不会回退CPU；`budget_ms`为1～5000软预算，不能强杀原生Session构造。运行库仍由调用方初始化，不自动替换CPU/GPU版ORT。
+有序推理后端选择（v0.2.0 起随包，ABI 1.1 r9），使用时检查`AMV_CAP_ORDERED_SELECTION`。路径和内存均可选择；最多3个(backend, device_id)候选，CPU=0、OpenVINO CPU=1、CUDA=2。`allow_fallback=false`只尝试首项；没有列CPU就不会回退CPU；`budget_ms`为1～5000软预算，不能强杀原生Session构造。运行库仍由调用方初始化，不自动替换CPU/GPU版ORT。
 
 ```python
 with VisionContext(dll_path, [ort_directory]) as ctx:
@@ -63,11 +63,11 @@ Python 另提供 `copy_detect()`、`copy_classify()`、`copy_segment()`、`copy_
 
 Python also provides `copy_detect()`, `copy_classify()`, `copy_segment()`, and `copy_obb()`. The result must remain alive during the call; returned values are independent. Masks are copied. See the linked local validation for limits and scope.
 
-Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 `(bounds, confidence, keypoints)` 元组；随后可释放结果并继续读取复制值。原 `result.view` 为借用，释放后不可用。仅为本地未发布功能。
+Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 `(bounds, confidence, keypoints)` 元组；随后可释放结果并继续读取复制值。原 `result.view` 为借用，释放后不可用（v0.2.0 起随包）。
 
-For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view.
+For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view (shipped since v0.2.0).
 
-未发布本地扩展：`amv_model_configure_batching(model, &options)` 显式启用自适应攒批（`AM_BATCHING_ENABLE`，max_batch_items 2..64 或 0 取动态上限，max_wait_ms 0..5000，0 为凑满即发），传 NULL 关闭；仅动态批量轴模型、仅 AUTO 语义生效，固定批量轴返回 `vision.batchUnsupported`，不填伪样本。凑满/窗口截止/关闭排空触发单一物理批次，逐项 request_id/取消/TTL 不变；等待项计入既有队列与等待者上限。`amv_model_get_batching` 查询生效配置与累计计数（formed_batches/batched_items/timeout_batches/rejected_items，关闭清零）。合成数据单测与生成器同步已验，真实模型组批实测待验；绑定由生成链同步。
+自适应攒批（v0.2.0 起随包）：`amv_model_configure_batching(model, &options)` 显式启用（`AM_BATCHING_ENABLE`，max_batch_items 2..64 或 0 取动态上限，max_wait_ms 0..5000，0 为凑满即发），传 NULL 关闭；仅动态批量轴模型、仅 AUTO 语义生效，固定批量轴返回 `vision.batchUnsupported`，不填伪样本。凑满/窗口截止/关闭排空触发单一物理批次，逐项 request_id/取消/TTL 不变；等待项计入既有队列与等待者上限。`amv_model_get_batching` 查询生效配置与累计计数（formed_batches/batched_items/timeout_batches/rejected_items，关闭清零）。合成数据单测与生成器同步已验，真实模型组批实测待验；绑定由生成链同步。
 
 旧 `amv_query_backends` 现只读本 context 的显式 CUDA probe 缓存；需要设备判定时先调用 `amv_probe_inference_hardware`。hw_detected=0 需结合 note 区分未知和已确认无设备。
 
@@ -123,7 +123,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 
 ## 2. 运行环境与首版范围
 
-### FILE 本地文件源（未发布）
+### FILE 本地文件源（v0.4.0 起随包）
 
 低层 `am_source_desc_t.kind = AM_SRC_FILE`（4），`url_utf8` 为 UTF-8 文件路径，可带 `file://` 前缀；不存在或不可读返回 `camera.urlInvalid`，详情包含路径和原因。`creds`、`provider` 必须为 NULL，`stream_kind_utf8` 仅允许 NULL 或空字符串。首版验收口径为 MP4 的 H.264/H.265，须配置 FFmpeg 运行库；C# 可使用 `OpenFile`，Python 高层 OpenSource 仅支持 RTSP/ISAPI，FILE 使用低层接口。
 
