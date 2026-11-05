@@ -98,10 +98,58 @@ struct SessionCore {
     clients_empty_since: Mutex<Option<std::time::Instant>>,
     /// 会话创建时刻：启动期（未就绪）停流上限判据，与空转期分离
     created: std::time::Instant,
+    /// 未就绪期存活上限（默认 SESSION_STARTUP_LIMIT；测试经 new_with_limits 注入小值）
+    startup_limit: Duration,
+    /// 最后订阅意向时刻（P0 热修 2026-11-05）：未就绪期存活上限从"创建起算"
+    /// 改为"最后意向起算"——被 NotReady 拒的持续重试是续命证据（RTSP 二次建立
+    /// 慢/453 长退避不再被 60s 上限腰斩成重建死循环，真机实证：服务运行一段
+    /// 时间后 NotReady 死循环、重启才恢复）；无意向拉起仍按上限自清防泄漏。
+    last_interest: Mutex<std::time::Instant>,
+    /// 诊断环形缓冲（最近 DIAG_CAPACITY 条 drop-oldest；宿主经 hub 快照轮询）
+    diag: Mutex<std::collections::VecDeque<DiagEvent>>,
+}
+
+/// 拉流会话诊断事件（时间基准=会话创建时刻；宿主诊断页用）。
+#[derive(Debug, Clone)]
+pub struct DiagEvent {
+    /// 距会话创建的毫秒数。
+    pub elapsed_ms: u64,
+    /// 事件类别（connect_attempt/connect_ok/connect_fail/probe_fail/
+    /// auth_terminal/codec_terminal/bandwidth_backoff/ready/read_fail/
+    /// stop_idle/stop_startup_limit/spawn_fail/thread_exit）。
+    pub event: &'static str,
+    /// 事件细节（错误串/尺寸/退避毫秒等）。
+    pub detail: String,
+}
+
+/// 每会话诊断缓冲容量。
+const DIAG_CAPACITY: usize = 32;
+
+/// 会话概要（诊断页用；hub.session_states()）。
+#[derive(Debug)]
+pub struct SessionState {
+    pub url: String,
+    pub ready: bool,
+    pub stop: bool,
+    pub thread_alive: bool,
+    pub generation: u32,
+    /// 终态原因（auth_failed / codec:<名> / 无=非终态）。
+    pub terminal: Option<String>,
+}
+
+/// 终态可读标签（诊断概要用；DenyReason 的 Display 语义面向分诊）。
+fn terminal_label(reason: &DenyReason) -> String {
+    match reason {
+        DenyReason::NotReady => "not_ready".into(),
+        DenyReason::TooManyClients => "too_many_clients".into(),
+        DenyReason::TooManySources => "too_many_sources".into(),
+        DenyReason::CodecNotSupported(codec) => format!("codec:{codec}"),
+        DenyReason::AuthFailed => "auth_failed".into(),
+    }
 }
 
 impl SessionCore {
-    fn new(url: &str, gop_max_bytes: usize) -> Self {
+    fn new(url: &str, gop_max_bytes: usize, startup_limit: Duration) -> Self {
         Self {
             url: url.to_string(),
             clients: Mutex::new(HashMap::new()),
@@ -118,11 +166,28 @@ impl SessionCore {
             thread_alive: AtomicBool::new(false),
             clients_empty_since: Mutex::new(Some(std::time::Instant::now())),
             created: std::time::Instant::now(),
+            startup_limit,
+            last_interest: Mutex::new(std::time::Instant::now()),
+            diag: Mutex::new(std::collections::VecDeque::with_capacity(DIAG_CAPACITY)),
         }
     }
 
     fn lock_clients(&self) -> std::sync::MutexGuard<'_, HashMap<u64, Arc<ClientFan>>> {
         self.clients.lock().unwrap_or_else(|p| p.into_inner())
+    }
+
+    /// 追加诊断事件（drop-oldest；锁中毒取内值继续，诊断不因毒锁失效）。
+    fn diag_push(&self, event: &'static str, detail: impl Into<String>) {
+        let entry = DiagEvent {
+            elapsed_ms: self.created.elapsed().as_millis() as u64,
+            event,
+            detail: detail.into(),
+        };
+        let mut diag = self.diag.lock().unwrap_or_else(|p| p.into_inner());
+        if diag.len() == DIAG_CAPACITY {
+            diag.pop_front();
+        }
+        diag.push_back(entry);
     }
 }
 
@@ -152,17 +217,24 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
         if core.stop.load(Ordering::Acquire) {
             break;
         }
+        core.diag_push(
+            "connect_attempt",
+            format!("attempt={} backoff_idx={backoff_idx}", backoff_idx + 1),
+        );
         // 每轮重连走解析链取认证 URL（链全 None 时按引用 URL 原样拉流）
         let url = resolver(&core.url).unwrap_or_else(|| core.url.clone());
         if core.stop.load(Ordering::Acquire) {
             break;
         }
+        let connect_started = std::time::Instant::now();
         let mut input = match crate::media::rtsp::open_input(&url, std::ptr::from_ref(&core.stop)) {
             Ok(input) => input,
             Err(error) => {
+                core.diag_push("connect_fail", error.clone());
                 // 认证失败立即终态（AIeng V-R2 红线）：海康设备连续 401 会锁机
                 // 30 分钟，退避重试等于持续撞锁；凭据修正后由新订阅复活会话。
                 if error.contains("401") || error.to_lowercase().contains("unauthorized") {
+                    core.diag_push("auth_terminal", error);
                     mark_terminal(core, DenyReason::AuthFailed);
                     break;
                 }
@@ -170,6 +242,7 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
                 // 遗留），短退避反复撞锁会挤兑相机出口带宽（真机实证：突发攒批
                 // 发送）。切长退避（30s）等相机自清。
                 if error.contains("453") || error.contains("Not Enough Bandwidth") {
+                    core.diag_push("bandwidth_backoff", "453: 30s long backoff");
                     if wait_or_stop(core, Duration::from_secs(30)) {
                         break;
                     }
@@ -181,6 +254,10 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
                 continue 'outer;
             }
         };
+        core.diag_push(
+            "connect_ok",
+            format!("connect_ms={}", connect_started.elapsed().as_millis()),
+        );
         // 流参数探测：头直读优先（ffprobe 语义不吞包；NOBUFFER 下 find_stream_info
         // 会消费并丢弃首包——MP4 单 IDR 流会因此永失关键帧）。头无尺寸（部分 SDP
         // 不带宽高）才回退 find_stream_info（RTSP 周期 IDR 场景可容忍首包损失）。
@@ -198,6 +275,7 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
             Some(video) => video,
             None => {
                 drop(input);
+                core.diag_push("probe_fail", "no usable video stream");
                 if fail_and_backoff(core, "无视频流".into(), &mut backoff_idx) {
                     break;
                 }
@@ -206,10 +284,9 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
         };
         if video.codec_id != AV_CODEC_ID_H264 {
             // 终态：非 H.264 不重试（相机重配后由新订阅复活会话）
-            mark_terminal(
-                core,
-                DenyReason::CodecNotSupported(super::codec_probe::codec_display(video.codec_id)),
-            );
+            let codec = super::codec_probe::codec_display(video.codec_id);
+            core.diag_push("codec_terminal", codec.clone());
+            mark_terminal(core, DenyReason::CodecNotSupported(codec));
             break;
         }
         backoff_idx = 0;
@@ -218,6 +295,17 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
         *core.param_sets.lock().unwrap_or_else(|p| p.into_inner()) = sets.clone();
         *core.current_sps.lock().unwrap_or_else(|p| p.into_inner()) = sets.sps;
         reconfigure(core, video.width, video.height, video.fps);
+        core.diag_push(
+            "ready",
+            format!(
+                "startup_ms={} {}x{} fps={:?} gen={}",
+                core.created.elapsed().as_millis(),
+                video.width,
+                video.height,
+                video.fps,
+                core.generation.load(Ordering::Acquire)
+            ),
+        );
         loop {
             if core.stop.load(Ordering::Acquire) {
                 break 'outer;
@@ -227,6 +315,7 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
                 Ok(None) => continue,
                 Err(error) => {
                     drop(input);
+                    core.diag_push("read_fail", error.clone());
                     if fail_and_backoff(core, error, &mut backoff_idx) {
                         break 'outer;
                     }
@@ -234,6 +323,16 @@ fn pull_loop(core: &Arc<SessionCore>, resolver: &UrlResolver) {
                 }
             }
         }
+    }
+    // 退出原因区分（诊断三问之三：空闲回收是否参与）
+    if core.ready.load(Ordering::Acquire) && !core.lock_clients().is_empty() {
+        core.diag_push("thread_exit", "stop requested with clients");
+    } else if core.ready.load(Ordering::Acquire) {
+        core.diag_push("stop_idle", "idle timeout, no clients");
+    } else if core.stop.load(Ordering::Acquire) {
+        core.diag_push("thread_exit", "stop requested before ready");
+    } else {
+        core.diag_push("stop_startup_limit", "startup limit hit before ready");
     }
 }
 
@@ -412,11 +511,19 @@ fn wait_or_stop(core: &SessionCore, duration: Duration) -> bool {
 
 /// 空转超时：无客户端持续超宽限即停流（防 NotReady 放弃后连接泄漏）。
 fn idle_expired(core: &SessionCore) -> bool {
+    let startup_limit = core.startup_limit;
     // 启动期与空转期分离：真机 RTSP 建立（DESCRIBE/SETUP/PLAY+首包）秒级起步，
     // 拉起即空转 10s 会先于就绪触发停流，形成 NotReady 重连死循环（真机验证实证）。
-    // 未就绪期改按会话创建时刻判上限；终态会话（ready=false）同样走此分支立即停。
+    // 未就绪期按"最后订阅意向"判上限（P0 热修 2026-11-05：创建起算在 RTSP 二次
+    // 建立慢/453 长退避场景仍会腰斩成重建死循环——消费方生产实证）；终态会话
+    // （ready=false）同样走此分支，终态无订阅刷新即按上限清退。
     if !core.ready.load(Ordering::Acquire) {
-        return core.created.elapsed() > SESSION_STARTUP_LIMIT;
+        return core
+            .last_interest
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .elapsed()
+            > startup_limit;
     }
     if !core.lock_clients().is_empty() {
         return false;
@@ -433,6 +540,8 @@ pub struct H264Hub {
     sessions: Mutex<HashMap<String, Arc<SessionCore>>>,
     /// 会话 GOP 缓存字节上限（测试可注入小值，生产走 GOP_CACHE_MAX_BYTES）。
     gop_max_bytes: usize,
+    /// 未就绪期存活上限（生产 SESSION_STARTUP_LIMIT；测试注入小值加速语义验证）。
+    startup_limit: Duration,
 }
 
 /// 全局搬运枢纽（HTTP WS 端点用；测试用 new() 局部实例）。
@@ -443,10 +552,20 @@ pub fn global(resolver: UrlResolver) -> &'static Arc<H264Hub> {
 
 impl H264Hub {
     pub fn new(resolver: UrlResolver, gop_max_bytes: usize) -> Arc<Self> {
+        Self::new_with_limits(resolver, gop_max_bytes, SESSION_STARTUP_LIMIT)
+    }
+
+    /// 测试/诊断注入变体：未就绪期存活上限可调（语义验证用小值加速）。
+    pub fn new_with_limits(
+        resolver: UrlResolver,
+        gop_max_bytes: usize,
+        startup_limit: Duration,
+    ) -> Arc<Self> {
         Arc::new(Self {
             resolver,
             sessions: Mutex::new(HashMap::new()),
             gop_max_bytes,
+            startup_limit,
         })
     }
 
@@ -463,9 +582,63 @@ impl H264Hub {
             })
     }
 
+    /// 诊断快照（P0 热修配套）：每源最近诊断事件（时间基准=会话创建；连接
+    /// 尝试/成败与耗时/失败原因/退避/就绪/读失败/停流原因），宿主轮询展示。
+    pub fn diag_snapshot(&self) -> Vec<(String, Vec<DiagEvent>)> {
+        self.sessions
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .iter()
+            .map(|(url, core)| {
+                (
+                    url.clone(),
+                    core.diag
+                        .lock()
+                        .unwrap_or_else(|p| p.into_inner())
+                        .iter()
+                        .cloned()
+                        .collect(),
+                )
+            })
+            .collect()
+    }
+
+    /// 会话概要（诊断页一屏态）：就绪/停止/线程存活/终态原因/代次。
+    pub fn session_states(&self) -> Vec<SessionState> {
+        self.sessions
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .iter()
+            .map(|(url, core)| SessionState {
+                url: url.clone(),
+                ready: core.ready.load(Ordering::Acquire),
+                stop: core.stop.load(Ordering::Acquire),
+                thread_alive: core.thread_alive.load(Ordering::Acquire),
+                generation: core.generation.load(Ordering::Acquire),
+                terminal: core
+                    .terminal
+                    .lock()
+                    .unwrap_or_else(|p| p.into_inner())
+                    .as_ref()
+                    .map(terminal_label),
+            })
+            .collect()
+    }
+
     /// 订阅：首个消息为 h264_stream_config，其后 GOP 缓存帧+活跃流。
     pub fn subscribe(self: &Arc<Self>, url: &str) -> Result<H264Subscription, DenyReason> {
         let core = self.ensure_session(url)?;
+        // 订阅意向续命（P0 热修）：非终态会话每次订阅尝试刷新——NotReady 慢重试
+        // 期间会话不因启动上限自杀重建（死循环根因）；终态不续（自清走原路径）。
+        if core
+            .terminal
+            .lock()
+            .unwrap_or_else(|p| p.into_inner())
+            .is_none()
+        {
+            *core.last_interest.lock().unwrap_or_else(|p| p.into_inner()) =
+                std::time::Instant::now();
+        }
         let mut clients = core.lock_clients();
         if core.stop.load(Ordering::Acquire) || !core.thread_alive.load(Ordering::Acquire) {
             return Err(DenyReason::NotReady);
@@ -566,7 +739,11 @@ impl H264Hub {
         if !sessions.contains_key(url) && sessions.len() >= MAX_SOURCES_PER_HUB {
             return Err(DenyReason::TooManySources);
         }
-        let core = Arc::new(SessionCore::new(url, self.gop_max_bytes));
+        let core = Arc::new(SessionCore::new(
+            url,
+            self.gop_max_bytes,
+            self.startup_limit,
+        ));
         core.thread_alive.store(true, Ordering::Release);
         sessions.insert(url.to_string(), core.clone());
         drop(sessions);
@@ -597,10 +774,13 @@ impl H264Hub {
         count: usize,
     ) -> Vec<Arc<ClientQueue>> {
         let mut sessions = self.sessions.lock().unwrap_or_else(|p| p.into_inner());
-        let core = sessions
-            .get(url)
-            .cloned()
-            .unwrap_or_else(|| Arc::new(SessionCore::new(url, GOP_CACHE_MAX_BYTES)));
+        let core = sessions.get(url).cloned().unwrap_or_else(|| {
+            Arc::new(SessionCore::new(
+                url,
+                GOP_CACHE_MAX_BYTES,
+                SESSION_STARTUP_LIMIT,
+            ))
+        });
         let fans: Vec<_> = (0..count).map(|_| Arc::new(ClientFan::new())).collect();
         let queues: Vec<_> = fans.iter().map(|fan| fan.queue.clone()).collect();
         {

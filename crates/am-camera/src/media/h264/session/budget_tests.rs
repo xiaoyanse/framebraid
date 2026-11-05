@@ -5,7 +5,11 @@ fn hub() -> Arc<H264Hub> {
     H264Hub::new(Arc::new(|_| None), GOP_CACHE_MAX_BYTES)
 }
 fn core(url: &str) -> Arc<SessionCore> {
-    Arc::new(SessionCore::new(url, GOP_CACHE_MAX_BYTES))
+    Arc::new(SessionCore::new(
+        url,
+        GOP_CACHE_MAX_BYTES,
+        SESSION_STARTUP_LIMIT,
+    ))
 }
 fn wait(check: impl Fn() -> bool) {
     let until = std::time::Instant::now() + Duration::from_secs(3);
@@ -167,4 +171,43 @@ fn long_resource_backoff_honors_already_requested_stop() {
     let at = std::time::Instant::now();
     assert!(wait_or_stop(&core, Duration::from_secs(30)));
     assert!(at.elapsed() < Duration::from_secs(2));
+}
+
+/// P0 热修语义锁（消费方生产死循环实证 2026-11-05）：未就绪期存活上限按
+/// "最后订阅意向"起算——意向刷新续命，无意向照超限自清（防泄漏不回退）。
+#[test]
+fn unready_startup_limit_follows_last_interest_not_creation() {
+    let a = SessionCore::new("rtsp://127.0.0.1:9/a", 1024, Duration::from_millis(150));
+    std::thread::sleep(Duration::from_millis(220));
+    assert!(
+        idle_expired(&a),
+        "no-interest session expires by startup limit"
+    );
+    let b = SessionCore::new("rtsp://127.0.0.1:9/b", 1024, Duration::from_millis(150));
+    std::thread::sleep(Duration::from_millis(100));
+    *b.last_interest.lock().unwrap() = std::time::Instant::now();
+    std::thread::sleep(Duration::from_millis(100));
+    assert!(
+        !idle_expired(&b),
+        "fresh interest keeps unready session alive past creation age"
+    );
+}
+
+/// 诊断缓冲 drop-oldest：超容量丢最老，最新完整保留。
+#[test]
+fn diag_ring_drops_oldest_beyond_capacity() {
+    let core = SessionCore::new("rtsp://127.0.0.1:9/diag", 1024, Duration::from_secs(60));
+    for i in 0..DIAG_CAPACITY + 3 {
+        core.diag_push("probe_fail", format!("ev{i}"));
+    }
+    let events: Vec<_> = core
+        .diag
+        .lock()
+        .unwrap()
+        .iter()
+        .map(|e| e.detail.clone())
+        .collect();
+    assert_eq!(events.len(), DIAG_CAPACITY);
+    assert_eq!(events.first().map(String::as_str), Some("ev3"));
+    assert_eq!(events.last().map(String::as_str), Some("ev34"));
 }
