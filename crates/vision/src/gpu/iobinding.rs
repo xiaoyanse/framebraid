@@ -10,9 +10,15 @@ use ort::{
 
 /// 输入张量与 IOBinding 的组合生命周期：tensor 按引用绑定，run_binding
 /// 完成前整体必须存活（结构体一并持有，调用方保管到推理结束）。
+/// 保活的 MemoryInfo/Allocator 与绑定共存亡：ORT IoBinding 内部按裸指针保留
+/// 输出绑定的 OrtMemoryInfo，提前 Release 会令后续 run_binding/析构读写悬垂
+/// 指针，堆腐坏表现为随机延迟段错误（M2b P0，实证见 fix 验证记录）。
+/// 字段声明序即 Drop 序：binding 先析构（此刻上述指针均存活）。
 pub struct InferenceInput {
     pub binding: IoBinding,
     tensor: Tensor<f32>,
+    _output_info: MemoryInfo<'static>,
+    _allocator: Allocator,
 }
 
 impl InferenceInput {
@@ -43,7 +49,12 @@ impl InferenceInput {
                 .bind_output_to_device(output.name(), &cpu)
                 .map_err(|e| Error(format!("GPU 输出绑定失败|{e}")))?;
         }
-        Ok(Self { binding, tensor })
+        Ok(Self {
+            binding,
+            tensor,
+            _output_info: cpu,
+            _allocator: allocator,
+        })
     }
 
     /// device 数据指针（预处理 kernel 直接写入；借用期内不得释放）。

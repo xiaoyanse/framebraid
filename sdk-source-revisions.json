@@ -1152,8 +1152,8 @@
   {
    "path": "crates/vision/src/gpu/iobinding.rs",
    "previousSha256": null,
-   "sha256": "2a116e8645daef9db7bc28c692876b862115eeaadc2e46aac4dbb77f2dbc11b9",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "eafa6dfe34445a4ea0b961c3f227da0277c09433df822095875649087d82ae7f",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged. M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap (overwritten by string data per crash dumps), corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro rungpu-only 11/12 & rungpu-reuse 8/12 crashes pre-fix vs 0/12 kept-alive control; post-fix full-mode 0/30, r01-baseline cuda 0/30, workspace 491 green, gpu e2e parity 5x ok; C ABI unchanged"
   },
   {
    "path": "crates/vision/src/gpu/mod.rs",
