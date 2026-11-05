@@ -1,6 +1,6 @@
 # Changelog / 变更记录
 
-## Unreleased
+## [0.6.0] - 2026-11-05
 
 - ROI cascade inference (C1, contract §4.1): `amv_infer_cascade_sync/async` — one call runs full-frame primary detect → ROI generation (static + dynamic rules, cap 16, confidence-desc truncation) → per-ROI crop/letterbox upscale → secondary detect → coordinate mapping back to the original frame. Independent model handles per stage (integrator-verified scenario: small-object score 0.167 → 0.461, boxes 7 → 15); per-ROI independent NMS; single-ROI failure skips without failing the batch; `amv_result_t` tail gains a `cascade` result (secondary boxes + source `hits` + `skipped_count` three-state observability); vocab-bound models may serve as the secondary stage. Integrator confirmation frozen 2026-11-05 (8 points, no objections; observability note landed as `skipped_count`). Implementation `98cee5f`+`a11d1b1` (unreleased). / ROI 级联推理（C1，合同 §4.1）：一次调用完成全图一级检测→ROI 生成（静态+动态规则可并存，上限 16，超限按一级置信度降序截断）→逐 ROI 裁剪 letterbox 放大→二级检测→坐标回映原图。两级模型独立句柄（下游实证：小目标全图直检 0.167，ROI 放大后 0.461、检出框 7→15）；NMS 逐 ROI 独立；单 ROI 失败跳过不废整批；`amv_result_t` 尾部新增 `cascade` 明细（二级框+来源 `hits`+`skipped_count` 三态可观测）；vocab 词表模型可作二级。消费方确认冻结（2026-11-05，8 点无异议；可观测性备注已落地为 `skipped_count`）。实现 `98cee5f`+`a11d1b1`（未发布）。
 

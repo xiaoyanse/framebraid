@@ -15,7 +15,7 @@ FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repo
 | **FrameBraid Media SDK** | ISAPI images, RTSP encoded streams, decoded frames, standalone decoding and pixel conversion |
 | **FrameBraid Vision SDK** | ONNX execution, bounded asynchronous work, raw tensors and profile-based postprocessing |
 
-**Status: v0.5.0.** [Releases](https://github.com/xiaoyanse/framebraid/releases). C ABI 1.2 (compatible additions over 1.1: FILE-source seek/rate/loop, open-vocabulary binding); the validated target is **Windows x64 CPU + hardware-decode probing**; Linux/macOS/mobile binaries and GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
+**Status: v0.6.0.** [Releases](https://github.com/xiaoyanse/framebraid/releases). C ABI 1.3 (compatible additions over 1.2: ROI cascade inference, cross-frame object tracking, single-frame JPEG/PNG export); the validated target is **Windows x64 CPU + hardware-decode probing**; Linux/macOS/mobile binaries and GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
 
 
 ## Contents

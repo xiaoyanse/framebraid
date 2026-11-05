@@ -1,5 +1,18 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.6.0 (2026-11-05)
+
+Compatible-addition release, **C ABI 1.2 → 1.3** (`AM_ABI_VERSION` 65538 → 65539). Three integrator-confirmed capabilities, no breaking changes — existing consumers keep working via struct_size negotiation.
+
+- **ROI cascade inference (C1)** — `amv_infer_cascade_sync/async`: one call runs full-frame primary detect → ROI generation (static + dynamic rules with class filter and expand ratio, cap 16, confidence-desc truncation) → per-ROI crop/letterbox upscale → secondary detect → coordinate mapping back to the original frame. Independent model handles per stage; per-ROI independent NMS; single-ROI failure skips without failing the batch; `skipped_count` three-state observability (null = not cascaded / empty+0 = no hits / >0 = ROIs not executed). Vocab-bound models may serve as the secondary stage. Grounded in the integrator's measured scenario: small-object score 0.167 → 0.461, boxes 7 → 15.
+- **Cross-frame object tracking** — `amv_tracker_create/update/reset/close`: SORT-grade lightweight association decoupled from inference (accepts boxes from any source: detect results, cascade secondary boxes, external detectors). Constant-velocity prediction + deterministic IoU greedy matching; monotonic never-reused track IDs; confirm-hits gate (explicit 1 = emit on first frame); TTL recycling; unsmoothed pass-through output. Parameter bounds are contract-frozen (ttl ≤ 10000, confirm ≤ 1000, max_tracks 1..4096).
+- **Single-frame image export** — `amc_frame_encode`: any host-held pixel view (subscription callback / shared pool / decoder output) to JPEG/PNG bytes. Stateless, all pixel formats (NV12 via BT.601/709/2020 conversion parity with the vision side), capacity-insufficient fills required size and returns `sdk.limitOutOfRange` (no partial output), 32MiB cap.
+- **Rust direct-dependency example** — `examples/vision_cascade_tracker.rs`: tracker usage (confirm=1 semantics, ID stability across frames and TTL re-acquisition) and cascade primitives (`generate_rois`/`map_box_to_original`), `cargo run` verified.
+
+Verification: workspace 489 tests zero failures across repeat runs; cascade + vocab e2e gates over real ORT (synthetic dual models, hand-computed coordinate assertions) all pass; clippy clean on new code; source-fingerprint gate 282 green. The three capabilities compose: cascade detects small objects → tracker assigns stable IDs → frame export captures evidence.
+
+/ 兼容新增版，C ABI 1.2→1.3。三项接入方确认能力：ROI 级联推理（一次调用完成全图检出→ROI 放大细检→坐标回映，含跳过计数三态可观测）；SORT 级跨帧目标跟踪（与推理解耦、确定性匹配、ID 单调不复用、确认/TTL 语义、输出透传不平滑）；单帧 JPEG/PNG 导出（任意 pixel view、全格式、容量不足报所需不返回半份）；另附 Rust 直依赖调用示例。验证：工作区 489 项测试两遍零失败；级联+词汇双 e2e 真机门（真实 ORT 合成双模型、坐标回映手算断言）全过；新码 clippy 零告警；指纹闸门 282 绿。三项能力可组合：级联检小目标→跟踪稳定 ID→导出留证。
+
 ## v0.3.2 (2026-11-03)
 
 Integrator-feedback release, no ABI break. Python bindings expose the init/thread parameters that

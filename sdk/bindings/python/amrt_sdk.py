@@ -1409,7 +1409,7 @@ amv_result_t._fields_ = [
     ("cascade", POINTER(am_cascade_result_t)),
 ]
 
-AM_ABI_VERSION = 65538
+AM_ABI_VERSION = 65539
 AM_OK = 0
 AM_CODEC_H264 = 1
 AM_CODEC_H265 = 2

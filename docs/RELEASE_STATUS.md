@@ -1,7 +1,11 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.5.0**（2026-11-04，C ABI 1.1→**1.2** 兼容新增：FILE 源 seek/duration/rate/loop 四 API 与 EOF 复活、开放词汇词表绑定 A1+A2+A4、审计清偿批）。历史版本 [v0.4.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.4.0)、[v0.3.2](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)、[v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.6.0**（2026-11-05，C ABI 1.2→**1.3** 兼容新增：ROI 级联推理 C1、跨帧目标跟踪、单帧 JPEG/PNG 导出，三项接入方确认闭环）。历史版本 [v0.4.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.4.0)、[v0.3.2](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)、[v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
+
+## v0.6.0 验证状态快照
+
+ROI 级联推理 C1（合同 §4.1，接入方 8 点确认冻结 2026-11-05）+ 跨帧目标跟踪（§4.1b，接入方 6 点确认，参数上限入合同）+ 单帧 JPEG/PNG 导出（§2.11，接入方确认归档）+ Rust 直依赖调用示例。**验证**：workspace **489 项测试零失败、两遍稳定**（含 cascade 7 核心+1 FFI、tracker 13 核心+7 FFI、frame-export 7 核心+1 FFI）；真机门——cascade/vocab 双 e2e 合成模型真实 ORT 全断言过（静态 ROI 坐标回映手算值/动态规则 primary_index 溯源/独立阈值/跳过计数三态）；帧导出 PNG 无损往返+JPEG 质量序+NV12 矩阵换算单测过；并行测试 ctx 准入竞争修复后两遍全绿；clippy 新码零告警；check-boundary 282 全绿；C ABI `AM_ABI_VERSION` 65539。下游实证背景：小目标全图直检 0.167→ROI 放大 0.461、检出框 7→15（EXTENSION_CAPABILITIES C1）。
 
 ## v0.5.0 验证状态快照
 

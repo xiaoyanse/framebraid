@@ -14,6 +14,8 @@ Interface presence, tested behavior and release commitments are separate. No sup
 
 接口存在、实测通过与交付承诺分开，不承诺支持时限。
 
+v0.6.0 adds C ABI 1.3 compatible surface (ROI cascade inference `amv_infer_cascade_sync/async` with per-ROI skip observability; cross-frame object tracking `amv_tracker_*` SORT-grade association with confirm/TTL semantics; single-frame JPEG/PNG export `amc_frame_encode`). All three are integrator-confirmed; a Rust direct-dependency example ships in `examples/vision_cascade_tracker.rs`. / v0.6.0 新增 C ABI 1.3 兼容面（ROI 级联推理含逐 ROI 跳过可观测；SORT 级跨帧目标跟踪含确认/TTL 语义；单帧 JPEG/PNG 导出）。三项均经接入方确认；随包附带 Rust 直依赖调用示例（examples/vision_cascade_tracker.rs）。
+
 v0.5.0 adds C ABI 1.2 compatible surface (FILE-source seek/duration/rate/loop; open-vocabulary binding `amv_vocab_bind` with per-box hit details). Text-tokenizer pairing and embedding-space pairing remain caller responsibilities (A3 honesty boundary); vocab end-to-end on real dual-model weights is registered as pending, covered by synthetic tests this release. / v0.5.0 新增 C ABI 1.2 兼容面（FILE 源 seek/时长/倍速/循环；开放词汇绑定与逐框命中明细）。tokenizer 配对与嵌入空间配对责任仍在调用方（A3 诚实边界）；vocab 真机双模型端到端登记待验，本版以合成测试覆盖。
 
 Local C ABI 1.1 r10 exposes a Media worker budget per Context (default/ceiling 64, tightening only, zero disables new SDK workers). Counts cover the eight C ABI worker kinds, excluding caller threads and unmanaged driver threads. Direct Rust SessionPool configuration remains a separate audit path. Python/C# helpers and Windows x64 loopback checks are [recorded](verification/sdk-r3-media-workers-20261027.md); no published-platform or soak guarantee is added. / 历史峰值不随收紧清零，不能拿旧峰值与新上限误判超额。

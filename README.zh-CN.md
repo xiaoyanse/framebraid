@@ -15,7 +15,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量及模型档案后处理 |
 
-**当前状态：v0.5.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.2（对 1.1 的兼容新增：FILE 源 seek/倍速/循环、开放词汇词表绑定）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.6.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.3（对 1.2 的兼容新增：ROI 级联推理、跨帧目标跟踪、单帧 JPEG/PNG 导出）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
 ## 目录
