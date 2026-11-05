@@ -8,7 +8,7 @@
 - **离线录像文件分析**：MP4 文件源 + seek → 解码 → 推理（录像 AI 复盘）；FILE 源 seek/倍速/循环已随 v0.5.0 交付（真机 seek 集成全绿）。
 - **帧抓图编码输出**：解码帧/推理关联帧导出 JPEG/PNG（与后续流编码输出共享编码器）——已随 v0.6.0 交付（`amc_frame_encode`）
 
-登记待实现（防遗忘，按需启动）：GPU 全程显存管线（CUDA/OpenVINO 推理验收）、运行期模型热切换、编码推流输出（RTMP/MP4）、Linux 移植、包管理器分发（PyPI/NuGet/crates.io）、多模型流水线、ARM64 Windows、GB28181 客户端、ONVIF 发现+取流（低优先）。
+登记待实现（防遗忘，按需启动）：GPU 全程显存管线（CUDA/OpenVINO 推理验收；2026-11-06 研究阶段0产出：单路 GPU 直传基线已建——见 POC core-performance；A 线三靶点优化待多路数据定批）、Intel 核显 GPU 设备支持（OpenVINO 插件运行库已就绪，SDK 两处硬编码 CPU 设备待合同化放开——研究 R0.1 发现，无下游拉动暂缓）、运行期模型热切换、编码推流输出（RTMP/MP4）、Linux 移植、包管理器分发（PyPI/NuGet/crates.io）、多模型流水线、ARM64 Windows、GB28181 客户端、ONVIF 发现+取流（低优先）。
 
 2026-11-05 进度：ROI 区域裁剪推理（C1 级联，合同 §4.1，消费方确认冻结）、跨帧目标跟踪（§4.1b，SORT 级轻量关联，消费方确认）、单帧 JPEG/PNG 导出（§2.11）均已随 **v0.6.0 发布**（C ABI 1.3）。
 
