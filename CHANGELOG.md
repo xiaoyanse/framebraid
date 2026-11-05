@@ -1,5 +1,9 @@
 # Changelog / 变更记录
 
+## Unreleased
+
+- **H264 session NotReady loop hotfix (P0, integrator production evidence)**: the unready-session startup limit now counts from the *last subscription interest* instead of session creation — repeated NotReady-denied retries keep the session alive so slow RTSP re-establishment (or the 30s RTSP-453 long backoff) no longer gets killed at the 60s limit into a rebuild loop ("running for a while, then never ready again until service restart" symptom). No-interest startups still expire (leak-safe); terminal sessions are not extended. Ships with a session-level diagnostic ring (32 events: connect attempt/ok with duration/fail with the raw error string — previously discarded/453 backoff/ready with startup duration/read failures/stop cause split idle vs startup-limit) exposed via Rust-only `H264Hub::diag_snapshot()` / `session_states()` (direct-dependency consumers; no C ABI change — the C ABI surface never exposed the affected hub). The startup limit is test-injectable (`H264Hub::new_with_limits`). Implementation `d6b8fc1`. / H264 会话 NotReady 死循环 P0 热修：未就绪期存活上限改按"最后订阅意向"起算（持续被拒重试续命，RTSP 二次建立慢/453 长退避不再被 60s 上限腰斩成重建死循环）；无意向照超限自清、终态不续命。配套会话诊断环形缓冲（连接成败与耗时、原始错误串——此前被丢弃、453 退避、就绪耗时、停流原因二分）经纯 Rust `diag_snapshot`/`session_states` 暴露（直依赖消费者；C ABI 面不含受影响的 hub，无 ABI 变更）；启动上限测试可注入。实现 `d6b8fc1`。
+
 ## [0.6.0] - 2026-11-05
 
 - Rust direct-dependency example (`examples/vision_cascade_tracker.rs`): tracker usage (confirm-hits=1 first-frame emission, ID stability across frames, TTL re-acquisition) and cascade primitives (`generate_rois` / `map_box_to_original`), verified by `cargo run`. Implementation `672c49d`. / Rust 直依赖调用示例：跟踪与级联纯逻辑形态，cargo run 验证过。实现 `672c49d`。
