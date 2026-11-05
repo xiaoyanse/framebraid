@@ -594,8 +594,8 @@
   {
    "path": "crates/camera-ffi/src/subscriptions/queue/tests.rs",
    "previousSha256": "f6c61ffa4b5981c8f5418d6d8eecfe9a4c6120a9c632321075d033737243c17c",
-   "sha256": "cb0881cdf074e727987bc0afc25f8c6e02125f72c7df6d84849e218ba9cfaf7c",
-   "reason": "R3 reviewed pending Context admission, fixed foundation registries and shared-frame index ownership; allocation/boundary unit evidence, integrated workspace and real DLL regressions; no C ABI change"
+   "sha256": "86f4cfdff7a9907f5c842cf37bfa2235c87fa627b6b0a225baad11d00b37753c",
+   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
   },
   {
    "path": "crates/camera-ffi/src/telemetry.rs",
@@ -1320,8 +1320,8 @@
   {
    "path": "crates/am-camera/src/lib.rs",
    "previousSha256": "61c76e37b10df84909e9c17cf3ab07b9319a98d6fa4f5f8949a86e52c9ad584a",
-   "sha256": "61c76e37b10df84909e9c17cf3ab07b9319a98d6fa4f5f8949a86e52c9ad584a",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "78c08edfff13293b2b267f0683616a8182067ea61314c336f7344e9e2f25aa6b",
+   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
   },
   {
    "path": "crates/am-camera/src/media/h264/annexb.rs",
@@ -1676,6 +1676,24 @@
    "previousSha256": null,
    "sha256": "285b9d63f4242cda2e8f2bbfcef4caf3ffd77e4530d24d21e81d2bc386dcaefb",
    "reason": "tracker impl"
+  },
+  {
+   "path": "crates/camera-ffi/src/encode.rs",
+   "previousSha256": null,
+   "sha256": "79a5dbf95e237619813d663c564a45a118855272200c0f2689b040397de119e1",
+   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
+  },
+  {
+   "path": "crates/camera-ffi/src/encode/tests.rs",
+   "previousSha256": null,
+   "sha256": "80fd2d275a35aa528df72c5fe44fc93210f6586bfb2a7951ead04365a1b8e0e6",
+   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
+  },
+  {
+   "path": "crates/am-camera/src/frame_export.rs",
+   "previousSha256": null,
+   "sha256": "99c840dcd4a6d53ebdace18cc2d958e37cc74c0a32267dbc009dd81532ec8f85",
+   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
   }
  ]
 }

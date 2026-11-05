@@ -2,6 +2,7 @@
 pub mod credentials;
 pub mod device_addresses;
 pub mod frame_budget;
+pub mod frame_export;
 pub mod media;
 
 /// 公共媒体错误；宿主自行映射到业务错误。

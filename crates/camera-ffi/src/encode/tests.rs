@@ -427,3 +427,215 @@ fn drain_tail_packets_survive_queue_full_and_recover_on_retry() {
     assert_eq!(unsafe { crate::amc_shutdown(ctx, 100, &mut lifecycle) }, 0);
     assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
 }
+
+/// §2.11 单帧导出：帧视图（自定义格式/平面），不依赖 FFmpeg 运行库。
+/// frame_view 放堆（Box）——view 指针指回它，栈上返回值 move 会失效指针。
+unsafe fn export_frame_view(
+    planes: &[(&[u8], usize)],
+    w: u32,
+    h: u32,
+    format: u32,
+) -> (Box<am_frame_view_t>, am_pixel_view_t) {
+    let mut frame = Box::new(am_frame_view_t {
+        width: w,
+        height: h,
+        format,
+        plane_count: planes.len() as u32,
+        ..Default::default()
+    });
+    for (i, (data, stride)) in planes.iter().enumerate() {
+        frame.planes[i] = data.as_ptr();
+        frame.strides[i] = *stride as u32;
+        frame.plane_size_bytes[i] = data.len() as u64;
+    }
+    let view = pixel_view(&frame);
+    (frame, view)
+}
+
+/// ctx 名额守卫：panic 路径也释放共享域准入名额（并行测试竞争敏感）。
+struct CtxGuard(usize);
+impl Drop for CtxGuard {
+    fn drop(&mut self) {
+        let _ = crate::amc_object_destroy(self.0 as *mut core::ffi::c_void);
+    }
+}
+
+fn export_ctx() -> CtxGuard {
+    let params = amc_init_params_t {
+        abi_version: AM_ABI_VERSION,
+        ..Default::default()
+    };
+    loop {
+        match unsafe { am_sdk_support::context::initialize_camera(crate::domain(), &params) } {
+            Ok(key) => return CtxGuard(key),
+            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                std::thread::sleep(std::time::Duration::from_millis(5))
+            }
+            Err(other) => panic!("camera ctx init: {other}"),
+        }
+    }
+}
+
+/// §2.11 单帧导出全链：PNG 往返+容量重试、JPEG 成功、opts 违规、NV12 奇偶拒、
+/// 无效 ctx。单测试单 ctx（共享域准入名额有限，避免挤占并行测试）。
+#[test]
+fn frame_encode_roundtrip_capacity_and_rejections() {
+    let guard = export_ctx();
+    let ctx: usize = guard.0;
+    // --- PNG：容量不足重试 + 往返（RGBA8 路径） ---
+    let mut rgba = vec![0u8; 4 * 4 * 4];
+    for px in 0..16 {
+        rgba[px * 4..px * 4 + 3].copy_from_slice(&[180, 30, 60]);
+    }
+    let planes: [(&[u8], usize); 1] = [(&rgba, 4 * 4)];
+    let (frame, view) = unsafe { export_frame_view(&planes, 4, 4, AM_PF_RGBA8 as u32) };
+    let png_opts = am_frame_encode_opts_t {
+        struct_size: std::mem::size_of::<am_frame_encode_opts_t>() as u32,
+        format: 2,
+        quality: 0,
+        reserved: [0; 5],
+    };
+    let mut needed = 0u64;
+    let mut sink = [0u8; 4];
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &view,
+                &png_opts,
+                sink.as_mut_ptr(),
+                4,
+                &mut needed,
+            )
+        },
+        AM_ERR_SDK_LIMIT_OUT_OF_RANGE
+    );
+    assert!(needed > 4, "required size must be reported, got {needed}");
+    let mut out = vec![0u8; needed as usize];
+    let mut written = 0u64;
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &view,
+                &png_opts,
+                out.as_mut_ptr(),
+                needed,
+                &mut written,
+            )
+        },
+        0
+    );
+    assert_eq!(written, needed);
+    assert!(
+        out.starts_with(&[0x89, b'P', b'N', b'G', 0x0D, 0x0A, 0x1A, 0x0A]),
+        "PNG magic"
+    );
+    // --- JPEG 成功 + opts 违规（RGB8 路径） ---
+    let mut gray = vec![128u8; 4 * 4 * 3];
+    for (i, b) in gray.iter_mut().enumerate() {
+        *b = b.wrapping_add(i as u8);
+    }
+    let gray_planes: [(&[u8], usize); 1] = [(&gray, 4 * 3)];
+    let (gray_frame, gray_view) =
+        unsafe { export_frame_view(&gray_planes, 4, 4, AM_PF_RGB8 as u32) };
+    out.resize(64 * 1024, 0); // JPEG 输出可超 PNG 所需，统一放大缓冲
+    let base = am_frame_encode_opts_t {
+        struct_size: std::mem::size_of::<am_frame_encode_opts_t>() as u32,
+        format: 1,
+        quality: 80,
+        reserved: [0; 5],
+    };
+    let mut bad = base;
+    bad.format = 9;
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &gray_view,
+                &bad,
+                out.as_mut_ptr(),
+                out.len() as u64,
+                &mut written,
+            )
+        },
+        AM_ERR_SDK_INVALID_ARGUMENT
+    );
+    let mut bad = base;
+    bad.quality = 101;
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &gray_view,
+                &bad,
+                out.as_mut_ptr(),
+                out.len() as u64,
+                &mut written,
+            )
+        },
+        AM_ERR_SDK_INVALID_ARGUMENT
+    );
+    let mut bad = base;
+    bad.reserved[2] = 1;
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &gray_view,
+                &bad,
+                out.as_mut_ptr(),
+                out.len() as u64,
+                &mut written,
+            )
+        },
+        AM_ERR_SDK_INVALID_ARGUMENT
+    );
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &gray_view,
+                &base,
+                out.as_mut_ptr(),
+                out.len() as u64,
+                &mut written,
+            )
+        },
+        0
+    );
+    assert!(written > 0 && out[0] == 0xFF && out[1] == 0xD8, "JPEG SOI");
+    // --- NV12 奇数宽拒绝 + 无效 ctx ---
+    let luma = vec![128u8; 5 * 4];
+    let chroma = vec![128u8; 5 * 2];
+    let nv12_planes: [(&[u8], usize); 2] = [(&luma, 5), (&chroma, 5)];
+    let (nv12_frame, nv12_view) =
+        unsafe { export_frame_view(&nv12_planes, 5, 4, AM_PF_NV12 as u32) };
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &nv12_view,
+                &base,
+                out.as_mut_ptr(),
+                out.len() as u64,
+                &mut written,
+            )
+        },
+        AM_ERR_CAMERA_PIXEL_FORMAT_UNSUPPORTED
+    );
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                0xdead as _,
+                &view,
+                &base,
+                out.as_mut_ptr(),
+                out.len() as u64,
+                &mut written,
+            )
+        },
+        AM_ERR_SDK_HANDLE_INVALID
+    );
+    drop((frame, gray_frame, nv12_frame));
+}

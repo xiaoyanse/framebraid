@@ -423,5 +423,142 @@ pub unsafe extern "C" fn amc_encoder_close(
     })
 }
 
+/// 全格式像素视图校验（§2.11 单帧导出）：RGBA8/RGB8/BGR8 单平面、NV12 双平面
+/// （偶数宽高）；返回 (平面切片集, 步长集, 宽, 高, 格式, matrix, range)。
+///
+/// # Safety
+/// frame 须指向有效 am_pixel_view_t；平面数据在本次调用期间保持可读。
+/// 全格式帧提取产物：平面切片集/步长集/宽/高/格式/矩阵/范围（§2.11）。
+type AnyView<'a> = (Vec<&'a [u8]>, Vec<usize>, u32, u32, u32, u32, u32);
+unsafe fn read_pixel_view_any(frame: *const am_pixel_view_t) -> Result<AnyView<'static>, i32> {
+    am_sdk_support::args::pointer(frame)?;
+    let value = unsafe { am_sdk_support::args::read(frame, size_of::<am_pixel_view_t>()) }?;
+    if value.magic != AM_PIXEL_VIEW_MAGIC {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    am_sdk_support::args::pointer(value.view)?;
+    let view = unsafe { &*value.view };
+    let (w, h) = (view.width, view.height);
+    if w == 0 || h == 0 || w > 8192 || h > 8192 {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    let planes = match view.format as i32 {
+        AM_PF_RGBA8 | AM_PF_RGB8 | AM_PF_BGR8 => vec![(
+            view.planes[0],
+            view.strides[0] as usize,
+            h as usize,
+            if view.format as i32 == AM_PF_RGBA8 {
+                4
+            } else {
+                3
+            },
+        )],
+        AM_PF_NV12 if w.is_multiple_of(2) && h.is_multiple_of(2) => vec![
+            (view.planes[0], view.strides[0] as usize, h as usize, 1),
+            (view.planes[1], view.strides[1] as usize, h as usize / 2, 2),
+        ],
+        _ => return Err(AM_ERR_CAMERA_PIXEL_FORMAT_UNSUPPORTED),
+    };
+    let mut slices = Vec::with_capacity(planes.len());
+    let mut strides = Vec::with_capacity(planes.len());
+    for (ptr, stride, rows, bpp) in planes {
+        if ptr.is_null() || stride < w as usize * bpp {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let needed = (stride
+            .checked_mul(rows - 1)
+            .and_then(|tail| tail.checked_add(w as usize * bpp)))
+        .ok_or(AM_ERR_SDK_INVALID_ARGUMENT)? as u64;
+        if view.plane_size_bytes[planes_index(&slices)] < needed {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        slices.push(unsafe { std::slice::from_raw_parts(ptr, needed as usize) });
+        strides.push(stride);
+    }
+    Ok((
+        slices,
+        strides,
+        w,
+        h,
+        view.format,
+        view.color_matrix,
+        view.color_range,
+    ))
+}
+
+fn planes_index(slices: &[&[u8]]) -> usize {
+    slices.len()
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn amc_frame_encode(
+    ctx: *mut amc_context_t,
+    frame: *const am_pixel_view_t,
+    opts: *const am_frame_encode_opts_t,
+    out: *mut u8,
+    capacity: u64,
+    out_size: *mut u64,
+) -> i32 {
+    status(domain(), ctx as usize, || {
+        am_sdk_support::callbacks::reject_reentry()?;
+        am_sdk_support::args::pointer(out_size)?;
+        unsafe {
+            out_size.write(0);
+        }
+        let _ = domain().active(ctx as usize)?;
+        am_sdk_support::args::pointer(opts)?;
+        let opts =
+            unsafe { am_sdk_support::args::read(opts, size_of::<am_frame_encode_opts_t>()) }?;
+        if opts.format != am_camera_core::frame_export::FORMAT_JPEG
+            && opts.format != am_camera_core::frame_export::FORMAT_PNG
+        {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        if opts.quality > 100 || opts.reserved != [0; 5] {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        let (planes, strides, w, h, format, matrix, range) = unsafe { read_pixel_view_any(frame)? };
+        let input = am_camera_core::frame_export::FrameInput {
+            planes: &planes,
+            strides: &strides,
+            width: w,
+            height: h,
+            format,
+            color_matrix: matrix,
+            color_range: range,
+        };
+        let quality = if opts.quality == 0 {
+            am_camera_core::frame_export::QUALITY_JPEG_DEFAULT
+        } else {
+            opts.quality
+        };
+        let bytes = am_camera_core::frame_export::encode(&input, opts.format, quality).map_err(
+            |e| match e {
+                am_camera_core::frame_export::ExportError::FormatInvalid
+                | am_camera_core::frame_export::ExportError::PixelInvalid => {
+                    AM_ERR_SDK_INVALID_ARGUMENT
+                }
+                am_camera_core::frame_export::ExportError::OutputTooLarge => {
+                    AM_ERR_SDK_LIMIT_OUT_OF_RANGE
+                }
+                am_camera_core::frame_export::ExportError::EncodeFailed => {
+                    AM_ERR_SDK_INTERNAL_ERROR
+                }
+            },
+        )?;
+        unsafe {
+            out_size.write(bytes.len() as u64);
+        }
+        if (capacity as usize) < bytes.len() {
+            return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+        }
+        am_sdk_support::args::pointer(out)?;
+        unsafe {
+            std::ptr::copy_nonoverlapping(bytes.as_ptr(), out, bytes.len());
+        }
+        Ok(())
+    })
+}
+
 #[cfg(test)]
 mod tests;

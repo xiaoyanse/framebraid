@@ -6,7 +6,16 @@ fn context() -> (usize, Arc<CameraState>) {
         abi_version: AM_ABI_VERSION,
         ..Default::default()
     };
-    let key = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+    // 共享进程域准入名额有限（并行测试挤占时等待释放，对齐 requests_tests 模式）
+    let key = loop {
+        match unsafe { am_sdk_support::context::initialize_camera(domain(), &params) } {
+            Ok(key) => break key,
+            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                std::thread::sleep(std::time::Duration::from_millis(5))
+            }
+            Err(other) => panic!("camera ctx init: {other}"),
+        }
+    };
     (key, crate::frames::camera_state(key).unwrap())
 }
 fn subscription(state: Arc<CameraState>, mode: u32) -> Arc<Subscription> {
