@@ -415,3 +415,7 @@ Keep path models and external weights trusted and unchanged throughout loading. 
 `amc_frame_encode(ctx, pixel_view, opts, out, capacity, out_size)`——宿主持有的任意像素视图编码为 JPEG/PNG 字节（取证/快照/调试）。无状态单次调用不占编码器句柄；全像素格式（NV12 内部矩阵换算）；容量不足时 `out_size` 填所需大小并返回 `sdk.limitOutOfRange`（不返回半份），按值重试一次即得；输出上限 32MiB。
 
 
+
+### Rust 直依赖 IoBinding 保活提醒（v0.6.x 修复随记）
+
+SDK 内部已修复：ORT IoBinding 对输出绑定的 MemoryInfo 按裸指针保留——自行组合 IoBinding 的 Rust 直依赖调用方若在 run/析构前释放该对象，会触发随机延迟段错误（SDK 修复见 CHANGELOG 01a819c）。自组绑定时让 MemoryInfo/Allocator 与 binding 同生命周期（字段声明序即 Drop 序）。
