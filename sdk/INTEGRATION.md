@@ -419,3 +419,7 @@ Keep path models and external weights trusted and unchanged throughout loading. 
 ### Rust 直依赖 IoBinding 保活提醒（v0.6.x 修复随记）
 
 SDK 内部已修复：ORT IoBinding 对输出绑定的 MemoryInfo 按裸指针保留——自行组合 IoBinding 的 Rust 直依赖调用方若在 run/析构前释放该对象，会触发随机延迟段错误（SDK 修复见 CHANGELOG 01a819c）。自组绑定时让 MemoryInfo/Allocator 与 binding 同生命周期（字段声明序即 Drop 序）。
+
+### 会话输入尺寸纪律（v0.6.x 研究发现随记）
+
+同一模型会话内交替提交不同输入尺寸，每次形状切换后首次推理会触发推理引擎的执行计划重规划（实测 +30ms 量级惩罚）。**每会话固定一个输入尺寸；需要多档分辨率的部署用多个会话**（多会话完全消除该惩罚，实测验证）。
