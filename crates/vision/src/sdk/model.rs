@@ -426,7 +426,17 @@ impl Model {
                 return Err(Error("vision.inferenceFailed".into()));
             }
         };
-        Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)
+        // 输出批轴须与本次实际输入首轴一致（M2b 提取重构时误改为与声明 batch 相等，
+        // 动态轴模型（native_batch=1）N>1 合批输出 [N,..] 被整批拒——R5 攒批自彼时
+        // 起损坏，批 C 复原为与输入首轴对照（原 R5 语义））。
+        let expected = inputs.first().and_then(|v| v.info.shape.first().copied());
+        Self::extract_outputs(
+            self.batch,
+            expected,
+            &mut self.selection,
+            result,
+            output_budget,
+        )
     }
 
     /// OV 引擎的引用输入路径：首版经临时副本（语义正确性优先；ORT 主路径零复制，
@@ -505,7 +515,13 @@ impl Model {
                 return Err(Error(format!("vision.inferenceFailed|gpu|{error}")));
             }
         };
-        Self::extract_outputs(self.batch, &mut self.selection, result, output_budget)
+        Self::extract_outputs(
+            self.batch,
+            Some(input.batch_len() as i64),
+            &mut self.selection,
+            result,
+            output_budget,
+        )
     }
 
     fn observe_ok(selection: &mut super::selection::BackendSelectionReport) {
@@ -522,8 +538,11 @@ impl Model {
         selection.last_native_error_code = Some(code as i32);
     }
 
+    /// `expected`：本次实际输入的首轴（含动态批 N）。输出首轴须与之对照——
+    /// 固定轴模型 N==batch，动态轴模型 N 为合批项数；None（异常无首轴）跳过对照。
     fn extract_outputs(
         batch: u32,
+        expected: Option<i64>,
         selection: &mut super::selection::BackendSelectionReport,
         result: ort::session::SessionOutputs<'_>,
         output_budget: usize,
@@ -549,9 +568,10 @@ impl Model {
             output.push(TensorData::new(spec, raw)?);
         }
         if batch != 0
+            && expected.is_some()
             && output
                 .iter()
-                .any(|v| v.info.shape.first().is_none_or(|b| *b != batch as i64))
+                .any(|v| v.info.shape.first() != expected.as_ref())
         {
             return Err(Error("vision.batchUnsupported".into()));
         }
