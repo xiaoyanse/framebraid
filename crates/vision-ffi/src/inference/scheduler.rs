@@ -243,7 +243,13 @@ struct Job {
 }
 enum Payload {
     Single(Input),
-    Native { inputs: Vec<Input>, ids: Vec<u64> },
+    Native {
+        inputs: Vec<Input>,
+        ids: Vec<u64>,
+        /// 逐项推理参数（批 C）：窗口/显式组批的逐项 decode 参数（confidence 等）
+        /// 必须逐项生效；顺序与 ids 对齐。RAW 路径不消费（无档案解码）。
+        params: Vec<am_infer_params_t>,
+    },
 }
 // params中raw_preprocess不跨线程使用，接受前已复制进Input；其余字段是纯值。
 unsafe impl Send for Job {}

@@ -1,10 +1,19 @@
-use super::{error, models::ModelHandle};
+use super::{error, lock, models::ModelHandle};
 use am_sdk_support::{abi::*, args, Result};
 use am_vision_core::{
+    gpu::iobinding::InferenceInput,
     profiles,
-    sdk::{self, pixels::Pixels, Preprocess},
+    sdk::{self, pixels::Pixels, ImageTransform, Preprocess},
 };
 use std::{ffi::c_void, mem::size_of};
+
+/// GPU 帧接受段预处理产物（批 C 落实合同 §3.3a"GPU 预处理在接受段同步完成，
+/// 纹理不跨异步生命周期"）：纹理内容在接受时已消费进设备张量，此后请求
+/// （含攒批窗口挂起期）只持有设备缓冲，纹理借用窗口在 capture 返回即闭合。
+pub struct GpuFrame {
+    pub binding: InferenceInput,
+    pub transform: ImageTransform,
+}
 
 pub struct Plan {
     view: Option<am_frame_view_t>,
@@ -23,7 +32,8 @@ pub struct Input {
     planes: Vec<Vec<u8>>,
     encoded: Vec<u8>,
     owner: Option<Owner>,
-    pub gpu: Option<am_gpu_frame_ref_t>,
+    /// GPU 帧（批 C 起为接受段预处理产物而非纹理引用）；None=非 GPU 帧输入。
+    pub gpu: Option<GpuFrame>,
     pub assoc: Option<am_frame_assoc_t>,
     pub preprocess: Preprocess,
 }
@@ -37,6 +47,8 @@ impl Drop for Owner {
     }
 }
 // view平面只指向自有Vec或经retain保留的只读拥有者，元数据在接受时已复制。
+// GPU 帧绑定（批 C）：ORT session/allocator/IoBinding 对象线程安全（ORT C API
+// 契约），构造后仅由单一执行线程消费至 run 完成。
 unsafe impl Send for Input {}
 pub unsafe fn params(p: *const am_infer_params_t) -> Result<am_infer_params_t> {
     let value = if p.is_null() {
@@ -301,13 +313,18 @@ fn validate_view(view: &am_frame_view_t) -> Result<()> {
 }
 impl Plan {
     /// 调用方保证输入到返回持续有效；此函数只在全域预算预留成功后执行。
-    pub unsafe fn capture(&self) -> Result<Input> {
+    /// GPU 帧（批 C）：预处理在此（接受段）同步完成，纹理借用随返回闭合。
+    pub unsafe fn capture(&self, model: &ModelHandle) -> Result<Input> {
+        let gpu = match self.gpu {
+            Some(reference) => Some(unsafe { capture_gpu(model, reference)? }),
+            None => None,
+        };
         let mut input = Input {
             view: self.view,
             planes: Vec::new(),
             encoded: Vec::new(),
             owner: None,
-            gpu: self.gpu,
+            gpu,
             assoc: self.assoc,
             preprocess: self.preprocess,
         };
@@ -333,11 +350,51 @@ impl Plan {
             input.encoded =
                 unsafe { std::slice::from_raw_parts(self.encoded, self.encoded_size) }.to_vec();
         }
-        // GPU 帧输入无 CPU 载荷（encoded null/0）：纹理按 gpu_ref 借用语义由
-        // Input.gpu 携带，不得对 null 指针构造切片（批 B ABI 全链 e2e 暴露：
+        // GPU 帧输入无 CPU 载荷（encoded null/0）：纹理内容已在 capture_gpu
+        // 消费进设备张量，此后不再引用纹理指针（批 B ABI 全链 e2e 暴露：
         // 原无条件拷贝在 GPU 帧提交时触发 UB 断言 abort）。
         Ok(input)
     }
+}
+
+/// GPU 帧接受段预处理（§3.3a）：会话须为 CUDA 且管线可用（显式输入不静默
+/// 降级，notSupported 与单帧执行路径同码）；接受线程同步完成互操作搬运与
+/// 预处理 kernel，产物为设备输入张量绑定——异步生命周期内不再触纹理。
+unsafe fn capture_gpu(model: &ModelHandle, gpu_ref: am_gpu_frame_ref_t) -> Result<GpuFrame> {
+    use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
+    let guard = lock(&model.session)?;
+    let session = guard.as_ref().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+    if !session.is_cuda() || !GpuPipeline::available() {
+        return Err(AM_ERR_SDK_NOT_SUPPORTED);
+    }
+    let (input_w, input_h) = {
+        let shape = &session.inputs[0].shape;
+        // L1 防御（审计 2026-11-01，自 run_gpu 迁移）：rank<2 下溢/负维 as u32
+        // 巨值转明确拒绝——正常加载后恒走 Ok 路径。
+        if shape.len() < 2 || shape[shape.len() - 1] <= 0 || shape[shape.len() - 2] <= 0 {
+            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
+        }
+        let last = shape.len() - 1;
+        (shape[last] as u32, shape[last - 1] as u32)
+    };
+    let pipeline = GpuPipeline::global().map_err(error)?;
+    let frame = GpuFrameData {
+        width: gpu_ref.width,
+        height: gpu_ref.height,
+        d3d_format: gpu_ref.d3d_format,
+        subresource: gpu_ref.subresource,
+        texture: gpu_ref.texture,
+    };
+    let (binding, transform) = pipeline
+        .preprocess_to_binding(
+            &frame,
+            session.ort_session(),
+            &session.inputs[0].name,
+            input_w,
+            input_h,
+        )
+        .map_err(error)?;
+    Ok(GpuFrame { binding, transform })
 }
 impl Input {
     pub fn prepare(

@@ -27,6 +27,21 @@ pub struct InferenceInput {
 impl InferenceInput {
     /// 在 session 的 CUDA device 上分配 [1, 3, h, w] f32 输入张量并绑定。
     pub fn new(session: &Session, input_name: &str, h: usize, w: usize) -> Result<Self, Error> {
+        Self::new_batch(session, input_name, 1, h, w)
+    }
+
+    /// 批 C 图像攒批：分配 [batch, 3, h, w] f32 设备张量并绑定（batch=1 与
+    /// `new` 等价；批量轴为首位，逐帧预处理输出按 batch 维组装进此张量）。
+    pub fn new_batch(
+        session: &Session,
+        input_name: &str,
+        batch: usize,
+        h: usize,
+        w: usize,
+    ) -> Result<Self, Error> {
+        if batch == 0 || batch > 64 {
+            return Err(Error("vision.dynamicRangeExceeded".into()));
+        }
         let memory = MemoryInfo::new(
             AllocationDevice::CUDA,
             0,
@@ -36,7 +51,7 @@ impl InferenceInput {
         .map_err(|e| Error(format!("CUDA MemoryInfo 构造失败|{e}")))?;
         let allocator = Allocator::new(session, memory)
             .map_err(|e| Error(format!("CUDA allocator 获取失败|{e}")))?;
-        let tensor = Tensor::<f32>::new(&allocator, [1usize, 3, h, w])
+        let tensor = Tensor::<f32>::new(&allocator, [batch, 3, h, w])
             .map_err(|e| Error(format!("CUDA 输入张量分配失败|{e}")))?;
         let mut binding = session
             .create_binding()
@@ -93,5 +108,24 @@ impl InferenceInput {
     /// device 数据指针（预处理 kernel 直接写入；借用期内不得释放）。
     pub fn device_ptr(&self) -> u64 {
         self.tensor.data_ptr() as u64
+    }
+
+    /// 绑定输入张量的批量轴长度（批 C：输出首轴对照与逐帧组装偏移计算用）。
+    pub fn batch_len(&self) -> usize {
+        self.tensor
+            .shape()
+            .first()
+            .and_then(|v| usize::try_from(*v).ok())
+            .unwrap_or(0)
+    }
+
+    /// 绑定输入张量的字节数（设备侧组装的逐帧拷贝长度）。
+    pub fn tensor_bytes(&self) -> usize {
+        self.tensor
+            .shape()
+            .iter()
+            .filter_map(|v| usize::try_from(*v).ok())
+            .product::<usize>()
+            * std::mem::size_of::<f32>()
     }
 }

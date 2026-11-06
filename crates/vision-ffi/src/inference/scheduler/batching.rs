@@ -6,11 +6,22 @@ use am_vision_core::sdk::batching::{self as core, Coordinator, WindowFlush};
 use am_vision_core::sdk::Preprocess;
 use std::time::Instant;
 
-/// 聚合键：逐项输入 shape 签名 + 前处理参数完全一致才同批（张量项无前处理）。
-/// 同一模型实例即同一实际后端选择；键不匹配项不等待、立即按现行规则执行。
+/// 聚合键的执行入口维度（批 C）：CPU 图像与 GPU 帧组装路径完全不同（CPU
+/// 张量拼接 vs 设备侧组装），不得同窗混批；张量项维持原键不变。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum BatchEntry {
+    Tensor,
+    ImageCpu,
+    ImageGpu,
+}
+
+/// 聚合键：逐项输入 shape 签名 + 前处理参数 + 执行入口完全一致才同批（张量
+/// 项无前处理）。同一模型实例即同一实际后端选择；键不匹配项不等待、立即按
+/// 现行规则执行。
 pub(super) type AggKey = (
     super::super::submission::TensorSignature,
     Option<Preprocess>,
+    BatchEntry,
 );
 
 /// 从提交计划构造聚合键；AUTO 原生组内项目已按签名分组，此处再叠加完整前处理。
@@ -19,10 +30,23 @@ pub(in crate::inference) fn agg_key(model: &ModelHandle, plan: &Plan) -> AggKey 
         Plan::Image(p) => (
             plan.signature(&model.info.input_specs[0].name),
             Some(p.preprocess),
+            if p.gpu.is_some() {
+                BatchEntry::ImageGpu
+            } else {
+                BatchEntry::ImageCpu
+            },
         ),
-        Plan::Tensors(_) => (plan.signature(&model.info.input_specs[0].name), None),
+        Plan::Tensors(_) => (
+            plan.signature(&model.info.input_specs[0].name),
+            None,
+            BatchEntry::Tensor,
+        ),
         // 级联不参与攒批（scheduler::submit 已按计划类型关断窗口），此臂仅为穷尽。
-        Plan::Cascade(..) => (plan.signature(&model.info.input_specs[0].name), None),
+        Plan::Cascade(..) => (
+            plan.signature(&model.info.input_specs[0].name),
+            None,
+            BatchEntry::Tensor,
+        ),
     }
 }
 
@@ -136,6 +160,7 @@ fn job_native(entry: Arc<Entry>, parallel: usize, items: Vec<Pending>) -> Job {
     let mut ids = Vec::with_capacity(count);
     let mut inputs = Vec::with_capacity(count);
     let mut admissions = Vec::with_capacity(count);
+    let mut per_item = Vec::with_capacity(count);
     let mut params = am_infer_params_t::default();
     for (index, pending) in items.into_iter().enumerate() {
         if index == 0 {
@@ -144,11 +169,16 @@ fn job_native(entry: Arc<Entry>, parallel: usize, items: Vec<Pending>) -> Job {
         ids.push(pending.id);
         inputs.push(pending.input);
         admissions.push(pending.admission);
+        per_item.push(pending.params);
     }
     let id = ids.first().copied().unwrap_or(0);
     Job {
         model: entry,
-        input: Payload::Native { inputs, ids },
+        input: Payload::Native {
+            inputs,
+            ids,
+            params: per_item,
+        },
         id,
         params,
         parallel,

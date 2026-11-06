@@ -46,7 +46,11 @@ pub(super) fn release(job: Job) {
             execution::finish(model, id, Err(AM_ERR_SDK_HANDLE_CLOSED));
             1
         }
-        Payload::Native { inputs, ids } => {
+        Payload::Native {
+            inputs,
+            ids,
+            params: _,
+        } => {
             let count = ids.len();
             drop(inputs);
             drop(_admissions);

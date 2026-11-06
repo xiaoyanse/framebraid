@@ -1,4 +1,4 @@
-use super::{cascade, input, tensors};
+use super::{cascade, input, models::ModelHandle, tensors};
 use am_sdk_support::{abi::*, Result};
 use am_vision_core::sdk::{cascade::MAX_ROIS, ImageTransform, TensorData};
 pub type TensorSignature = Vec<(String, u32, Vec<i64>)>;
@@ -52,12 +52,12 @@ impl Plan {
             }
         }
     }
-    pub unsafe fn capture(&self) -> Result<Input> {
+    pub unsafe fn capture(&self, model: &ModelHandle) -> Result<Input> {
         match self {
-            Self::Image(p) => Ok(Input::Image(Box::new(unsafe { p.capture() }?))),
+            Self::Image(p) => Ok(Input::Image(Box::new(unsafe { p.capture(model) }?))),
             Self::Tensors(p) => Ok(Input::Tensors(unsafe { p.capture() }?)),
             Self::Cascade(p, job) => Ok(Input::Cascade(
-                Box::new(unsafe { p.capture() }?),
+                Box::new(unsafe { p.capture(model) }?),
                 job.clone(),
             )),
         }

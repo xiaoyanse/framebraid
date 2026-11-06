@@ -1,5 +1,7 @@
 //! GPU 帧直传（M2b）：CUDA 互操作、GPU 预处理、IOBinding 与管线编排；
 //! E1 引擎适配位见合同 §3.3a。
+#[cfg(test)]
+mod batch_e2e_tests;
 pub mod bufpool;
 pub mod cuda_sys;
 pub mod driver_sys;

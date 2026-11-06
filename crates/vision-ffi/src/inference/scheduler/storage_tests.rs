@@ -27,6 +27,7 @@ fn non_power_of_two_job_slots_have_exact_backing_capacity() {
                 input: Payload::Native {
                     inputs: Vec::new(),
                     ids: Vec::new(),
+                    params: Vec::new(),
                 },
                 id: index,
                 params: Default::default(),

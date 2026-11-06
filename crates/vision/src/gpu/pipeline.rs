@@ -128,6 +128,46 @@ impl GpuPipeline {
         // 缓冲归还池 → unmap → 解除同纹理锁 → 注册缓存条目引用释放。
     }
 
+    /// 批 C 图像攒批的设备侧组装：N 帧已预处理设备张量（各 [1,3,h,w]，来自
+    /// `preprocess_to_binding`）D2D 拼接为单一 [N,3,h,w] 批绑定——零 CPU 回读
+    /// （R1.4 实测 CPU 拼接 ~3ms/样本不可接受，生死线）；逐帧一次
+    /// cudaMemcpy DtoD（同步语义，拷贝完成即组装完成）。
+    pub fn assemble_frames(
+        &self,
+        frames: &[&InferenceInput],
+        session: &ort::session::Session,
+        input_name: &str,
+        h: u32,
+        w: u32,
+    ) -> Result<InferenceInput, Error> {
+        if frames.is_empty() || frames.len() > 64 {
+            return Err(crate::Error("vision.dynamicRangeExceeded".into()));
+        }
+        self.driver.check(
+            unsafe { (self.driver.ctx_set_current)(self.context) },
+            "上下文设置",
+        )?;
+        let batch =
+            InferenceInput::new_batch(session, input_name, frames.len(), h as usize, w as usize)?;
+        let frame_bytes = batch.tensor_bytes() / frames.len();
+        let base = batch.device_ptr();
+        for (index, frame) in frames.iter().enumerate() {
+            if frame.tensor_bytes() != frame_bytes {
+                return Err(crate::Error("vision.inputShapeMismatch".into()));
+            }
+            let code = unsafe {
+                (self.runtime.memcpy_dtod)(
+                    (base + index as u64 * frame_bytes as u64) as *mut c_void,
+                    frame.device_ptr() as *const c_void,
+                    frame_bytes,
+                    3, // cudaMemcpyDeviceToDevice
+                )
+            };
+            self.runtime.check(code, "批帧设备侧组装")?;
+        }
+        Ok(batch)
+    }
+
     #[allow(clippy::too_many_arguments)]
     fn copy_and_launch(
         &self,

@@ -67,7 +67,7 @@ pub(super) unsafe fn submit(
     };
     let inputs = plans
         .iter()
-        .map(|p| unsafe { p.capture() })
+        .map(|p| unsafe { p.capture(model) })
         .collect::<Result<Vec<_>>>()?;
     let policy = *lock(&model.policy)?;
     let mut records = lock(&state.records)?;
@@ -203,9 +203,18 @@ pub(super) unsafe fn submit(
         let mut params = plans[0].params();
         params.raw_preprocess = std::ptr::null();
         let input = if native {
+            let per_item = plans
+                .iter()
+                .map(|p| {
+                    let mut value = p.params();
+                    value.raw_preprocess = std::ptr::null();
+                    value
+                })
+                .collect::<Vec<_>>();
             Payload::Native {
                 inputs,
                 ids: ids.clone(),
+                params: per_item,
             }
         } else {
             Payload::Single(inputs.into_iter().next().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?)

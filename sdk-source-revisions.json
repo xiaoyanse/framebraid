@@ -894,14 +894,14 @@
   {
    "path": "crates/vision-ffi/src/inference/input.rs",
    "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "5f197dbd5d071432e237aadb1aec532ffb5603057b09eb18e1704f94ff461d21",
-   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝"
+   "sha256": "e3743d11cfeffeb51cae1c7356584532051ad73e94a1a6d8d4411d9601b644a8",
+   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝；批C：GPU帧预处理移至接受段——Plan::capture(model)在capture_gpu同步完成互操作与预处理kernel，Input.gpu携带GpuFrame(设备张量绑定+变换)而非纹理引用，落实合同§3.3a\"预处理在接受段同步完成、纹理不跨异步生命周期\"（原异步路径工作线程时读纹理为该承诺的实现缺口，同时使攒批窗口挂起安全）"
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "7289926cb1efd7abc407bf60a8c3e7374f657a7a4a39696de480c11c399b42a6",
-   "reason": "cascade C1 impl; tracker impl (module wiring)"
+   "sha256": "bbd22fb819691e529a7139f5d15aac96c7c3d3e4e3a3f7c2d08e0ae95fd88d35",
+   "reason": "cascade C1 impl; tracker impl (module wiring)；批C：batch_e2e_tests模块登记（FFI攒批真机门）"
   },
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
@@ -960,26 +960,26 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
    "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-   "sha256": "2ac82bbec7e690c3142d4d0e5fbc712610b2dc2b9a5b6ac696d583d3b498aec7",
-   "reason": "cascade C1 impl"
+   "sha256": "5c4713e1820f0af36b8efa95b069121d08cb6d91069c207d24f653b671144e13",
+   "reason": "cascade C1 impl；批C：Payload::Native增逐项params字段（窗口/显式组批的逐项decode参数）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
    "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
-   "sha256": "f3fac25e46de9930b6d8d0efc9f0e05ac7a06db7d1126ae039ea7668504c3951",
-   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+   "sha256": "13a417240ab21683349b61999b4571612716ff73f16d917cf2bc7bc3638a3685",
+   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；批C：capture传入model；非parking原生路径收集逐项params进Payload::Native（逐项decode参数载体）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
    "previousSha256": null,
-   "sha256": "9657b20d73d7b149a45ff482fd7218dd15414cec9a386033710e72e8d667c612",
-   "reason": "cascade C1 impl"
+   "sha256": "0ee1d4e37d7010f8d295d8d84e5d16d661ee7f3f79936e024d3e27aabbbc34ca",
+   "reason": "cascade C1 impl；批C：AggKey增执行入口维度（BatchEntry张量/CPU图像/GPU帧——组装路径不同不混批，各自凑窗，键不匹配立即逐项执行）；job_native携带逐项params向量"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
    "previousSha256": null,
-   "sha256": "9862b532b45757fe814f3079d0475668722694e97cd26a0b516216f3e4dc1510",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "dd1e8d7843bda9287b0ee5c7e1fe2636aea56679ff3423c80f3ade9acf796623",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；批C：三目聚合键适配+凑满Job逐项params断言+执行入口分窗用例（CPU/GPU同签名不同键不并窗）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/budget.rs",
@@ -990,26 +990,26 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "4a7eabdb358d9fab4ea8e9add850cba2833dc6a03a6c39dad9464dbbf79d1848",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码"
+   "sha256": "dc44a8b48d53096043f8ec990dfe23e53a1031c2d723cc6e755220443e4b563b",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码；批C：run_gpu改消费接受段GpuFrame产物（预处理已在capture完成，纹理借用窗口闭合）；decode_profile/vocab_injection/outputs_bytes升pub(super)供原生批逐项解码复用；Payload::Native解构逐项params传native_execution"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
    "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-   "sha256": "49236aad28df65eed0a772ed8255c00776415bc2205747e37fd23a5d737a598f",
-   "reason": "cascade C1 impl"
+   "sha256": "c550917e57bf52ff9f3ffe714053d12dce858a35da9080240d0ba9d7b7bf5895",
+   "reason": "cascade C1 impl；批C主战场：PROFILE分支从整批拒绝改为物理批分派——CPU项逐项prepare→run_batch合并（词汇注入张量随行）→拆分逐项档案解码；GPU项设备侧组装(assemble_frames)单次run_gpu→首轴拆分逐项解码；混合显式组按入口拆两个物理批；逐项params/映射/掩膜预留逐项生效；split_batch_rows单测（位置身份+首轴漂移拒斥）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
    "previousSha256": null,
-   "sha256": "9c7730a0cf821c1e46eae00f8a90e19c6dc1c86e0b58f13af62d268b96e80884",
-   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+   "sha256": "69f6507ccd3d790b8fa71aa8bd0a5cb6a50fd612114aad2f601763af7c3934ef",
+   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；批C：Payload::Native解构补逐项params字段（忽略项）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
    "previousSha256": null,
-   "sha256": "8a90a7095afb698051bd46cb8f887db0765a0e02dcc753f94572aec3aea238e6",
-   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition"
+   "sha256": "08f3575354a89d23d0743cc9444f7180ec3fb100e1b21e88d94ee1948dbf015a",
+   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition；批C：Payload::Native构造补逐项params字段"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/storage.rs",
@@ -1152,20 +1152,20 @@
   {
    "path": "crates/vision/src/gpu/iobinding.rs",
    "previousSha256": null,
-   "sha256": "b2a1f1dc0cdf495978dbc425cbbb877e1bd517f3d196f6e13c538112ad66e2f0",
-   "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）"
+   "sha256": "39577de4b173017e3521266753906aa17e6b4f8ef83c46383ab94325203c5fb8",
+   "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）；批C：new_batch批形构造（[batch,3,h,w]，new委托batch=1保POC签名兼容）+batch_len/tensor_bytes查询（输出首轴对照与设备侧组装偏移/长度计算用）"
   },
   {
    "path": "crates/vision/src/gpu/mod.rs",
    "previousSha256": null,
-   "sha256": "e029fb4059fdea2689f28a2ed784ba279b3dcadb0c39242ef8feda9237df8373",
-   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
+   "sha256": "2fefef40d230be3e7bef9503b6d260cb562a1a9f238bdcff1a5479f17de112de",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）；批C：batch_e2e_tests模块登记（设备侧组装真机门）"
   },
   {
    "path": "crates/vision/src/gpu/pipeline.rs",
    "previousSha256": null,
-   "sha256": "d40673634d40d190281e77d2d2cfaf2f66be2976515fa50109f552f1f7938b12",
-   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
+   "sha256": "d4e5e11251414b21c6aca78cfc1130cf3d9fc99bf10e57107c3f61bbc37f8b6a",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）；批C：assemble_frames设备侧组装——N帧已预处理设备张量D2D(cudaMemcpy DtoD)拼接为单一[N,3,h,w]批绑定，零CPU回读（R1.4实测CPU拼接~3ms/样本不可接受）"
   },
   {
    "path": "crates/vision/src/gpu/preprocess_tests.rs",
@@ -1224,8 +1224,8 @@
   {
    "path": "crates/vision/src/sdk/model.rs",
    "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-   "sha256": "97f011b866f126100d5172c562f92a5ea03d9c0851d8f4bd04aa7473ee5c1567",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）"
+   "sha256": "e5a6c17a593714a78570490df4affbdd84e7f4460ab2726a026d98649d366bf2",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）；批C：extract_outputs批轴检查复原为与本次实际输入首轴对照（M2b 49d8a10误改为与声明batch相等，动态轴模型N>1合批自彼时起整批失败——R5攒批损坏，批合同门重跑捕获），expected经参数传入（run_ref取输入首轴/run_gpu取绑定批长），漂移拒斥语义保留"
   },
   {
    "path": "crates/vision/src/sdk/model/source.rs",
@@ -1518,8 +1518,8 @@
   {
    "path": "crates/vision-ffi/src/inference/submission.rs",
    "previousSha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
-   "sha256": "2921425799fe8022c7a0cb58d9f2cf17f49cdc8f83442a7fe3bef81e6d3d5b8d",
-   "reason": "cascade C1 impl"
+   "sha256": "d49cf61eafd7bd528183bb5aefd78491e66dd84c91a3fa5f4d3966e913f04c0d",
+   "reason": "cascade C1 impl；批C：Plan::capture透传ModelHandle（GPU帧接受段预处理需会话形状/ORT分配器）"
   },
   {
    "path": "crates/vision-ffi/src/inference/tensor_exports.rs",

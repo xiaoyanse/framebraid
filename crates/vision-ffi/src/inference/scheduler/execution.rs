@@ -109,10 +109,14 @@ fn execute(job: Job) {
         _admissions,
         parallel: _,
     } = job;
-    let input = match input {
+    let mut input = match input {
         Payload::Single(input) => input,
-        Payload::Native { inputs, ids } => {
-            native_execution::execute(entry, inputs, ids, _admissions);
+        Payload::Native {
+            inputs,
+            ids,
+            params: per_item,
+        } => {
+            native_execution::execute(entry, inputs, ids, per_item, _admissions);
             return;
         }
     };
@@ -137,7 +141,7 @@ fn execute(job: Job) {
         Err(AM_ERR_SDK_HANDLE_CLOSED)
     } else {
         std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-            run(model, &input, id, params)
+            run(model, &mut input, id, params)
         }))
         .unwrap_or(Err(AM_ERR_SDK_INTERNAL_ERROR))
     };
@@ -209,36 +213,15 @@ pub(super) fn finish(model: &ModelHandle, id: u64, result: Result<Arc<ResultBuff
 fn run_gpu(
     model: &ModelHandle,
     session: &mut am_vision_core::sdk::Model,
-    gpu_ref: am_gpu_frame_ref_t,
+    frame: &mut super::super::input::GpuFrame,
     id: u64,
     params: am_infer_params_t,
+    assoc: Option<am_frame_assoc_t>,
 ) -> Result<Arc<ResultBuffer>> {
-    use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
-    if !session.is_cuda() || !GpuPipeline::available() {
-        return Err(AM_ERR_SDK_NOT_SUPPORTED);
-    }
-    let pipeline = GpuPipeline::global().map_err(error)?;
-    let name = session.inputs[0].name.clone();
-    let (input_w, input_h) = {
-        let shape = &session.inputs[0].shape;
-        // L1 防御（审计 2026-11-01）：rank<2 下溢/负维 as u32 巨值转明确拒绝——
-        // 正常加载（byte_count 拒非正维）后恒走 Ok 路径，仅异常错误码语义收窄。
-        if shape.len() < 2 || shape[shape.len() - 1] <= 0 || shape[shape.len() - 2] <= 0 {
-            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
-        }
-        let last = shape.len() - 1;
-        (shape[last] as u32, shape[last - 1] as u32)
-    };
-    let frame = GpuFrameData {
-        width: gpu_ref.width,
-        height: gpu_ref.height,
-        d3d_format: gpu_ref.d3d_format,
-        subresource: gpu_ref.subresource,
-        texture: gpu_ref.texture,
-    };
-    let (mut binding, transform) = pipeline
-        .preprocess_to_binding(&frame, session.ort_session(), &name, input_w, input_h)
-        .map_err(error)?;
+    // 接受段（capture）已同步完成互操作搬运与预处理 kernel（批 C 落实
+    // §3.3a"GPU 预处理在接受段同步完成"）；此处消费设备张量绑定。
+    let binding = &mut frame.binding;
+    let transform = frame.transform;
     // 批 B 词汇注入（GPU 直传）：快照/组装复用 vocab_injection 共享段，嵌入
     // 张量按 CPU 内存绑定第二输入（H2D 每次注入由 ORT 异步搬运、run 前
     // synchronize_inputs 收口，首版无设备侧缓存）；未绑定双输入档案报
@@ -300,7 +283,7 @@ fn run_gpu(
     }
     let charge = model.state.charge(reserve)?;
     let start = am_sdk_support::clock::monotonic_ms();
-    let output = session.run_gpu(&binding, reserve);
+    let output = session.run_gpu(binding, reserve);
     model.refresh_selection(session);
     let raw = output.map_err(error)?;
     let prediction = decode_prediction(
@@ -317,7 +300,7 @@ fn run_gpu(
     ResultBuffer::build(
         model,
         id,
-        gpu_assoc(gpu_ref),
+        assoc,
         Some(mapping),
         raw,
         prediction,
@@ -328,15 +311,9 @@ fn run_gpu(
     )
 }
 
-fn gpu_assoc(gpu_ref: am_gpu_frame_ref_t) -> Option<am_frame_assoc_t> {
-    if gpu_ref.assoc.is_null() {
-        return None;
-    }
-    unsafe { am_sdk_support::args::read(gpu_ref.assoc, size_of::<am_frame_assoc_t>()) }.ok()
-}
-
+/// GPU/批量共用的独立解码入口（批 C 起亦为原生批逐项解码所复用）。
 #[allow(clippy::too_many_arguments)]
-fn decode_prediction(
+pub(super) fn decode_prediction(
     session: &am_vision_core::sdk::Model,
     raw: &[am_vision_core::sdk::TensorData],
     mapping: &am_vision_core::sdk::ImageTransform,
@@ -354,10 +331,10 @@ fn decode_prediction(
     )
 }
 
-/// PROFILE 解码共享段（图像主路径与级联 C1 两级共用）：形状重组→TensorView→
-/// profiles::decode（vocab 布局透传）；RAW 会话返回 None。
+/// PROFILE 解码共享段（图像主路径、级联 C1 两级与批 C 原生批逐项共用）：
+/// 形状重组→TensorView→profiles::decode（vocab 布局透传）；RAW 会话返回 None。
 #[allow(clippy::too_many_arguments)]
-fn decode_profile(
+pub(super) fn decode_profile(
     session: &am_vision_core::sdk::Model,
     raw: &[am_vision_core::sdk::TensorData],
     mapping: &am_vision_core::sdk::ImageTransform,
@@ -414,7 +391,7 @@ fn decode_profile(
 }
 
 /// 会话输出字节量合计（形状积×dtype 宽度；形状异常按 fallback 饱和）。
-fn outputs_bytes(outputs: &[sdk::TensorInfo], fallback: usize) -> usize {
+pub(super) fn outputs_bytes(outputs: &[sdk::TensorInfo], fallback: usize) -> usize {
     outputs
         .iter()
         .try_fold(0usize, |n, s| {
@@ -438,7 +415,7 @@ fn outputs_bytes(outputs: &[sdk::TensorInfo], fallback: usize) -> usize {
 /// A1 词汇注入共享段（§4.1）：PROFILE 双输入 detect 档案（YOLO-World 头形态）
 /// 的第二输入由词表嵌入快照自动填充——在途请求快照后执行，换代不影响已开始
 /// 推理；未绑定时按合同拒绝（vocabNotBound）；单输入/RAW 模型返回 None。
-fn vocab_injection(
+pub(super) fn vocab_injection(
     handle: &ModelHandle,
     session: &am_vision_core::sdk::Model,
 ) -> Result<Option<(sdk::TensorData, profiles::VocabLayout)>> {
@@ -463,7 +440,7 @@ fn vocab_injection(
 
 fn run(
     model: &ModelHandle,
-    input: &Input,
+    input: &mut Input,
     id: u64,
     params: am_infer_params_t,
 ) -> Result<Arc<ResultBuffer>> {
@@ -477,10 +454,11 @@ fn run(
     let mut session = lock(&model.session)?;
     let session = session.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
     // GPU 帧直传分派（M2b §3.3a）：显式输入不静默降级——非 CUDA 后端或管线
-    // 不可用报 notSupported（宿主按能力位选择输入 kind，像素路径永远可用）。
+    // 不可用在接受段 capture 已拒 notSupported（像素路径永远可用）；执行侧
+    // 消费接受段预处理产物（设备张量绑定，纹理借用已在接受时闭合）。
     if let super::super::submission::Input::Image(image) = input {
-        if let Some(gpu_ref) = image.gpu {
-            return run_gpu(model, session, gpu_ref, id, params);
+        if let Some(frame) = image.gpu.as_mut() {
+            return run_gpu(model, session, frame, id, params, image.assoc);
         }
     }
     let prepared = input.prepare(

@@ -91,7 +91,11 @@ fn pending(_f: &Fixture, ids: &[u64], guards: Vec<Admission>) -> Vec<Pending> {
 }
 
 fn agg(tag: u32) -> AggKey {
-    (vec![(format!("x{tag}"), 0, vec![1, 2])], None)
+    (
+        vec![(format!("x{tag}"), 0, vec![1, 2])],
+        None,
+        BatchEntry::Tensor,
+    )
 }
 
 #[test]
@@ -115,20 +119,24 @@ fn route_parks_until_fill_then_forms_one_native_job() {
     assert!(parked.is_empty());
     assert_eq!(f.engine.data.lock().unwrap().inflight, 2);
     assert_eq!(snapshot(f.key).1, core::Stats::default());
-    // 凑满：恰一个原生 Job，逐项 request_id 保序，逐项准入合计计费。
-    let jobs = route(
-        f.key,
-        &f.entry,
-        2,
-        agg(1),
-        pending(&f, &[3], admissions(&f, 1, 64)),
-    );
+    // 凑满：恰一个原生 Job，逐项 request_id 保序，逐项准入合计计费、逐项
+    // params 随 Job 携带（批 C：逐项 decode 参数逐项生效的载体）。
+    let mut with_params = pending(&f, &[3], admissions(&f, 1, 64));
+    with_params[0].params.confidence_threshold = 0.5;
+    let jobs = route(f.key, &f.entry, 2, agg(1), with_params);
     assert_eq!(jobs.len(), 1);
-    let Payload::Native { inputs, ids } = &jobs[0].input else {
+    let Payload::Native {
+        inputs,
+        ids,
+        params,
+    } = &jobs[0].input
+    else {
         panic!("凑满应为原生批量 Job");
     };
     assert_eq!(ids, &[1, 2, 3]);
     assert_eq!(inputs.len(), 3);
+    assert_eq!(params.len(), 3);
+    assert_eq!(params[2].confidence_threshold, 0.5);
     assert_eq!(Admission::totals(&jobs[0]._admissions), (3, 192));
     let stats = snapshot(f.key).1;
     assert_eq!(
@@ -141,6 +149,44 @@ fn route_parks_until_fill_then_forms_one_native_job() {
     );
     drop(jobs);
     assert_eq!(f.engine.data.lock().unwrap().inflight, 0);
+}
+
+/// 批 C：执行入口进聚合键——同签名同前处理的 CPU 图像与 GPU 帧不同键，
+/// 不并窗（组装路径不同：CPU 张量合并 vs 设备侧组装）；键不匹配项不等待。
+#[test]
+fn execution_entry_dimension_separates_windows() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let f = fixture(
+        0x5509,
+        Some(core::Config {
+            max_batch_items: 2,
+            max_wait_ms: 5000,
+        }),
+    );
+    let image = |entry: BatchEntry| -> AggKey {
+        (vec![("images".into(), 0, vec![1, 3, 64, 64])], None, entry)
+    };
+    assert!(image(BatchEntry::ImageCpu) != image(BatchEntry::ImageGpu));
+    assert!(image(BatchEntry::ImageCpu) != agg(1));
+    // CPU 图像项入窗等待；同签名 GPU 帧项键不匹配，立即按现行规则执行。
+    assert!(route(
+        f.key,
+        &f.entry,
+        2,
+        image(BatchEntry::ImageCpu),
+        pending(&f, &[1], admissions(&f, 1, 8))
+    )
+    .is_empty());
+    let jobs = route(
+        f.key,
+        &f.entry,
+        2,
+        image(BatchEntry::ImageGpu),
+        pending(&f, &[2], admissions(&f, 1, 8)),
+    );
+    assert_eq!(jobs.len(), 1);
+    assert!(matches!(jobs[0].input, Payload::Single(_)));
+    drop(jobs);
 }
 
 #[test]
