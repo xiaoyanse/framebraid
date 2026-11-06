@@ -236,9 +236,26 @@ fn run_gpu(
         subresource: gpu_ref.subresource,
         texture: gpu_ref.texture,
     };
-    let (binding, transform) = pipeline
+    let (mut binding, transform) = pipeline
         .preprocess_to_binding(&frame, session.ort_session(), &name, input_w, input_h)
         .map_err(error)?;
+    // 批 B 词汇注入（GPU 直传）：快照/组装复用 vocab_injection 共享段，嵌入
+    // 张量按 CPU 内存绑定第二输入（H2D 每次注入由 ORT 异步搬运、run 前
+    // synchronize_inputs 收口，首版无设备侧缓存）；未绑定双输入档案报
+    // vocabNotBound 与 CPU 路径同码，单输入模型零影响。
+    let injected = vocab_injection(model, session)?;
+    let vocab_layout = injected.as_ref().map(|(_, l)| l);
+    if let Some((vocab, _)) = injected.as_ref() {
+        binding.bind_vocab(vocab).map_err(error)?;
+        // ORT 绑定输入到 CUDA EP 的搬运是异步排队的（OrtSynchronizeBoundInputs
+        // 的存在即为此）：images 为 device 张量无搬运，vocab 是 CPU 内存绑定
+        // 有 H2D——run 前显式同步，否则 EP 执行流与搬运流时序不确定。
+        binding.binding.synchronize_inputs().map_err(|e| {
+            error(am_vision_core::Error(format!(
+                "vision.inferenceFailed|vocab输入同步|{e}"
+            )))
+        })?;
+    }
     let ctx = model.state.context()?;
     let context = ctx.data::<Context>()?;
     let limits = *lock(&context.limits)?;
@@ -286,8 +303,16 @@ fn run_gpu(
     let output = session.run_gpu(&binding, reserve);
     model.refresh_selection(session);
     let raw = output.map_err(error)?;
-    let prediction =
-        decode_prediction(session, &raw, &mapping, params, max_det, reserve, raw_bytes)?;
+    let prediction = decode_prediction(
+        session,
+        &raw,
+        &mapping,
+        params,
+        max_det,
+        reserve,
+        raw_bytes,
+        vocab_layout,
+    )?;
     let end = am_sdk_support::clock::monotonic_ms();
     ResultBuffer::build(
         model,
@@ -310,6 +335,7 @@ fn gpu_assoc(gpu_ref: am_gpu_frame_ref_t) -> Option<am_frame_assoc_t> {
     unsafe { am_sdk_support::args::read(gpu_ref.assoc, size_of::<am_frame_assoc_t>()) }.ok()
 }
 
+#[allow(clippy::too_many_arguments)]
 fn decode_prediction(
     session: &am_vision_core::sdk::Model,
     raw: &[am_vision_core::sdk::TensorData],
@@ -318,12 +344,13 @@ fn decode_prediction(
     max_det: usize,
     reserve: usize,
     raw_bytes: usize,
+    vocab: Option<&profiles::VocabLayout>,
 ) -> Result<Option<profiles::Prediction>> {
-    // GPU/批量共用的独立解码入口无词汇上下文：亲和头档案在此路径明确
-    // 拒绝（decode 内 affinity&&vocab 缺失 → profileUnsupported），与注入层
-    // 的 vocabNotBound 分工一致。
+    // GPU/批量共用的独立解码入口：批 B 起随 GPU 注入透传词汇布局（亲和
+    // 解码走通）；无词汇上下文时亲和头档案在 decode 内明确拒绝（affinity&&
+    // vocab 缺失 → profileUnsupported），与注入层的 vocabNotBound 分工一致。
     decode_profile(
-        session, raw, mapping, params, max_det, reserve, raw_bytes, None,
+        session, raw, mapping, params, max_det, reserve, raw_bytes, vocab,
     )
 }
 

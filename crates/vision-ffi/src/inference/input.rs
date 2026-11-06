@@ -329,10 +329,13 @@ impl Plan {
                 input.planes.push(data);
             }
             input.view = Some(view);
-        } else {
+        } else if self.gpu.is_none() {
             input.encoded =
                 unsafe { std::slice::from_raw_parts(self.encoded, self.encoded_size) }.to_vec();
         }
+        // GPU 帧输入无 CPU 载荷（encoded null/0）：纹理按 gpu_ref 借用语义由
+        // Input.gpu 携带，不得对 null 指针构造切片（批 B ABI 全链 e2e 暴露：
+        // 原无条件拷贝在 GPU 帧提交时触发 UB 断言 abort）。
         Ok(input)
     }
 }

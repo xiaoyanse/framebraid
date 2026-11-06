@@ -14,6 +14,8 @@ pub mod tracker;
 pub mod vocab;
 pub use batch::validate_count as validate_batch_count;
 pub use model::{byte_count, validate_input_infos, Model, ModelSource, TensorData, TensorInfo};
+// dtype→ORT 元素类型映射仅供 crate 内输入构造共享（GPU 绑定与 run_ref 同构）。
+pub(crate) use model::element;
 pub use prepare::{prepare, ImageTransform, Preprocess};
 pub use vocab::{encode as vocab_encode, VocabEmbedding};
 #[cfg(test)]

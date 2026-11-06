@@ -22,14 +22,21 @@ fn init_ctx() -> usize {
     unsafe { context::initialize_vision(domain(), &params) }.expect("vision ctx")
 }
 
-fn load_model(ctx: usize, path: &str, profile: &str) -> usize {
+fn load_model(ctx: usize, path: &str, profile: &str, backend: Option<u32>) -> usize {
     let cpath = CString::new(path).unwrap();
     let cprofile = CString::new(profile).unwrap();
+    // 指定后端时 strict=1：不静默回落 CPU（测试确定性）
+    let policy = backend.map(|requested| am_backend_policy_t {
+        requested,
+        strict: 1,
+        ..Default::default()
+    });
     let desc = am_model_desc_t {
         struct_size: std::mem::size_of::<am_model_desc_t>() as u32,
         path_utf8: cpath.as_ptr(),
         load_mode: AM_LOAD_PROFILE,
         profile_id: cprofile.as_ptr(),
+        backend: policy.as_ref().map_or(std::ptr::null(), |p| p as *const _),
         ..Default::default()
     };
     let mut key = std::ptr::null_mut();
@@ -49,11 +56,13 @@ fn vocab_e2e_bind_inject_decode_and_hits() {
         ctx,
         &format!("{FIXTURES}\\text-tower.onnx"),
         "text-encoder-clip-embed-v1",
+        None,
     );
     let detector = load_model(
         ctx,
         &format!("{FIXTURES}\\affinity-head.onnx"),
         "detect-yolo-world-head-v1",
+        None,
     );
     // 词表：hand 两词（id1 高分 0.9 / id2 中分 0.5 同框）、glove 一词（id3 低分 0.047）
     let labels = [
@@ -149,4 +158,156 @@ fn vocab_e2e_bind_inject_decode_and_hits() {
     assert_eq!(name2.to_bytes(), b"glove", "re-bind swaps labels");
     unsafe { amv_result_release(out2) };
     let _ = unsafe { amv_result_ack(ctx as _, id2) };
+}
+
+/// 批 B 对拍：GPU 直传路径词汇注入 vs CPU 注入——同模型（CUDA 后端）同词表，
+/// 合成亲和头的分数只由 vocab 嵌入首列决定、坐标为常量框（预处理域差异被
+/// 模型设计屏蔽），两条路径检测结果应数值一致。GPU 侧全断言（亲和解码/
+/// vocab_hits/class_name）与 CPU e2e 同口径。
+#[test]
+#[ignore = "需真实 NVIDIA GPU 与 vocab 合成双模型夹具（.local/tests/vocab-e2e）"]
+fn vocab_e2e_gpu_direct_injection_matches_cpu() {
+    use am_vision_core::gpu::{
+        cuda_sys::CudaApi, interop::nvidia_nv12_texture, interop::RegisteredTexture,
+        pipeline::GpuPipeline,
+    };
+    let ctx = init_ctx();
+    let tower = load_model(
+        ctx,
+        &format!("{FIXTURES}\\text-tower.onnx"),
+        "text-encoder-clip-embed-v1",
+        None,
+    );
+    // affinity head 指定 CUDA（backend=2）：GPU 帧分派按 is_cuda 判定
+    let detector = load_model(
+        ctx,
+        &format!("{FIXTURES}\\affinity-head.onnx"),
+        "detect-yolo-world-head-v1",
+        Some(2),
+    );
+    let labels = [CString::new("hand").unwrap()];
+    let tokens: Vec<i64> = vec![1i64; 77];
+    let entries = [am_vocab_entry_t {
+        struct_size: std::mem::size_of::<am_vocab_entry_t>() as u32,
+        label_utf8: labels[0].as_ptr(),
+        token_ids: tokens.as_ptr(),
+        token_rows: 1,
+        token_cols: 77,
+    }];
+    let _keep = (&labels, &tokens);
+    assert_eq!(
+        unsafe { amv_vocab_bind(detector as _, tower as _, entries.as_ptr(), 1) },
+        0
+    );
+    // GPU 帧：常色 NV12（合成模型分数与图像内容无关，常色即可）→ D3D 纹理
+    // → CUDA 装载（装载模式与 GPU e2e 相同：Y/UV 平面各一次 H2D）
+    let (w, h) = (640usize, 640usize);
+    let nv12 = vec![128u8; w * h * 3 / 2];
+    let runtime = CudaApi::load().expect("cudart");
+    GpuPipeline::global().expect("GPU 管线");
+    let texture = unsafe { nvidia_nv12_texture(640, 640).expect("NV12 纹理") };
+    unsafe {
+        (runtime.set_device)(0);
+        let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
+        let y = registered.map_subresource(0).expect("Y map");
+        let uv = registered.map_subresource(1).expect("UV map");
+        (runtime.memcpy2d_to_array)(y.array, 0, 0, nv12.as_ptr().cast(), w, w, h, 1);
+        let uv_ptr = nv12.as_ptr().add(w * h);
+        (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), w, w, h / 2, 1);
+    }
+    let gpu_ref = am_gpu_frame_ref_t {
+        width: 640,
+        height: 640,
+        d3d_format: 103,
+        texture: texture.0,
+        ..Default::default()
+    };
+    let gpu_input = am_image_input_t {
+        kind: AM_IMG_GPU_FRAME,
+        gpu: &gpu_ref,
+        ..Default::default()
+    };
+    let mut gpu_out: *mut amv_result_t = std::ptr::null_mut();
+    let mut gpu_id = 0u64;
+    let rc = unsafe {
+        amv_infer_image_sync(
+            detector as _,
+            &gpu_input,
+            std::ptr::null(),
+            &mut gpu_out,
+            &mut gpu_id,
+        )
+    };
+    if rc != 0 {
+        if let Ok((_, Some(detail))) = am_sdk_support::diagnostics::snapshot(domain(), detector) {
+            eprintln!(
+                "[gpu-vocab] rc={rc} detail={}",
+                detail.message.to_string_lossy()
+            );
+        }
+        panic!("GPU 直传 + vocab 注入应成功 rc={rc}");
+    }
+    let result = unsafe { &*gpu_out };
+    assert_eq!(result.task, AM_TASK_DETECT);
+    assert_eq!(result.detect.count, 1, "常量坐标框恒出一框");
+    // 值拷贝脱离 result 生命周期：release 后对拍断言不再引用其内存（早期
+    // 版本此处悬垂读，表现为对拍偶发垃圾值——GPU 侧断言实际全过）。
+    let gpu_box = unsafe { *result.detect.boxes };
+    assert_eq!(gpu_box.class_id, 0);
+    assert!(
+        (gpu_box.confidence - 0.9).abs() < 0.02,
+        "{:?}",
+        gpu_box.confidence
+    );
+    let name = unsafe { std::ffi::CStr::from_ptr(gpu_box.class_name_utf8) };
+    assert_eq!(name.to_bytes(), b"hand", "GPU 路径亲和解码 label");
+    let hits = unsafe { &*result.vocab_hits };
+    assert_eq!(hits.count, 1);
+    let hit0 = unsafe { &*hits.hits };
+    assert_eq!((hit0.entry_index, hit0.prompt_index), (0, 0));
+    unsafe { amv_result_release(gpu_out) };
+    let _ = unsafe { amv_result_ack(ctx as _, gpu_id) };
+    // CPU 对拍：同模型同词表 PNG 输入（run_ref 注入路径）——分数由同一嵌入
+    // 决定（Sigmoid 数值差 ≤1e-4）；坐标同为常量框且两侧 mapping 同为
+    // 640→640（scale=1），像素框应一致。
+    let png = fixture_png();
+    let cpu_input = am_image_input_t {
+        kind: AM_IMG_PNG,
+        encoded: png.as_ptr(),
+        encoded_size: png.len() as u64,
+        ..Default::default()
+    };
+    let mut cpu_out: *mut amv_result_t = std::ptr::null_mut();
+    let mut cpu_id = 0u64;
+    assert_eq!(
+        unsafe {
+            amv_infer_image_sync(
+                detector as _,
+                &cpu_input,
+                std::ptr::null(),
+                &mut cpu_out,
+                &mut cpu_id,
+            )
+        },
+        0
+    );
+    let cpu_result = unsafe { &*cpu_out };
+    assert_eq!(cpu_result.detect.count, 1);
+    let cpu_box = unsafe { &*cpu_result.detect.boxes };
+    assert!(
+        (cpu_box.confidence - gpu_box.confidence).abs() < 1e-4,
+        "置信不一致 cpu={:?} gpu={:?}",
+        cpu_box.confidence,
+        gpu_box.confidence
+    );
+    for i in 0..4 {
+        assert!(
+            (cpu_box.bounds[i] - gpu_box.bounds[i]).abs() < 1e-3,
+            "bounds[{i}] cpu={} gpu={}",
+            cpu_box.bounds[i],
+            gpu_box.bounds[i]
+        );
+    }
+    unsafe { amv_result_release(cpu_out) };
+    let _ = unsafe { amv_result_ack(ctx as _, cpu_id) };
 }

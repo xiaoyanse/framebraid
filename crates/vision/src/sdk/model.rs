@@ -159,7 +159,7 @@ fn validate_input_data_refs(expected: &[TensorInfo], inputs: &[&TensorData]) -> 
     }
     Ok(())
 }
-fn element(dtype: u32) -> Result<TensorElementType> {
+pub(crate) fn element(dtype: u32) -> Result<TensorElementType> {
     match dtype {
         0 => Ok(TensorElementType::Float32),
         1 => Ok(TensorElementType::Float16),

@@ -894,8 +894,8 @@
   {
    "path": "crates/vision-ffi/src/inference/input.rs",
    "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "a162521a07c1d897d4ffc19d56c0154c8b5943e7d52e672be0ac1c5fa1792405",
-   "reason": "cascade C1 impl"
+   "sha256": "5f197dbd5d071432e237aadb1aec532ffb5603057b09eb18e1704f94ff461d21",
+   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝"
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
@@ -990,8 +990,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "2613474a1c8381b9d913d5911f1015d92ab3708174da2ba307e48a1c3d39b5d2",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
+   "sha256": "4a7eabdb358d9fab4ea8e9add850cba2833dc6a03a6c39dad9464dbbf79d1848",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
@@ -1122,8 +1122,8 @@
   {
    "path": "crates/vision/src/gpu/cuda_sys.rs",
    "previousSha256": null,
-   "sha256": "77f5c7c1b2b91968701b439546bc62a202b3a55764a6a1d2e72b9d69fbbc9bc7",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "507acafb0b9f513ee67c756f70bbada60273e697eb34b7a5b88a8b497206e2fc",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；批B：memcpy_htod/dtod/dtoh 三参签名错绑四参 cudaMemcpy（kind 读栈垃圾报 invalid copy direction）修正为四参——既有缺陷此前零调用未暴露，批B排查首用踩中"
   },
   {
    "path": "crates/vision/src/gpu/driver_sys.rs",
@@ -1152,8 +1152,8 @@
   {
    "path": "crates/vision/src/gpu/iobinding.rs",
    "previousSha256": null,
-   "sha256": "eafa6dfe34445a4ea0b961c3f227da0277c09433df822095875649087d82ae7f",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged. M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap (overwritten by string data per crash dumps), corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro rungpu-only 11/12 & rungpu-reuse 8/12 crashes pre-fix vs 0/12 kept-alive control; post-fix full-mode 0/30, r01-baseline cuda 0/30, workspace 491 green, gpu e2e parity 5x ok; C ABI unchanged"
+   "sha256": "b2a1f1dc0cdf495978dbc425cbbb877e1bd517f3d196f6e13c538112ad66e2f0",
+   "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）"
   },
   {
    "path": "crates/vision/src/gpu/mod.rs",
@@ -1218,14 +1218,14 @@
   {
    "path": "crates/vision/src/sdk/mod.rs",
    "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-   "sha256": "4233fc92d3fe089b27de6951fe61aa6b4c47fddaaae8d6849a7cab09727d9167",
-   "reason": "cascade C1 impl; tracker impl (module wiring)"
+   "sha256": "bf1067f233418cdedecc3106ac100f146052a1cfed8323b53aee72dab3cbe7fd",
+   "reason": "cascade C1 impl; tracker impl (module wiring)；批B：element() dtype→ORT 元素类型映射提为 crate 内共享导出（GPU 绑定与 run_ref 输入构造同构复用）"
   },
   {
    "path": "crates/vision/src/sdk/model.rs",
    "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-   "sha256": "108a820cdba96b5bfd17c25ffad93aded21664da0c17b045edba20308398bb76",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
+   "sha256": "97f011b866f126100d5172c562f92a5ea03d9c0851d8f4bd04aa7473ee5c1567",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）"
   },
   {
    "path": "crates/vision/src/sdk/model/source.rs",

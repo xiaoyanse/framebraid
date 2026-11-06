@@ -44,9 +44,12 @@ pub struct CudaApi {
     /// driver cuMemAlloc 在 ORT EP 共存环境报 INVALID_CONTEXT 的规避，2026-10-29）。
     pub malloc: unsafe extern "C" fn(*mut *mut c_void, usize) -> CudaResult,
     pub free: unsafe extern "C" fn(*mut c_void) -> CudaResult,
-    pub memcpy_htod: unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CudaResult,
-    pub memcpy_dtod: unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CudaResult,
-    pub memcpy_dtoh: unsafe extern "C" fn(*mut c_void, *const c_void, usize) -> CudaResult,
+    /// cudaMemcpy 四参（dst, src, count, kind：1=HtoD、2=DtoH、3=DtoD）——
+    /// 原三参签名缺 kind 调用读栈垃圾（invalid copy direction，批 B 首个
+    /// 调用方踩中修正；此前零调用未暴露）。
+    pub memcpy_htod: unsafe extern "C" fn(*mut c_void, *const c_void, usize, i32) -> CudaResult,
+    pub memcpy_dtod: unsafe extern "C" fn(*mut c_void, *const c_void, usize, i32) -> CudaResult,
+    pub memcpy_dtoh: unsafe extern "C" fn(*mut c_void, *const c_void, usize, i32) -> CudaResult,
     pub memcpy2d_from_array: unsafe extern "C" fn(
         *mut c_void, // dst（device）
         usize,       // dpitch（目标行距字节）
