@@ -1,12 +1,15 @@
 //! GPU 帧直传管线编排（M2b 3.6）：GpuFrameData → 互操作映射 → D2D 搬运 →
 //! 预处理 kernel → IOBinding 输入。全程 device 内完成（M2c 搬运审计口径）。
+//! A 线三靶点优化：设备缓冲池化复用、纹理注册缓存（COM 保活）、kernel
+//! 完成事件同步替代全上下文同步——纯内部优化，无合同面变化。
+use super::bufpool::{DeviceBufPool, EventLease, EventPool, PooledBuf};
 use super::cuda_sys::CudaApi;
 use super::driver_sys::{DriverApi, KernelModule};
-use super::interop::RegisteredTexture;
 use super::iobinding::InferenceInput;
+use super::registry;
 use crate::Error;
 use std::ffi::c_void;
-use std::sync::{Arc, OnceLock};
+use std::sync::{Arc, Mutex, OnceLock};
 
 /// 跨 DLL 传入的 GPU 帧引用（ABI am_gpu_frame_ref_t 的内部形态）。
 /// `texture` 借用至推理接受（合同 §3.3a：同步至返回/异步至接受）。
@@ -16,29 +19,6 @@ pub struct GpuFrameData {
     pub d3d_format: u32,
     pub subresource: u32,
     pub texture: *mut c_void,
-}
-
-/// CUDA 中间缓冲 guard：分配成功即接管释放；`?` 提前返回或 panic 任何退出
-/// 路径都走 Drop，后续分配/搬运失败不再泄漏已分配缓冲。
-struct CudaBuf {
-    ptr: *mut c_void,
-    free: unsafe extern "C" fn(*mut c_void) -> super::cuda_sys::CudaResult,
-}
-impl CudaBuf {
-    fn alloc(api: &CudaApi, bytes: usize, what: &str) -> Result<Self, Error> {
-        let mut ptr: *mut c_void = std::ptr::null_mut();
-        api.check(unsafe { (api.malloc)(&mut ptr, bytes) }, what)?;
-        Ok(Self {
-            ptr,
-            free: api.free,
-        })
-    }
-}
-impl Drop for CudaBuf {
-    fn drop(&mut self) {
-        // 析构路径错误无法传播；释放结果按既有惯例忽略，不构成吞错。
-        let _ = unsafe { (self.free)(self.ptr) };
-    }
 }
 
 /// 进程级 GPU 管线单例（driver ctx + JIT kernel；CUDA 环境进程内共享）。
@@ -52,6 +32,10 @@ pub struct GpuPipeline {
     /// 建立时的上下文句柄：每次管线操作前显式设为当前（runtime/ORT 调用
     /// 可能扰动线程 current，不依赖隐式延续）。
     context: *mut std::ffi::c_void,
+    /// 设备缓冲复用池（三靶点：消除每帧 cudaMalloc/cudaFree）。
+    bufs: Mutex<DeviceBufPool>,
+    /// kernel 完成事件池（三靶点：事件同步替代 cuCtxSynchronize）。
+    events: Mutex<EventPool>,
 }
 
 impl GpuPipeline {
@@ -80,12 +64,14 @@ impl GpuPipeline {
             driver,
             kernel,
             context,
+            bufs: Mutex::new(DeviceBufPool::new()),
+            events: Mutex::new(EventPool::default()),
         })
     }
 
     /// GPU 帧 → 模型输入（dst 尺寸按模型输入形状）。返回 IOBinding 输入
     /// （device tensor 由 ORT allocator 持有）。纹理借用至本函数返回（kernel
-    /// 完成后归还语义：同步等待 kernel 结束再释放中间 buffer）。
+    /// 完成后归还语义：事件同步等 kernel 结束再归还缓冲/解除映射）。
     pub fn preprocess_to_binding(
         &self,
         frame: &GpuFrameData,
@@ -105,24 +91,41 @@ impl GpuPipeline {
         if frame.texture.is_null() || frame.width == 0 || frame.height == 0 {
             return Err(crate::Error("vision.gpuFrameInvalid".into()));
         }
-        let registered =
-            unsafe { RegisteredTexture::register(self.runtime.clone(), frame.texture)? };
+        // 注册缓存命中即免 register/unregister；同纹理并发 map 串行化兜底。
+        // Safety：纹理指针经 GPU 帧租约借入（合同 §3.3a），缓存 AddRef 保活。
+        let cached = unsafe {
+            registry::global()
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .acquire(&self.runtime, frame.texture)?
+        };
+        let _map_guard = cached.map_lock.lock().unwrap_or_else(|e| e.into_inner());
         {
-            let y = registered.map_subresource(frame.subresource)?;
+            let y = cached.texture.map_subresource(frame.subresource)?;
             // NV12 每 slice 两个 subresource（M2b 实测）：UV 紧随 Y。
-            let uv = registered.map_subresource(frame.subresource + 1)?;
+            let uv = cached.texture.map_subresource(frame.subresource + 1)?;
             let y_array = y.array;
             let uv_array = uv.array;
-            // D2D 搬运：array → device buffer（GPU 内拷贝，计入搬运审计）。
+            // D2D 搬运：array → device buffer（GPU 内拷贝，计入搬运审计）；
+            // 缓冲池复用，尺寸变化时按需新分配。
             let y_bytes = frame.width as usize * frame.height as usize;
             let uv_bytes = y_bytes / 2;
-            let y_buf = CudaBuf::alloc(&self.runtime, y_bytes, "Y缓冲分配")?;
-            let uv_buf = CudaBuf::alloc(&self.runtime, uv_bytes, "UV缓冲分配")?;
+            let y_buf = PooledBuf::acquire(&self.bufs, &self.runtime, y_bytes, "Y缓冲分配")?;
+            let uv_buf = PooledBuf::acquire(&self.bufs, &self.runtime, uv_bytes, "UV缓冲分配")?;
             self.copy_and_launch(
-                y_buf.ptr, uv_buf.ptr, y_array, uv_array, frame, dst_w, dst_h, session, input_name,
-                y_bytes,
+                y_buf.ptr(),
+                uv_buf.ptr(),
+                y_array,
+                uv_array,
+                frame,
+                dst_w,
+                dst_h,
+                session,
+                input_name,
             )
         }
+        // 作用域出口顺序：copy_and_launch 内事件同步（kernel 完成）→
+        // 缓冲归还池 → unmap → 解除同纹理锁 → 注册缓存条目引用释放。
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -137,7 +140,6 @@ impl GpuPipeline {
         dst_h: u32,
         session: &ort::session::Session,
         input_name: &str,
-        y_bytes: usize,
     ) -> Result<(InferenceInput, crate::sdk::ImageTransform), Error> {
         let width = frame.width as usize;
         let height = frame.height as usize;
@@ -171,7 +173,6 @@ impl GpuPipeline {
             left,
             top,
         };
-        let _ = y_bytes;
         let launched = self.kernel.launch(
             y_buf as u64,
             uv_buf as u64,
@@ -184,9 +185,19 @@ impl GpuPipeline {
             input.device_ptr(),
         );
         launched?;
-        // kernel 完成后再释放中间 buffer（launch 异步；同步等待借用窗口闭合）。
-        self.driver
-            .check(unsafe { (self.driver.ctx_synchronize)() }, "kernel同步")?;
+        // kernel 完成=本帧 legacy 流到 record 点：事件同步替代全上下文同步
+        // （后者在多路并发下连带等待其它流上全部推理 kernel，R1.3 实证空隙
+        // 来源）。同步完成后才归还中间 buffer/解除纹理映射（借用窗口闭合）。
+        let event = EventLease::acquire(&self.events, &self.driver)?;
+        self.driver.check(
+            unsafe { (self.driver.event_record)(event.get(), std::ptr::null_mut()) },
+            "kernel事件记录",
+        )?;
+        self.driver.check(
+            unsafe { (self.driver.event_synchronize)(event.get()) },
+            "kernel事件同步",
+        )?;
+        drop(event);
         audit_frame();
         Ok((input, transform))
     }
@@ -208,41 +219,4 @@ pub mod audit {
 fn audit_frame() {
     use std::sync::atomic::Ordering;
     audit::GPU_INPUTS.fetch_add(1, Ordering::Relaxed);
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use std::sync::atomic::{AtomicUsize, Ordering};
-
-    static FREED: AtomicUsize = AtomicUsize::new(0);
-
-    // 计数版 free：验证 Drop 语义（真实 cudaMalloc 失败注入需 CUDA 环境，未测）。
-    unsafe extern "C" fn counting_free(_p: *mut c_void) -> super::super::cuda_sys::CudaResult {
-        FREED.fetch_add(1, Ordering::SeqCst);
-        0
-    }
-
-    /// issue #5：每个成功分配的缓冲恰好释放一次；第二次分配失败时
-    /// 第一个缓冲随作用域退出释放——修复前该路径裸指针直接泄漏。
-    #[test]
-    fn cuda_buf_drop_frees_each_allocation_exactly_once() {
-        FREED.store(0, Ordering::SeqCst);
-        {
-            let _y = CudaBuf {
-                ptr: 1 as *mut c_void,
-                free: counting_free,
-            };
-            let _uv = CudaBuf {
-                ptr: 2 as *mut c_void,
-                free: counting_free,
-            };
-            // 第二次分配失败的形态：不存在第二个 guard，也没有游离的裸指针。
-        }
-        assert_eq!(
-            FREED.load(Ordering::SeqCst),
-            2,
-            "两个成功分配各释放一次，无双重释放"
-        );
-    }
 }

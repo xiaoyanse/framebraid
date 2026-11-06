@@ -1128,8 +1128,8 @@
   {
    "path": "crates/vision/src/gpu/driver_sys.rs",
    "previousSha256": null,
-   "sha256": "bda36828194f69a2af27d8320e6d342b8041656a6d266ff3a2d662914551373e",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "59816c6162951633fdd63f6db1c2020b49c89e0feba4a6b0d580ec86eb87b750",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
   },
   {
    "path": "crates/vision/src/gpu/e2e_tests.rs",
@@ -1146,8 +1146,8 @@
   {
    "path": "crates/vision/src/gpu/interop.rs",
    "previousSha256": null,
-   "sha256": "3ef8be725f90c8a3c4a74f6023b70869b33749b08f8eb90c380b83c8a4624c64",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；v0.3.1 audit fix applied (issues #2-#8)"
+   "sha256": "f9da05f136e5a9e6fb4ef0aeb54d0fe69698adb452654c0420eb1c3bd36e3ffb",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
   },
   {
    "path": "crates/vision/src/gpu/iobinding.rs",
@@ -1158,14 +1158,14 @@
   {
    "path": "crates/vision/src/gpu/mod.rs",
    "previousSha256": null,
-   "sha256": "4256510443363bdb4daf2aac2af61ce42b1b25730d28cd658f0a7680023a22d8",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+   "sha256": "e029fb4059fdea2689f28a2ed784ba279b3dcadb0c39242ef8feda9237df8373",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
   },
   {
    "path": "crates/vision/src/gpu/pipeline.rs",
    "previousSha256": null,
-   "sha256": "4a79285600aaf7ad01a86990dbd85bf9d2ea699d20caad7a62ce6878bc069f66",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；v0.3.1 audit fix applied (issues #2-#8)"
+   "sha256": "d40673634d40d190281e77d2d2cfaf2f66be2976515fa50109f552f1f7938b12",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
   },
   {
    "path": "crates/vision/src/gpu/preprocess_tests.rs",
@@ -1694,6 +1694,18 @@
    "previousSha256": null,
    "sha256": "99c840dcd4a6d53ebdace18cc2d958e37cc74c0a32267dbc009dd81532ec8f85",
    "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
+  },
+  {
+   "path": "crates/vision/src/gpu/bufpool.rs",
+   "previousSha256": null,
+   "sha256": "fc36309e6e5e0aa3403b439ccc0f3b15ef9a49dac29e3cd77b2e03aa4e5e7ff1",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
+  },
+  {
+   "path": "crates/vision/src/gpu/registry.rs",
+   "previousSha256": null,
+   "sha256": "afe7bd6b34c8bab9fbe2082ead5c1a9dafb50e15b0a85786765498c082e7f833",
+   "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
   }
  ]
 }

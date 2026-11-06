@@ -44,6 +44,12 @@ pub struct DriverApi {
     pub ctx_create: unsafe extern "C" fn(*mut *mut c_void, u32, i32) -> CuResult,
     pub ctx_set_current: unsafe extern "C" fn(*mut c_void) -> CuResult,
     pub ctx_synchronize: unsafe extern "C" fn() -> CuResult,
+    /// kernel 完成事件（A 线三靶点优化）：细粒度同步替代全上下文等待。
+    pub event_create: unsafe extern "C" fn(*mut *mut c_void, u32) -> CuResult,
+    pub event_record: unsafe extern "C" fn(*mut c_void, *mut c_void) -> CuResult,
+    pub event_synchronize: unsafe extern "C" fn(*mut c_void) -> CuResult,
+    #[allow(dead_code)]
+    pub event_destroy: unsafe extern "C" fn(*mut c_void) -> CuResult,
     pub module_load_data: unsafe extern "C" fn(*mut *mut c_void, *const c_void) -> CuResult,
     pub module_get_function:
         unsafe extern "C" fn(*mut *mut c_void, *mut c_void, *const u8) -> CuResult,
@@ -127,6 +133,10 @@ impl DriverApi {
             ctx_create: cast!(b"cuCtxCreate\0"),
             ctx_set_current: cast!(b"cuCtxSetCurrent\0"),
             ctx_synchronize: cast!(b"cuCtxSynchronize\0"),
+            event_create: cast!(b"cuEventCreate\0"),
+            event_record: cast!(b"cuEventRecord\0"),
+            event_synchronize: cast!(b"cuEventSynchronize\0"),
+            event_destroy: cast!(b"cuEventDestroy\0"),
             module_load_data: cast!(b"cuModuleLoadData\0"),
             module_get_function: cast!(b"cuModuleGetFunction\0"),
             launch_kernel: cast!(b"cuLaunchKernel\0"),

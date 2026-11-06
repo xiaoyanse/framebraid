@@ -4,12 +4,47 @@ use super::cuda_sys::{CudaApi, CudaArray, GraphicsResource, REGISTER_DEFAULT};
 use std::ffi::c_void;
 use std::sync::Arc;
 
+/// COM 引用保活（IUnknown::AddRef/Release）：注册缓存的生命周期基石——
+/// SDK 持引用期间宿主 Release 不销毁纹理对象，unregister 时对象必然有效，
+/// 且同地址不可能被复用为新纹理（引用计数未归零地址不释放）。
+pub struct ComRef(*mut c_void);
+impl Drop for ComRef {
+    fn drop(&mut self) {
+        unsafe { com_release(self.0) };
+    }
+}
+
+/// IUnknown::AddRef（vtable slot 1）。
+///
+/// # Safety
+/// `ptr` 为有效 COM 对象。
+pub unsafe fn com_add_ref(ptr: *mut c_void) -> u32 {
+    let table = unsafe { *ptr.cast::<*const *const c_void>() };
+    let add_ref: unsafe extern "system" fn(*mut c_void) -> u32 =
+        unsafe { std::mem::transmute(*table.add(1)) };
+    unsafe { add_ref(ptr) }
+}
+
+/// IUnknown::Release（vtable slot 2）。
+///
+/// # Safety
+/// `ptr` 为有效 COM 对象。
+pub unsafe fn com_release(ptr: *mut c_void) -> u32 {
+    let table = unsafe { *ptr.cast::<*const *const c_void>() };
+    let release: unsafe extern "system" fn(*mut c_void) -> u32 =
+        unsafe { std::mem::transmute(*table.add(2)) };
+    unsafe { release(ptr) }
+}
+
 /// 注册的 D3D11 纹理：Drop 注销（unregister），借用期内有效。
 /// map 为 resource 级：多子资源共享一次 map，引用计数归零才 unmap。
+/// `_keepalive` 为最后字段：字段声明序即 Drop 序——unregister（本类型
+/// Drop）先执行，COM Release（ComRef Drop）后执行，满足互操作释放顺序。
 pub struct RegisteredTexture {
     api: Arc<CudaApi>,
     resource: GraphicsResource,
     mapped: std::sync::atomic::AtomicUsize,
+    _keepalive: Option<ComRef>,
 }
 
 impl RegisteredTexture {
@@ -32,7 +67,24 @@ impl RegisteredTexture {
             api,
             resource,
             mapped: std::sync::atomic::AtomicUsize::new(0),
+            _keepalive: None,
         })
+    }
+
+    /// 注册并对纹理 COM AddRef 保活（注册缓存用，见 ComRef）；Drop 顺序
+    /// unregister → Release 由字段声明序静态保证。
+    ///
+    /// # Safety
+    /// 同 `register`：`texture` 为有效 ID3D11Texture2D，且调用后宿主不得在
+    /// 本对象存活期间依赖纹理已销毁（保活使其存活至 Drop）。
+    pub unsafe fn register_keepalive(
+        api: Arc<CudaApi>,
+        texture: *mut c_void,
+    ) -> Result<Self, crate::Error> {
+        let mut this = unsafe { Self::register(api, texture)? };
+        unsafe { com_add_ref(texture) };
+        this._keepalive = Some(ComRef(texture));
+        Ok(this)
     }
 
     /// 映射并取子资源数组；返回 RAII 映射守卫（计数归零 unmap）。
