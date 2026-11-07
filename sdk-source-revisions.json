@@ -6,8 +6,8 @@
   {
    "path": "crates/am-camera/Cargo.toml",
    "previousSha256": "c49aef7faba6a39e41250fd91227ae9e9849714740e0f3b264abc9fd847fe6af",
-   "sha256": "cf6ac395b20cade41c473700199eb64101631d81cebd05fa52a14ffab648b7d0",
-   "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged"
+   "sha256": "96dc16da00ef80f5452099bd7b956ee5b691ae1923bd749757b910f762bcad8b",
+   "reason": "Reviewed JPEG fast path via zune-jpeg direct RGBA decode (R6: -41%/-23% at 720p/1080p, EXIF orientation preserved, benchmark test staged); workspace green; C ABI unchanged; batch H: add jpeg-encoder 0.7.1 (std+simd) as the JPEG export encoding core (AVX2 runtime-detected, scalar fallback); C ABI unchanged"
   },
   {
    "path": "crates/am-camera/src/media/codec.rs",
@@ -1698,8 +1698,8 @@
   {
    "path": "crates/am-camera/src/frame_export.rs",
    "previousSha256": null,
-   "sha256": "99c840dcd4a6d53ebdace18cc2d958e37cc74c0a32267dbc009dd81532ec8f85",
-   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix)"
+   "sha256": "8ae4f12be2a84055d5bd130e7988da903fb4c3624b8972a3d69b21cb036dba13",
+   "reason": "frame export impl: am-camera frame_export.rs (image crate JPEG/PNG, 4-format assembly incl. NV12 matrix per vision-parity coefficients, 32MiB cap) + camera-ffi amc_frame_encode (capacity-insufficient limitOutOfRange + required, opts validation) + FFI test (heap frame view vs self-referential move trap, CtxGuard admission guard); queue-tests admission wait (parallel regression fix); batch H: JPEG core swapped to jpeg-encoder 0.7.1 pinned F_1_1 4:4:4 (SOF0 forensics: image crate actual output is 4:4:4 despite its 4:2:2 docs; Annex K tables + libjpeg scaling formula byte-identical; PSNR within +0.04dB, bytes within 0.8%; 1.75-2.1x with AVX2 runtime detection; PNG path unchanged); C ABI unchanged"
   },
   {
    "path": "crates/vision/src/gpu/bufpool.rs",

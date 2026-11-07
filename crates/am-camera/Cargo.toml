@@ -16,6 +16,8 @@ uuid = { version = "1", features = ["v4"] }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 # JPEG 直解 RGBA（R6：消除 DynamicImage 中转的全图 RGB→RGBA 转换，~25% 耗时）
 zune-jpeg = "0.5"
+# JPEG 编码核心（批 H：替换 image crate 自研慢路径；AVX2 运行时检测自动回退标量）
+jpeg-encoder = { version = "0.7", default-features = false, features = ["std", "simd"] }
 sha2 = "0.10"
 libloading = "0.9"
 # 搬运会话客户端队列唤醒（仅 sync 原语，无 runtime）

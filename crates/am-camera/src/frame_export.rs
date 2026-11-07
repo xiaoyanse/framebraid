@@ -1,7 +1,10 @@
 //! 单帧图像导出（§2.11）：宿主持有的像素平面 → JPEG/PNG 字节。无状态纯函数，
-//! 与流编码器共享 image 编码底座但不占 amc_encoder 额度；NV12 换算系数与
-//! am-vision 侧 Pixels::rgb 同源（两库同像同色）。
-use image::{codecs::jpeg::JpegEncoder, codecs::png::PngEncoder, ImageEncoder, RgbImage};
+//! 不占 amc_encoder 额度；JPEG 核心为 jpeg-encoder 纯 Rust 编码器（4:4:4 +
+//! Annex K 量化表，质量刻度与 libjpeg/image crate 同源；AVX2 运行时检测，无
+//! AVX2 自动回退标量），PNG 沿用 image crate；NV12 换算系数与 am-vision 侧
+//! Pixels::rgb 同源（两库同像同色）。
+use image::{codecs::png::PngEncoder, ImageEncoder, RgbImage};
+use jpeg_encoder::{Encoder as JpegEncoderCore, SamplingFactor};
 
 /// 像素格式值（与 am_pixel_format_e 对齐；本 crate 不依赖 sdk-support）。
 pub const PF_RGBA8: u32 = 0;
@@ -135,13 +138,16 @@ pub fn encode(input: &FrameInput<'_>, format: u32, quality: u32) -> Result<Vec<u
     let mut bytes = Vec::new();
     match format {
         FORMAT_JPEG => {
-            let encoder = JpegEncoder::new_with_quality(&mut bytes, quality.clamp(1, 100) as u8);
+            let mut encoder = JpegEncoderCore::new(&mut bytes, quality.clamp(1, 100) as u8);
+            // 4:4:4 对齐 image crate 旧底座实际输出（SOF0 取证为 h1v1；其文档标
+            // 4:2:2 与实际不符），量化表/缩放公式同源，质量参数语义不变。
+            encoder.set_sampling_factor(SamplingFactor::F_1_1);
             encoder
-                .write_image(
+                .encode(
                     image.as_raw(),
-                    input.width,
-                    input.height,
-                    image::ExtendedColorType::Rgb8,
+                    input.width as u16,
+                    input.height as u16,
+                    jpeg_encoder::ColorType::Rgb,
                 )
                 .map_err(|_| ExportError::EncodeFailed)?;
         }
@@ -254,6 +260,31 @@ mod tests {
             "quality orders size: {} vs {}",
             low.len(),
             high.len()
+        );
+    }
+
+    #[test]
+    fn jpeg_quality_scale_parity_with_reference_encoder() {
+        // 新核心与 image crate 参考实现量化口径同源（Annex K 表 + libjpeg 缩放
+        // 公式 + 4:4:4 采样）：同图同质量输出尺寸应在 ±3% 内。上游换表、改采样
+        // 因子或质量刻度漂移都会打破此界，作为接入方无感的守门断言。
+        let mut noisy = checkerboard(64, 64);
+        for (i, b) in noisy.iter_mut().enumerate() {
+            *b = b.wrapping_add((i * 31 % 251) as u8);
+        }
+        let (planes, strides, mut input) = packed_input(&noisy, 64, 64, PF_RGB8);
+        input.planes = &planes;
+        input.strides = &strides;
+        let new_bytes = encode(&input, FORMAT_JPEG, 85).expect("new core");
+        let mut reference = Vec::new();
+        let encoder = image::codecs::jpeg::JpegEncoder::new_with_quality(&mut reference, 85);
+        encoder
+            .write_image(&noisy, 64, 64, image::ExtendedColorType::Rgb8)
+            .expect("reference");
+        let ratio = new_bytes.len() as f64 / reference.len() as f64;
+        assert!(
+            (0.97..=1.03).contains(&ratio),
+            "quality scale parity ratio {ratio}"
         );
     }
 

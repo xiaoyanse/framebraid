@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "target": "x86_64-pc-windows-msvc",
   "scope": "Resolved Cargo metadata including build dependencies; not exact linked-code attribution",
-  "cargoLockSha256": "873af7469dd7c21cf131ea9db5a9f3721c9ff1297eaa9b230489ad31cb1cdd41",
+  "cargoLockSha256": "e98fd69c9936e292ffd516e8e68d723eec80b8eaadb8c3bb98ef47b1dc0b693f",
   "noticeParts": [
     {
       "path": "NOTICES-1.txt",
@@ -11,13 +11,13 @@
     },
     {
       "path": "NOTICES-2.txt",
-      "bytes": 449240,
-      "sha256": "b0f0bd568fe8c9fa694f8c5bea83c16e5aa1761b98bb385859de9181de650cea"
+      "bytes": 440736,
+      "sha256": "01fd65464bc166c9846c508e104dc2287090e632f3dc45ff07ed8b73ce25b68a"
     },
     {
       "path": "NOTICES-3.txt",
-      "bytes": 388542,
-      "sha256": "bd5faf8af90763af7d00ff546b48b3ead2120a022fe2b11997af3d604b7cb5c0"
+      "bytes": 412195,
+      "sha256": "8f4766a86f183f8c45319cbc167bceb92af04bc068cc314c2b44b8396bc043b9"
     }
   ],
   "packages": [
@@ -927,6 +927,29 @@
           "path": "LICENSE-MIT",
           "bytes": 1023,
           "sha256": "23f18e03dc49df91622fe2a76176497404e46ced8a715d9d2b67a7446571cca3"
+        }
+      ]
+    },
+    {
+      "name": "jpeg-encoder",
+      "version": "0.7.1",
+      "declaredLicense": "(MIT OR Apache-2.0) AND IJG",
+      "registrySource": "registry+https://github.com/rust-lang/crates.io-index",
+      "originalTexts": [
+        {
+          "path": "LICENSE-APACHE",
+          "bytes": 10701,
+          "sha256": "85a884980abd6032fc6b5439ba918ab16db9ac9051b5cf18db9c27c587df07c0"
+        },
+        {
+          "path": "LICENSE-IJG",
+          "bytes": 3228,
+          "sha256": "a21e92ec88aefc6823f0c51994783571a849e8d9b43d9ade61ec9d886776721e"
+        },
+        {
+          "path": "LICENSE-MIT",
+          "bytes": 1088,
+          "sha256": "4d022727ea392ebba2fe5e9a5f78c610a0eae506b491f3db29c78b6d430d6503"
         }
       ]
     },
