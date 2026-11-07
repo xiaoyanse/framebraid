@@ -1,5 +1,18 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.6.2 (2026-11-08)
+
+Fix + compatible-addition release, **C ABI unchanged at 1.3** — no new symbols or structures; swap the DLLs to pick up the changes.
+
+- **Profile registry evolution: batch-dynamic open-vocabulary entries** — new `detect-yolo-world-batch-v1` (images batch-dynamic + 3-D text `[batch,num_prompts,512]` aligned to the image batch axis + output `[batch,rows,8400]`) and `text-encoder-clip-dynseq-v1` (dynamic sequence length) connect real YOLO-World-class weights to image batching; `decode_affinity` now takes the runtime anchors dimension (fixed declarations verified identical, semantics unchanged); CPU/GPU vocab batch injection unified byte-identical. Real-weights e2e green (GPU direct vs CPU cross-domain Pearson 0.927; batched vs per-frame ≤0.4%). Honest boundary: detection semantics quality is model-side (no tokenizer in-repo; pipeline correctness asserted).
+- **Staged preprocessing accrual (batching availability unlock)** — parking-phase admission now accounts actual residency (~3.1MB/item vs 17.8MB full-cycle estimate at 1080p→640) with execution-phase top-up; caps and rejection semantics unchanged. Pooled 8-lane re-run: window fills to configured 4.0 (was 3.0 with 30270 backpressures → now 0), throughput +14%; tail latency shifts from throttled-smooth to queued — pick per SLA. Deployment note: CUDA batching steady-state RSS scales with batch shape (world-class dual-input pooled ≈2.9-3.0GB; ~+200-300MB per batch unit N) — reserve accordingly.
+- **JPEG export encoding core speedup** — `amc_frame_encode` JPEG base swapped from image-crate JpegEncoder to `jpeg-encoder` 0.7.1 (pure Rust, AVX2 runtime-detected, scalar fallback; 4:4:4 pinned to match the old base's actual output — image-crate's documented 4:2:2 is wrong, verified via SOF0 byte streams). Pure-encode 1.75-2.1x (1080p q95 50.9→26.6ms; 960x540 up to 2.10x); PSNR slightly better across the board; guard test pins quality-scale parity against the reference encoder. End-to-end gain depends on the NV12→RGB conversion share (unchanged, in the same seam).
+- Governance: ABI freeze baseline recomputed (v0.6.0's ABI-1.3 artifacts had drifted unrecorded — six artifacts fully attributed); release checklist now gates on `freeze-abi --check`.
+
+Verification: workspace 508 tests zero failures; hardware gates green (real-weights e2e, FFI batch e2e 3/3, device-side assembly, vocab GPU parity, m2b-repro stability); fingerprint gate 285; ABI frozen 11 unchanged.
+
+/ 兼容新增+修复版，C ABI 不变（1.3），换 DLL 即得。档案注册表演进（world 级真实权重的图像攒批路径接通+真实权重 e2e+CPU/GPU 词汇注入批语义统一）；攒批入账分期计费（窗口可正常凑满、背压归零+部署内存规划注记）；JPEG 导出编码底座提速 1.75-2.1x（纯 Rust+SIMD，4:4:4 对齐旧底座实际行为并守门）；ABI 冻结基线重算与发版清单堵漏。验证：workspace 508 零失败；真机门全绿；指纹闸门 285。
+
 ## v0.6.1 (2026-11-07)
 
 Fix + compatible-addition release, **C ABI unchanged at 1.3** (`AM_ABI_VERSION` 65539). No new C symbols or structures — existing consumers only need to swap the DLLs to pick up the fixes and expanded coverage.
