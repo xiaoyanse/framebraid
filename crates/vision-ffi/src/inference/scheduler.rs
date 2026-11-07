@@ -240,6 +240,10 @@ struct Job {
     params: am_infer_params_t,
     parallel: usize,
     _admissions: Vec<Admission>,
+    /// 批 E 分期计费：逐项执行期补账字节（与 _admissions 同长对齐；空=非
+    /// 分期路径，准入已一次性全额入账）。worker 执行开始时补入同源账目，
+    /// 随 _admissions 一同释放——账目守恒与取消/关闭路径归还不变。
+    exec_charges: Vec<usize>,
 }
 enum Payload {
     Single(Input),

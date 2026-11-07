@@ -894,8 +894,8 @@
   {
    "path": "crates/vision-ffi/src/inference/input.rs",
    "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "e3743d11cfeffeb51cae1c7356584532051ad73e94a1a6d8d4411d9601b644a8",
-   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝；批C：GPU帧预处理移至接受段——Plan::capture(model)在capture_gpu同步完成互操作与预处理kernel，Input.gpu携带GpuFrame(设备张量绑定+变换)而非纹理引用，落实合同§3.3a\"预处理在接受段同步完成、纹理不跨异步生命周期\"（原异步路径工作线程时读纹理为该承诺的实现缺口，同时使攒批窗口挂起安全）"
+   "sha256": "efbb534e30d374f6a239588d69c557ab3c0f67db024a603f420432d2f63278f0",
+   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝；批C：GPU帧预处理移至接受段——Plan::capture(model)在capture_gpu同步完成互操作与预处理kernel，Input.gpu携带GpuFrame(设备张量绑定+变换)而非纹理引用，落实合同§3.3a\"预处理在接受段同步完成、纹理不跨异步生命周期\"（原异步路径工作线程时读纹理为该承诺的实现缺口，同时使攒批窗口挂起安全）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
@@ -960,38 +960,38 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler.rs",
    "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-   "sha256": "5c4713e1820f0af36b8efa95b069121d08cb6d91069c207d24f653b671144e13",
-   "reason": "cascade C1 impl；批C：Payload::Native增逐项params字段（窗口/显式组批的逐项decode参数）"
+   "sha256": "b5b4853dfaaedd2c7147179f5054b67fdbedfb9d533f100773d8ad5623202589",
+   "reason": "cascade C1 impl；批C：Payload::Native增逐项params字段（窗口/显式组批的逐项decode参数）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
    "previousSha256": "891f92ae2f7b52fb990b787732ec9ad95b0069fa734b247b79a022027b4f52e6",
-   "sha256": "13a417240ab21683349b61999b4571612716ff73f16d917cf2bc7bc3638a3685",
-   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；批C：capture传入model；非parking原生路径收集逐项params进Payload::Native（逐项decode参数载体）"
+   "sha256": "0c49f11bbb3e8ee509d4f29e23af48b3d198fd5f0f032b592334610020d4d837",
+   "reason": "Reviewed R3 request-table backing storage and overlap admission, idle accounting and no external close barrier; actual CPU low-budget, ID/replacement, batch/cancel/notify and pressure verification; no C ABI change；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；批C：capture传入model；非parking原生路径收集逐项params进Payload::Native（逐项decode参数载体）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
    "previousSha256": null,
-   "sha256": "0ee1d4e37d7010f8d295d8d84e5d16d661ee7f3f79936e024d3e27aabbbc34ca",
-   "reason": "cascade C1 impl；批C：AggKey增执行入口维度（BatchEntry张量/CPU图像/GPU帧——组装路径不同不混批，各自凑窗，键不匹配立即逐项执行）；job_native携带逐项params向量"
+   "sha256": "3436b318ffdaf19a39156ba8f1dfd39e63f4de43a358957b9c3e190d94976b96",
+   "reason": "cascade C1 impl；批C：AggKey增执行入口维度（BatchEntry张量/CPU图像/GPU帧——组装路径不同不混批，各自凑窗，键不匹配立即逐项执行）；job_native携带逐项params向量；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
    "previousSha256": null,
-   "sha256": "dd1e8d7843bda9287b0ee5c7e1fe2636aea56679ff3423c80f3ade9acf796623",
-   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；批C：三目聚合键适配+凑满Job逐项params断言+执行入口分窗用例（CPU/GPU同签名不同键不并窗）"
+   "sha256": "b6c11a92ad78d78be4c3a68e5949bf5d2f9f720d9db29bb1d51c6a9a2c3831b6",
+   "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；批C：三目聚合键适配+凑满Job逐项params断言+执行入口分窗用例（CPU/GPU同签名不同键不并窗）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/budget.rs",
    "previousSha256": null,
-   "sha256": "bc6b870b363689d0ced31d58a2b1331f92437c93a5253e129c9a45a95f4f949d",
-   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged"
+   "sha256": "3da46ffa1655cacb96706798662129a80671c6b7b335d11373eb591676084da8",
+   "reason": "R3 executor fixed Job/thread slots and retained Context-index capacity share the existing global ceiling, growth overlap charged before request commit; bounded cleanup snapshots/direct statistics and native CPU regression, C ABI unchanged；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "dc44a8b48d53096043f8ec990dfe23e53a1031c2d723cc6e755220443e4b563b",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码；批C：run_gpu改消费接受段GpuFrame产物（预处理已在capture完成，纹理借用窗口闭合）；decode_profile/vocab_injection/outputs_bytes升pub(super)供原生批逐项解码复用；Payload::Native解构逐项params传native_execution"
+   "sha256": "21ff8d92d4a783255f6a3447ece62687dc55ddb7331e3837d9a99bc1b42914b3",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码；批C：run_gpu改消费接受段GpuFrame产物（预处理已在capture完成，纹理借用窗口闭合）；decode_profile/vocab_injection/outputs_bytes升pub(super)供原生批逐项解码复用；Payload::Native解构逐项params传native_execution；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
@@ -1008,8 +1008,8 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/storage_tests.rs",
    "previousSha256": null,
-   "sha256": "08f3575354a89d23d0743cc9444f7180ec3fb100e1b21e88d94ee1948dbf015a",
-   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition；批C：Payload::Native构造补逐项params字段"
+   "sha256": "1e0a16e92ee3bafc426cf2eab8862df9afbf9fbe176f2e7863160ebcdeb70a43",
+   "reason": "M5 hot swap batch: swap exports/tests/state/models + E1 constants; workspace 397 green; C ABI compatible addition；批C：Payload::Native构造补逐项params字段；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/storage.rs",
@@ -1518,8 +1518,8 @@
   {
    "path": "crates/vision-ffi/src/inference/submission.rs",
    "previousSha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
-   "sha256": "d49cf61eafd7bd528183bb5aefd78491e66dd84c91a3fa5f4d3966e913f04c0d",
-   "reason": "cascade C1 impl；批C：Plan::capture透传ModelHandle（GPU帧接受段预处理需会话形状/ORT分配器）"
+   "sha256": "8a82cca05821faf889fc5f2f4e94a8167bdae425392cb9da20db7486b54c0ea1",
+   "reason": "cascade C1 impl；批C：Plan::capture透传ModelHandle（GPU帧接受段预处理需会话形状/ORT分配器）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/inference/tensor_exports.rs",
@@ -1530,8 +1530,8 @@
   {
    "path": "crates/vision-ffi/src/inference/tensors.rs",
    "previousSha256": "b4d4ac1f7b3b6dee75ee037f283dadf9dce7a36b63e5ca1ea9acb441fcd6a433",
-   "sha256": "b4d4ac1f7b3b6dee75ee037f283dadf9dce7a36b63e5ca1ea9acb441fcd6a433",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "cbba3eb879de5d1f6b17415e0e6ec4ed236f2df4d72bed382740dc2f140b8c6a",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
   },
   {
    "path": "crates/vision-ffi/src/shared.rs",

@@ -44,6 +44,26 @@ pub(super) fn reserve(
     })
 }
 
+/// 批 E 执行期补账：在同源分类/Context/执行器账目上追加字节预留（项数已
+/// 在挂起期准入计入，此处 count=0 仅字节）；上限检查与拒绝语义同准入预留
+/// ——满了照拒，不因分期放大预算护栏。
+pub(super) fn topup(
+    source: &Admission,
+    bytes: usize,
+    limits: &am_limits_t,
+    policy: &am_queue_policy_t,
+) -> Result<Admission> {
+    reserve(
+        source.engine.clone(),
+        source.usage.clone(),
+        source.class,
+        0,
+        bytes,
+        limits,
+        policy,
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use super::super::super::state::Usage;
@@ -168,6 +188,56 @@ mod tests {
         assert_eq!(snapshot(&e, &u), (1, 212, [0, 212]));
         assert!(reserve(e.clone(), u.clone(), 1, 1, 1, &limits(512), &policy(128)).is_err());
         drop(input);
+        assert_eq!(snapshot(&e, &u), (0, 0, [0, 0]));
+    }
+
+    /// 批 E 分期计费：挂起份额之上执行期补账，账目同源累计、项数不重复
+    /// 计，逐守卫释放后全量归还。
+    #[test]
+    fn staged_topup_extends_ledger_and_conserves_on_release() {
+        let e = engine();
+        let u = Arc::new(Usage::default());
+        let held = reserve(
+            e.clone(),
+            u.clone(),
+            0,
+            1,
+            300,
+            &limits(1024),
+            &policy(1024),
+        )
+        .unwrap();
+        let extra = topup(&held, 212, &limits(1024), &policy(1024)).unwrap();
+        assert_eq!(snapshot(&e, &u), (1, 512, [512, 0]));
+        drop(extra);
+        assert_eq!(snapshot(&e, &u), (1, 300, [300, 0]));
+        drop(held);
+        assert_eq!(snapshot(&e, &u), (0, 0, [0, 0]));
+    }
+
+    /// 批 E：补账与准入共用上限，满了照拒、不产生部分入账（护栏语义不变）。
+    #[test]
+    fn staged_topup_respects_caps_without_partial_charge() {
+        let e = engine();
+        let u = Arc::new(Usage::default());
+        let held = reserve(
+            e.clone(),
+            u.clone(),
+            0,
+            1,
+            700,
+            &limits(1024),
+            &policy(1024),
+        )
+        .unwrap();
+        let extra = topup(&held, 300, &limits(1024), &policy(1024)).unwrap();
+        assert!(matches!(
+            topup(&held, 25, &limits(1024), &policy(1024)),
+            Err(AM_ERR_SDK_QUEUE_FULL)
+        ));
+        assert_eq!(snapshot(&e, &u), (1, 1000, [1000, 0]));
+        drop(extra);
+        drop(held);
         assert_eq!(snapshot(&e, &u), (0, 0, [0, 0]));
     }
 

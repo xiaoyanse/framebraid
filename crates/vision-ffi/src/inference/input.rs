@@ -24,6 +24,15 @@ pub struct Plan {
     pub gpu: Option<am_gpu_frame_ref_t>,
     pub assoc: Option<am_frame_assoc_t>,
     pub preprocess: Preprocess,
+    /// 批 E 分期计费：挂起期实驻留（capture 产物——CPU 帧=planes/encoded
+    /// 拷贝字节；GPU 帧=接受段设备输入张量 [1,3,H,W] F32=12B/像素）。
+    pub pending: usize,
+    /// 批 E 分期计费：执行期补账（组批峰值份额——预处理行进合并缓冲与
+    /// ORT 输入副本各一份=24B/像素，编码项另加解码 RGB 面 3B/像素；GPU 帧
+    /// 设备侧组装不落 CPU 账，与现行执行期设备张量同口径）。两项之和为
+    /// 攒批项执行期的同源核心组批预算基线；cost 保持全周期峰值口径，供
+    /// 非攒批路径一次性入账与级联估算使用。
+    pub exec_charge: usize,
     pub cost: usize,
     pub params: am_infer_params_t,
 }
@@ -183,6 +192,8 @@ pub unsafe fn plan_item(
         gpu: None,
         assoc: None,
         preprocess,
+        pending: 0,
+        exec_charge: 0,
         cost: 0,
         params,
     };
@@ -200,6 +211,11 @@ pub unsafe fn plan_item(
             .iter()
             .take(view.plane_count as usize)
             .sum::<u64>() as usize;
+        // 批 E：挂起期实驻留=平面字节（拷贝或保留拥有者缓冲，同一请求归因）；
+        // 执行期补账=合并缓冲+ORT 输入副本各一份（24B/像素，core run_batch
+        // input_budget 同源口径）。
+        result.pending = result.cost;
+        result.exec_charge = preprocess.width as usize * preprocess.height as usize * 24;
         result.view = Some(view);
         if input.flags == AM_INPUT_BORROW_RETAINED {
             if pixel.owner_handle.is_null()
@@ -224,6 +240,11 @@ pub unsafe fn plan_item(
         }
         let (w, h) = sdk::encoded::dimensions(bytes).map_err(error)?;
         result.cost = bytes.len() + w as usize * h as usize * 8;
+        // 批 E：挂起期实驻留=编码载荷拷贝；执行期补账=解码 RGB 面（prepare
+        // 期瞬态）+合并缓冲+ORT 输入副本。
+        result.pending = bytes.len();
+        result.exec_charge = w as usize * h as usize * 3
+            + preprocess.width as usize * preprocess.height as usize * 24;
         result.encoded = input.encoded;
         result.encoded_size = bytes.len();
     } else if input.kind == AM_IMG_GPU_FRAME {
@@ -248,6 +269,10 @@ pub unsafe fn plan_item(
         }
         source_assoc = gpu.assoc;
         result.cost = gpu.width as usize * gpu.height as usize * 36;
+        // 批 E：GPU 帧挂起期实驻留=接受段设备输入张量（预处理目标面 F32
+        // 12B/像素；纹理借用已在接受段闭合不持有）；执行期设备侧组装不落
+        // CPU 账（与现行执行期设备张量同口径），补账为零。
+        result.pending = preprocess.width as usize * preprocess.height as usize * 12;
         result.gpu = Some(gpu);
     } else {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);

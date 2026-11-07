@@ -86,6 +86,7 @@ fn pending(_f: &Fixture, ids: &[u64], guards: Vec<Admission>) -> Vec<Pending> {
             id: *id,
             params: am_infer_params_t::default(),
             admission,
+            exec_charge: 0,
         })
         .collect()
 }
@@ -149,6 +150,64 @@ fn route_parks_until_fill_then_forms_one_native_job() {
     );
     drop(jobs);
     assert_eq!(f.engine.data.lock().unwrap().inflight, 0);
+}
+
+/// 批 E 分期计费：挂起项准入只入账实驻留份额，执行期补账随 Job 逐项携带；
+/// 凑满/旁路两形态的准入合计、释放守恒（inflight 与 bytes 双归零）。
+#[test]
+fn staged_exec_charges_flow_into_jobs_and_conserve() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let f = fixture(
+        0x550a,
+        Some(core::Config {
+            max_batch_items: 3,
+            max_wait_ms: 5000,
+        }),
+    );
+    let mut parked = pending(&f, &[1, 2], admissions(&f, 2, 8));
+    for item in &mut parked {
+        item.exec_charge = 32;
+    }
+    // 挂起期：仅入账实驻留（2×8），执行期份额不提前占用。
+    assert!(route(f.key, &f.entry, 2, agg(1), parked).is_empty());
+    {
+        let data = f.engine.data.lock().unwrap();
+        assert_eq!((data.inflight, data.bytes), (2, 16));
+    }
+    // 凑满：原生 Job 逐项携带补账字节；准入合计仍为挂起份额。
+    let mut fill = pending(&f, &[3], admissions(&f, 1, 8));
+    fill[0].exec_charge = 32;
+    let jobs = route(f.key, &f.entry, 2, agg(1), fill);
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0].exec_charges, vec![32, 32, 32]);
+    assert_eq!(Admission::totals(&jobs[0]._admissions), (3, 24));
+    {
+        let data = f.engine.data.lock().unwrap();
+        assert_eq!((data.inflight, data.bytes), (3, 24));
+    }
+    // 释放守恒：Job 丢弃即全量归还，账目归零（含分类账）。
+    drop(jobs);
+    {
+        let data = f.engine.data.lock().unwrap();
+        assert_eq!((data.inflight, data.bytes), (0, 0));
+    }
+    assert_eq!(*f.usage.preprocess.lock().unwrap(), [0, 0]);
+    // 旁路单项：窗口开着（挂起一项 agg(1)）时键不匹配项不等待、立即执行，
+    // 补账同样逐项携带；随后排空窗内挂起项，账目全量归零。
+    let mut holder = pending(&f, &[7], admissions(&f, 1, 8));
+    holder[0].exec_charge = 32;
+    assert!(route(f.key, &f.entry, 2, agg(1), holder).is_empty());
+    let mut bypass = pending(&f, &[8], admissions(&f, 1, 8));
+    bypass[0].exec_charge = 32;
+    let jobs = route(f.key, &f.entry, 2, agg(2), bypass);
+    assert_eq!(jobs.len(), 1);
+    assert_eq!(jobs[0].exec_charges, vec![32]);
+    drop(jobs);
+    let drained = tick_inner(Instant::now(), |_| true).jobs;
+    assert_eq!(drained.len(), 1);
+    drop(drained);
+    let data = f.engine.data.lock().unwrap();
+    assert_eq!((data.inflight, data.bytes), (0, 0));
 }
 
 /// 批 C：执行入口进聚合键——同签名同前处理的 CPU 图像与 GPU 帧不同键，

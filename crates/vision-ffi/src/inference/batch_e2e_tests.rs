@@ -201,6 +201,67 @@ fn batch_e2e_window_assembles_splits_and_keeps_identity() {
     assert!(after.batched_items >= 4, "逐项计入成批项");
 }
 
+/// 批 E 分期计费门：同一收紧预算（6MiB）下，旧口径（全周期估算峰值逐项
+/// 入账，四项 ≈8.83MB）第三项起必拒、窗口凑不满；新口径（挂起期实驻留
+/// ≈730B/项 + 执行期补账 ≈1.35MB/项，峰值 ≈5.42MB）整窗凑满并正确执行
+/// ——攒批可用性由账目口径解锁的直接证据。完成/释放后账目归还（后续提交
+/// 仍被接受），全程零准入背压。
+#[test]
+#[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
+fn batch_e2e_staged_accrual_fills_window_under_tightened_budget() {
+    let ctx = init_ctx();
+    // 收紧两层上限（ctx preprocess 预算 + 实时推理类队列字节上限，两者
+    // 独立存储）；执行器 64MiB 硬顶不动。类队列收紧须经 amv_set_queue_policy。
+    unsafe {
+        let mut limits = std::mem::zeroed::<am_limits_t>();
+        limits.struct_size = std::mem::size_of::<am_limits_t>() as u32;
+        assert_eq!(crate::amv_get_limits(ctx as _, &mut limits), 0);
+        limits.preprocess_budget_bytes = 6 << 20;
+        assert_eq!(crate::amv_set_limits(ctx as _, &limits), 0);
+        let mut policy = std::mem::zeroed::<am_queue_policy_t>();
+        policy.struct_size = std::mem::size_of::<am_queue_policy_t>() as u32;
+        assert_eq!(
+            crate::amv_get_queue_policy(ctx as _, AM_Q_REALTIME_INFER as u32, &mut policy),
+            0
+        );
+        policy.max_bytes = 6 << 20;
+        assert_eq!(
+            crate::amv_set_queue_policy(ctx as _, AM_Q_REALTIME_INFER as u32, &policy),
+            0
+        );
+    }
+    let model = load_raw(ctx);
+    configure(model, 4, 100);
+    let ids = [
+        submit(ctx, model, "red"),
+        submit(ctx, model, "green"),
+        submit(ctx, model, "blue"),
+        submit(ctx, model, "yellow"),
+    ];
+    let colors = [
+        [1.0f32, 0.0, 0.0],
+        [0.0f32, 1.0, 0.0],
+        [0.0f32, 0.0, 1.0],
+        [1.0f32, 1.0, 0.0],
+    ];
+    for (id, color) in ids.iter().zip(&colors) {
+        assert_eq!(wait_terminal(ctx, *id), AM_REQ_DONE);
+        let label = format!("item{id}");
+        assert_identity(&label, fetch_values(ctx, *id), *color);
+        assert_eq!(unsafe { amv_result_ack(ctx as _, *id) }, 0);
+    }
+    let after = stats(model);
+    assert!(after.formed_batches >= 1, "收紧预算下窗口仍应凑满成批");
+    assert!(after.batched_items >= 4, "逐项计入成批项");
+    assert_eq!(after.rejected_items, 0, "收紧预算下不应触发准入背压");
+    // 全周期账目守恒：补账若未随执行释放，6MiB 预算已被占满、后续提交必拒。
+    let extra = submit(ctx, model, "blue");
+    assert_eq!(wait_terminal(ctx, extra), AM_REQ_DONE);
+    assert_identity("post-cycle", fetch_values(ctx, extra), [0.0, 0.0, 1.0]);
+    assert_eq!(unsafe { amv_result_ack(ctx as _, extra) }, 0);
+    assert_eq!(stats(model).rejected_items, 0);
+}
+
 #[test]
 #[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
 fn batch_e2e_tail_single_and_cancel_semantics_hold() {

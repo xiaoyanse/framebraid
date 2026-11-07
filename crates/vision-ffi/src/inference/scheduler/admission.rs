@@ -36,15 +36,22 @@ pub(super) unsafe fn submit(
             .saturating_add(if native { p.native_extra() } else { 0 })
     };
     let e = engine()?;
+    // 批 E 分期计费：窗口项挂起期只入账 capture 实驻留（CPU 帧=planes/
+    // encoded 载荷、GPU 帧=接受段设备输入张量、张量=自有副本），执行期
+    // 补账由 Pending 携带至 worker 开始执行时入账——挂起 N 项不再按全
+    // 周期估算峰值占满预算，窗口凑批能力解锁；总预算上限与拒绝语义不动。
+    let mut exec_charges: Vec<usize> = Vec::new();
     let admissions: Vec<Admission> = if parking {
         let mut guards = Vec::with_capacity(count);
         for p in plans {
+            let (pending, exec) = p.stage();
+            exec_charges.push(exec);
             guards.push(budget::reserve(
                 e.clone(),
                 state.usage.clone(),
                 usize::from(offline),
                 1,
-                item_cost(p),
+                pending,
                 &limits,
                 &queues[class],
             )?);
@@ -185,14 +192,17 @@ pub(super) unsafe fn submit(
             params.raw_preprocess = std::ptr::null();
             params
         });
-        for ((input, id), (params, admission)) in
-            inputs.into_iter().zip(&ids).zip(per_item.zip(admissions))
+        for ((input, id), (params, (admission, exec))) in inputs
+            .into_iter()
+            .zip(&ids)
+            .zip(per_item.zip(admissions.into_iter().zip(exec_charges)))
         {
             pendings.push(batching::Pending {
                 input,
                 id: *id,
                 params,
                 admission,
+                exec_charge: exec,
             });
         }
         drop(data);
@@ -226,6 +236,7 @@ pub(super) unsafe fn submit(
             params,
             parallel,
             _admissions: admissions,
+            exec_charges: Vec::new(),
         });
         drop(data);
         drop(records);

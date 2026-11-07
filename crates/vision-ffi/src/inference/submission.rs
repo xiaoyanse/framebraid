@@ -31,6 +31,19 @@ impl Plan {
             Self::Cascade(p, _) => p.params,
         }
     }
+    /// 批 E 分期计费（仅攒批窗口挂起项使用）：挂起期入账 capture 实驻留，
+    /// 执行期补账组批峰值份额（合并缓冲+ORT 输入副本+编码解码面；GPU 帧
+    /// 设备侧组装不落 CPU 账）。两项之和即执行期同源核心组批预算基线；
+    /// 非攒批路径仍按 cost() 一次性全额入账。
+    pub fn stage(&self) -> (usize, usize) {
+        match self {
+            Self::Image(p) => (p.pending, p.exec_charge),
+            Self::Tensors(p) => (p.pending, p.exec_charge),
+            // 级联不进攒批窗口（scheduler::submit 已按计划类型关断）；此臂
+            // 保持一次性全额语义，不分期。
+            Self::Cascade(..) => (self.cost(), 0),
+        }
+    }
     pub fn native_extra(&self) -> usize {
         match self {
             Self::Image(_) | Self::Cascade(..) => 0,

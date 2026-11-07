@@ -39,6 +39,7 @@ fn non_power_of_two_job_slots_have_exact_backing_capacity() {
                     bytes: 0,
                     items: 0,
                 }],
+                exec_charges: Vec::new(),
             });
         }
         let capacity = data.queue.capacity();

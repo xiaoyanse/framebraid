@@ -55,7 +55,11 @@ pub(super) struct Pending {
     pub input: Input,
     pub id: u64,
     pub params: am_infer_params_t,
+    /// 挂起期准入（已入账 capture 实驻留字节）。
     pub admission: Admission,
+    /// 批 E：执行期补账字节（组批峰值份额），随 Job 携带至 worker 开始
+    /// 执行时补入同源账目。
+    pub exec_charge: usize,
 }
 // params.raw_preprocess 在接受前已复制进 Input 并置空，指针不跨线程使用；
 // 其余字段与 Job 同构（Job 已有同样的 Send 声明）。
@@ -144,6 +148,7 @@ fn job_single(entry: Arc<Entry>, parallel: usize, pending: Pending) -> Job {
         id,
         params,
         admission,
+        exec_charge,
     } = pending;
     Job {
         model: entry,
@@ -152,6 +157,7 @@ fn job_single(entry: Arc<Entry>, parallel: usize, pending: Pending) -> Job {
         params,
         parallel,
         _admissions: vec![admission],
+        exec_charges: vec![exec_charge],
     }
 }
 
@@ -160,6 +166,7 @@ fn job_native(entry: Arc<Entry>, parallel: usize, items: Vec<Pending>) -> Job {
     let mut ids = Vec::with_capacity(count);
     let mut inputs = Vec::with_capacity(count);
     let mut admissions = Vec::with_capacity(count);
+    let mut exec_charges = Vec::with_capacity(count);
     let mut per_item = Vec::with_capacity(count);
     let mut params = am_infer_params_t::default();
     for (index, pending) in items.into_iter().enumerate() {
@@ -169,6 +176,7 @@ fn job_native(entry: Arc<Entry>, parallel: usize, items: Vec<Pending>) -> Job {
         ids.push(pending.id);
         inputs.push(pending.input);
         admissions.push(pending.admission);
+        exec_charges.push(pending.exec_charge);
         per_item.push(pending.params);
     }
     let id = ids.first().copied().unwrap_or(0);
@@ -183,6 +191,7 @@ fn job_native(entry: Arc<Entry>, parallel: usize, items: Vec<Pending>) -> Job {
         params,
         parallel,
         _admissions: admissions,
+        exec_charges,
     }
 }
 

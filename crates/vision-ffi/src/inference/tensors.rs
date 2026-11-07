@@ -11,6 +11,11 @@ struct Source {
 pub struct Plan {
     sources: Vec<Source>,
     pub assoc: Option<am_frame_assoc_t>,
+    /// 批 E 分期计费：挂起期实驻留（capture 自有对齐副本+张量元数据）。
+    pub pending: usize,
+    /// 批 E 分期计费：执行期补账（合并缓冲+ORT 输入副本各一份）；两项之和
+    /// 与既有 cost+native_extra 全周期合计同额（纯分期，不改变总量口径）。
+    pub exec_charge: usize,
     pub cost: usize,
     pub params: am_infer_params_t,
 }
@@ -41,6 +46,8 @@ pub unsafe fn plan_item(
     let params = unsafe { input::params(params) }?;
     let mut sources = Vec::with_capacity(count as usize);
     let mut assoc = None;
+    let mut pending = 0usize;
+    let mut exec_charge = 0usize;
     let mut cost = 0usize;
     for value in unsafe { std::slice::from_raw_parts(tensors, count as usize) } {
         if value.flags != AM_TENSOR_CONTIGUOUS {
@@ -73,6 +80,15 @@ pub unsafe fn plan_item(
                     info.name.capacity() + info.shape.capacity() * 8 + size_of::<Source>(),
                 )
             })
+            .ok_or(AM_ERR_SDK_QUEUE_FULL)?;
+        // 批 E 分期：挂起期=capture 副本（对齐字节+元数据）；执行期补账=
+        // 合并缓冲+ORT 输入副本（各一份）。两项之和与 cost+native_extra 同额。
+        pending = pending
+            .checked_add(len.div_ceil(8).saturating_mul(8))
+            .and_then(|n| n.checked_add(info.name.capacity() + info.shape.capacity() * 8))
+            .ok_or(AM_ERR_SDK_QUEUE_FULL)?;
+        exec_charge = exec_charge
+            .checked_add(len.div_ceil(8).saturating_mul(16))
             .ok_or(AM_ERR_SDK_QUEUE_FULL)?;
         if !value.assoc.is_null() {
             let incoming = unsafe { args::read(value.assoc, size_of::<am_frame_assoc_t>()) }?;
@@ -122,6 +138,8 @@ pub unsafe fn plan_item(
     Ok(Plan {
         sources,
         assoc,
+        pending,
+        exec_charge,
         cost,
         params,
     })
