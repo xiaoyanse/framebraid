@@ -392,15 +392,10 @@ unsafe fn capture_gpu(model: &ModelHandle, gpu_ref: am_gpu_frame_ref_t) -> Resul
     if !session.is_cuda() || !GpuPipeline::available() {
         return Err(AM_ERR_SDK_NOT_SUPPORTED);
     }
-    let (input_w, input_h) = {
-        let shape = &session.inputs[0].shape;
-        // L1 防御（审计 2026-11-01，自 run_gpu 迁移）：rank<2 下溢/负维 as u32
-        // 巨值转明确拒绝——正常加载后恒走 Ok 路径。
-        if shape.len() < 2 || shape[shape.len() - 1] <= 0 || shape[shape.len() - 2] <= 0 {
-            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
-        }
-        let last = shape.len() - 1;
-        (shape[last] as u32, shape[last - 1] as u32)
+    // 批 D：模型 H/W 为符号维（world 形态）时回落档案钉死的目标尺寸；全动态
+    // 无档案返回 None 维持既有 profileUnsupported 拒绝链。
+    let Some((input_w, input_h)) = session.input_hw() else {
+        return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
     };
     let pipeline = GpuPipeline::global().map_err(error)?;
     let frame = GpuFrameData {

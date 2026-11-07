@@ -4,7 +4,7 @@ mod mask;
 mod registry;
 mod results;
 
-pub use registry::{all, find, release_for_sdk_unload, Profile, Task, TensorSpec};
+pub use registry::{all, find, release_for_sdk_unload, Layout, Profile, Task, TensorSpec};
 pub use results::{
     ClassScore, Detection, Output, Prediction, RotatedDetection, Segment, TensorView, VocabHit,
     VocabLayout, VocabResult,
@@ -120,12 +120,14 @@ pub fn decode(
         return Err(Error("vision.outputShapeMismatch".into()));
     }
     let mut ordered = Vec::with_capacity(tensors.len());
+    let mut actual_shapes: Vec<Vec<usize>> = Vec::with_capacity(tensors.len());
     for expected in &profile.outputs {
         let matches: Vec<_> = tensors.iter().filter(|t| t.name == expected.name).collect();
         if matches.len() != 1 {
             return Err(Error("vision.outputShapeMismatch".into()));
         }
         let actual = matches[0];
+        actual_shapes.push(actual.shape.to_vec());
         // 动态维（档案声明 0=命名动态，如 world-head 输出行数=4+提示词数运行期才定）
         // 逐维放宽：非零声明须精确相等，零声明跳过；元素数按实际形状复核。
         let dims_ok = expected.shape.len() == actual.shape.len()
@@ -162,8 +164,14 @@ pub fn decode(
         }
         Task::Classify => Output::Classify(results::classify(ordered[0], options.top_k)?),
         Task::Detect if affinity && let Some(layout) = vocab => {
-            let (detections, hits) =
-                results::decode_affinity(profile, &ordered, mapping, options, layout)?;
+            let (detections, hits) = results::decode_affinity(
+                profile,
+                &ordered,
+                &actual_shapes[0],
+                mapping,
+                options,
+                layout,
+            )?;
             vocab_hits = Some(results::VocabResult {
                 hits,
                 labels: layout.entries.iter().map(|(l, _)| l.clone()).collect(),

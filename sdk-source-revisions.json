@@ -894,14 +894,14 @@
   {
    "path": "crates/vision-ffi/src/inference/input.rs",
    "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-   "sha256": "efbb534e30d374f6a239588d69c557ab3c0f67db024a603f420432d2f63278f0",
-   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝；批C：GPU帧预处理移至接受段——Plan::capture(model)在capture_gpu同步完成互操作与预处理kernel，Input.gpu携带GpuFrame(设备张量绑定+变换)而非纹理引用，落实合同§3.3a\"预处理在接受段同步完成、纹理不跨异步生命周期\"（原异步路径工作线程时读纹理为该承诺的实现缺口，同时使攒批窗口挂起安全）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
+   "sha256": "77984800917506ec9c91ccff0aadfc9fc24d1cbb7ba6ef30f09a8b0f2fab0adb",
+   "reason": "cascade C1 impl；批B：Plan::capture 对 GPU 帧提交（无CPU载荷）无条件切片触发空指针 UB 断言 abort——ABI 全链 GPU 帧 e2e 首跑暴露（M2b 期遗留）；GPU 帧分支跳过 encoded 拷贝；批C：GPU帧预处理移至接受段——Plan::capture(model)在capture_gpu同步完成互操作与预处理kernel，Input.gpu携带GpuFrame(设备张量绑定+变换)而非纹理引用，落实合同§3.3a\"预处理在接受段同步完成、纹理不跨异步生命周期\"（原异步路径工作线程时读纹理为该承诺的实现缺口，同时使攒批窗口挂起安全）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）; batch D: capture_gpu resolves target H/W via model-else-profile (world symbolic dims fall back to pinned 640)"
   },
   {
    "path": "crates/vision-ffi/src/inference/mod.rs",
    "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-   "sha256": "bbd22fb819691e529a7139f5d15aac96c7c3d3e4e3a3f7c2d08e0ae95fd88d35",
-   "reason": "cascade C1 impl; tracker impl (module wiring)；批C：batch_e2e_tests模块登记（FFI攒批真机门）"
+   "sha256": "783fa7ca3c899c199a5ae3cf12152915b9df130a6e0cead13621f6a9f5eb8b54",
+   "reason": "cascade C1 impl; tracker impl (module wiring)；批C：batch_e2e_tests模块登记（FFI攒批真机门）; batch D: world real-weights e2e gates module registration"
   },
   {
    "path": "crates/vision-ffi/src/inference/models.rs",
@@ -990,14 +990,14 @@
   {
    "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
    "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-   "sha256": "21ff8d92d4a783255f6a3447ece62687dc55ddb7331e3837d9a99bc1b42914b3",
-   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码；批C：run_gpu改消费接受段GpuFrame产物（预处理已在capture完成，纹理借用窗口闭合）；decode_profile/vocab_injection/outputs_bytes升pub(super)供原生批逐项解码复用；Payload::Native解构逐项params传native_execution；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
+   "sha256": "8ed3aef4fb2ad0527d2b3d637eda955038147c709fa7b6ef64d36d48a33dc5db",
+   "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts；批B：run_gpu 加词汇注入段（vocab_injection 共享段复用+CPU 内存绑定第二输入+run 前 synchronize_inputs），decode_prediction 透传词汇布局走通亲和解码；未绑定拒 vocabNotBound 与 CPU 路径同码；批C：run_gpu改消费接受段GpuFrame产物（预处理已在capture完成，纹理借用窗口闭合）；decode_profile/vocab_injection/outputs_bytes升pub(super)供原生批逐项解码复用；Payload::Native解构逐项params传native_execution；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）; batch D: vocab injection hoisted before result reservation; affinity single-frame output estimate (4+prompt rows x pinned anchors) replaces symbolic-dim full-budget fallback in run/run_gpu"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
    "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-   "sha256": "c550917e57bf52ff9f3ffe714053d12dce858a35da9080240d0ba9d7b7bf5895",
-   "reason": "cascade C1 impl；批C主战场：PROFILE分支从整批拒绝改为物理批分派——CPU项逐项prepare→run_batch合并（词汇注入张量随行）→拆分逐项档案解码；GPU项设备侧组装(assemble_frames)单次run_gpu→首轴拆分逐项解码；混合显式组按入口拆两个物理批；逐项params/映射/掩膜预留逐项生效；split_batch_rows单测（位置身份+首轴漂移拒斥）"
+   "sha256": "33b0e656d2b5e454ff6e11a6b5d8b3b920f4e87d666086f982949182b54a9207",
+   "reason": "cascade C1 impl；批C主战场：PROFILE分支从整批拒绝改为物理批分派——CPU项逐项prepare→run_batch合并（词汇注入张量随行）→拆分逐项档案解码；GPU项设备侧组装(assemble_frames)单次run_gpu→首轴拆分逐项解码；混合显式组按入口拆两个物理批；逐项params/映射/掩膜预留逐项生效；split_batch_rows单测（位置身份+首轴漂移拒斥）; batch D: vocab injection hoisted to physical-batch entry (one snapshot shared by CPU/GPU paths); affinity row estimate; GPU batch vocab tiled [N,rows,dim] per-frame snapshots (semantics unified with CPU combine); input_hw for symbolic H/W"
   },
   {
    "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -1092,8 +1092,8 @@
   {
    "path": "crates/vision/resources/profiles.json",
    "previousSha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
-   "sha256": "26efdfa07766fcdb470b5b0f3bbbf935937de2816f34e84711ecf7bf4a3ab5b4",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
+   "sha256": "dd3ebfaa949179c3bdb8e21ce363a2ee12bdf9f9b1bf9a81acc3d10bd3c4a79d",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green; batch D compatible additions: detect-yolo-world-batch-v1 (3-D txt_feats [batch,num_prompts,512] batch-aligned, images batch-dynamic pinned 640, output anchors pinned 8400) + text-encoder-clip-dynseq-v1 (dynamic seq); existing entries untouched"
   },
   {
    "path": "crates/vision/src/backend.rs",
@@ -1182,26 +1182,26 @@
   {
    "path": "crates/vision/src/profiles/mod.rs",
    "previousSha256": "b6e62092631732545a31cd3365cb795d4e14a4f973d1785a26a16a3a58126121",
-   "sha256": "93e2ed4e889dd396ec685aca1816fac47192f9490ab2a62c529b360c8143d12b",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green"
+   "sha256": "60d80e97d00cd108383742aaa7062dd16708dc8d24a6bd0e9dee1e253afcfe44",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green; batch D: decode passes actual runtime output shape into affinity decode (anchors no longer profile-declared)"
   },
   {
    "path": "crates/vision/src/profiles/registry.rs",
    "previousSha256": "83124c5222843b2e0f4d39257809f8d4d8fa6aadf69a2539301de02a036d9570",
-   "sha256": "608691e57386e548ff0d01df36dc26d41047157190592e7fece47e70200e8e4e",
-   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+   "sha256": "072b290d847074772989e1e8c5a1cbf1a0c949a07294f1764a3ed12d58049b46",
+   "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green; batch D: text-encoder seq dim now allows dynamic (dynseq entries; fixed declarations still exact-checked); registry-carries-new-entries test"
   },
   {
    "path": "crates/vision/src/profiles/results.rs",
    "previousSha256": "695cf736746db76a07955d2d499b097d02931810adbb22e932f76724baec6810",
-   "sha256": "8c46cb5205f0016dd87bb8022d4f0f426cdf6510a042d3fa98d903e3f6bbd0f5",
-   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
+   "sha256": "d89acb2052e1d794fac00fb9e10fcfb2c40b8a60adadafc6bf0dc5be7b5a3503",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green; batch D: decode_affinity anchors from actual runtime shape; batch-axis [1,rows,anchors] slice flattens to the same row-major indexing (forensics: compatible, no new decoder branch); zero-anchor/len-mismatch rejected instead of truncating"
   },
   {
    "path": "crates/vision/src/profiles/tests.rs",
    "previousSha256": "737db32a00d880747c847bace27ebdd638785fa5cd2a3348fbbe1e0d6d7e38f1",
-   "sha256": "1e5849f5c5eb9312b94d8a98d6d906f59caf76767decc1c7ada74fc09e3abcee",
-   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green"
+   "sha256": "6c48c39f45c184173767a85968679dd237dea03bdcf6b8972156ece359614db0",
+   "reason": "vocab A2 (issue#9): affinity decode (per-(anchor,prompt) candidates, within-entry cross-prompt NMS), vocab_hits/labels through ResultBuffer, A4 class_name=label; workspace 437 green; batch D: batch-axis shape decode equivalence test (2-D flat vs [1,rows,anchors]) + anchors guard; registry count 9"
   },
   {
    "path": "crates/vision/src/sdk/batching_tests.rs",
@@ -1224,8 +1224,14 @@
   {
    "path": "crates/vision/src/sdk/model.rs",
    "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-   "sha256": "e5a6c17a593714a78570490df4affbdd84e7f4460ab2726a026d98649d366bf2",
-   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）；批C：extract_outputs批轴检查复原为与本次实际输入首轴对照（M2b 49d8a10误改为与声明batch相等，动态轴模型N>1合批自彼时起整批失败——R5攒批损坏，批合同门重跑捕获），expected经参数传入（run_ref取输入首轴/run_gpu取绑定批长），漂移拒斥语义保留"
+   "sha256": "60100307e79eba751c377558a1849e52afc97ca3aadf2f0addc1148c7f784cf6",
+   "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）；批C：extract_outputs批轴检查复原为与本次实际输入首轴对照（M2b 49d8a10误改为与声明batch相等，动态轴模型N>1合批自彼时起整批失败——R5攒批损坏，批合同门重跑捕获），expected经参数传入（run_ref取输入首轴/run_gpu取绑定批长），漂移拒斥语义保留; batch D: profile load match accepts symbolic model dims under pinned fixed profile dims (world H/W symbolic vs profile-pinned 640); input_hw helper (concrete model dims else profile) for GPU paths"
+  },
+  {
+   "path": "crates/vision/src/sdk/vocab.rs",
+   "previousSha256": null,
+   "sha256": "8ec1ad1d0e02e19e53a5275ed52b02f3df0dbdf8e7110eff30983bc64fc82350",
+   "reason": "补登记（2026-11-07 PM）：vocab 批（v0.5.0 词表绑定/嵌入快照）创建时遗漏纳入受控清单——批 D 发现登记缺口，按当前状态入账（previousSha256=null 表 manifest 无原指纹）；批 D 改动：词汇注入张量批语义统一（3-D 档案注入逐帧快照 [1,rows,dim]，CPU combine 合并 [N,rows,dim] 与 GPU replicate_frames 平铺字节级同构，单测断言）"
   },
   {
    "path": "crates/vision/src/sdk/model/source.rs",
@@ -1506,8 +1512,8 @@
   {
    "path": "crates/vision-ffi/src/inference/exports.rs",
    "previousSha256": "e9853356a47e62016d9375fee9f0299bbdb849968e68387892797bff713e3b59",
-   "sha256": "3b8034468840ac37d8f22c8ad269ea6a95ba466e936da0eefa1bba0652e861fd",
-   "reason": "cascade C1 impl"
+   "sha256": "41dce3942e38cc76f9757813022a7627a0a2d9e7206bbd770cd36d99476b8527",
+   "reason": "cascade C1 impl; batch D: vocab bind embed dim from last dim of second input (2-D and 3-D ranks alike)"
   },
   {
    "path": "crates/vision-ffi/src/inference/receipt.rs",

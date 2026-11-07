@@ -170,14 +170,14 @@ fn parse(json: &str) -> std::result::Result<Registry, String> {
         }
         if profile.task == Task::TextEncoder {
             // A1 档案约束：单输入 2 维（batch 动态=0）× 单输出 2 维；多输入/输出、
-            // 3 维起（含 mask 类第二输入）不在文本塔档案范围。
+            // 3 维起（含 mask 类第二输入）不在文本塔档案范围。seq 维批 D 起兼容
+            // 放宽：允许动态（=0，如 text.onnx 双动态 ids）——固定声明仍精确校验。
             let input = &profile.input.shape;
             let output = profile.outputs.first().map(|o| o.shape.as_slice());
             let valid = profile.inputs.len() == 1
                 && profile.outputs.len() == 1
                 && input.len() == 2
                 && input[0] == 0
-                && input[1] > 0
                 && output.is_some_and(|o| o.len() == 2 && o[0] == 0 && o[1] > 0);
             if !valid {
                 return Err(format!(
@@ -218,6 +218,30 @@ mod tests {
         // 固定 batch 维（无动态）拒绝——词表条目数运行期决定
         let fixed = r#"{"profiles":[{"id":"t","task":"text-encoder","sampleSha256":"ignore","input":{"name":"input_ids","shape":[1,77]},"outputs":[{"name":"text_embeddings","shape":["batch",512]}]}]}"#;
         assert!(parse(fixed).err().is_some());
+        // 动态 seq（批 D 兼容放宽）：双动态 ids 档案合法
+        let dynseq = r#"{"profiles":[{"id":"t","task":"text-encoder","sampleSha256":"ignore","input":{"name":"input_ids","shape":["batch","seq"]},"outputs":[{"name":"text_embeddings","shape":["batch",512]}]}]}"#;
+        assert!(parse(dynseq).is_ok());
+    }
+    #[test]
+    fn registry_carries_batch_world_and_dynseq_text_profiles() {
+        // 批 D 兼容新增条目实装断言（装载面：嵌入注册表真实解析通过且形状如声明）。
+        let all = all().unwrap();
+        let world = all
+            .iter()
+            .find(|p| p.id == "detect-yolo-world-batch-v1")
+            .expect("batch world entry");
+        assert_eq!(world.inputs[0].shape, vec![0, 3, 640, 640]);
+        assert_eq!(world.inputs[1].shape, vec![0, 0, 512]);
+        assert_eq!(world.outputs[0].shape, vec![0, 0, 8400]);
+        let tower = all
+            .iter()
+            .find(|p| p.id == "text-encoder-clip-dynseq-v1")
+            .expect("dynseq text tower entry");
+        assert_eq!(tower.input.shape, vec![0, 0]);
+        assert_eq!(tower.outputs[0].shape, vec![0, 512]);
+        // 既有条目语义不动：world-head 2-D 文本与固定 77 文本塔仍在表。
+        assert!(all.iter().any(|p| p.id == "detect-yolo-world-head-v1"));
+        assert!(all.iter().any(|p| p.id == "text-encoder-clip-embed-v1"));
     }
     #[test]
     fn inputs_precede_legacy_input_and_bad_head_shape_is_rejected() {

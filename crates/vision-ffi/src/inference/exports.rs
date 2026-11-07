@@ -160,7 +160,9 @@ pub unsafe extern "C" fn amv_vocab_bind(
             {
                 return Err(AM_ERR_SDK_INVALID_ARGUMENT);
             }
-            let dim = model.inputs[1].shape[1];
+            // 批 D：嵌入维取第二输入末维（2-D [num_prompts,dim] 与 3-D
+            // [batch,num_prompts,dim] 的 world 形态一致）。
+            let dim = *model.inputs[1].shape.last().unwrap_or(&0);
             if dim <= 0 {
                 return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
             }

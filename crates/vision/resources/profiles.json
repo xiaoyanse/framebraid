@@ -134,6 +134,62 @@
       ]
     },
     {
+      "id": "detect-yolo-world-batch-v1",
+      "task": "detect",
+      "decoder": "raw-affinity",
+      "sampleSha256": "ignore",
+      "inputs": [
+        {
+          "name": "images",
+          "shape": [
+            "batch",
+            3,
+            640,
+            640
+          ]
+        },
+        {
+          "name": "txt_feats",
+          "shape": [
+            "batch",
+            "num_prompts",
+            512
+          ]
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output0",
+          "shape": [
+            "batch",
+            "rows",
+            8400
+          ]
+        }
+      ]
+    },
+    {
+      "id": "text-encoder-clip-dynseq-v1",
+      "task": "text-encoder",
+      "sampleSha256": "ignore",
+      "input": {
+        "name": "input_ids",
+        "shape": [
+          "batch",
+          "seq"
+        ]
+      },
+      "outputs": [
+        {
+          "name": "text_embeds",
+          "shape": [
+            "batch",
+            512
+          ]
+        }
+      ]
+    },
+    {
       "id": "text-encoder-clip-embed-v1",
       "task": "text-encoder",
       "sampleSha256": "ignore",

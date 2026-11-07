@@ -27,6 +27,7 @@ v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流
 - [ ] 绑定参数覆盖：`node scripts/sdk/check-bindings.mjs --check`（2026-11-03 新增）
 - [ ] 文档符号覆盖：`node scripts/sdk/check-doc-coverage.mjs --check`（2026-11-03 新增）
 - [ ] 零值语义覆盖：`node scripts/sdk/check-zero-semantics.mjs --check`（2026-11-03 新增）
+- [ ] ABI 冻结基线：`node scripts/sdk/freeze-abi.mjs --check` 过（漂移=发布阻断，须先按授权变更重算基线并登记原因；2026-11-07 补——v0.6.0 发版漏检教训：10-27 基线后 ABI 1.3/档案演进未随批重算，漂移积压到批 D 才发现）
 - [ ] 漂移阻断：基线 FAIL=发布阻断；豁免仅限验证制度三类并按登记格式执行（见 VERIFICATION_DOCTRINE.md）
 - [ ] 运行结果（数字）进当版验证记录，输入档位与消费方画像对齐
 

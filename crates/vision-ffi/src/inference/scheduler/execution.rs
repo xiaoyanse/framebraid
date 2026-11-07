@@ -322,7 +322,13 @@ fn run_gpu(
         .min(queue_bytes)
         .saturating_sub(model.state.usage.bytes.load(Ordering::Acquire) as u64)
         as usize;
-    let raw_bytes = outputs_bytes(&session.outputs, available);
+    // 批 D：亲和头档案单帧输出估计（vocab 布局驱动）替代符号维输出的全预算
+    // 口径（outputs_bytes 对符号维形状积溢出回落 available）。
+    let raw_bytes = session
+        .profile
+        .zip(vocab_layout)
+        .and_then(|(p, l)| am_vision_core::sdk::vocab::affinity_row_bytes(p, l))
+        .unwrap_or_else(|| outputs_bytes(&session.outputs, available));
     let max_det = if params.max_det == 0 {
         300
     } else {
@@ -552,13 +558,22 @@ fn run(
             top: 0,
         }
     });
+    // A1 词汇注入（§4.1）：注入段与级联二级共用 vocab_injection；引用切片组装
+    // 免图像张量复制（run_ref 语义与 run 一致）。批 D 起先于结果预留——亲和头
+    // 档案的单帧输出估计由 vocab 布局驱动（替代符号维输出的全预算口径）。
+    let injected = vocab_injection(model, session)?;
+    let vocab_layout = injected.as_ref().map(|(_, l)| l);
     let queue_bytes = lock(&context.queues)?[AM_Q_RESULTS as usize].max_bytes;
     let available = limits
         .result_budget_bytes
         .min(queue_bytes)
         .saturating_sub(model.state.usage.bytes.load(Ordering::Acquire) as u64)
         as usize;
-    let raw_bytes = outputs_bytes(&session.outputs, available);
+    let raw_bytes = session
+        .profile
+        .zip(vocab_layout)
+        .and_then(|(p, l)| am_vision_core::sdk::vocab::affinity_row_bytes(p, l))
+        .unwrap_or_else(|| outputs_bytes(&session.outputs, available));
     let max_det = if params.max_det == 0 {
         300
     } else {
@@ -581,10 +596,6 @@ fn run(
     }
     let charge = model.state.charge(reserve)?;
     let start = am_sdk_support::clock::monotonic_ms();
-    // A1 词汇注入（§4.1）：注入段与级联二级共用 vocab_injection；引用切片组装
-    // 免图像张量复制（run_ref 语义与 run 一致）。
-    let injected = vocab_injection(model, session)?;
-    let vocab_layout = injected.as_ref().map(|(_, l)| l);
     let mut infer_inputs: Vec<&am_vision_core::sdk::TensorData> =
         prepared.tensors().iter().collect();
     if let Some((tensor, _)) = injected.as_ref() {

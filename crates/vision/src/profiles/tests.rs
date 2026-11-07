@@ -75,7 +75,9 @@ fn detect_head_four_layout_coordinate_combinations() {
 
 #[test]
 fn registry_is_five_explicit_profiles_not_shape_guessing() {
-    assert_eq!(all().unwrap().len(), 7);
+    // 批 D 后 9 条：五类冻结样本 + world-head 2-D 亲和 + 固定 77 文本塔 +
+    // world 批动态 3-D 亲和 + dynseq 文本塔（兼容新增，既有条目语义不动）。
+    assert_eq!(all().unwrap().len(), 9);
     for profile in all()
         .unwrap()
         .iter()
@@ -337,8 +339,15 @@ fn affinity_decode_merges_within_entry_and_keeps_hits() {
         put(3, row, [100.0, 100.0, 50.0, 50.0][row]);
     }
     put(3, 4, 0.1);
-    let (detections, hits) =
-        decode_affinity(&profile, &[&head], mapping(), Options::default(), &layout).unwrap();
+    let (detections, hits) = decode_affinity(
+        &profile,
+        &[&head],
+        &[7, 4],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .unwrap();
     assert_eq!(detections.len(), 2, "{detections:?}");
     assert_eq!(detections[0].class_id, 0, "hand 组最高分");
     assert_eq!(detections[0].confidence, 0.9);
@@ -372,10 +381,17 @@ fn affinity_decode_rejects_short_head_and_bad_score() {
         entries: vec![("a".into(), 1), ("b".into(), 1), ("c".into(), 1)],
     };
     let head = vec![0.0f32; 24];
-    let error = decode_affinity(&profile, &[&head], mapping(), Options::default(), &layout)
-        .err()
-        .unwrap()
-        .0;
+    let error = decode_affinity(
+        &profile,
+        &[&head],
+        &[6, 4],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .err()
+    .unwrap()
+    .0;
     assert!(error.contains("affinityHead"), "{error}");
     // 分数越界（>1）拒绝
     let profile_ok = super::Profile {
@@ -390,9 +406,120 @@ fn affinity_decode_rejects_short_head_and_bad_score() {
         bad[row * 4] = [320.0, 320.0, 300.0, 180.0][row]; // anchor0 合法坐标
     }
     bad[4 * 4] = 1.5; // anchor0 prompt0 分 1.5
-    let error = decode_affinity(&profile_ok, &[&bad], mapping(), Options::default(), &layout)
-        .err()
-        .unwrap()
-        .0;
+    let error = decode_affinity(
+        &profile_ok,
+        &[&bad],
+        &[7, 4],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .err()
+    .unwrap()
+    .0;
     assert!(error.contains("classProbabilityExpected"), "{error}");
+}
+
+/// 批 D 布局取证固化：真实 world.onnx 输出 [B, 4+提示词行, anchors] 与批拆分后
+/// 的逐项 [1, rows, anchors] 扁平化后即亲和解码器索引的 [rows, anchors] 行主序
+/// （批轴因子 1 不改变偏移）——同值张量按 2-D 与 3-D（带批轴）形状声明解码，
+/// 结果必须逐项一致；anchors 取实际末维，档案末维动态（=0）不再参与除法。
+#[test]
+fn affinity_decode_batch_axis_shape_is_compatible_with_raw_affinity() {
+    use super::results::{decode_affinity, VocabLayout};
+    let profile = super::Profile {
+        id: "affinity-batch".into(),
+        task: Task::Detect,
+        sample_sha256: String::new(),
+        input: TensorSpec {
+            name: "images".into(),
+            shape: vec![0, 3, 640, 640],
+        },
+        inputs: vec![
+            TensorSpec {
+                name: "images".into(),
+                shape: vec![0, 3, 640, 640],
+            },
+            TensorSpec {
+                name: "txt_feats".into(),
+                shape: vec![0, 0, 512],
+            },
+        ],
+        outputs: vec![TensorSpec {
+            name: "output0".into(),
+            shape: vec![0, 0, 7], // batch/rows 动态，anchors=7（档案钉死格点数）
+        }],
+        classes: None,
+        postprocess: Default::default(),
+    };
+    let layout = VocabLayout {
+        entries: vec![("hand".into(), 1)],
+    };
+    // [rows=5, anchors=7] 已知值：anchor2 一框（合法坐标），prompt0 分 0.8。
+    let mut head = vec![0.0f32; 5 * 7];
+    for row in 0..4 {
+        head[row * 7 + 2] = [320.0, 320.0, 300.0, 180.0][row];
+    }
+    head[4 * 7 + 2] = 0.8;
+    let flat = decode_affinity(
+        &profile,
+        &[&head],
+        &[5, 7],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .unwrap();
+    let batched = decode_affinity(
+        &profile,
+        &[&head],
+        &[1, 5, 7],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .unwrap();
+    assert_eq!(flat.0.len(), 1, "{:?}", flat.0);
+    assert_eq!((flat.0[0].confidence, flat.0[0].class_id), (0.8, 0));
+    assert_eq!(
+        batched.0.len(),
+        flat.0.len(),
+        "批轴形状与扁平形状解码结果一致"
+    );
+    for (a, b) in batched.0.iter().zip(&flat.0) {
+        assert_eq!(a.class_id, b.class_id);
+        assert_eq!(a.confidence, b.confidence);
+        assert_eq!(a.bounds, b.bounds);
+    }
+    assert_eq!(batched.1.len(), flat.1.len());
+    assert_eq!(
+        (batched.1[0].entry_index, batched.1[0].prompt_index),
+        (flat.1[0].entry_index, flat.1[0].prompt_index)
+    );
+    // 实际末维 anchors=0（异常形状）：显式拒绝，不除零。
+    let error = decode_affinity(
+        &profile,
+        &[&head],
+        &[5, 0],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .err()
+    .unwrap()
+    .0;
+    assert!(error.contains("affinityHead"), "{error}");
+    // 实际元素数与形状积不一致：拒绝（不静默截断）。
+    let error = decode_affinity(
+        &profile,
+        &[&head],
+        &[5, 6],
+        mapping(),
+        Options::default(),
+        &layout,
+    )
+    .err()
+    .unwrap()
+    .0;
+    assert!(error.contains("affinityHead"), "{error}");
 }

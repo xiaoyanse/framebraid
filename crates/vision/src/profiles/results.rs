@@ -118,22 +118,25 @@ pub(super) fn classify(values: &[f32], top_k: usize) -> Result<Vec<ClassScore>> 
 /// 一个亲和分列），每个 (anchor, prompt) 独立成候选；**组内跨提示词 NMS**——同条目
 /// 内 IoU 超阈值的多提示词命中合并为单框保留最高分（hit 记保留词行号），组间独立
 /// 不去重；class_id=条目索引。坐标语义复用档案 layout/coordForm 声明。
+/// `actual`：output0 实际运行期形状（批 D 起 anchors 取实际末维——档案末维可为
+/// 动态命名维（=0），且批拆分后带批轴 [1, rows, anchors]，批轴因子 1 不影响
+/// 行主序索引；固定声明维经 decode() 前置校验与实际一致，语义不变）。
 pub(super) fn decode_affinity(
     profile: &Profile,
     outputs: &[&[f32]],
+    actual: &[usize],
     mapping: ImageMapping,
     options: Options,
     layout: &VocabLayout,
 ) -> Result<(Vec<Detection>, Vec<VocabHit>)> {
-    let shape = &profile.outputs[0].shape;
     let anchors = match profile.postprocess.layout {
-        Layout::Transposed => shape[shape.len() - 1],
-        Layout::RowMajor => shape[shape.len() - 2],
+        Layout::Transposed => actual[actual.len() - 1],
+        Layout::RowMajor => actual[actual.len() - 2],
     };
     let head = outputs[0];
-    let rows = head.len() / anchors;
+    let rows = head.len() / anchors.max(1);
     let prompt_rows: u32 = layout.entries.iter().map(|(_, n)| *n).sum();
-    if rows < 4 + prompt_rows as usize {
+    if anchors == 0 || rows < 4 + prompt_rows as usize || rows * anchors != head.len() {
         return Err(Error("vision.outputShapeMismatch|affinityHead".into()));
     }
     // 提示词列号 → 条目索引（前缀和）

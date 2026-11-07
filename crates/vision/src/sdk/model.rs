@@ -320,7 +320,11 @@ impl Model {
                                                 // 的单帧模型常态；world-head images 即此形态）
                                                 a < 0 || a == 1
                                             } else {
-                                                a == *d as i64
+                                                // 固定声明：实际精确相等，或模型侧为符号维
+                                                // （批 D：模型比档案声明更泛——world.onnx 的
+                                                // height/width 符号维 vs 档案钉死 640，SDK 按
+                                                // 档案前处理恒喂 640，合法；固定≠固定仍拒）
+                                                a == *d as i64 || a < 0
                                             }
                                         })
                                         && a.shape.len() == e.shape.len()
@@ -362,6 +366,25 @@ impl Model {
     /// 实际后端是否 CUDA（GPU 帧直传的前提；非 CUDA 显式报不支持）。
     pub fn is_cuda(&self) -> bool {
         self.actual_backend == 2
+    }
+
+    /// 图像输入的 (高, 宽) 目标尺寸（GPU 预处理/组装路径用）：模型实际维具体时
+    /// 取之；符号维（批 D 的 world 形态——height/width 动态）回落到档案声明
+    /// （档案钉死的 letterbox 目标即 SDK 恒喂的尺寸）。非 rank4/全动态无档案
+    /// 返回 None，调用方按既有拒绝链处理。
+    pub fn input_hw(&self) -> Option<(u32, u32)> {
+        let shape = &self.inputs.first()?.shape;
+        if shape.len() != 4 {
+            return None;
+        }
+        let (h, w) = (shape[2], shape[3]);
+        if h > 0 && w > 0 {
+            return Some((h as u32, w as u32));
+        }
+        let profile = self.profile?;
+        let shape = &profile.input.shape;
+        let (h, w) = (shape[2], shape[3]);
+        (h > 0 && w > 0).then_some((h as u32, w as u32))
     }
 
     pub fn validate_inputs(&self, inputs: &[TensorData]) -> Result<()> {

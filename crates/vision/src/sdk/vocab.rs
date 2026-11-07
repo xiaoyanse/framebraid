@@ -41,10 +41,22 @@ impl VocabEmbedding {
             entries: self.entries.clone(),
         }
     }
-    /// 构造注入检测模型第二输入的张量：shape=[total_rows, dim]（动态首维取实际值）、
-    /// dtype/名字取检测档案第二输入声明（F32 嵌入）。
+    /// 构造注入检测模型第二输入的张量：2-D 档案（如 world-head）为 [total_rows, dim]；
+    /// 3-D 档案（批 D 的 world 形态，txt_feats=[batch, num_prompts, 512] 每帧独立）
+    /// 为 [1, total_rows, dim]（单帧快照；攒批 CPU 路径按项复制后首轴合并为
+    /// [N, rows, dim]，GPU 路径经 replicate_frames 同语义平铺）。
+    /// dtype/名字取检测模型第二输入声明（F32 嵌入）。
     pub fn injection_tensor(&self, declared: &super::TensorInfo) -> Result<TensorData> {
         let rows = self.total_rows();
+        let shape = match declared.shape.len() {
+            2 => vec![rows as i64, self.dim as i64],
+            3 => vec![1, rows as i64, self.dim as i64],
+            rank => {
+                return Err(Error(format!(
+                    "vision.profileMismatch|field=vocab_input_rank,value={rank},expected=2|3"
+                )))
+            }
+        };
         // SAFETY：f32 切片到字节的平台表示转换（引擎输入同序）。
         let raw = unsafe {
             std::slice::from_raw_parts(self.matrix.as_ptr().cast::<u8>(), self.matrix.len() * 4)
@@ -53,7 +65,7 @@ impl VocabEmbedding {
             super::TensorInfo {
                 name: declared.name.clone(),
                 dtype: declared.dtype,
-                shape: vec![rows as i64, self.dim as i64],
+                shape,
             },
             raw,
         )
@@ -91,9 +103,11 @@ pub fn validate(entries: &[EntrySpec]) -> Result<()> {
     Ok(())
 }
 
-/// 文本塔前置校验：档案 task=text-encoder、单输入单输出、seq_len 与 token 列数一致。
-/// 返回 (输入名, seq_len, embed_dim)；不满足返回错误详情（§7 约定）。
-pub fn encoder_signature(encoder: &Model) -> Result<(String, usize, usize)> {
+/// 文本塔前置校验：档案 task=text-encoder、单输入单输出。
+/// 返回 (输入名, seq_len, embed_dim)；seq_len 为 None 表示模型 seq 维动态
+/// （批 D 的 dynseq 档案——token 列数不受档案限定，由调用方词表决定）。
+/// 不满足返回错误详情（§7 约定）。
+pub fn encoder_signature(encoder: &Model) -> Result<(String, Option<usize>, usize)> {
     let profile = encoder
         .profile
         .filter(|p| p.task == crate::profiles::Task::TextEncoder)
@@ -110,7 +124,68 @@ pub fn encoder_signature(encoder: &Model) -> Result<(String, usize, usize)> {
             profile.id
         )));
     }
-    Ok((input.name.clone(), seq_len as usize, dim as usize))
+    let seq = (seq_len > 0).then_some(seq_len as usize);
+    Ok((input.name.clone(), seq, dim as usize))
+}
+
+/// 3-D 文本输入的批注入平铺（批 D vocab 批语义统一）：单帧快照 [1, rows, dim]
+/// 复制 frames 份为 [frames, rows, dim]——txt_feats 每帧独立，逐项完整快照
+/// （与 CPU 攒批路径 combine 按项合并 [N, rows, dim] 字节级同构）。2-D 快照
+/// （无批量轴）原样返回。
+pub fn replicate_frames(tensor: &TensorData, frames: usize) -> Result<TensorData> {
+    if tensor.info.shape.len() == 2 {
+        // 2-D 文本输入无批量轴：单份快照语义（现网 world-head 形态）。
+        return TensorData::new(tensor.info.clone(), tensor.bytes());
+    }
+    if frames == 0 || tensor.info.shape.first() != Some(&1) {
+        return Err(Error("vision.inputShapeMismatch|field=vocab_batch".into()));
+    }
+    let mut shape = tensor.info.shape.clone();
+    shape[0] = frames as i64;
+    let bytes = tensor.bytes();
+    let mut tiled = Vec::with_capacity(bytes.len() * frames);
+    for _ in 0..frames {
+        tiled.extend_from_slice(bytes);
+    }
+    TensorData::new(
+        super::TensorInfo {
+            name: tensor.info.name.clone(),
+            dtype: tensor.info.dtype,
+            shape,
+        },
+        &tiled,
+    )
+}
+
+/// 亲和头档案（双输入 detect、classes 未声明）的单帧输出字节估计（批 D）：
+/// 输出行数=4+提示词行（vocab 布局运行期已知），anchors 取档案输出末维固定声明
+/// （world 形态 640²→8400，由钉死的档案输入尺寸保证）。非亲和档案/全动态无
+/// 声明返回 None（调用方维持既有口径）。
+pub fn affinity_row_bytes(
+    profile: &crate::profiles::Profile,
+    layout: &crate::profiles::VocabLayout,
+) -> Option<usize> {
+    if profile.task != crate::profiles::Task::Detect
+        || profile.classes.is_some()
+        || profile.inputs.len() < 2
+    {
+        return None;
+    }
+    let shape = profile.outputs.first()?.shape.as_slice();
+    let anchors = match profile.postprocess.layout {
+        crate::profiles::Layout::Transposed => shape[shape.len() - 1],
+        crate::profiles::Layout::RowMajor => shape[shape.len() - 2],
+    };
+    if anchors == 0 {
+        return None;
+    }
+    let prompt_rows = layout
+        .entries
+        .iter()
+        .map(|(_, rows)| *rows as usize)
+        .sum::<usize>();
+    let rows = 4usize.checked_add(prompt_rows)?;
+    rows.checked_mul(anchors)?.checked_mul(4)
 }
 
 /// 逐条目执行文本塔前向，拼装嵌入矩阵。tokens 为全部条目展平的行主序
@@ -124,9 +199,10 @@ pub fn encode(
     detector_dim: Option<usize>,
 ) -> Result<VocabEmbedding> {
     let (_, seq_len, dim) = encoder_signature(encoder)?;
-    if cols != seq_len {
+    if cols == 0 || seq_len.is_some_and(|expected| cols != expected) {
+        let expected = seq_len.map_or("dynamic".to_string(), |v| v.to_string());
         return Err(Error(format!(
-            "sdk.invalidArgument|field=token_cols,value={cols},expected={seq_len}"
+            "sdk.invalidArgument|field=token_cols,value={cols},expected={expected}"
         )));
     }
     if let Some(expected) = detector_dim {
@@ -268,5 +344,105 @@ mod tests {
         assert_eq!(vocab.row_range(0), (0, 2));
         assert_eq!(vocab.row_range(1), (2, 5));
         assert_eq!(vocab.matrix[vocab.row_range(1).0 * vocab.dim], 1.5);
+    }
+
+    fn snapshot() -> VocabEmbedding {
+        VocabEmbedding {
+            entries: vec![("hand".into(), 2)],
+            matrix: (0..8).map(|v| v as f32).collect(),
+            dim: 4,
+            row_ranges: vec![(0, 2)],
+        }
+    }
+
+    fn declared(shape: Vec<i64>) -> super::super::model::TensorInfo {
+        super::super::model::TensorInfo {
+            name: "txt_feats".into(),
+            dtype: 0,
+            shape,
+        }
+    }
+
+    /// 批 D：注入张量按检测模型第二输入秩适配——2-D [rows,dim]（world-head
+    /// 形态不变），3-D [1,rows,dim]（world 形态每帧快照），其余秩拒绝。
+    #[test]
+    fn injection_tensor_matches_declared_input_rank() {
+        let vocab = snapshot();
+        let flat = vocab.injection_tensor(&declared(vec![-1, 4])).unwrap();
+        assert_eq!(flat.info.shape, vec![2, 4]);
+        assert_eq!(flat.info.name, "txt_feats");
+        let batched = vocab.injection_tensor(&declared(vec![-1, -1, 4])).unwrap();
+        assert_eq!(batched.info.shape, vec![1, 2, 4]);
+        assert_eq!(batched.bytes(), flat.bytes(), "同快照字节不变仅加批轴");
+        let error = vocab
+            .injection_tensor(&declared(vec![-1, -1, -1, 4]))
+            .err()
+            .expect("rank 4 拒绝")
+            .0;
+        assert!(error.contains("vocab_input_rank"), "{error}");
+    }
+
+    /// 批 D vocab 批语义统一（CPU/GPU 同构）：3-D 快照 [1,rows,dim] 平铺 N 份为
+    /// [N,rows,dim]（每帧完整嵌入，字节=N×单帧）；2-D 快照原样返回（无批量轴）。
+    #[test]
+    fn replicate_frames_tiles_per_frame_snapshots() {
+        let vocab = snapshot();
+        let single = vocab.injection_tensor(&declared(vec![-1, -1, 4])).unwrap();
+        let tiled = replicate_frames(&single, 3).unwrap();
+        assert_eq!(tiled.info.shape, vec![3, 2, 4]);
+        let bytes = single.bytes();
+        assert_eq!(tiled.bytes().len(), bytes.len() * 3);
+        for frame in 0..3 {
+            assert_eq!(
+                &tiled.bytes()[frame * bytes.len()..(frame + 1) * bytes.len()],
+                bytes
+            );
+        }
+        let flat = vocab.injection_tensor(&declared(vec![-1, 4])).unwrap();
+        let passed = replicate_frames(&flat, 3).unwrap();
+        assert_eq!(passed.info.shape, vec![2, 4], "2-D 快照原样");
+        assert!(replicate_frames(&single, 0).is_err(), "零帧拒绝");
+    }
+
+    /// 批 D：亲和头单帧输出估计=4字节×(4+提示词行)×档案 anchors；非亲和档案/
+    /// 动态 anchors 返回 None。
+    #[test]
+    fn affinity_row_bytes_estimates_from_layout_and_pinned_anchors() {
+        let layout = crate::profiles::VocabLayout {
+            entries: vec![("hand".into(), 2), ("glove".into(), 1)],
+        };
+        let make = |task: crate::profiles::Task, classes: Option<usize>, anchors: usize| {
+            crate::profiles::Profile {
+                id: "p".into(),
+                task,
+                sample_sha256: String::new(),
+                input: crate::profiles::TensorSpec {
+                    name: "images".into(),
+                    shape: vec![0, 3, 640, 640],
+                },
+                inputs: vec![
+                    crate::profiles::TensorSpec {
+                        name: "images".into(),
+                        shape: vec![0, 3, 640, 640],
+                    },
+                    crate::profiles::TensorSpec {
+                        name: "txt_feats".into(),
+                        shape: vec![0, 0, 512],
+                    },
+                ],
+                outputs: vec![crate::profiles::TensorSpec {
+                    name: "output0".into(),
+                    shape: vec![0, 0, anchors],
+                }],
+                classes,
+                postprocess: Default::default(),
+            }
+        };
+        let affinity = make(crate::profiles::Task::Detect, None, 8400);
+        assert_eq!(affinity_row_bytes(&affinity, &layout), Some(7 * 8400 * 4));
+        let dynamic = make(crate::profiles::Task::Detect, None, 0);
+        assert_eq!(affinity_row_bytes(&dynamic, &layout), None);
+        let classified = make(crate::profiles::Task::Detect, Some(3), 8400);
+        assert_eq!(affinity_row_bytes(&classified, &layout), None);
     }
 }

@@ -141,6 +141,8 @@ fn run(
 /// 批 C PROFILE 物理批执行：CPU 图像项合并张量单次 run_batch；GPU 帧项设备侧
 /// 组装单次 run_gpu（聚合键已按执行入口分窗不混批；显式 NATIVE 组内混入时拆为
 /// 两个物理批顺序执行）。逐项 params（confidence/nms/max_det）逐项解码生效。
+/// 批 D：词汇注入先行提升到物理批入口（vocab 布局驱动亲和头单帧输出估计，
+/// 双路径共用同一快照——CPU 按项复制合并、GPU 3-D 平铺，语义统一）。
 #[allow(clippy::too_many_arguments)]
 fn run_profile(
     model: &ModelHandle,
@@ -166,7 +168,15 @@ fn run_profile(
         .profile
         .is_some_and(|p| p.task == am_vision_core::profiles::Task::Segment);
     let overhead = 512 * 1024;
-    let row_bytes = profile_row_bytes(session).ok_or(AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
+    let injected = execution::vocab_injection(model, session)?;
+    // 亲和头（双输入 detect）：单帧输出行数=4+提示词行运行期已知，估计替代
+    // 符号维输出形状积（否则全动态输出按 None 拒）；其余档案维持形状积口径。
+    let row_bytes = session
+        .profile
+        .zip(injected.as_ref().map(|(_, l)| l))
+        .and_then(|(p, l)| am_vision_core::sdk::vocab::affinity_row_bytes(p, l))
+        .or_else(|| profile_row_bytes(session))
+        .ok_or(AM_ERR_SDK_RESOURCE_EXHAUSTED)?;
     let mut cpu = Vec::new();
     let mut gpu = Vec::new();
     for (index, input) in inputs.iter().enumerate() {
@@ -184,6 +194,7 @@ fn run_profile(
             ids,
             params,
             &cpu,
+            &injected,
             input_budget,
             limits,
             segment,
@@ -195,7 +206,8 @@ fn run_profile(
     }
     if !gpu.is_empty() {
         for (index, result) in run_profile_gpu(
-            model, session, inputs, ids, params, &gpu, available, segment, row_bytes, overhead,
+            model, session, inputs, ids, params, &gpu, &injected, available, segment, row_bytes,
+            overhead,
         )? {
             results[index] = Some(result);
         }
@@ -243,7 +255,8 @@ fn mask_of(segment: bool, mapping: &sdk::ImageTransform, max_det: usize) -> usiz
     }
 }
 
-/// CPU 项物理批：逐项 prepare → run_batch 合并（词汇注入张量按名称随行合并）
+/// CPU 项物理批：逐项 prepare → run_batch 合并（词汇注入张量按名称随行合并——
+/// 3-D 文本档案逐项 [1,rows,dim] 快照合并为 [N,rows,dim]，每帧完整嵌入）
 /// → 拆分逐项解码（逐项映射/params）。
 #[allow(clippy::too_many_arguments)]
 fn run_profile_cpu(
@@ -253,6 +266,7 @@ fn run_profile_cpu(
     ids: &[u64],
     params: &[am_infer_params_t],
     indices: &[usize],
+    injected: &Option<(sdk::TensorData, am_vision_core::profiles::VocabLayout)>,
     input_budget: usize,
     limits: &am_limits_t,
     segment: bool,
@@ -266,7 +280,6 @@ fn run_profile_cpu(
         .collect::<Result<Vec<_>>>()?;
     let mappings: Vec<sdk::ImageTransform> =
         prepared.iter().map(|p| mapping_of(p, session)).collect();
-    let injected = execution::vocab_injection(model, session)?;
     let vocab_layout = injected.as_ref().map(|(_, l)| l);
     // 逐项行：图像张量按值移入（免复制）；双输入档案追加词汇注入张量副本
     // （combine 按名称随行合并——注入语义与单帧一致）。
@@ -339,8 +352,9 @@ fn run_profile_cpu(
 }
 
 /// GPU 帧物理批：各帧接受段预处理产物（设备张量）经管线设备侧组装为
-/// [N,3,H,W] 批绑定，单次 run_gpu；输出按首轴拆分逐项解码。词汇注入绑定
-/// 单帧同款嵌入快照（注入语义与单帧一致；2-D 文本档案无批量轴，不复制）。
+/// [N,3,H,W] 批绑定，单次 run_gpu；输出按首轴拆分逐项解码。词汇注入（批 D
+/// 语义统一）：3-D 文本档案（txt_feats 每帧独立）单帧快照平铺 N 份绑定为
+/// [N,rows,dim]——与 CPU 路径 combine 按项合并字节级同构；2-D 档案单份快照。
 #[allow(clippy::too_many_arguments)]
 fn run_profile_gpu(
     model: &ModelHandle,
@@ -349,6 +363,7 @@ fn run_profile_gpu(
     ids: &[u64],
     params: &[am_infer_params_t],
     indices: &[usize],
+    injected: &Option<(sdk::TensorData, am_vision_core::profiles::VocabLayout)>,
     available: usize,
     segment: bool,
     row_bytes: usize,
@@ -375,15 +390,9 @@ fn run_profile_gpu(
             _ => Err(AM_ERR_SDK_INTERNAL_ERROR),
         })
         .collect::<Result<Vec<_>>>()?;
-    let (h, w) = {
-        let shape = &session.inputs[0].shape;
-        // L1 防御（审计 2026-11-01，与 capture 段同规则）：rank<2 下溢/负维
-        // as u32 巨值转明确拒绝——正常加载后恒走 Ok 路径。
-        if shape.len() < 2 || shape[shape.len() - 1] <= 0 || shape[shape.len() - 2] <= 0 {
-            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
-        }
-        let last = shape.len() - 1;
-        (shape[last - 1] as u32, shape[last] as u32)
+    // 批 D：模型 H/W 符号维（world 形态）回落档案钉死目标尺寸（capture 段同则）。
+    let Some((h, w)) = session.input_hw() else {
+        return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
     };
     let mut batch = pipeline
         .assemble_frames(
@@ -394,10 +403,11 @@ fn run_profile_gpu(
             w,
         )
         .map_err(error)?;
-    let injected = execution::vocab_injection(model, session)?;
     let vocab_layout = injected.as_ref().map(|(_, l)| l);
     if let Some((vocab, _)) = injected.as_ref() {
-        batch.bind_vocab(vocab).map_err(error)?;
+        let tiled =
+            am_vision_core::sdk::vocab::replicate_frames(vocab, indices.len()).map_err(error)?;
+        batch.bind_vocab(&tiled).map_err(error)?;
         // vocab 为 CPU 内存绑定（H2D 异步搬运），run 前显式同步（与单帧段同则）。
         batch.binding.synchronize_inputs().map_err(|e| {
             error(am_vision_core::Error(format!(

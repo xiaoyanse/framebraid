@@ -38,6 +38,8 @@ mod tracker;
 mod tracker_tests;
 #[cfg(test)]
 mod vocab_e2e_tests;
+#[cfg(test)]
+mod world_e2e_tests;
 
 use am_sdk_support::{abi::*, Result};
 pub fn error(e: am_vision_core::Error) -> i32 {
