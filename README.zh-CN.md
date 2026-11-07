@@ -15,7 +15,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量及模型档案后处理 |
 
-**当前状态：v0.6.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.3（对 1.2 的兼容新增：ROI 级联推理、跨帧目标跟踪、单帧 JPEG/PNG 导出）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.6.1。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.3 不变（v0.6.1：张量攒批回归修复、开放词汇 GPU 直传支持、图像项自适应攒批、H264 会话热修）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
 ## 目录
@@ -141,7 +141,7 @@ Rust 专属硬件/性能示例在仓库 [`examples/`](examples/)；四语言接�
 
 ## 验证与边界
 
-v0.6.0 Windows x64 发布通过 **489 项 workspace Rust 测试**（57 项环境门槛忽略、两遍稳定）、生成器链零漂移与来源指纹边界检查（**282 文件**）。干净包验证覆盖 C/C++17/C#/Python 四语言示例；级联与开放词汇 e2e 门在真实 ORT 上以合成双模型全断言过（坐标回映手算值）；FILE seek 集成在真机 FFmpeg 上全绿。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。真实两阶段开放词汇权重、CUDA/OpenVINO 执行后端、现场流与长时验收如实登记未验。见[交付状态](docs/RELEASE_STATUS.md)与 [v0.6.0 发布页](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.0)。
+v0.6.1 Windows x64 发布通过 **499 项 workspace Rust 测试**（两遍稳定）、生成器链零漂移与来源指纹边界检查（**284 文件**）。干净包验证覆盖 C/C++17/C#/Python 四语言示例；级联与开放词汇 e2e 门在真实 ORT 上以合成双模型全断言过（坐标回映手算值）；FILE seek 集成在真机 FFmpeg 上全绿。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。0.6.1 新增：攒批/图像攒批与 GPU 管线真机门（FFI 批 e2e、设备侧组装对拍、词汇 GPU/CPU 对拍、m2b-repro 稳定性）。真实两阶段开放词汇权重、CUDA/OpenVINO 执行后端、现场流与长时验收如实登记未验。见[交付状态](docs/RELEASE_STATUS.md)与 [v0.6.1 发布页](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.1)。
 
 源码检出不含运行库、权重、凭据、业务库与宿主 UI。Windows 包附带匹配的 CPU 运行库及其源码/许可材料。提取清单为历史来源记录，不是持续更新的发布清单；核心文件保持指纹核查。
 

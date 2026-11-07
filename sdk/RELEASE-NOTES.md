@@ -1,5 +1,18 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.6.1 (2026-11-07)
+
+Fix + compatible-addition release, **C ABI unchanged at 1.3** (`AM_ABI_VERSION` 65539). No new C symbols or structures — existing consumers only need to swap the DLLs to pick up the fixes and expanded coverage.
+
+- **Tensor batching regression fix (important)** — a 2026-10-29 refactor made every N>1 `run_batch` on dynamic-batch-axis models (`native_batch=1`, the hard precondition for adaptive batching) fail with `vision.batchUnsupported`, silently breaking R5 tensor batching for 9 days; caught when the batch-contract gate was re-run and restored to input-first-axis comparison. **Consumers on v0.6.0 using adaptive batching with N>1 dynamic-axis batches should upgrade.**
+- **Open-vocabulary on the GPU direct-transfer path** — `run_gpu` now injects the vocab embedding snapshot into the IoBinding second input (CPU-memory binding, explicit `synchronize_inputs` before run); affinity decoding works on the GPU path; unbound dual-input profiles reject with the same `vision.vocabNotBound` code as CPU; single-input models unaffected.
+- **Image-item adaptive batching** — image inputs (incl. GPU frames) now batch on par with tensor items (contract §3.5 image-item clause). CPU images and GPU frames batch in separate windows (different assembly domains); GPU frames preprocess synchronously at submission (§3.3a: texture borrow closes when the call returns — async GPU-frame submissions therefore carry ~ms-scale preprocessing inside the call); GPU physical batches assemble device-side with zero CPU readback; per-item decode params (confidence/max_det) take effect per item. Honest boundary: the shipped profile registry has no batchable PROFILE image model yet — machinery is in place and verified (world.onnx device-side assembly vs single runs; FFI-window RAW image batching e2e), real-model e2e awaits profile-registry evolution.
+- **H264 session NotReady loop hotfix (P0, integrator production evidence)** — the unready-session startup limit now counts from the last subscription interest; sessions stay alive through slow RTSP re-establishment / 453 long backoff instead of being killed into a rebuild loop. Ships with a Rust-only diagnostic ring (`H264Hub::diag_snapshot`/`session_states`).
+
+Verification: workspace 499 tests zero failures; new FFI/vision ignore gates (batch e2e ×2, GPU batch assembly, vocab GPU parity) green on real hardware; m2b-repro 8-iteration stability zero crashes; clippy clean on touched crates; fingerprint gate 284 green. Pooled 8-lane comparison recorded as a structural negative (single pooled session serializes into one CUDA stream — see ROADMAP); tail-latency-sensitive scenarios still benefit (P99 114ms vs 348ms).
+
+/ 修复+兼容新增版，C ABI 不变（1.3），无新符号/结构——换 DLL 即得。重点：张量攒批回归修复（10-29 起 N>1 动态轴合批被错误拒绝，v0.6.0 攒批用户建议升级）；开放词汇 GPU 直传路径支持；图像项自适应攒批（CPU/GPU 分窗、接受段预处理、设备侧组装、逐项参数——真实档案模型路径待注册表演进）；H264 会话 NotReady 死循环热修（按最后订阅意向续命+诊断环形缓冲）。验证：workspace 499 零失败；新增真机门全绿；m2b-repro 8 循环零崩；指纹闸门 284 绿。池化 8 路对照为结构性负结论（单池化会话单 CUDA 流串行，见 ROADMAP），尾延迟敏感场景仍有正收益（P99 114ms vs 348ms）。
+
 ## v0.6.0 (2026-11-05)
 
 Compatible-addition release, **C ABI 1.2 → 1.3** (`AM_ABI_VERSION` 65538 → 65539). Three integrator-confirmed capabilities, no breaking changes — existing consumers keep working via struct_size negotiation.
