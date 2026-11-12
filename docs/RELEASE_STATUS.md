@@ -1,7 +1,12 @@
 # Release status / 交付状态
 
-当前公开版本：**v0.6.2**（2026-11-08，C ABI 不变 **1.3**：档案演进真实权重批路径 `87c4d68`+攒批入账分期计费 `170dd7e`+JPEG 导出编码提速 `8d48137`+部署内存规划注记 `3fc7ef6`）。历史版本 [v0.6.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.1)、[v0.6.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.0)、[v0.4.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.4.0)、[v0.3.2](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)、[v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
+当前公开版本：**v0.6.3**（2026-11-12，C ABI 不变 **1.3**，文档指导版：攒批吞吐优先配置指导（批 I）+131 复测锚点回填+CUDA 口径勘误+v0.6.0 门禁债清偿（零值语义标注/文档覆盖）；二进制与 v0.6.2 功能一致，变更=文档+头文件注释+版本元数据）。历史版本 [v0.6.2](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.2)、[v0.6.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.1)、[v0.6.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.0)、[v0.4.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.4.0)、[v0.3.2](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.2)、[v0.3.1](https://github.com/xiaoyanse/framebraid/releases/tag/v0.3.1)、[v0.1.0](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。
 当前本地源码与发布版一致时以 Git 提交核对；领先时以本页登记。发布流程见 [发布清单](RELEASE_CHECKLIST.md)，逐项验证证据见 [verification 目录](verification/)（按主题命名，含过程记录）。
+
+## v0.6.3 验证状态快照
+
+**文档指导版（零代码语义变更；变更=文档+公开头文件注释+版本元数据 0.6.2→0.6.3，DLL 功能与 v0.6.2 一致）**：攒批吞吐优先配置指导（批 I，`sdk/INTEGRATION.md` 攒批段）——max_wait_ms 取凑满时间尺度（非帧周期）、非整除路数陷阱（6 路×批 4×wait=40 比全凑满低约 45% 且可低于逐项；wait=120 恢复 99.9% 凑满）、wait=0 即入即发语义（代码取证：零宽窗口零挂起零死等）；CHANGELOG 定版段含 131 复测锚点（621.14 驱动+ORT 1.31.1/CUDA 13.4.92：8 路 w40=57.9 items/s 1868 批零截止 meanN=4.00；6 路陷阱=34.8 items/s 截止/凑满交替同构 meanN=3.0——陷阱形态跨驱动复现、幅度驱动敏感）与 CUDA 口径勘误（126 口径实为 12.9.79，按包内 DLL ProductName 订正）。**门禁债清偿（v0.6.0 起积压，本版复跑清单检查暴露）**：dual-dll-abi-types.md 为 0.6.0 新增级联/跟踪/帧导出结构体补 20 个零值语义标注（语义取自合同正文，如 track_id/hits 输出自 1 起故 zero=invalid；一处旧标格式规范化）+生成链同步 am_sdk_types.h 注释（41 行，仅注释无布局/签名变化）+INTEGRATION 四个级联/跟踪 API 名展开全名（过整词文档检查）。am_sdk_types.h 属 11 项冻结工件（全文哈希），注释同步触发 freeze 检查漂移——**freeze 基线已重算并单文件归因**（无 ABI 布局/符号变化，同批 D 先例）。**验证**：workspace **508 绿/0 失败**（与 0.6.2 基线同数，PM 独立统计）；fmt 稳定/clippy（1.97.1 工具链组件当日补装）零告警/bindings 0 issues/doc-coverage 0 missing/zero-semantics 0 problems/boundary 285（0 业务依赖/0 外部路径）/freeze-abi check 过（11 条目，重算后基线）；探针+复测两臂监控全绿（事件日志零新增、显存满载后完全释放、内存账本闭合）——报告 `.local/evidence/driver-incident-20261112/`（内部证据，不入公开包）。**诚实边界**：本版无新代码验证面（测试数字沿用 0.6.2 基线的同一代码语义）；131 复测为本机单卡口径（RTX 5060 Laptop/621.14），跨机绝对值需接入方复验；GPU 推理验收范围维持既有登记（Windows x64 CPU+硬解探测为主体验收面）。
+
 
 ## v0.6.2 验证状态快照
 

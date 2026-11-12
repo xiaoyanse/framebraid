@@ -17,8 +17,8 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "f66726b476f924c21a14560a0bccdfbc89cee0a49f9d855f77557066956a3cf1",
-      "bytes": 79465
+      "sha256": "c664648f0ad3cfd4a283fcc125afb32a233dbb702ec7919cd57121ce66076f07",
+      "bytes": 80046
     },
     {
       "path": "sdk/abi/constants.json",

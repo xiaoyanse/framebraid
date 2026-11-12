@@ -635,10 +635,10 @@ typedef struct am_frame_meta_s {   /* B12 独立帧身份：不假设一包一�
 } am_frame_meta_t;
 /* ---- 单帧图像导出（§2.11，与流编码器共享编码底座但无句柄生命周期）---- */
 typedef struct am_frame_encode_opts_s {
-  uint32_t struct_size;
-  uint32_t format;        /* AM_ENCODE_JPEG=1 / AM_ENCODE_PNG=2 */
+  uint32_t struct_size;  /* explicit */
+  uint32_t format;        /* AM_ENCODE_JPEG=1 / AM_ENCODE_PNG=2 */ /* zero=invalid */
   uint32_t quality;       /* JPEG 质量 1..100；0=85 默认；PNG 忽略 */ /* zero=default */
-  uint32_t reserved[5];   /* 必须清零（首版无扩展字段） */
+  uint32_t reserved[5];   /* 必须清零（首版无扩展字段） */ /* zero=default */
 } am_frame_encode_opts_t;
 /* 时间原点（P5）：全部 *_at_ms 为同机单调时基毫秒（Windows 使用原始 QPC/frequency 换算，
    不扣减进程/ctx 启动点；Unix CLOCK_MONOTONIC 的平台实现后续验证）；跨 DLL/跨进程不改原点；captured_at_ms=设备时钟
@@ -942,34 +942,34 @@ typedef struct am_image_input_s {
 } am_image_input_t;
 /* ---- ROI 级联推理（C1，§4.1a）---- */
 typedef struct am_cascade_rule_s {  /* 动态 ROI 规则：从一级结果生成二次推理区域 */
-  uint32_t struct_size;
-  int32_t source_class_id;        /* 一级命中此类别才生成 ROI；-1=全部一级框 */ /* zero=default(0=首类) */
+  uint32_t struct_size;           /* explicit */
+  int32_t source_class_id;        /* 一级命中此类别才生成 ROI；0=首类；-1=全部一级框 */ /* zero=default */
   float expand;                   /* 框外扩比例（相对框宽高各向外扩 expand/2；下游实证 0.15） */
   float min_roi_size;             /* ROI 归一化最小边长（退化防护，小于则丢弃）；0=0.02 */
 } am_cascade_rule_t;
 typedef struct am_cascade_request_s { /* 级联请求：静态 ROI 与动态规则可并存 */
-  uint32_t struct_size;
+  uint32_t struct_size;           /* explicit */
   const float* static_rois;       /* 静态 ROI 扁平数组（归一化 xyxy，每 ROI 连续 4 个
                                      float，共 static_roi_count*4 个）；NULL=纯动态 */
-  uint32_t static_roi_count;      /* ≤16；0=无静态 */
+  uint32_t static_roi_count;      /* ≤16；0=无静态 */ /* zero=default */
   const am_cascade_rule_t* rules; /* 动态规则数组；NULL=纯静态 */
-  uint32_t rule_count;            /* ≤16；0=无动态 */
+  uint32_t rule_count;            /* ≤16；0=无动态 */ /* zero=default */
   float secondary_confidence;     /* 二级置信度阈值；0=继承 params.confidence_threshold */ /* zero=default */
 } am_cascade_request_t;
 typedef struct am_cascade_hit_s { /* 二级框来源明细（与 secondary 数组同序） */
-  int32_t primary_index;          /* 来源一级框索引；静态 ROI 来源=-1（无一级关联） */
+  int32_t primary_index;          /* 来源一级框索引（0=首个一级框，合法输出值）；静态 ROI 来源=-1（无一级关联） */ /* zero=default */
   float roi[4];                   /* 实际使用的 ROI（归一化 xyxy，含外扩后 clamp 图内） */
 } am_cascade_hit_t;
 typedef struct am_cascade_result_s {
-  uint32_t struct_size;
-  uint32_t secondary_count;       /* 二级框数（原图坐标）；0=无二级命中 */
+  uint32_t struct_size;           /* explicit */
+  uint32_t secondary_count;       /* 二级框数（原图坐标）；0=无二级命中 */ /* zero=default */
   const am_detect_box_t* secondary; /* 二级框：class 语义=二级模型，坐标=原图归一化 xyxy */
   const am_cascade_hit_t* hits;   /* 与 secondary 同序；保留来源与 ROI 供业务裁决 */
   uint32_t skipped_count;         /* 被跳过的 ROI 数（单 ROI 推理/解码失败；二级句柄
                                      关闭=全部跳过）；P2 尾部追加，旧读者经 struct_size
                                      协商不读；三态：cascade=NULL 未级联 / 空+0 真无
                                      命中 / skipped>0 有 ROI 未执行（可观测性，消费方
-                                     确认轮 2026-11-05 备注 1） */
+                                     确认轮 2026-11-05 备注 1） */ /* zero=default */
 } am_cascade_result_t;
 typedef struct am_infer_params_s {
   uint32_t struct_size;
@@ -1064,20 +1064,21 @@ typedef struct am_detect_box_s {
 } am_detect_box_t;
 /* ---- 目标跟踪（SORT 级轻量关联，§4.1b）---- */
 typedef struct am_track_params_s { /* 跟踪器建档参数（create 时定值，运行期不变） */
-  uint32_t struct_size;
+  uint32_t struct_size;  /* explicit */
   float iou_threshold;   /* 匹配 IoU 下限；0=0.3 */ /* zero=default */
-  uint32_t ttl_frames;   /* 轨迹丢失回收帧数（连续未命中该帧数后轨迹删除）；0=30 */
-  uint32_t confirm_hits; /* 新轨迹确认命中数（达到才输出；防误检闪烁）；0=3 */
-  uint32_t max_tracks;   /* 轨迹表容量上限（满表新目标不建档）；0=64 */
+  uint32_t ttl_frames;   /* 轨迹丢失回收帧数（连续未命中该帧数后轨迹删除）；0=30 */ /* zero=default */
+  uint32_t confirm_hits; /* 新轨迹确认命中数（达到才输出；防误检闪烁）；0=3 */ /* zero=default */
+  uint32_t max_tracks;   /* 轨迹表容量上限（满表新目标不建档）；0=64 */ /* zero=default */
 } am_track_params_t;
 typedef struct am_tracked_box_s { /* 跟踪输出：喂入框+跟踪元数据（只输出当帧命中的已确认轨迹） */
   float bounds[4];       /* 归一化 xyxy（喂入框原样，不做平滑改写） */
   float confidence;      /* 当帧命中置信度（喂入值透传） */
   uint32_t class_id;     /* 喂入框类别（喂入值透传；不透传 class_name 指针——喂入
-                             数组生命周期归调用方，输出不悬挂引用） */
-  uint64_t track_id;     /* 轨迹 ID（1 起单调递增，不复用；reset 后重新编号） */
-  uint32_t age_frames;   /* 轨迹建档以来经过的 update 帧数 */
-  uint32_t hits;         /* 轨迹累计命中帧数 */
+                             数组生命周期归调用方，输出不悬挂引用） */ /* zero=default */
+  uint64_t track_id;     /* 轨迹 ID（1 起单调递增，不复用；reset 后重新编号；
+                             0 不是合法输出值，仅出现在调用方零初始化缓冲中 */ /* zero=invalid */
+  uint32_t age_frames;   /* 轨迹建档以来经过的 update 帧数（0=确认当帧） */ /* zero=default */
+  uint32_t hits;         /* 轨迹累计命中帧数（≥confirm_hits≥1，0 非合法输出值） */ /* zero=invalid */
 } am_tracked_box_t;
 typedef struct am_detect_result_s { uint32_t count; const am_detect_box_t* boxes; } am_detect_result_t;
 

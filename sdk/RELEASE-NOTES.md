@@ -1,5 +1,17 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.6.3 (2026-11-12)
+
+Documentation guidance release, **C ABI unchanged at 1.3 and binaries functionally identical to v0.6.2** (changes are documentation, header comments and version metadata — no code-semantics change). Existing v0.6.2 consumers need no upgrade for correctness; the guidance below is configuration advice.
+
+- **Batching throughput-first configuration guidance (batch I)** — on CUDA backends, batch-shape stability beats per-batch waiting: alternating deadline batches (N<max) and fill batches force cuDNN replanning. Measured: 6 lanes × batch 4 × wait=40ms runs ~45% below all-fill throughput and can even drop below per-item execution; `max_wait_ms` should be the *fill timescale* (time for a full batch to arrive), not the frame period (8 lanes @25fps × batch 4: 40ms already yields 100% fill; non-divisible/under-load shapes needed 120ms for 99.9% fill). `max_wait_ms=0` is fire-on-submit: single-frame submission shapes equal per-item execution (semantics settled by code forensics: zero-width window, zero parked items, no deadlock). Shaped batches also win p50/p99 frame age under saturation.
+- **Retest on driver 621.14 with ORT 1.31.1/CUDA 13.4.92** — both anchors confirmed (after the 616.56 crash chain was replaced): 8-lane wait=40 → 57.9 items/s with 1868 batches, zero deadline batches, meanN=4.00; 6-lane non-divisible trap → 34.8 items/s with the same deadline/fill alternation at meanN=3.0. The trap shape reproduces across drivers while its penalty magnitude is driver-sensitive — the fill-timescale guidance is the recommended mitigation for non-divisible lane counts.
+- Honest boundary: study numbers are ORT 1.26/CUDA 12.9.79 (per-DLL ProductName; the earlier "12.8" label was an inference from the official package baseline — corrected here); throughput figures are saturated-queue steady-state, not single-session ceilings.
+
+Verification: workspace 508 tests zero failures (code semantics identical to v0.6.2); fmt/clippy/bindings/doc-coverage/zero-semantics/boundary/freeze-abi all green — this release also clears a gate debt from v0.6.0 (zero-value-semantics annotations for the cascade/track/frame-encode structures, comment-synced through the generator chain; four cascade/tracker API names spelled out in INTEGRATION); probe + both retest arms green with zero new GPU-related event-log entries and no memory-regression signatures (full reports in the internal evidence directory).
+
+/ 文档指导版，C ABI 不变（1.3）、二进制与 v0.6.2 功能一致（变更=文档+头文件注释+版本元数据，无代码语义变化）。v0.6.2 既有用户无正确性升级需要，以下为配置建议。本版顺带清偿 v0.6.0 起门禁债（级联/跟踪/帧导出结构体零值语义标注 20 处经生成链同步；INTEGRATION 四个 API 名展开全名）。攒批吞吐优先配置指导（批 I）：CUDA 后端下批形状稳定比单批等待更重要——截止批与凑满批交替会让 cuDNN 反复重规划（6 路×批 4×wait=40ms 比全凑满低约 45%、甚至低于逐项）；max_wait_ms 取"凑满一批的到达时间尺度"而非帧周期（8 路 25fps×批 4 实测 40ms 即 100% 凑满，非整倍形态需 120ms 恢复 99.9% 凑满）；wait=0 即入即发（单帧形态=逐项，零挂起零死等，代码取证定案）；定形批 p50/p99 帧龄同步占优。621.14 驱动+ORT 1.31/CUDA 13 复测双锚点确认（616.56 事故链更换后）：8 路 w40=57.9 items/s（1868 批零截止）；6 路陷阱交替形态复现（34.8，定形的 60%）——陷阱形态跨驱动复现而幅度驱动敏感，非整除路数按凑满时间尺度指导规避。诚实边界：研究数字为 ORT 1.26/CUDA 12.9.79 口径（按包内 DLL ProductName 订正，旧记 12.8 为官方包基准推断）；吞吐为欠载排队稳态口径非单 session 上限。验证：workspace 508 零失败（代码与 v0.6.2 一致）；fmt/clippy/bindings/boundary/freeze-abi 全绿；探针+复测两臂全绿、事件日志零新增、无内存回归迹象（完整报告见内部证据目录）。
+
 ## v0.6.2 (2026-11-08)
 
 Fix + compatible-addition release, **C ABI unchanged at 1.3** — no new symbols or structures; swap the DLLs to pick up the changes.
