@@ -1,5 +1,17 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.6.4 (2026-11-12)
+
+Optimization release, **C ABI unchanged at 1.3** — swap the DLLs to pick up the changes.
+
+- **Multi-model ctx budget (sdk-b1): staggered execution slot + estimate refinement** — multi-model deployments share one 64MiB preprocessing budget envelope; CPU-pixel submissions whose execution shares (24B/px) stack across models were 74-75% admission-rejected at batch 3/4. A ctx-level execution slot now serializes execution-phase share accounting across models (a waiting batch holds only its conserved parked share; GPU-direct batches with zero exec share bypass the slot). The encoded-path transient source plane leaves the exec charge (serial prepare, zero co-existence, decoder-side hard cap retained). Guardrail semantics unchanged (envelope total / three layers / full-cap rejection / conservation) — verified by the extended batch-E conservation family plus a new dual-model staggered e2e gate.
+- **Quantified (dev-machine GPU, 8 lanes 25fps, ORT 1.31/CUDA 13.4.92, driver 621.14)**: CPU-pixel dual-model batch 3/4 unlock (rejects 75%→0; throughput 20.1/56.5 — staggering buys availability, not speed; CPU-channel optimum stays batch 2 at 97.7); **GPU-frame dual-model batch 4 = 194.8 items/s, zero rejects — 97.4% of the 8-lane 200 demand, effectively full-rate**, superseding the CPU-scoped "8 lanes unreachable" assessment. Single-model regression anchor 56.3 vs 57.9 (2.8%, within noise). Per-channel multi-model guidance added to INTEGRATION (GPU-direct batch 4 primary / CPU-pixel batch 2 secondary).
+- Honest boundaries: the batch-3 anomaly (100% fill yet slow cycle) is attributed-unresolved and registered for follow-up; a GpuPipeline cold-start ordering fragility (PTX JIT before context establishment on first-touch threads) was found by the harness and registered as a follow-up candidate — integrators hitting it can warm up from the initializing thread.
+
+Verification: workspace 9 suites green across two runs (69 unit tests + 4 real-ORT e2e gates in am-vision-ffi); boundary gate 287 with chained source-revision registration; ABI freeze check green (no ABI artifacts touched); GPU event log clean across all quantification arms. Evidence `.local/evidence/sdk-b1-20261112/`.
+
+/ 优化版，C ABI 不变（1.3），换 DLL 即得。多 Model ctx 预算分配：执行错峰槽（CPU 像素批 3/4 从 74-75% 准入拒绝解锁为零拒绝；GPU 直传零份额批旁路不串行化）+编码路径瞬态源面出账；护栏语义全部保持（批 E 守恒族扩展+双 Model e2e 门验证）。量化（开发机 GPU，8 路 25fps，ORT 1.31/CUDA 13.4.92 驱动 621.14）：CPU 像素双 Model 批 3/4 解锁（20.1/56.5——错峰买可用性不买速度，CPU 通道最优仍批 2=97.7）；**GPU 帧直传双 Model 批 4=194.8 items/s 零拒绝（8 路 200 需求 97.4% 实质满额）**；单 Model 回归锚 2.8% 噪声内；事件日志全臂零新增。诚实边界：批 3 反常归因登记后续；GpuPipeline 冷启动顺序脆弱性登记立项候选。验证：workspace 9 套件两轮全绿；boundary 287 链式登记；freeze 检查过；证据 `.local/evidence/sdk-b1-20261112/`。实现 `5388a78`。
+
 ## v0.6.3 (2026-11-12)
 
 Documentation guidance release, **C ABI unchanged at 1.3 and binaries functionally identical to v0.6.2** (changes are documentation, header comments and version metadata — no code-semantics change). Existing v0.6.2 consumers need no upgrade for correctness; the guidance below is configuration advice.

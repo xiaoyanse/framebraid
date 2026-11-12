@@ -15,7 +15,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量及模型档案后处理 |
 
-**当前状态：v0.6.3。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.3 不变（v0.6.3：攒批吞吐优先配置指导——凑满时间尺度等待/非整除陷阱/wait=0 语义；文档+头文件注释级变更，二进制与 v0.6.2 功能一致）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.6.4。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.3 不变（v0.6.4：多 Model ctx 预算分配——执行错峰槽解锁批 3/4 零拒绝；GPU 帧直传双 Model 批 4 达 **194.8 items/s≈8 路@25fps 实质满额**（开发机 GPU 实测））；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
 ## 目录
@@ -141,7 +141,7 @@ Rust 专属硬件/性能示例在仓库 [`examples/`](examples/)；四语言接�
 
 ## 验证与边界
 
-v0.6.3 Windows x64 发布通过 **508 项 workspace Rust 测试**（代码与 v0.6.2 一致——纯文档版）、生成器链零漂移与来源指纹边界检查（**285 文件**）。干净包验证覆盖 C/C++17/C#/Python 四语言示例；级联与开放词汇 e2e 门在真实 ORT 上以合成双模型全断言过（坐标回映手算值）；FILE seek 集成在真机 FFmpeg 上全绿。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。0.6.1～0.6.2 新增：攒批/图像攒批、真实权重开放词汇与 GPU 管线真机门（FFI 批 e2e、设备侧组装对拍、真实文本塔词汇管线、词汇 GPU/CPU 对拍、m2b-repro 稳定性）。v0.6.3 新增攒批吞吐优先配置指导（`max_wait_ms` 取凑满时间尺度、非整除路数陷阱、`max_wait_ms=0` 逐项语义），并在 621.14 驱动+ORT 1.31/CUDA 13 下复测（8 路 100% 凑满 57.9 items/s；6 路陷阱交替形态复现、吞吐为定形 60%）。现场流与长时验收如实登记未验。见[交付状态](docs/RELEASE_STATUS.md)与 [v0.6.3 发布页](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.3)。
+v0.6.3 Windows x64 发布通过 **508 项 workspace Rust 测试**（代码与 v0.6.2 一致——纯文档版）、生成器链零漂移与来源指纹边界检查（**285 文件**）。干净包验证覆盖 C/C++17/C#/Python 四语言示例；级联与开放词汇 e2e 门在真实 ORT 上以合成双模型全断言过（坐标回映手算值）；FILE seek 集成在真机 FFmpeg 上全绿。硬解矩阵（H.264/H.265，360p～4K 含 Main10）D3D11VA 实测通过并含软件对照；RTSP 故障矩阵（断流恢复、在途关闭）通过。0.6.1～0.6.2 新增：攒批/图像攒批、真实权重开放词汇与 GPU 管线真机门（FFI 批 e2e、设备侧组装对拍、真实文本塔词汇管线、词汇 GPU/CPU 对拍、m2b-repro 稳定性）。v0.6.3 新增攒批吞吐优先配置指导（`max_wait_ms` 取凑满时间尺度、非整除路数陷阱、`max_wait_ms=0` 逐项语义），并在 621.14 驱动+ORT 1.31/CUDA 13 下复测（8 路 100% 凑满 57.9 items/s；6 路陷阱交替形态复现、吞吐为定形 60%）。v0.6.4 新增多 Model ctx 预算分配（执行错峰槽+份额精估）：CPU 像素通道双 Model 批 3/4 解锁零拒绝（吞吐 56.5/20.1，CPU 通道最优仍批 2=97.7）；**GPU 帧直传双 Model 批 4=194.8 items/s 零拒绝（8 路 200 需求的 97.4% 实质满额，开发机 GPU/ORT 1.31/CUDA 13/驱动 621.14 实测）**，多 Model 分通道编排指导见 INTEGRATION。现场流与长时验收如实登记未验。见[交付状态](docs/RELEASE_STATUS.md)与 [v0.6.4 发布页](https://github.com/xiaoyanse/framebraid/releases/tag/v0.6.4)。
 
 源码检出不含运行库、权重、凭据、业务库与宿主 UI。Windows 包附带匹配的 CPU 运行库及其源码/许可材料。提取清单为历史来源记录，不是持续更新的发布清单；核心文件保持指纹核查。
 
