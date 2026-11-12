@@ -1,5 +1,18 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.6.5 (2026-11-13) — hotfix for v0.6.4
+
+Hotfix release, **C ABI unchanged at 1.3** — swap the DLLs. Two fixes:
+
+- **Single-frame non-batched regression (all v0.6.4 DLLs — upgrade advised)**: a length-consistency check introduced by the v0.6.4 execution-slot entry ran before the zero-share bypass; every single-frame non-batched submission (one-shot full-charge path) was misreported as `sdk.internalError` (28). Root-caused via a v0.6.3 worktree control run in the same environment (driver/ORT drift ruled out); bypass reordered ahead of the check; the four real-weights gates pass again (solo and across processes). Honest boundary: the same-process 13-gate serial run still trips the last gate at ctx initialization — pre-existing test-isolation debt, tracked separately.
+- **GPU pipeline cold-start ordering**: context establishment now precedes PTX kernel JIT — a cold business thread's first GPU-frame touch no longer fails with a spurious JIT error (probe-reproducible before, regression-tested now; GPU gate family green).
+
+Why verification missed it in v0.6.4: the B1 conservation family exercises only batched paths; single-frame coverage lives solely in ignore-gated real-ORT suites that the release gate did not run — the release checklist now lists ignore gates explicitly.
+
+Verification: workspace suites green; am-vision 112 + am-vision-ffi 69 unit tests; all 13 ignore gates green solo/across processes; GPU event log clean. Evidence `.local/evidence/sdk-b1-20261112/` + P1 attribution record.
+
+/ v0.6.4 热修版：①单帧非攒批回归（v0.6.4 制品全受影响，建议升级）——执行槽入口长度检查排在零份额旁路前，单帧一次性全额入账路径误报 internalError(28)；v0.6.3 worktree 同环境对照定案，旁路重排后 4 真实权重门全绿（单跑/跨进程）。②GPU 管线冷启动顺序：上下文建立前置到 PTX JIT 前，业务线程冷启动首触不再伪 JIT 失败（回归测试覆盖）。验证与盲区说明同上英文段。
+
 ## v0.6.4 (2026-11-12)
 
 Optimization release, **C ABI unchanged at 1.3** — swap the DLLs to pick up the changes.

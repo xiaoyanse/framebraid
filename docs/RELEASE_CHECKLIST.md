@@ -25,6 +25,7 @@ v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流
 - [ ] 场景五件（`scripts/sdk/scenarios/`）：`scenario_budget_4k.py`、`scenario_cadence.py`、`scenario_mjpeg_stream.py`、`scenario_fault_observability.py`、`scenario_binding_load.py` 全过
 - [ ] 命令样例：`python scripts/sdk/baselines/baseline_decode.py --dll-dir <release> --runtime-dir <ffmpeg bin> --baseline scripts/sdk/baselines/recorded.json`
 - [ ] 绑定参数覆盖：`node scripts/sdk/check-bindings.mjs --check`（2026-11-03 新增）
+- [ ] **ignore 真机门全列**（2026-11-13 补——0.6.4 单帧回归教训：workspace 默认不含 ignore 门，单帧非攒批路径仅 ignore 套覆盖）：发版前逐门跑 `am-vision` 与 `am-vision-ffi` 全部 `--ignored` 门（真机 ORT 环境变量齐备+运行库目录挂 PATH；已知隔离债：13 门同进程串行末门 ctx 初始化挂——**分进程/分组跑为当前口径**，隔离债清偿另登记）；门清单以 `cargo test -p <crate> -- --list --ignored` 实时输出为准，新增 ignore 门随实现入列
 - [ ] 文档符号覆盖：`node scripts/sdk/check-doc-coverage.mjs --check`（2026-11-03 新增）
 - [ ] 零值语义覆盖：`node scripts/sdk/check-zero-semantics.mjs --check`（2026-11-03 新增）
 - [ ] ABI 冻结基线：`node scripts/sdk/freeze-abi.mjs --check` 过（漂移=发布阻断，须先按授权变更重算基线并登记原因；2026-11-07 补——v0.6.0 发版漏检教训：10-27 基线后 ABI 1.3/档案演进未随批重算，漂移积压到批 D 才发现）
