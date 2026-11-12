@@ -57,8 +57,10 @@ impl GpuPipeline {
     fn new() -> Result<Self, Error> {
         let runtime = CudaApi::load().map_err(|e| Error(format!("cudart 加载失败|{e}")))?;
         let driver = DriverApi::load().map_err(|e| Error(format!("nvcuda 加载失败|{e}")))?;
-        let kernel = KernelModule::load_nv12_letterbox(driver.clone())?;
+        // 先建上下文再 JIT：cuModuleLoadData 依赖调用线程已有 current 上下文，
+        // 业务线程冷启动首触时无上下文，JIT 前置必败（cuInit+primary 激活须先行）。
         let context = driver.establish_context()?;
+        let kernel = KernelModule::load_nv12_letterbox(driver.clone())?;
         Ok(Self {
             runtime,
             driver,
@@ -259,4 +261,20 @@ pub mod audit {
 fn audit_frame() {
     use std::sync::atomic::Ordering;
     audit::GPU_INPUTS.fetch_add(1, Ordering::Relaxed);
+}
+
+#[cfg(test)]
+mod coldstart_tests {
+    use super::GpuPipeline;
+
+    #[test]
+    #[ignore = "需要真实 NVIDIA GPU（AM_SDK_ORT_DIR/AM_SDK_CUDA_DIR 提供 cudart）"]
+    fn cold_thread_first_touch_initializes_pipeline() {
+        // 新线程无 thread-local current 上下文，复现接入方业务线程冷启动首触。
+        std::thread::spawn(|| {
+            GpuPipeline::new().expect("冷线程首触 GpuPipeline 初始化应成功");
+        })
+        .join()
+        .expect("冷启动线程执行");
+    }
 }

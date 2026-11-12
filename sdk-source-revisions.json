@@ -1164,8 +1164,8 @@
     {
       "path": "crates/vision/src/gpu/pipeline.rs",
       "previousSha256": null,
-      "sha256": "d4e5e11251414b21c6aca78cfc1130cf3d9fc99bf10e57107c3f61bbc37f8b6a",
-      "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）；批C：assemble_frames设备侧组装——N帧已预处理设备张量D2D(cudaMemcpy DtoD)拼接为单一[N,3,h,w]批绑定，零CPU回读（R1.4实测CPU拼接~3ms/样本不可接受）"
+      "sha256": "9ab5225a2a23857d13e18facb80b82749fc198e80b25a498036683c9dda8775c",
+      "reason": "B2 gpu cold-start ordering fix: establish_context (cuInit+primary) moved before PTX kernel JIT (cuModuleLoadData) — cold business-thread first-touch no longer fails JIT(3); error-string mapping unchanged; cold-start regression test added"
     },
     {
       "path": "crates/vision/src/gpu/preprocess_tests.rs",

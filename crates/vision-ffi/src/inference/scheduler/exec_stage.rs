@@ -51,12 +51,15 @@ pub(super) fn enter(
     admissions: &mut Vec<Admission>,
     charges: &[usize],
 ) -> Result<Option<ExecSlotGuard>> {
+    // 零份额批（单帧全额入账/GPU 直传 exec=0）先旁路：不补账就不做长度
+    // 一致性检查——这些路径 admissions 非空而 charges 为空，长度检查会
+    // 误报内部错误（B2 归因修复：v0.6.4 vocab/world 4 门 rc=28 回归根因）。
+    if !charges.iter().any(|&charge| charge > 0) {
+        return Ok(None);
+    }
     if admissions.len() != charges.len() {
         abort_job(entry, input, id, AM_ERR_SDK_INTERNAL_ERROR);
         return Err(AM_ERR_SDK_INTERNAL_ERROR);
-    }
-    if !charges.iter().any(|&charge| charge > 0) {
-        return Ok(None);
     }
     let Some(engine) = admissions.first().map(|a| a.engine.clone()) else {
         abort_job(entry, input, id, AM_ERR_SDK_INTERNAL_ERROR);
