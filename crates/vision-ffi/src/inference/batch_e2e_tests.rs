@@ -26,6 +26,30 @@ fn init_ctx() -> usize {
     unsafe { context::initialize_vision(domain(), &params) }.expect("vision ctx")
 }
 
+/// 各门共用进程级 Domain（ctx 上限 SDK_MAX_CONTEXTS=8），串行跑时前门不释放
+/// 会挤占后门初始化：退出（含断言失败提前退出）统一关闭并注销。
+struct CtxGuard {
+    ctx: usize,
+    models: Vec<usize>,
+}
+
+impl CtxGuard {
+    fn track(&mut self, key: usize) {
+        self.models.push(key);
+    }
+}
+
+impl Drop for CtxGuard {
+    fn drop(&mut self) {
+        for key in self.models.iter() {
+            let _ = domain().close(*key, 5000);
+            let _ = domain().destroy(*key);
+        }
+        let _ = domain().close(self.ctx, 5000);
+        let _ = domain().destroy(self.ctx);
+    }
+}
+
 fn load_raw(ctx: usize) -> usize {
     let cpath = CString::new(format!("{FIXTURES}\\image-dynamic.onnx")).unwrap();
     let desc = am_model_desc_t {
@@ -172,8 +196,13 @@ fn assert_identity(label: &str, values: [f32; 9], rgb: [f32; 3]) {
 #[test]
 #[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
 fn batch_e2e_window_assembles_splits_and_keeps_identity() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let model = load_raw(ctx);
+    guard.track(model);
     configure(model, 4, 100);
     let before = stats(model);
     assert_eq!(before.batched_items, 0, "起始零计数");
@@ -209,7 +238,11 @@ fn batch_e2e_window_assembles_splits_and_keeps_identity() {
 #[test]
 #[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
 fn batch_e2e_staged_accrual_fills_window_under_tightened_budget() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     // 收紧两层上限（ctx preprocess 预算 + 实时推理类队列字节上限，两者
     // 独立存储）；执行器 64MiB 硬顶不动。类队列收紧须经 amv_set_queue_policy。
     unsafe {
@@ -231,6 +264,7 @@ fn batch_e2e_staged_accrual_fills_window_under_tightened_budget() {
         );
     }
     let model = load_raw(ctx);
+    guard.track(model);
     configure(model, 4, 100);
     let ids = [
         submit(ctx, model, "red"),
@@ -265,8 +299,13 @@ fn batch_e2e_staged_accrual_fills_window_under_tightened_budget() {
 #[test]
 #[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
 fn batch_e2e_tail_single_and_cancel_semantics_hold() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let model = load_raw(ctx);
+    guard.track(model);
     // 尾项不足 2：单项入窗→截止→不组批、逐项执行（结果正确、成批计数不增）。
     configure(model, 4, 150);
     let before = stats(model);
@@ -298,9 +337,15 @@ fn batch_e2e_tail_single_and_cancel_semantics_hold() {
 #[test]
 #[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
 fn batch_e2e_dual_model_staggered_execution() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let model_a = load_raw(ctx);
+    guard.track(model_a);
     let model_b = load_raw(ctx);
+    guard.track(model_b);
     configure(model_a, 4, 100);
     configure(model_b, 4, 100);
     let names = ["red", "green", "blue", "yellow"];

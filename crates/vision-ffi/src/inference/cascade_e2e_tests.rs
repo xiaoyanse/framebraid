@@ -22,6 +22,30 @@ fn init_ctx() -> usize {
     unsafe { context::initialize_vision(domain(), &params) }.expect("vision ctx")
 }
 
+/// 各门共用进程级 Domain（ctx 上限 SDK_MAX_CONTEXTS=8），串行跑时前门不释放
+/// 会挤占后门初始化：退出（含断言失败提前退出）统一关闭并注销。
+struct CtxGuard {
+    ctx: usize,
+    models: Vec<usize>,
+}
+
+impl CtxGuard {
+    fn track(&mut self, key: usize) {
+        self.models.push(key);
+    }
+}
+
+impl Drop for CtxGuard {
+    fn drop(&mut self) {
+        for key in self.models.iter() {
+            let _ = domain().close(*key, 5000);
+            let _ = domain().destroy(*key);
+        }
+        let _ = domain().close(self.ctx, 5000);
+        let _ = domain().destroy(self.ctx);
+    }
+}
+
 fn load_model(ctx: usize, path: &str) -> usize {
     let cpath = CString::new(path).unwrap();
     let cprofile = CString::new("detect-yolo11n-nms-v1").unwrap();
@@ -55,9 +79,15 @@ fn near(got: &[f32], want: [f32; 4], tol: f32, what: &str) {
 #[test]
 #[ignore = "需真实 ORT 与 cascade 合成双模型夹具（.local/tests/cascade-e2e）"]
 fn cascade_e2e_static_dynamic_confidence_full_flow() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let primary = load_model(ctx, &format!("{FIXTURES}\\primary.onnx"));
+    guard.track(primary);
     let secondary = load_model(ctx, &format!("{FIXTURES}\\secondary.onnx"));
+    guard.track(secondary);
     let png = std::fs::read(format!("{FIXTURES}\\input.png")).expect("fixture png");
     let input = am_image_input_t {
         kind: AM_IMG_PNG,

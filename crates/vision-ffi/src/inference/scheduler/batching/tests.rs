@@ -7,6 +7,7 @@ use am_sdk_support::abi::*;
 use std::time::{Duration, Instant};
 
 // REGISTRY 为模块级共享静态；用例串行避免跨键触发相互排空。
+// 锁按毒化恢复获取：单用例失败毒锁后，后续用例照常运行不级联掩盖。
 static TEST_LOCK: Mutex<()> = Mutex::new(());
 
 struct Fixture {
@@ -102,7 +103,9 @@ fn agg(tag: u32) -> AggKey {
 
 #[test]
 fn route_parks_until_fill_then_forms_one_native_job() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5501,
         Some(core::Config {
@@ -157,7 +160,9 @@ fn route_parks_until_fill_then_forms_one_native_job() {
 /// 凑满/旁路两形态的准入合计、释放守恒（inflight 与 bytes 双归零）。
 #[test]
 fn staged_exec_charges_flow_into_jobs_and_conserve() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x550a,
         Some(core::Config {
@@ -215,7 +220,9 @@ fn staged_exec_charges_flow_into_jobs_and_conserve() {
 /// 不并窗（组装路径不同：CPU 张量合并 vs 设备侧组装）；键不匹配项不等待。
 #[test]
 fn execution_entry_dimension_separates_windows() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5509,
         Some(core::Config {
@@ -251,7 +258,9 @@ fn execution_entry_dimension_separates_windows() {
 
 #[test]
 fn disabled_route_keeps_current_per_request_semantics() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(0x5502, None);
     // 未启用：单项成 Single Job，维持现行逐次执行、零攒批。
     let jobs = route(
@@ -271,7 +280,9 @@ fn disabled_route_keeps_current_per_request_semantics() {
 
 #[test]
 fn key_mismatch_and_generation_switch_execute_immediately() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5504,
         Some(core::Config {
@@ -327,7 +338,9 @@ fn key_mismatch_and_generation_switch_execute_immediately() {
 
 #[test]
 fn deadline_tick_forms_batch_and_under_two_runs_per_item() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5505,
         Some(core::Config {
@@ -383,7 +396,9 @@ fn deadline_tick_forms_batch_and_under_two_runs_per_item() {
 
 #[test]
 fn stopping_drains_window_and_disable_clears_stats() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5506,
         Some(core::Config {
@@ -425,7 +440,9 @@ fn stopping_drains_window_and_disable_clears_stats() {
 
 #[test]
 fn rejected_items_accumulate_only_while_enabled() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5507,
         Some(core::Config {
@@ -444,7 +461,9 @@ fn rejected_items_accumulate_only_while_enabled() {
 
 #[test]
 fn next_deadline_tracks_open_windows() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5508,
         Some(core::Config {
@@ -472,7 +491,9 @@ fn next_deadline_tracks_open_windows() {
 /// 交替完成（drop）归还，随后关闭排空收尾——全程账目精确、终态归零。
 #[test]
 fn dual_model_alternating_cycles_conserve_to_zero() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5601,
         Some(core::Config {
@@ -547,7 +568,9 @@ fn ledger(f: &Fixture) -> (usize, usize) {
 /// 全链不泄漏。
 #[test]
 fn slot_wait_keeps_pending_share_and_frees_after_completion() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5603,
         Some(core::Config {
@@ -606,7 +629,9 @@ fn policy(bytes: u64) -> am_queue_policy_t {
 /// 挂起份额全量归还、不残留执行份额。
 #[test]
 fn pruned_pending_share_returns_conserved() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(0x5604, None);
     let items = staged_pending(&f, &[1, 2, 3]);
     assert_eq!(ledger(&f), (3, 24));
@@ -619,7 +644,9 @@ fn pruned_pending_share_returns_conserved() {
 /// Job 收尾全量归还。
 #[test]
 fn drained_pending_jobs_conserve_with_exec_charges() {
-    let _lock = TEST_LOCK.lock().unwrap();
+    let _lock = TEST_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let f = fixture(
         0x5605,
         Some(core::Config {

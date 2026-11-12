@@ -22,6 +22,30 @@ fn init_ctx() -> usize {
     unsafe { context::initialize_vision(domain(), &params) }.expect("vision ctx")
 }
 
+/// 各门共用进程级 Domain（ctx 上限 SDK_MAX_CONTEXTS=8），串行跑时前门不释放
+/// 会挤占后门初始化：退出（含断言失败提前退出）统一关闭并注销。
+struct CtxGuard {
+    ctx: usize,
+    models: Vec<usize>,
+}
+
+impl CtxGuard {
+    fn track(&mut self, key: usize) {
+        self.models.push(key);
+    }
+}
+
+impl Drop for CtxGuard {
+    fn drop(&mut self) {
+        for key in self.models.iter() {
+            let _ = domain().close(*key, 5000);
+            let _ = domain().destroy(*key);
+        }
+        let _ = domain().close(self.ctx, 5000);
+        let _ = domain().destroy(self.ctx);
+    }
+}
+
 fn load_model(ctx: usize, path: &str, profile: &str, backend: Option<u32>) -> usize {
     let cpath = CString::new(path).unwrap();
     let cprofile = CString::new(profile).unwrap();
@@ -51,19 +75,25 @@ fn fixture_png() -> Vec<u8> {
 #[test]
 #[ignore = "需真实 ORT 与 vocab 合成双模型夹具（.local/tests/vocab-e2e）"]
 fn vocab_e2e_bind_inject_decode_and_hits() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let tower = load_model(
         ctx,
         &format!("{FIXTURES}\\text-tower.onnx"),
         "text-encoder-clip-embed-v1",
         None,
     );
+    guard.track(tower);
     let detector = load_model(
         ctx,
         &format!("{FIXTURES}\\affinity-head.onnx"),
         "detect-yolo-world-head-v1",
         None,
     );
+    guard.track(detector);
     // 词表：hand 两词（id1 高分 0.9 / id2 中分 0.5 同框）、glove 一词（id3 低分 0.047）
     let labels = [
         CString::new("hand").unwrap(),
@@ -171,13 +201,18 @@ fn vocab_e2e_gpu_direct_injection_matches_cpu() {
         cuda_sys::CudaApi, interop::nvidia_nv12_texture, interop::RegisteredTexture,
         pipeline::GpuPipeline,
     };
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let tower = load_model(
         ctx,
         &format!("{FIXTURES}\\text-tower.onnx"),
         "text-encoder-clip-embed-v1",
         None,
     );
+    guard.track(tower);
     // affinity head 指定 CUDA（backend=2）：GPU 帧分派按 is_cuda 判定
     let detector = load_model(
         ctx,
@@ -185,6 +220,7 @@ fn vocab_e2e_gpu_direct_injection_matches_cpu() {
         "detect-yolo-world-head-v1",
         Some(2),
     );
+    guard.track(detector);
     let labels = [CString::new("hand").unwrap()];
     let tokens: Vec<i64> = vec![1i64; 77];
     let entries = [am_vocab_entry_t {

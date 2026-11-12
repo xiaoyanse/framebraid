@@ -33,6 +33,30 @@ fn init_ctx() -> usize {
     unsafe { context::initialize_vision(domain(), &params) }.expect("vision ctx")
 }
 
+/// 各门共用进程级 Domain（ctx 上限 SDK_MAX_CONTEXTS=8），串行跑时前门不释放
+/// 会挤占后门初始化：退出（含断言失败提前退出）统一关闭并注销。
+struct CtxGuard {
+    ctx: usize,
+    models: Vec<usize>,
+}
+
+impl CtxGuard {
+    fn track(&mut self, key: usize) {
+        self.models.push(key);
+    }
+}
+
+impl Drop for CtxGuard {
+    fn drop(&mut self) {
+        for key in self.models.iter() {
+            let _ = domain().close(*key, 5000);
+            let _ = domain().destroy(*key);
+        }
+        let _ = domain().close(self.ctx, 5000);
+        let _ = domain().destroy(self.ctx);
+    }
+}
+
 fn load_model(ctx: usize, path: &str, profile: &str, backend: Option<u32>) -> usize {
     let cpath = CString::new(path).unwrap();
     let cprofile = CString::new(profile).unwrap();
@@ -338,19 +362,25 @@ fn assert_boxes_match(
 #[test]
 #[ignore = "需真实 ORT 与 yolo-world 双模型（.local/tests/yolo-world）"]
 fn world_e2e_cpu_real_vocab_pipeline() {
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let tower = load_model(
         ctx,
         &format!("{REAL}\\text.onnx"),
         "text-encoder-clip-dynseq-v1",
         None,
     );
+    guard.track(tower);
     let detector = load_model(
         ctx,
         &format!("{BATCHD}\\world-batch.onnx"),
         "detect-yolo-world-batch-v1",
         None,
     );
+    guard.track(detector);
     // 批 D 攒批资格断言：批动态档案 + 派生共同首轴声明 → native_batch=1。
     let mut info = am_model_info_t::default();
     assert_eq!(unsafe { amv_model_get_info(detector as _, &mut info) }, 0);
@@ -421,19 +451,25 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
         cuda_sys::CudaApi, interop::nvidia_nv12_texture, interop::RegisteredTexture,
         pipeline::GpuPipeline,
     };
-    let ctx = init_ctx();
+    let mut guard = CtxGuard {
+        ctx: init_ctx(),
+        models: Vec::new(),
+    };
+    let ctx = guard.ctx;
     let tower = load_model(
         ctx,
         &format!("{REAL}\\text.onnx"),
         "text-encoder-clip-dynseq-v1",
         None,
     );
+    guard.track(tower);
     let detector = load_model(
         ctx,
         &format!("{BATCHD}\\world-batch.onnx"),
         "detect-yolo-world-batch-v1",
         Some(2),
     );
+    guard.track(detector);
     let mut info = am_model_info_t::default();
     assert_eq!(unsafe { amv_model_get_info(detector as _, &mut info) }, 0);
     assert!(info.execution.actual == 2, "CUDA strict 装载");
