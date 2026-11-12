@@ -5,6 +5,7 @@ pub(super) use batching::{
     enabled as batching_enabled, release as batching_release, snapshot as batching_snapshot,
 };
 mod budget;
+mod exec_stage;
 mod execution;
 mod native_execution;
 mod retired;
@@ -45,6 +46,9 @@ struct Data {
     last: Option<(usize, u64)>,
     waiters: usize,
     models: usize,
+    /// B1.2 执行槽：执行期份额（补账→归还）在账窗口的互斥标志，executor 层
+    /// 多 Model 共享一处；等槽批保持挂起份额，槽释放后才补账执行。
+    exec_slot: bool,
 }
 struct Engine {
     data: Mutex<Data>,

@@ -110,27 +110,15 @@ fn execute(job: Job) {
         exec_charges,
         parallel: _,
     } = job;
-    // 批 E 分期计费：执行开始补账（挂起实驻留→组批执行峰值）。补账失败
-    // 按既有执行期预算失败语义逐项回执（resourceExhausted，B11 逐项错误
-    // 回执），不静默绕过护栏，也不留下部分入账。
-    if !exec_charges.is_empty() {
-        if let Err(code) = stage_charges(&entry, &mut _admissions, &exec_charges) {
-            let ids: Vec<u64> = match &input {
-                Payload::Single(_) => vec![id],
-                Payload::Native { ids, .. } => ids.clone(),
-            };
-            if let Ok(model) = entry.data::<ModelHandle>() {
-                for request in &ids {
-                    finish(model, *request, Err(code));
-                    model.inflight.fetch_sub(1, Ordering::AcqRel);
-                }
-                model.state.running.fetch_sub(1, Ordering::AcqRel);
-                model.busy.store(false, Ordering::Release);
-                model.state.changed.notify_all();
-            }
-            return;
-        }
-    }
+    // B1.2 执行错峰：非零执行份额批持槽至执行完成（补账在槽内完成，挂起
+    // 份额照常先行入账）；零份额批不进互斥窗口。批 E 分期计费的补账与
+    // 失败收口（逐项回执+在途归还，不静默绕过护栏、不留部分入账）在
+    // exec_stage::enter 内聚拢；Err=已整笔收口。
+    let _exec_slot =
+        match super::exec_stage::enter(&entry, &input, id, &mut _admissions, &exec_charges) {
+            Err(_) => return,
+            Ok(slot) => slot,
+        };
     let mut input = match input {
         Payload::Single(input) => input,
         Payload::Native {
@@ -177,45 +165,6 @@ fn execute(job: Job) {
     state.changed.notify_all();
 }
 
-/// 批 E：逐项执行期补账——挂起期准入之上追加同源账目预留（项数已在准入
-/// 计入，仅补字节）；run_batch 的同源核心组批预算检查以补账后合计为基
-/// （Admission::totals 含补账守卫，与分期前同一求和口径）。锁序与准入
-/// 一致（limits→queues→engine.data→usage），worker 此时不持其他锁。
-pub(super) fn stage_charges(
-    entry: &Arc<Entry>,
-    admissions: &mut Vec<Admission>,
-    charges: &[usize],
-) -> Result<()> {
-    if admissions.len() != charges.len() {
-        return Err(AM_ERR_SDK_INTERNAL_ERROR);
-    }
-    let model = entry.data::<ModelHandle>()?;
-    let ctx = model.state.context()?;
-    let context = ctx.data::<Context>()?;
-    let limits = *lock(&context.limits)?;
-    let queues = lock(&context.queues)?;
-    let mut staged = Vec::new();
-    for (admission, extra) in admissions.iter().zip(charges) {
-        if *extra == 0 {
-            continue;
-        }
-        // Admission.class 为预算类（0=实时/1=离线）；队列策略按 AM_Q 索引
-        // （2/3）取对应类——与 admission::submit 传入的 policy 同一来源。
-        let policy_class = if admission.class == 1 {
-            AM_Q_OFFLINE_BATCH
-        } else {
-            AM_Q_REALTIME_INFER
-        } as usize;
-        staged.push(budget::topup(
-            admission,
-            *extra,
-            &limits,
-            &queues[policy_class],
-        )?);
-    }
-    admissions.extend(staged);
-    Ok(())
-}
 pub(super) fn finish(model: &ModelHandle, id: u64, result: Result<Arc<ResultBuffer>>) {
     let state = &model.state;
     let mut terminal = None;

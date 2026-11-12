@@ -36,6 +36,7 @@ impl Data {
             last: None,
             waiters: 0,
             models: 0,
+            exec_slot: false,
         })
     }
 

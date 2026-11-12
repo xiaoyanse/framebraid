@@ -1,6 +1,7 @@
 //! R5-2.1 攒批调度接线测试：复用真实 Domain/Context 作为登记宿主，准入与
 //! Job 以 storage_tests 同款装配方式构造；引擎不派工作线程，触发全部由
 //! 显式 tick 驱动，不依赖 ORT 运行库。
+use super::super::exec_stage;
 use super::*;
 use am_sdk_support::abi::*;
 use std::time::{Duration, Instant};
@@ -465,4 +466,174 @@ fn next_deadline_tracks_open_windows() {
     let jobs = tick_inner(Instant::now(), |_| true).jobs;
     drop(jobs);
     assert!(next_deadline().is_none());
+}
+
+/// B1.4 双 Model 交替全周期：两模型共享执行器，交替攒批排出带执行份额的批、
+/// 交替完成（drop）归还，随后关闭排空收尾——全程账目精确、终态归零。
+#[test]
+fn dual_model_alternating_cycles_conserve_to_zero() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let f = fixture(
+        0x5601,
+        Some(core::Config {
+            max_batch_items: 2,
+            max_wait_ms: 5000,
+        }),
+    );
+    let second = 0x5602;
+    configure(
+        second,
+        &f.entry,
+        Some(core::Config {
+            max_batch_items: 2,
+            max_wait_ms: 5000,
+        }),
+    )
+    .unwrap();
+    struct Second(usize);
+    impl Drop for Second {
+        fn drop(&mut self) {
+            if let Ok(mut registry) = REGISTRY.lock() {
+                registry.retain(|r| r.key != self.0);
+            }
+        }
+    }
+    let _second = Second(second);
+    // 交替挂起：A、B 各一项在窗（凑满线 2），挂起份额同源累计。
+    assert!(route(f.key, &f.entry, 2, agg(1), staged_pending(&f, &[1])).is_empty());
+    assert!(route(second, &f.entry, 2, agg(1), staged_pending(&f, &[2])).is_empty());
+    assert_eq!(ledger(&f), (2, 16));
+    // 交替凑满排出：各自 Native Job 逐项携带执行份额。
+    let job_a = route(f.key, &f.entry, 2, agg(1), staged_pending(&f, &[3])).remove(0);
+    let job_b = route(second, &f.entry, 2, agg(1), staged_pending(&f, &[4])).remove(0);
+    assert_eq!(job_a.exec_charges, vec![32, 32]);
+    assert_eq!(job_b.exec_charges, vec![32, 32]);
+    assert_eq!(Admission::totals(&job_a._admissions), (2, 16));
+    assert_eq!(Admission::totals(&job_b._admissions), (2, 16));
+    assert_eq!(ledger(&f), (4, 32));
+    // 交替完成：逐 Job 全量归还，账目精确回落。
+    drop(job_a);
+    assert_eq!(ledger(&f), (2, 16));
+    drop(job_b);
+    assert_eq!(ledger(&f), (0, 0));
+    assert_eq!(*f.usage.preprocess.lock().unwrap(), [0, 0]);
+    // 关闭排空：两模型窗口剩余项一次收口，账目归零。
+    assert!(route(f.key, &f.entry, 2, agg(1), staged_pending(&f, &[5])).is_empty());
+    assert!(route(second, &f.entry, 2, agg(1), staged_pending(&f, &[6])).is_empty());
+    assert_eq!(ledger(&f), (2, 16));
+    let drained = tick_inner(Instant::now(), |_| true).jobs;
+    assert_eq!(drained.len(), 2);
+    drop(drained);
+    assert_eq!(ledger(&f), (0, 0));
+    assert_eq!(*f.usage.preprocess.lock().unwrap(), [0, 0]);
+}
+
+fn staged_pending(f: &Fixture, ids: &[u64]) -> Vec<Pending> {
+    let mut items = pending(f, ids, admissions(f, ids.len(), 8));
+    for item in &mut items {
+        item.exec_charge = 32;
+    }
+    items
+}
+
+/// 执行器共享账目快照（单次加锁读取，禁在断言元组内重复 lock）。
+fn ledger(f: &Fixture) -> (usize, usize) {
+    let data = f.engine.data.lock().unwrap();
+    (data.inflight, data.bytes)
+}
+
+/// B1.4 错峰等待链：A 持槽执行中，B 批已排出只在挂起份额下等槽（执行份额
+/// 未入账）；等槽期收口全量归还；槽释放后 B 补账执行再归零——挂起份额
+/// 全链不泄漏。
+#[test]
+fn slot_wait_keeps_pending_share_and_frees_after_completion() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let f = fixture(
+        0x5603,
+        Some(core::Config {
+            max_batch_items: 2,
+            max_wait_ms: 5000,
+        }),
+    );
+    let holder = exec_stage::acquire(&f.engine).unwrap();
+    assert!(f.engine.data.lock().unwrap().exec_slot);
+    // B 批排出即等槽：仅挂起份额在账（2×8），执行份额随 Job 携带未入账。
+    let waiting = route(f.key, &f.entry, 2, agg(1), staged_pending(&f, &[1, 2])).remove(0);
+    assert_eq!(waiting.exec_charges, vec![32, 32]);
+    assert_eq!(ledger(&f), (2, 16));
+    // 等槽期收口（取消/TTL/关闭同出口）：挂起份额全量归还，槽不受影响。
+    drop(waiting);
+    assert_eq!(ledger(&f), (0, 0));
+    assert!(f.engine.data.lock().unwrap().exec_slot);
+    // 槽释放后 B 补账执行：同源补账（逐项 topup，stage_charges 同链）成功，
+    // 执行完成（drop guard+topup+Job）账目归零。
+    drop(holder);
+    assert!(!f.engine.data.lock().unwrap().exec_slot);
+    let retry = route(f.key, &f.entry, 2, agg(1), staged_pending(&f, &[3, 4])).remove(0);
+    let guard = exec_stage::acquire(&f.engine).unwrap();
+    let exec_guards: Vec<_> = retry
+        ._admissions
+        .iter()
+        .zip(&retry.exec_charges)
+        .map(|(admission, extra)| {
+            budget::topup(admission, *extra, &limits(1024), &policy(1024)).unwrap()
+        })
+        .collect();
+    assert_eq!(ledger(&f), (2, 80));
+    drop(exec_guards);
+    drop(retry);
+    drop(guard);
+    assert_eq!(ledger(&f), (0, 0));
+    assert_eq!(*f.usage.preprocess.lock().unwrap(), [0, 0]);
+}
+
+fn limits(bytes: u64) -> am_limits_t {
+    am_limits_t {
+        preprocess_budget_bytes: bytes,
+        ..Default::default()
+    }
+}
+
+fn policy(bytes: u64) -> am_queue_policy_t {
+    am_queue_policy_t {
+        max_bytes: bytes,
+        max_items: 16,
+        ..Default::default()
+    }
+}
+
+/// B1.4 等槽/挂起期取消与 TTL 收口（finish_pruned 统一出口）：剪除项的
+/// 挂起份额全量归还、不残留执行份额。
+#[test]
+fn pruned_pending_share_returns_conserved() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let f = fixture(0x5604, None);
+    let items = staged_pending(&f, &[1, 2, 3]);
+    assert_eq!(ledger(&f), (3, 24));
+    finish_pruned(vec![(f.entry.clone(), items)]);
+    assert_eq!(ledger(&f), (0, 0));
+    assert_eq!(*f.usage.preprocess.lock().unwrap(), [0, 0]);
+}
+
+/// B1.4 关闭排空：等槽窗口项整批排出（执行份额仍随 Job 携带未入账），
+/// Job 收尾全量归还。
+#[test]
+fn drained_pending_jobs_conserve_with_exec_charges() {
+    let _lock = TEST_LOCK.lock().unwrap();
+    let f = fixture(
+        0x5605,
+        Some(core::Config {
+            max_batch_items: 4,
+            max_wait_ms: 5000,
+        }),
+    );
+    assert!(route(f.key, &f.entry, 2, agg(1), staged_pending(&f, &[1, 2, 3])).is_empty());
+    assert_eq!(ledger(&f), (3, 24));
+    let drained = tick_inner(Instant::now(), |_| true).jobs;
+    assert_eq!(drained.len(), 1);
+    assert_eq!(drained[0].exec_charges, vec![32, 32, 32]);
+    assert_eq!(ledger(&f), (3, 24));
+    drop(drained);
+    assert_eq!(ledger(&f), (0, 0));
+    assert_eq!(*f.usage.preprocess.lock().unwrap(), [0, 0]);
 }

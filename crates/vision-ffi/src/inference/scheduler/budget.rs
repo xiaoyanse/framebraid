@@ -1,6 +1,8 @@
 //! 分类、本Context及共享执行器三层准入，真实归还输入后一起出账。
 use super::*;
 
+/// host/device 混记总账包络：GPU 帧直传挂起项的 12B/px 记 device 内存入
+/// 同一账本（见 input.rs GPU 分支），不做物理内存域区分。
 pub(super) const EXECUTOR_BYTES: usize = 64 * 1024 * 1024;
 
 pub(super) fn reserve(
@@ -83,6 +85,7 @@ mod tests {
                 last: None,
                 waiters: 0,
                 models: 0,
+                exec_slot: false,
             }),
             wake: Condvar::new(),
             budget: ThreadBudget {
@@ -239,6 +242,42 @@ mod tests {
         drop(extra);
         drop(held);
         assert_eq!(snapshot(&e, &u), (0, 0, [0, 0]));
+    }
+
+    /// B1.4 双 Model 叠加压力：两源挂起份额共存下，后补账源按同源执行器
+    /// 总量上限整笔拒绝——无部分入账、对侧账目无损；先执行方归还后对侧
+    /// 可补账，终态双方归零。
+    #[test]
+    fn topup_across_two_models_rejects_without_partial_charge() {
+        let e = engine();
+        let a = Arc::new(Usage::default());
+        let b = Arc::new(Usage::default());
+        let envelope = &limits(EXECUTOR_BYTES as u64);
+        let headroom = &policy(EXECUTOR_BYTES as u64);
+        let held_a = reserve(e.clone(), a.clone(), 0, 1, 300, envelope, headroom).unwrap();
+        let held_b = reserve(e.clone(), b.clone(), 0, 1, 300, envelope, headroom).unwrap();
+        // A 补账至执行器总量余量仅 100：两源挂起 600 + A 执行份额。
+        let exec_a = topup(&held_a, EXECUTOR_BYTES - 700, envelope, headroom).unwrap();
+        // B 叠加补账越界（EXECUTOR_BYTES + 25）：整笔拒绝、无部分入账。
+        assert!(matches!(
+            topup(&held_b, 125, envelope, headroom),
+            Err(AM_ERR_SDK_QUEUE_FULL)
+        ));
+        assert_eq!(
+            snapshot(&e, &a),
+            (2, EXECUTOR_BYTES - 100, [EXECUTOR_BYTES - 400, 0])
+        );
+        assert_eq!(snapshot(&e, &b), (2, EXECUTOR_BYTES - 100, [300, 0]));
+        // A 执行完成归还执行份额后，B 同额补账成功（错峰让位语义）。
+        drop(exec_a);
+        assert_eq!(snapshot(&e, &a), (2, 600, [300, 0]));
+        assert_eq!(snapshot(&e, &b), (2, 600, [300, 0]));
+        let exec_b = topup(&held_b, 300, envelope, headroom).unwrap();
+        assert_eq!(snapshot(&e, &a), (2, 900, [300, 0]));
+        assert_eq!(snapshot(&e, &b), (2, 900, [600, 0]));
+        drop((exec_b, held_b, held_a));
+        assert_eq!(snapshot(&e, &a), (0, 0, [0, 0]));
+        assert_eq!(snapshot(&e, &b), (0, 0, [0, 0]));
     }
 
     #[test]

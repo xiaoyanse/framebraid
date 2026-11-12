@@ -240,11 +240,11 @@ pub unsafe fn plan_item(
         }
         let (w, h) = sdk::encoded::dimensions(bytes).map_err(error)?;
         result.cost = bytes.len() + w as usize * h as usize * 8;
-        // 批 E：挂起期实驻留=编码载荷拷贝；执行期补账=解码 RGB 面（prepare
-        // 期瞬态）+合并缓冲+ORT 输入副本。
+        // 批 E：挂起期实驻留=编码载荷拷贝；执行期补账=合并缓冲+ORT 输入副本。
+        // 解码 RGB 源面不入执行账：只在单次 prepare 内瞬态（解码即弃、逐项串行
+        // 至多一面在、与合并/ORT 副本零共存），尺寸另有解码器 64MB 硬限独立守护。
         result.pending = bytes.len();
-        result.exec_charge = w as usize * h as usize * 3
-            + preprocess.width as usize * preprocess.height as usize * 24;
+        result.exec_charge = preprocess.width as usize * preprocess.height as usize * 24;
         result.encoded = input.encoded;
         result.encoded_size = bytes.len();
     } else if input.kind == AM_IMG_GPU_FRAME {

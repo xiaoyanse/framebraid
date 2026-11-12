@@ -203,9 +203,9 @@ fn batch_e2e_window_assembles_splits_and_keeps_identity() {
 
 /// 批 E 分期计费门：同一收紧预算（6MiB）下，旧口径（全周期估算峰值逐项
 /// 入账，四项 ≈8.83MB）第三项起必拒、窗口凑不满；新口径（挂起期实驻留
-/// ≈730B/项 + 执行期补账 ≈1.35MB/项，峰值 ≈5.42MB）整窗凑满并正确执行
-/// ——攒批可用性由账目口径解锁的直接证据。完成/释放后账目归还（后续提交
-/// 仍被接受），全程零准入背压。
+/// ≈730B/项 + 执行期补账 ≈1.2MB/项，即 224²×24 不含 prepare 期瞬态解码
+/// 源面，峰值 ≈4.8MB）整窗凑满并正确执行——攒批可用性由账目口径解锁的
+/// 直接证据。完成/释放后账目归还（后续提交仍被接受），全程零准入背压。
 #[test]
 #[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
 fn batch_e2e_staged_accrual_fills_window_under_tightened_budget() {
@@ -288,4 +288,85 @@ fn batch_e2e_tail_single_and_cancel_semantics_hold() {
     assert_eq!(wait_terminal(ctx, keep), AM_REQ_DONE);
     assert_identity("keep", fetch_values(ctx, keep), [1.0, 0.0, 0.0]);
     assert_eq!(unsafe { amv_result_ack(ctx as _, keep) }, 0);
+}
+
+/// 双 Model 错峰真装配门：两 Model 实例各自开窗攒批（批 4），并发提交使两
+/// 窗口同相凑满——执行期份额在 ctx 级执行槽上错峰入账，两窗都成批执行、
+/// 逐项身份正确、全程零拒绝；一 Model 在另一 Model 在途期间关闭排空（其
+/// 在途请求按关闭语义取消），另一 Model 不受干扰继续成批执行，共享执行器
+/// 账目全周期守恒（关闭排空后提交仍被接受）。
+#[test]
+#[ignore = "需真实 ORT 与合成批模型夹具（.local/tests/batch-image）"]
+fn batch_e2e_dual_model_staggered_execution() {
+    let ctx = init_ctx();
+    let model_a = load_raw(ctx);
+    let model_b = load_raw(ctx);
+    configure(model_a, 4, 100);
+    configure(model_b, 4, 100);
+    let names = ["red", "green", "blue", "yellow"];
+    let colors = [
+        [1.0f32, 0.0, 0.0],
+        [0.0f32, 1.0, 0.0],
+        [0.0f32, 0.0, 1.0],
+        [1.0f32, 1.0, 0.0],
+    ];
+    // 屏障同步并发提交：两窗口同相凑满，执行期在共享执行槽上错峰。
+    let barrier = std::sync::Arc::new(std::sync::Barrier::new(2));
+    let lanes: Vec<_> = [model_a, model_b]
+        .into_iter()
+        .map(|model| {
+            let barrier = barrier.clone();
+            std::thread::spawn(move || {
+                barrier.wait();
+                names.map(|name| submit(ctx, model, name))
+            })
+        })
+        .collect();
+    let ids: Vec<[u64; 4]> = lanes
+        .into_iter()
+        .map(|lane| lane.join().expect("提交线程应正常结束"))
+        .collect();
+    for (lane_ids, model) in ids.iter().zip([model_a, model_b]) {
+        for (id, color) in lane_ids.iter().zip(&colors) {
+            assert_eq!(wait_terminal(ctx, *id), AM_REQ_DONE);
+            assert_identity(&format!("lane{id}"), fetch_values(ctx, *id), *color);
+            assert_eq!(unsafe { amv_result_ack(ctx as _, *id) }, 0);
+        }
+        let after = stats(model);
+        assert!(after.formed_batches >= 1, "双 Model 两窗都应成批");
+        assert!(after.batched_items >= 4, "逐项计入成批项");
+        assert_eq!(after.rejected_items, 0, "错峰执行不应触发准入背压");
+    }
+    // A 在 B 在途期间关闭排空：A 在途按关闭语义取消收口，B 不受干扰继续
+    // 成批执行；关闭等待排空返回，B 项终态在关闭返回后仍可查询。
+    let ids_b2 = [submit(ctx, model_b, "blue"), submit(ctx, model_b, "red")];
+    let ids_a2 = [
+        submit(ctx, model_a, "green"),
+        submit(ctx, model_a, "yellow"),
+    ];
+    let mut lifecycle: am_lifecycle_state_t = 0;
+    assert_eq!(
+        unsafe { amv_model_close(model_a as _, 5000, &mut lifecycle) },
+        0
+    );
+    assert_eq!(lifecycle, AM_LIFECYCLE_CLOSED as u32, "关闭应排空至 CLOSED");
+    for id in ids_a2 {
+        assert_eq!(wait_terminal(ctx, id), AM_REQ_CANCELED, "关闭在途应取消");
+    }
+    let late_colors = [[0.0f32, 0.0, 1.0], [1.0f32, 0.0, 0.0]];
+    for (id, color) in ids_b2.iter().zip(&late_colors) {
+        assert_eq!(wait_terminal(ctx, *id), AM_REQ_DONE, "对侧不受关闭干扰");
+        assert_identity(&format!("late{id}"), fetch_values(ctx, *id), *color);
+        assert_eq!(unsafe { amv_result_ack(ctx as _, *id) }, 0);
+    }
+    let after = stats(model_b);
+    assert!(after.formed_batches >= 2, "B 关闭 A 后应继续成批");
+    assert!(after.batched_items >= 6, "两窗成批项累计");
+    assert_eq!(after.rejected_items, 0, "全程零准入背压");
+    // 账目守恒：关闭排空后共享执行器账目已归还，B 仍可接受并正确执行。
+    let post = submit(ctx, model_b, "yellow");
+    assert_eq!(wait_terminal(ctx, post), AM_REQ_DONE);
+    assert_identity("post-close", fetch_values(ctx, post), [1.0, 1.0, 0.0]);
+    assert_eq!(unsafe { amv_result_ack(ctx as _, post) }, 0);
+    assert_eq!(stats(model_b).rejected_items, 0);
 }
