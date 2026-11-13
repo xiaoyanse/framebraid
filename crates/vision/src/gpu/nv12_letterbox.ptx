@@ -24,16 +24,17 @@
     .param .u32 pitch,
     .param .u32 origin_x,
     .param .u32 origin_y,
-    .param .u32 clamp_roi
+    .param .u32 sampling,
+    .param .f32 roi_scale
 )
 {
-	.reg .pred p, q;
+	.reg .pred p, q, parity, truncate;
 	// %r1=x %r2=y %r3=dst_w %r4=dst_h %r5=rw %r6=rh %r7=left %r8=top
 	// %r9=dx %r10=dy %r11=tmp %r12=hw %r13=sx0 %r14=sy0 %r15=sx1 %r16=sy1
 	// %r17=wgridx %r18=wgridy %r19=uvsx0 %r20=uvsy0 %r21=uvsx1 %r22=uvsy1
 	.reg .b32 %r<26>;
 	// %f1..=coords/weights, %f10=Y %f11=U %f12=V
-	.reg .f32 %f<32>;
+	.reg .f32 %f<48>;
 	.reg .b64 %rd<12>;
 
 	ld.param.u64 %rd1, [y_ptr];
@@ -106,7 +107,16 @@
 	sub.f32 %f1, %f1, 0f3F000000;  // sy
 
     // ROI mode clamps interpolation to the cropped image before translating to the full planes.
-    ld.param.u32 %r23, [clamp_roi];
+    ld.param.u32 %r23, [sampling];
+    setp.ge.u32 parity, %r23, 2;
+    setp.eq.u32 truncate, %r23, 3;
+    @parity ld.param.f32 %f5, [roi_scale];
+    @parity cvt.rn.f32.s32 %f1, %r9;
+    @parity add.f32 %f1, %f1, 0f3F000000;
+    @parity div.rn.f32 %f9, %f1, %f5;
+    @parity sub.f32 %f9, %f9, 0f3F000000;
+    @parity div.rn.f32 %f1, %f2, %f5;
+    @parity sub.f32 %f1, %f1, 0f3F000000;
     setp.ne.u32 q, %r23, 0;
     sub.s32 %r11, %r17, 1;
     cvt.rn.f32.s32 %f2, %r11;
@@ -143,6 +153,8 @@
     add.s32 %r14, %r14, %r24;
     add.s32 %r16, %r16, %r24;
     mov.u32 %r17, %r25;
+
+    @parity bra CPU_PARITY;
 
     // Y bilinear: base = y*src_w + x
 	mad.lo.s32 %r19, %r14, %r17, %r13;  // y00
@@ -225,6 +237,210 @@
 	st.global.f32 [%rd5], %f19;
 	st.global.f32 [%rd6], %f22;
 	bra DONE;
+
+CPU_PARITY:
+    cvta.to.global.u64 %rd7, %rd1;
+    cvta.to.global.u64 %rd9, %rd2;
+    mad.lo.s32 %r11, %r14, %r17, %r13;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd7, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    cvt.rn.f32.u32 %f12, %r11;
+    add.f32 %f12, %f12, 0fC1800000;
+    mul.f32 %f12, %f12, 0f3F950A85;
+    shr.u32 %r11, %r14, 1;
+    and.b32 %r12, %r13, 0xFFFFFFFE;
+    mad.lo.s32 %r11, %r11, %r17, %r12;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd9, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    add.s64 %rd10, %rd8, 1;
+    ld.global.u8 %r12, [%rd10];
+    cvt.rn.f32.u32 %f13, %r11;
+    cvt.rn.f32.u32 %f14, %r12;
+    add.f32 %f13, %f13, 0fC3000000;
+    add.f32 %f14, %f14, 0fC3000000;
+    mul.f32 %f13, %f13, 0f3F91B6DB;
+    mul.f32 %f14, %f14, 0f3F91B6DB;
+    mul.f32 %f15, %f14, 0f3FB374BC;
+    add.f32 %f32, %f12, %f15;
+    mul.f32 %f15, %f13, 0f3EB03298;
+    sub.f32 %f33, %f12, %f15;
+    mul.f32 %f15, %f14, 0f3F36D19E;
+    sub.f32 %f33, %f33, %f15;
+    mul.f32 %f15, %f13, 0f3FE2D0E5;
+    add.f32 %f34, %f12, %f15;
+    max.f32 %f32, %f32, 0f00000000;
+    min.f32 %f32, %f32, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f32;
+    @truncate cvt.rn.f32.u32 %f32, %r11;
+    max.f32 %f33, %f33, 0f00000000;
+    min.f32 %f33, %f33, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f33;
+    @truncate cvt.rn.f32.u32 %f33, %r11;
+    max.f32 %f34, %f34, 0f00000000;
+    min.f32 %f34, %f34, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f34;
+    @truncate cvt.rn.f32.u32 %f34, %r11;
+    mad.lo.s32 %r11, %r14, %r17, %r15;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd7, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    cvt.rn.f32.u32 %f12, %r11;
+    add.f32 %f12, %f12, 0fC1800000;
+    mul.f32 %f12, %f12, 0f3F950A85;
+    shr.u32 %r11, %r14, 1;
+    and.b32 %r12, %r15, 0xFFFFFFFE;
+    mad.lo.s32 %r11, %r11, %r17, %r12;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd9, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    add.s64 %rd10, %rd8, 1;
+    ld.global.u8 %r12, [%rd10];
+    cvt.rn.f32.u32 %f13, %r11;
+    cvt.rn.f32.u32 %f14, %r12;
+    add.f32 %f13, %f13, 0fC3000000;
+    add.f32 %f14, %f14, 0fC3000000;
+    mul.f32 %f13, %f13, 0f3F91B6DB;
+    mul.f32 %f14, %f14, 0f3F91B6DB;
+    mul.f32 %f15, %f14, 0f3FB374BC;
+    add.f32 %f35, %f12, %f15;
+    mul.f32 %f15, %f13, 0f3EB03298;
+    sub.f32 %f36, %f12, %f15;
+    mul.f32 %f15, %f14, 0f3F36D19E;
+    sub.f32 %f36, %f36, %f15;
+    mul.f32 %f15, %f13, 0f3FE2D0E5;
+    add.f32 %f37, %f12, %f15;
+    max.f32 %f35, %f35, 0f00000000;
+    min.f32 %f35, %f35, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f35;
+    @truncate cvt.rn.f32.u32 %f35, %r11;
+    max.f32 %f36, %f36, 0f00000000;
+    min.f32 %f36, %f36, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f36;
+    @truncate cvt.rn.f32.u32 %f36, %r11;
+    max.f32 %f37, %f37, 0f00000000;
+    min.f32 %f37, %f37, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f37;
+    @truncate cvt.rn.f32.u32 %f37, %r11;
+    mad.lo.s32 %r11, %r16, %r17, %r13;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd7, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    cvt.rn.f32.u32 %f12, %r11;
+    add.f32 %f12, %f12, 0fC1800000;
+    mul.f32 %f12, %f12, 0f3F950A85;
+    shr.u32 %r11, %r16, 1;
+    and.b32 %r12, %r13, 0xFFFFFFFE;
+    mad.lo.s32 %r11, %r11, %r17, %r12;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd9, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    add.s64 %rd10, %rd8, 1;
+    ld.global.u8 %r12, [%rd10];
+    cvt.rn.f32.u32 %f13, %r11;
+    cvt.rn.f32.u32 %f14, %r12;
+    add.f32 %f13, %f13, 0fC3000000;
+    add.f32 %f14, %f14, 0fC3000000;
+    mul.f32 %f13, %f13, 0f3F91B6DB;
+    mul.f32 %f14, %f14, 0f3F91B6DB;
+    mul.f32 %f15, %f14, 0f3FB374BC;
+    add.f32 %f38, %f12, %f15;
+    mul.f32 %f15, %f13, 0f3EB03298;
+    sub.f32 %f39, %f12, %f15;
+    mul.f32 %f15, %f14, 0f3F36D19E;
+    sub.f32 %f39, %f39, %f15;
+    mul.f32 %f15, %f13, 0f3FE2D0E5;
+    add.f32 %f40, %f12, %f15;
+    max.f32 %f38, %f38, 0f00000000;
+    min.f32 %f38, %f38, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f38;
+    @truncate cvt.rn.f32.u32 %f38, %r11;
+    max.f32 %f39, %f39, 0f00000000;
+    min.f32 %f39, %f39, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f39;
+    @truncate cvt.rn.f32.u32 %f39, %r11;
+    max.f32 %f40, %f40, 0f00000000;
+    min.f32 %f40, %f40, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f40;
+    @truncate cvt.rn.f32.u32 %f40, %r11;
+    mad.lo.s32 %r11, %r16, %r17, %r15;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd7, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    cvt.rn.f32.u32 %f12, %r11;
+    add.f32 %f12, %f12, 0fC1800000;
+    mul.f32 %f12, %f12, 0f3F950A85;
+    shr.u32 %r11, %r16, 1;
+    and.b32 %r12, %r15, 0xFFFFFFFE;
+    mad.lo.s32 %r11, %r11, %r17, %r12;
+    cvt.u64.u32 %rd8, %r11;
+    add.s64 %rd8, %rd9, %rd8;
+    ld.global.u8 %r11, [%rd8];
+    add.s64 %rd10, %rd8, 1;
+    ld.global.u8 %r12, [%rd10];
+    cvt.rn.f32.u32 %f13, %r11;
+    cvt.rn.f32.u32 %f14, %r12;
+    add.f32 %f13, %f13, 0fC3000000;
+    add.f32 %f14, %f14, 0fC3000000;
+    mul.f32 %f13, %f13, 0f3F91B6DB;
+    mul.f32 %f14, %f14, 0f3F91B6DB;
+    mul.f32 %f15, %f14, 0f3FB374BC;
+    add.f32 %f41, %f12, %f15;
+    mul.f32 %f15, %f13, 0f3EB03298;
+    sub.f32 %f42, %f12, %f15;
+    mul.f32 %f15, %f14, 0f3F36D19E;
+    sub.f32 %f42, %f42, %f15;
+    mul.f32 %f15, %f13, 0f3FE2D0E5;
+    add.f32 %f43, %f12, %f15;
+    max.f32 %f41, %f41, 0f00000000;
+    min.f32 %f41, %f41, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f41;
+    @truncate cvt.rn.f32.u32 %f41, %r11;
+    max.f32 %f42, %f42, 0f00000000;
+    min.f32 %f42, %f42, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f42;
+    @truncate cvt.rn.f32.u32 %f42, %r11;
+    max.f32 %f43, %f43, 0f00000000;
+    min.f32 %f43, %f43, 0f437F0000;
+    @truncate cvt.rzi.u32.f32 %r11, %f43;
+    @truncate cvt.rn.f32.u32 %f43, %r11;
+    sub.f32 %f1, 0f3F800000, %f10;
+    sub.f32 %f2, 0f3F800000, %f11;
+    mul.f32 %f12, %f32, %f1;
+    mul.f32 %f13, %f35, %f10;
+    add.f32 %f12, %f12, %f13;
+    mul.f32 %f14, %f38, %f1;
+    mul.f32 %f15, %f41, %f10;
+    add.f32 %f14, %f14, %f15;
+    mul.f32 %f12, %f12, %f2;
+    mul.f32 %f14, %f14, %f11;
+    add.f32 %f12, %f12, %f14;
+    div.rn.f32 %f12, %f12, 0f437F0000;
+    st.global.f32 [%rd4], %f12;
+    mul.f32 %f12, %f33, %f1;
+    mul.f32 %f13, %f36, %f10;
+    add.f32 %f12, %f12, %f13;
+    mul.f32 %f14, %f39, %f1;
+    mul.f32 %f15, %f42, %f10;
+    add.f32 %f14, %f14, %f15;
+    mul.f32 %f12, %f12, %f2;
+    mul.f32 %f14, %f14, %f11;
+    add.f32 %f12, %f12, %f14;
+    div.rn.f32 %f12, %f12, 0f437F0000;
+    st.global.f32 [%rd5], %f12;
+    mul.f32 %f12, %f34, %f1;
+    mul.f32 %f13, %f37, %f10;
+    add.f32 %f12, %f12, %f13;
+    mul.f32 %f14, %f40, %f1;
+    mul.f32 %f15, %f43, %f10;
+    add.f32 %f14, %f14, %f15;
+    mul.f32 %f12, %f12, %f2;
+    mul.f32 %f14, %f14, %f11;
+    add.f32 %f12, %f12, %f14;
+    div.rn.f32 %f12, %f12, 0f437F0000;
+    st.global.f32 [%rd6], %f12;
+    bra DONE;
 
 PAD:
 	mov.f32 %f17, 0f3EE4E4E5;      // 114/255

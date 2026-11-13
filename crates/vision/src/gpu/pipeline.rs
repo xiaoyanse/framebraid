@@ -11,6 +11,8 @@ use crate::Error;
 
 #[cfg(test)]
 mod roi_prototype;
+mod snapshot;
+pub use snapshot::Nv12Snapshot;
 use std::ffi::c_void;
 use std::sync::{Arc, Mutex, OnceLock};
 

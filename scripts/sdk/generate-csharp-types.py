@@ -60,6 +60,7 @@ def generate():
               "    }",
               "    public static class VisionCapabilities {",
               "        public const uint OrderedSelection = %dU;" % a.AMV_CAP_ORDERED_SELECTION,
+              "        public const uint GpuCascade = %dU;" % a.AMV_CAP_GPU_CASCADE,
               "    }", "}", ""]
     return "\n".join(lines)
 

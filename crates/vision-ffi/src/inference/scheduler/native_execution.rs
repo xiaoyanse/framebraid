@@ -472,7 +472,10 @@ fn run_profile_gpu(
 }
 
 /// 批输出按首轴拆分回逐项 [1,..]（与 sdk::batch::split 同语义，预算外层已计费）。
-fn split_batch_rows(raw: Vec<sdk::TensorData>, count: usize) -> Result<Vec<Vec<sdk::TensorData>>> {
+pub(super) fn split_batch_rows(
+    raw: Vec<sdk::TensorData>,
+    count: usize,
+) -> Result<Vec<Vec<sdk::TensorData>>> {
     if count == 0 {
         return Err(AM_ERR_SDK_INTERNAL_ERROR);
     }

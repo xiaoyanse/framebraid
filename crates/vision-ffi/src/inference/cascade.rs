@@ -1,7 +1,12 @@
 //! ROI 级联推理（C1，合同 §4.1）FFI 侧：请求解析校验与提交计划组装；
 //! ROI 逐项执行编排在 scheduler/execution.rs 的 run_cascade。
 use super::{input, models::ModelHandle, submission::Plan};
-use am_sdk_support::{abi::*, args, handles::Entry, Result};
+use am_sdk_support::{
+    abi::*,
+    args,
+    handles::{Active, Entry},
+    Result,
+};
 use am_vision_core::{
     profiles,
     sdk::{cascade, Preprocess},
@@ -28,6 +33,9 @@ pub struct CascadeJob {
     /// 二级输入面成本（准入估算用）。
     pub secondary_cost: usize,
     pub spec: CascadeSpec,
+    pub gpu_group: Option<usize>,
+    pub gpu_bytes: usize,
+    pub gpu_secondary_lease: Option<Arc<Active>>,
 }
 
 impl Clone for CascadeJob {
@@ -37,6 +45,9 @@ impl Clone for CascadeJob {
             secondary_preprocess: self.secondary_preprocess,
             secondary_cost: self.secondary_cost,
             spec: self.spec.clone(),
+            gpu_group: self.gpu_group,
+            gpu_bytes: self.gpu_bytes,
+            gpu_secondary_lease: self.gpu_secondary_lease.clone(),
         }
     }
 }
@@ -125,8 +136,7 @@ fn detect_profile(model: &ModelHandle) -> Result<()> {
 }
 
 /// 组装级联提交计划：一级/二级图像面各跑一次 input::plan（只读校验不 capture，
-/// 调用两次安全）；两级均须 PROFILE detect 档案且句柄独立；GPU 帧直传无原图
-/// 像素访问（ROI 裁剪需要），显式 notSupported。
+/// 调用两次安全）；两级均须 PROFILE detect 档案且句柄独立。GPU 路径持有二级会话的排空租约。
 pub(super) unsafe fn plan(
     primary: &ModelHandle,
     secondary_entry: &Arc<Entry>,
@@ -142,12 +152,46 @@ pub(super) unsafe fn plan(
     detect_profile(primary)?;
     detect_profile(secondary)?;
     let primary_plan = unsafe { input::plan(primary, input, p, asynchronous) }?;
-    if primary_plan.gpu.is_some() {
-        return Err(AM_ERR_SDK_NOT_SUPPORTED);
-    }
     let secondary_plan = unsafe { input::plan(secondary, input, p, asynchronous) }?;
-    if secondary_plan.gpu.is_some() {
-        return Err(AM_ERR_SDK_NOT_SUPPORTED);
+    let mut gpu_group = None;
+    let mut gpu_bytes = 0;
+    let mut gpu_secondary_lease = None;
+    if let Some(gpu) = primary_plan.gpu {
+        if !Arc::ptr_eq(&primary.state, &secondary.state)
+            || primary.info.actual != AM_BACKEND_CUDA as u32
+            || secondary.info.actual != AM_BACKEND_CUDA as u32
+            || !am_vision_core::gpu::pipeline::GpuPipeline::available()
+        {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        if !gpu.width.is_multiple_of(2)
+            || !gpu.height.is_multiple_of(2)
+            || gpu.subresource == u32::MAX
+        {
+            return Err(AM_ERR_VISION_IMAGE_VIEW_INVALID);
+        }
+        if primary.info.device.as_bytes() != b"CUDA:0"
+            || secondary.info.device.as_bytes() != b"CUDA:0"
+            || [primary_plan.preprocess, secondary_plan.preprocess]
+                .iter()
+                .any(|p| p.width != p.height || p.width > 1024)
+        {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        let key = secondary.info.key.load(Ordering::Acquire);
+        let group = if secondary.info.native_batch == 1
+            && super::scheduler::batching_snapshot(key)
+                .0
+                .is_some_and(|c| c.max_batch_items == 4)
+        {
+            4
+        } else {
+            1
+        };
+        gpu_secondary_lease = Some(Arc::new(crate::domain().active(key)?));
+        gpu_group = Some(group);
+        gpu_bytes = gpu.width as usize * gpu.height as usize * 3 / 2
+            + primary_plan.pending.max(secondary_plan.pending * group);
     }
     let spec = unsafe { parse(cascade_request, &primary_plan.params) }?;
     let job = CascadeJob {
@@ -155,6 +199,9 @@ pub(super) unsafe fn plan(
         secondary_preprocess: secondary_plan.preprocess,
         secondary_cost: secondary_plan.cost,
         spec,
+        gpu_group,
+        gpu_bytes,
+        gpu_secondary_lease,
     };
     Ok(Plan::Cascade(Box::new(primary_plan), job))
 }

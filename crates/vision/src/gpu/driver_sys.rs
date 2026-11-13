@@ -212,7 +212,7 @@ impl KernelModule {
         out_ptr: u64,
     ) -> Result<(), crate::Error> {
         self.launch_region(
-            y_ptr, uv_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, false,
+            y_ptr, uv_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, 0, 1.0,
         )
     }
 
@@ -231,7 +231,8 @@ impl KernelModule {
         pitch: u32,
         x: u32,
         y: u32,
-        clamp_roi: bool,
+        sampling: u32,
+        roi_scale: f32,
     ) -> Result<(), crate::Error> {
         let mut params = KernelParams::new();
         params.push_u64(y_ptr);
@@ -246,7 +247,8 @@ impl KernelModule {
         params.push_u32(pitch);
         params.push_u32(x);
         params.push_u32(y);
-        params.push_u32(u32::from(clamp_roi));
+        params.push_u32(sampling);
+        params.push_u32(roi_scale.to_bits());
         let mut pointers: Vec<*mut c_void> = params
             .pointers()
             .into_iter()

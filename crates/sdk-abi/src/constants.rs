@@ -1,5 +1,6 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
-pub const AM_ABI_VERSION: u32 = 65540;
+pub const AM_ABI_VERSION: u32 = 65541;
+pub const AM_BACKEND_STRICT_CUDA_FP32: u32 = 2;
 pub const AM_OK: u32 = 0;
 pub const AM_CODEC_H264: u32 = 1;
 pub const AM_CODEC_H265: u32 = 2;
@@ -80,3 +81,4 @@ pub const AMV_CAP_PUSH_NOTIFY: u64 = 1 << 7;
 pub const AMV_CAP_SHARED_FRAME_POOL: u64 = 1 << 8;
 pub const AMV_CAP_ORDERED_SELECTION: u64 = 1 << 9;
 pub const AMV_CAP_GPU_FRAME_INPUT: u64 = 1 << 10;
+pub const AMV_CAP_GPU_CASCADE: u64 = 1 << 11;

@@ -121,7 +121,8 @@ impl GpuPipeline {
                         frame.width,
                         roi.x,
                         roi.y,
-                        true,
+                        1,
+                        scale,
                     )?;
                     transforms.push(crate::sdk::ImageTransform {
                         width: roi.w,

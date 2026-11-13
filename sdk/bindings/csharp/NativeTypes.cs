@@ -523,11 +523,12 @@ namespace AmrtSdk {
     }
 
     public static class AbiConstants {
-        public const uint AbiVersion = 65540U;
+        public const uint AbiVersion = 65541U;
         public const uint PixelViewMagic = 1095585880U;
         public const uint SubscriptionPull = 1U;
     }
     public static class VisionCapabilities {
         public const uint OrderedSelection = 512U;
+        public const uint GpuCascade = 2048U;
     }
 }

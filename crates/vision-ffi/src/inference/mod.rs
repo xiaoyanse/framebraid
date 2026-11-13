@@ -9,6 +9,8 @@ mod cascade_e2e_tests;
 mod exports;
 #[cfg(test)]
 mod exports_tests;
+#[cfg(test)]
+mod gpu_cascade_e2e_tests;
 mod hardware;
 mod input;
 mod models;

@@ -17,6 +17,7 @@ impl Plan {
             Self::Tensors(p) => p.cost,
             // 一级 + 二级输入面 + 二级 preprocess 尺寸×ROI 上限粗估（逐 ROI
             // 顺序复用同一份中转缓冲，估算不叠满 16 份张量）。
+            Self::Cascade(_, job) if job.gpu_group.is_some() => job.gpu_bytes,
             Self::Cascade(p, job) => p.cost.saturating_add(job.secondary_cost).saturating_add(
                 job.secondary_preprocess.width as usize
                     * job.secondary_preprocess.height as usize
@@ -70,7 +71,7 @@ impl Plan {
             Self::Image(p) => Ok(Input::Image(Box::new(unsafe { p.capture(model) }?))),
             Self::Tensors(p) => Ok(Input::Tensors(unsafe { p.capture() }?)),
             Self::Cascade(p, job) => Ok(Input::Cascade(
-                Box::new(unsafe { p.capture(model) }?),
+                Box::new(unsafe { p.capture_image(model, job.gpu_group.is_some()) }?),
                 job.clone(),
             )),
         }

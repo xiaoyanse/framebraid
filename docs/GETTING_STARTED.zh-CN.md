@@ -103,3 +103,5 @@ SDK 所有结果/帧用 SDK 释放，请求确认不代替结果释放。先关�
 ## 第一个调用之后
 
 基础推理链跑通后：运行期[开放词汇绑定](../sdk/INTEGRATION.md)（不重导权重换词表）、[ROI 级联](../sdk/INTEGRATION.md)（区域放大小目标检测）、[跨帧跟踪](../sdk/INTEGRATION.md)（规则引擎要的稳定 ID）与[单帧导出](../sdk/INTEGRATION.md)（取证 JPEG/PNG）可组合成完整检测链。Rust 调用方见 `examples/vision_cascade_tracker.rs`。
+
+研究分支的 ABI 1.5 GPU 级联候选与验证进度见[接入说明](../sdk/INTEGRATION.md#gpu-nv12-级联候选--gpu-nv12-cascade-candidate)。

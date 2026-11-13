@@ -1,7 +1,7 @@
 {
-  "id": "am-sdk-cabi-1.4-20261113-r11",
-  "previousFreezeSha256": "b8273a379a6bf4aa07b155c04849a3e4fd5a33904f4b37c73e332037ec73f6e3",
-  "abiVersion": 65540,
+  "id": "am-sdk-cabi-1.5-gpu-roi-r12",
+  "previousFreezeSha256": "87b909eb57ebd957244069cc50904abcaf7fd6b22450c55f959d73922f90419e",
+  "abiVersion": 65541,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
   "files": [
@@ -17,13 +17,13 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "6f1bb14428c17976ea83669e94f5f046034c8b03ae273f3c2b3cef357f6f86f4",
-      "bytes": 82985
+      "sha256": "13b94eaefeaf40033061105c964982221fc7e2f7d5a7aab434ee8d6e5c234c89",
+      "bytes": 83160
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "53c35d621765330eb49bd5994c9513a634181381eca150b8566d23a0cd9e3d9f",
-      "bytes": 2269
+      "sha256": "503c2406eaf0c00e12c622b5e7ec630417884a9618d5821a05d2231896817f8d",
+      "bytes": 2322
     },
     {
       "path": "sdk/abi/defaults.json",

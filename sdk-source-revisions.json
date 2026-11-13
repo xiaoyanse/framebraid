@@ -618,8 +618,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "65f027c7972d47a0e3ff376cc350d31b361f1bfe6de9f330da01f799b02c892b",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "1840a3c6088cceda90499c9b7f1277839202464a58535332a4c6b693fcc61c48",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 65f027c7972d47a0e3ff376cc350d31b361f1bfe6de9f330da01f799b02c892b"
     },
     {
       "path": "crates/sdk-abi/src/defaults.rs",
@@ -894,19 +894,19 @@
     {
       "path": "crates/vision-ffi/src/inference/input.rs",
       "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-      "sha256": "81d7d593e00b246fb2ae9509bfae835adf1d1af934286e00c0e7ab2b4365adf9",
-      "reason": "B1.3 estimate refinement: encoded-path transient source plane removed from exec charge (serial prepare, zero co-existence window, decoder-side 64MB hard cap retained) + budget envelope host/device mixed-account annotation + B1.5 dual-model staggered e2e gate"
+      "sha256": "38792c3f4062892eb32920bb1afbae2699a8c9c66c9ae231d8fbb805d98345aa",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 81d7d593e00b246fb2ae9509bfae835adf1d1af934286e00c0e7ab2b4365adf9"
     },
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "8469a96ffaeab3f4a11cd6325d8294124a52dd0a15c06ed1c4d2fe0ae1f138fa",
-      "reason": "P1.3 pool module wiring + P1.5 pool_e2e_tests module declaration"
+      "sha256": "e9cc953cb7570fc22e8b03302f97428dc05f2e75f1dcb56ff2adbb276af20661",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 8469a96ffaeab3f4a11cd6325d8294124a52dd0a15c06ed1c4d2fe0ae1f138fa"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "d9d822a84ee6384e2aa8a8a93d060a09d93d3ce0217cbc57cf3aa47cf6a51de6",
+      "sha256": "66e4e9e4ba4259250967ea5842c3981dde85175c85ae4558f6daf37d677b1078",
       "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
     },
     {
@@ -990,14 +990,14 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/execution.rs",
       "previousSha256": "9f6ae70618829faaff832f432183087eb789265e42a4c9761fdca8e7685d9183",
-      "sha256": "9ee0063b0d947b905c714ecfe3849701b3d1f104176784d76e78732d5b04397f",
-      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged)"
+      "sha256": "2ddbc0e7bc0918ae593655997a0eb8ee175b04a68204175f25656b452863d4b8",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 9ee0063b0d947b905c714ecfe3849701b3d1f104176784d76e78732d5b04397f"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
       "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-      "sha256": "33b0e656d2b5e454ff6e11a6b5d8b3b920f4e87d666086f982949182b54a9207",
-      "reason": "cascade C1 impl；批C主战场：PROFILE分支从整批拒绝改为物理批分派——CPU项逐项prepare→run_batch合并（词汇注入张量随行）→拆分逐项档案解码；GPU项设备侧组装(assemble_frames)单次run_gpu→首轴拆分逐项解码；混合显式组按入口拆两个物理批；逐项params/映射/掩膜预留逐项生效；split_batch_rows单测（位置身份+首轴漂移拒斥）; batch D: vocab injection hoisted to physical-batch entry (one snapshot shared by CPU/GPU paths); affinity row estimate; GPU batch vocab tiled [N,rows,dim] per-frame snapshots (semantics unified with CPU combine); input_hw for symbolic H/W"
+      "sha256": "feef80bf2188adce4796f30517ba18f131fe11b2fbaeae5a946df3aa3a43cdb3",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 33b0e656d2b5e454ff6e11a6b5d8b3b920f4e87d666086f982949182b54a9207"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -1074,8 +1074,8 @@
     {
       "path": "crates/vision-ffi/src/lib.rs",
       "previousSha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847",
-      "sha256": "65fe4d0115e899b6c6d2de9caa44cb3f6aef76e3cd3bb9250680644d2400cd7c",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved；v0.3.1 audit fix applied"
+      "sha256": "d57d204a9a30bc96b793234d20b94e1c413fef0049156dc91e72c9c77e667b5b",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 65fe4d0115e899b6c6d2de9caa44cb3f6aef76e3cd3bb9250680644d2400cd7c"
     },
     {
       "path": "crates/vision-types/src/lib.rs",
@@ -1122,14 +1122,14 @@
     {
       "path": "crates/vision/src/gpu/cuda_sys.rs",
       "previousSha256": null,
-      "sha256": "507acafb0b9f513ee67c756f70bbada60273e697eb34b7a5b88a8b497206e2fc",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；批B：memcpy_htod/dtod/dtoh 三参签名错绑四参 cudaMemcpy（kind 读栈垃圾报 invalid copy direction）修正为四参——既有缺陷此前零调用未暴露，批B排查首用踩中"
+      "sha256": "444c36afa2226a51c8c2d787a063a3994f8df6936a9a18a52aba2a0bcdd9bd8e",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 507acafb0b9f513ee67c756f70bbada60273e697eb34b7a5b88a8b497206e2fc"
     },
     {
       "path": "crates/vision/src/gpu/driver_sys.rs",
       "previousSha256": null,
-      "sha256": "4925f00082f4fb9512e6743561c1ddf1b0bb0656d0b2cd255adcbd9d5e9688c9",
-      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: 59816c6162951633fdd63f6db1c2020b49c89e0feba4a6b0d580ec86eb87b750"
+      "sha256": "969d237282c18146b9a54418b0bac6ebe8c9b6e37954a38cf8f48b4b93af1787",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 4925f00082f4fb9512e6743561c1ddf1b0bb0656d0b2cd255adcbd9d5e9688c9"
     },
     {
       "path": "crates/vision/src/gpu/e2e_tests.rs",
@@ -1164,8 +1164,8 @@
     {
       "path": "crates/vision/src/gpu/pipeline.rs",
       "previousSha256": null,
-      "sha256": "20d3c4a0e6e231d6d6a5221438c76272de2248dea09888a571b1228606a02e5d",
-      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: 9ab5225a2a23857d13e18facb80b82749fc198e80b25a498036683c9dda8775c"
+      "sha256": "48cbe47a870b6b97042f85c454c2757c60b2b044f54d1238bafdc2f8866fca8c",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 20d3c4a0e6e231d6d6a5221438c76272de2248dea09888a571b1228606a02e5d"
     },
     {
       "path": "crates/vision/src/gpu/preprocess_tests.rs",
@@ -1224,7 +1224,7 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "60100307e79eba751c377558a1849e52afc97ca3aadf2f0addc1148c7f784cf6",
+      "sha256": "05edfc9f9465c18ae6f8d68cf11de54b6267222dad3143dfbacb9961a5325510",
       "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）；批C：extract_outputs批轴检查复原为与本次实际输入首轴对照（M2b 49d8a10误改为与声明batch相等，动态轴模型N>1合批自彼时起整批失败——R5攒批损坏，批合同门重跑捕获），expected经参数传入（run_ref取输入首轴/run_gpu取绑定批长），漂移拒斥语义保留; batch D: profile load match accepts symbolic model dims under pinned fixed profile dims (world H/W symbolic vs profile-pinned 640); input_hw helper (concrete model dims else profile) for GPU paths"
     },
     {
@@ -1296,7 +1296,7 @@
     {
       "path": "crates/vision/src/sdk/session.rs",
       "previousSha256": null,
-      "sha256": "dc26268694a44926b6a0499e3fece03a5e5a6f4d983bdad0a44af524e3c0c8d4",
+      "sha256": "edb220783af4abd7592b02f29da58063ae7e4ca7a9f3d0968ec1d71debccefea",
       "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；E2 DirectML后端枚举扩展（第四推理路径）"
     },
     {
@@ -1524,8 +1524,8 @@
     {
       "path": "crates/vision-ffi/src/inference/submission.rs",
       "previousSha256": "bd3080a7c34f833bb1800a49073c059852e5c52a2b4f1366cd82f93b62974674",
-      "sha256": "8a82cca05821faf889fc5f2f4e94a8167bdae425392cb9da20db7486b54c0ea1",
-      "reason": "cascade C1 impl；批C：Plan::capture透传ModelHandle（GPU帧接受段预处理需会话形状/ORT分配器）；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
+      "sha256": "ef824262224058b45345ff09e4fc091103b5ae37501b97b8fe33b9bb2274f4d3",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 8a82cca05821faf889fc5f2f4e94a8167bdae425392cb9da20db7486b54c0ea1"
     },
     {
       "path": "crates/vision-ffi/src/inference/tensor_exports.rs",
@@ -1638,8 +1638,8 @@
     {
       "path": "crates/vision-ffi/src/inference/cascade.rs",
       "previousSha256": null,
-      "sha256": "941e78d01eb39856300cdb98489705717196db59fb5e4a4b276a102c4d6d550a",
-      "reason": "cascade C1 impl"
+      "sha256": "fd7fac5f6f2b3774a5a36108e48fd1c938adfd250dfafc7f74742c34c86a9644",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 941e78d01eb39856300cdb98489705717196db59fb5e4a4b276a102c4d6d550a"
     },
     {
       "path": "crates/vision-ffi/src/inference/cascade_e2e_tests.rs",
@@ -1752,14 +1752,32 @@
     {
       "path": "crates/vision/src/gpu/nv12_letterbox.ptx",
       "previousSha256": null,
-      "sha256": "e289c8e6b66fd0c6799454af69db8723e91452d3bf44ed49cefe6a5b2d4a1247",
-      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: new fingerprint entry"
+      "sha256": "51579530ba101eb9f469f12daa37f38b873fe9fa5dd7f16cdca4f297ba2cc863",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: e289c8e6b66fd0c6799454af69db8723e91452d3bf44ed49cefe6a5b2d4a1247"
     },
     {
       "path": "crates/vision/src/gpu/pipeline/roi_prototype.rs",
       "previousSha256": null,
-      "sha256": "f57aa922b2c8cfc8ba208534e4fc8ef8c4aabda99dad24082f02897efdeee2a7",
-      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: new fingerprint entry"
+      "sha256": "30a9b47bcc687f6bb00ce2af62a6b7bdae736e199f6452c6b6e8613bf2209423",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: f57aa922b2c8cfc8ba208534e4fc8ef8c4aabda99dad24082f02897efdeee2a7"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/gpu_cascade_e2e_tests.rs",
+      "previousSha256": null,
+      "sha256": "ca5a67091669afee4e088138def166149730ecc40e139b98e829054050d32053",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/scheduler/execution/gpu_cascade.rs",
+      "previousSha256": null,
+      "sha256": "c115f06c29715b51fc43ffcf248caa2fe521d7d8bb3d8024ab14d86b22ecee4b",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry"
+    },
+    {
+      "path": "crates/vision/src/gpu/pipeline/snapshot.rs",
+      "previousSha256": null,
+      "sha256": "6955d2f082b197132e2606b493593b6035dc848d145d508c58a964171e87eb60",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry"
     }
   ]
 }

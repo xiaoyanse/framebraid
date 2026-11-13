@@ -18,6 +18,7 @@ pub const REGISTER_DEFAULT: u32 = 0;
 /// 已解析符号表；裸函数指针天然线程安全（ffmpeg_sys 同惯例）。
 pub struct CudaApi {
     pub get_device_count: unsafe extern "C" fn(*mut i32) -> CudaResult,
+    pub mem_get_info: unsafe extern "C" fn(*mut usize, *mut usize) -> CudaResult,
     pub set_device: unsafe extern "C" fn(i32) -> CudaResult,
     pub get_error_string: unsafe extern "C" fn(CudaResult) -> *const u8,
     pub register_d3d11: unsafe extern "C" fn(*mut GraphicsResource, *mut c_void, u32) -> CudaResult,
@@ -101,6 +102,7 @@ impl CudaApi {
         }
         let api = Self {
             get_device_count: cast!(b"cudaGetDeviceCount"),
+            mem_get_info: cast!(b"cudaMemGetInfo\0"),
             set_device: cast!(b"cudaSetDevice"),
             get_error_string: cast!(b"cudaGetErrorString"),
             register_d3d11: cast!(b"cudaGraphicsD3D11RegisterResource"),

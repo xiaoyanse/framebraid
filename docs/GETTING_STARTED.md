@@ -103,3 +103,5 @@ Do not fix loader errors with random DLL copies or silently change backends when
 ## Beyond the first call
 
 Once the basic infer loop works: runtime [open-vocabulary binding](../sdk/INTEGRATION.md) (custom word lists without re-exporting weights), [ROI cascade](../sdk/INTEGRATION.md) (small-object detection via region upscaling), [cross-frame tracking](../sdk/INTEGRATION.md) (stable IDs for rule engines) and [single-frame export](../sdk/INTEGRATION.md) (evidence JPEG/PNG) compose into a full detection chain. Rust callers: see `examples/vision_cascade_tracker.rs`.
+
+The ABI 1.5 GPU cascade candidate and validation status are documented in [the integration guide](../sdk/INTEGRATION.md#gpu-nv12-级联候选--gpu-nv12-cascade-candidate).
