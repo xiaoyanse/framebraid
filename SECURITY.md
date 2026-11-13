@@ -2,10 +2,9 @@
 
 ## Supported scope / 支持范围
 
-Version 0.2.0 is a developer preview for Windows x64 (CPU validated; hardware-decode probing included). No response-time SLA
-or safety certification is declared. Maintainer: [xiaoyanse](https://github.com/xiaoyanse).
+See [release status](docs/RELEASE_STATUS.md) for the current Windows x64 release and its verified scope. Maintainer: [xiaoyanse](https://github.com/xiaoyanse).
 
-0.2.0 是 Windows x64 开发者预览版（CPU 已验证，含硬解探测），不承诺响应时限或安全认证。
+当前 Windows x64 版本及已验证范围见[交付状态](docs/RELEASE_STATUS.md)。
 
 ## Private reporting / 私密报告
 

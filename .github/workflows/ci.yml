@@ -48,3 +48,22 @@ jobs:
         run: node scripts/sdk/generate-abi.mjs --check
       - name: Check generated Python bindings
         run: node scripts/sdk/generate-python-abi.mjs --check
+      - name: Check ABI contract and generated binding coverage
+        run: |
+          node scripts/sdk/check-bindings.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/sdk/check-doc-coverage.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/sdk/check-zero-semantics.mjs --check
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node scripts/sdk/freeze-abi.mjs --check
+      - name: Check SDK source boundary
+        run: node scripts/sdk/check-boundary.mjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Check Python ownership and loader diagnostics
+        run: |
+          python -B scripts/sdk/test-safe-bindings.py
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          python -B scripts/sdk/test-sdk-load-diagnostics.py --python-only

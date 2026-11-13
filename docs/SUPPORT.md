@@ -20,20 +20,18 @@ v0.5.0 adds C ABI 1.2 compatible surface (FILE-source seek/duration/rate/loop; o
 
 Local C ABI 1.1 r10 exposes a Media worker budget per Context (default/ceiling 64, tightening only, zero disables new SDK workers). Counts cover the eight C ABI worker kinds, excluding caller threads and unmanaged driver threads. Direct Rust SessionPool configuration remains a separate audit path. Python/C# helpers and Windows x64 loopback checks are [recorded](verification/sdk-r3-media-workers-20261027.md); no published-platform or soak guarantee is added. / 历史峰值不随收紧清零，不能拿旧峰值与新上限误判超额。
 
-Local R2 introduces explicit Rust hardware primitives ([contract](design/native-hardware.md)); this does not upgrade the published Windows CPU scope or claim C ABI/RTSP automatic hardware selection is complete. / 本地硬解原语不改变公开CPU制品支持承诺，不代表C ABI/RTSP自动硬解已完成。
+For the current Windows x64 release, see the [release validation record](RELEASE_STATUS.md#v070-验证状态快照). It distinguishes CPU, D3D11VA hardware decoding, and the measured CUDA GPU-frame path. / 当前 Windows x64 版本的 CPU、D3D11VA 硬解与 CUDA GPU 帧路径验证范围见[交付状态](RELEASE_STATUS.md#v070-验证状态快照)。
 
-The local direct C decoder now selects hardware and admits CPU recovery ([verification](verification/sdk-r2-direct-auto-20261026.md)); RTSP integration, rich device diagnostics and production acceptance remain open. / 直接C入口已有本地实测，仍不扩大旧公开制品支持范围。
-
-| Area / 方面 | Initial scope / 首发范围 | Limits / 限制 |
+| Area / 方面 | Current scope / 当前范围 | Limits / 限制 |
 | --- | --- | --- |
-| Platform / 平台 | Windows x64 CPU | Linux/macOS/mobile and other architectures separately verified / 其他平台架构另验 |
+| Platform / 平台 | Windows x64 | Linux/macOS/mobile and other architectures separately verified / 其他平台架构另验 |
 | Build / 构建 | Rust sources and two DLL targets / Rust 源码及双 DLL 目标 | Local Windows Release candidate verified within recorded scope / 本地 Windows Release 已限定范围验证 |
 | Languages / 语言 | Recorded C/C++17/C#/Python calls / 已记录实调 | Java not delivered / 不交付 Java |
 | Media / 媒体 | ISAPI, RTSP H.264/H.265/MJPEG, standalone H.264/H.265 | Camera/FPS/recovery depend on workload and configuration / 相机、帧率、恢复依负载配置 |
 | Local FILE / 本地文件 | MP4 H.264/H.265 initial scope, shipped since v0.4.0 / 首版口径 MP4 H.264/H.265，v0.4.0 起随包 | Seek (three modes), duration, rate and loop shipped in v0.5.0 (real-FFmpeg integration green) / seek 三档、时长、倍速与循环已随 v0.5.0 交付（真机 FFmpeg 集成全绿） |
 | Direct decoder / 独立解码 | Complete Annex B AU / 完整 Annex B AU | Caller assembles fragments/converts packetization / 调用方装配分片与转换封装 |
 | Vision / 推理 | Five fixed profile families and supported RAW tensor paths / 五类限定档案及支持的 RAW 张量 | Exact dtype/shape/export contracts; not all YOLO / 非全版本 YOLO |
-| Acceleration / 加速 | CPU/OpenVINO/CUDA selection APIs | Local candidate validates CPU, not GPU/hardware decoding / 当前候选仅验 CPU |
+| Acceleration / 加速 | CPU/OpenVINO/CUDA selection APIs | Backend, runtime and hardware coverage follows the release validation record / 后端、运行库与设备覆盖以当版验证记录为准 |
 | Shared frames / 共享帧 | Optional, trusted local processes / 可信本机进程可选能力 | No cross-machine bus, hostile-tenant isolation or universal zero-copy guarantee / 非跨机总线、租户隔离或全链路零拷贝保证 |
 | Browser playback / 浏览器 | Host supplies transport/player / 宿主提供传输与播放器 | Native packets do not make a complete browser player / 原生包不等于播放器 |
 | Business / 业务 | Host owns rules, alarms, PLC, persistence and UI | Not SDK capabilities / 不属于 SDK |
@@ -44,9 +42,7 @@ The local direct C decoder now selects hardware and admits CPU recovery ([verifi
 
 The runtime compatibility matrix in this document is authoritative; code comments on version constants must point here, and `RELEASE_STATUS.md` records the runtime versions verified for each release.
 
-Version 0.1.0 is a developer preview, not a production support commitment. C ABI 1.0 and legacy symbols remain. Before 1.0, source/wrapper changes may occur; match actual DLLs, headers, bindings and capability queries, not package numbers alone. ABI changes require contract/generator/test review.
-
-0.1.0 为开发者预览版，不代表生产支持承诺。保留 C ABI 1.0 和兼容符号，1.0 前源码/封装可能变化；按实际 DLL 匹配头、封装、能力，不只看包版本。ABI 变化须审合同、生成器与测试。
+v0.7.0 uses C ABI 1.4. Match DLLs, headers and bindings to the release, then query runtime capabilities. Before SDK 1.0, Rust and language wrapper APIs may evolve. / v0.7.0 使用 C ABI 1.4。按发布版本匹配 DLL、头文件及绑定，再查询运行时能力。SDK 1.0 前 Rust 和语言封装接口可能演进。
 
 ## Resource and safety limits / 资源及安全边界
 
@@ -55,9 +51,3 @@ Finite local tests do not establish universal FPS, camera counts, lossless queue
 有限测试不保证通用 FPS、路数、无损队列、端到端延迟或 7×24 稳定性。设置预算、观测诊断并按负载验收。模型置信度不证明无危险，安全级停机须独立安全系统。
 
 This is a capability statement, not an additional license restriction. / 本文为能力说明，不增加许可限制。
-
-Local unpublished r7: [RTSP hardware verification](verification/sdk-r2-rtsp-hardware-20261026.md) covers shared policy, actual D3D11VA and CPU/MJPEG controls. Hardware availability is separate from speed; reader isolation, full hardware/pressure/soak acceptance and H5 remain open. Published v0.1.0 is unchanged. / 本地候选与旧公开CPU制品区分，H2整体未关闭。
-
-Bounded Rust model selection and explicit CUDA device discovery shipped since v0.2.0 (incl. ordered path/memory C selection and Python/C# helpers with per-model/per-attempt reports); accelerated-inference and runtime-recovery acceptance remain open. See [core verification](verification/sdk-h5-selection-core-20261026.md). Hardware-vs-CPU RGBA latency alone is not a defect; CPU offload and overall budgets require measurement. / 有界模型选择与显式 CUDA 设备发现已随 v0.2.0 发布（含有序路径/内存 C 选择与 Python/C# 助手、逐模型/逐尝试报告）；加速推理与运行期恢复验收仍开放。
-
-Local ordered-selection validation / 本地有序选择验证: [H5 r9](verification/sdk-h5-ordered-selection-20261026.md). Unpublished; no universal GPU performance claim.
