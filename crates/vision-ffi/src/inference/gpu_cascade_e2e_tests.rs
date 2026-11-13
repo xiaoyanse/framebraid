@@ -15,6 +15,13 @@ use std::{
     time::{Duration, Instant},
 };
 
+struct StopSampler<'a>(&'a std::sync::atomic::AtomicBool);
+impl Drop for StopSampler<'_> {
+    fn drop(&mut self) {
+        self.0.store(true, Ordering::Release);
+    }
+}
+
 struct Objects {
     ctx: usize,
     models: Vec<usize>,
@@ -195,21 +202,30 @@ fn gpu_cascade_public_entry_real_replay() {
         ctx,
         models: Vec::new(),
     };
-    let detector = fixture.join("yolo-world-batchd/world-batch.onnx");
-    let tower = objects.model(
-        fixture.join("yolo-world/text.onnx"),
-        "text-encoder-clip-dynseq-v1",
-        AM_BACKEND_CPU,
+    let photos = std::env::var_os("FB_ROI_PHOTOS").map(PathBuf::from);
+    let detector = photos.as_ref().map_or_else(
+        || fixture.join("yolo-world-batchd/world-batch.onnx"),
+        |dir| dir.join("yolo11n.onnx"),
     );
-    let model = |objects: &mut Objects, backend| {
-        objects.model(detector.clone(), "detect-yolo-world-batch-v1", backend)
+    let profile = if photos.is_some() {
+        "detect-yolo11n-nms-v1"
+    } else {
+        "detect-yolo-world-batch-v1"
     };
+    let model = |objects: &mut Objects, backend| objects.model(detector.clone(), profile, backend);
     let cpu_a = model(&mut objects, AM_BACKEND_CPU);
     let cpu_b = model(&mut objects, AM_BACKEND_CPU);
     let gpu_a = model(&mut objects, AM_BACKEND_CUDA);
     let gpu_b = model(&mut objects, AM_BACKEND_CUDA);
-    for m in [cpu_a, cpu_b, gpu_a, gpu_b] {
-        bind(m, tower);
+    if photos.is_none() {
+        let tower = objects.model(
+            fixture.join("yolo-world/text.onnx"),
+            "text-encoder-clip-dynseq-v1",
+            AM_BACKEND_CPU,
+        );
+        for m in [cpu_a, cpu_b, gpu_a, gpu_b] {
+            bind(m, tower);
+        }
     }
     let mut capability = amv_capability_t::default();
     assert_eq!(
@@ -245,11 +261,11 @@ fn gpu_cascade_public_entry_real_replay() {
     let request = am_cascade_request_t {
         static_rois: rois.as_flattened().as_ptr(),
         static_roi_count: 8,
-        secondary_confidence: 0.0,
+        secondary_confidence: if photos.is_some() { 0.25 } else { 0.0 },
         ..Default::default()
     };
     let params = am_infer_params_t {
-        confidence_threshold: 0.0,
+        confidence_threshold: if photos.is_some() { 0.25 } else { 0.0 },
         max_det: 1,
         ..Default::default()
     };
@@ -283,9 +299,16 @@ fn gpu_cascade_public_entry_real_replay() {
     let mut total_hits = 0;
     let mut max_cpu_drift = 0.0f32;
     let mut max_batch_drift = 0.0f32;
-    for sample in ["seek_f030", "seek_f031", "s1_f013", "s1_f014"] {
-        let bytes =
-            std::fs::read(fixture.join(format!("yolo-world-batchd/{sample}.nv12"))).unwrap();
+    let samples: &[&str] = if photos.is_some() {
+        &["bus", "zidane"]
+    } else {
+        &["seek_f030", "seek_f031", "s1_f013", "s1_f014"]
+    };
+    for &sample in samples {
+        let directory = photos
+            .clone()
+            .unwrap_or_else(|| fixture.join("yolo-world-batchd"));
+        let bytes = std::fs::read(directory.join(format!("{sample}.nv12"))).unwrap();
         assert_eq!(bytes.len(), 614400);
         let texture = unsafe { nvidia_nv12_texture(640, 640) }.unwrap();
         {
@@ -361,6 +384,19 @@ fn gpu_cascade_public_entry_real_replay() {
         let (batch, batch_ms) = call(gpu_a, gpu_b, &gpu);
         assert_eq!(native_runs(gpu_b) - before, 2);
         let cpu_cmp = compare(&cpu_hits, &single);
+        if photos.is_some() {
+            assert!(
+                !cpu_hits.is_empty(),
+                "{sample}: no detections at threshold 0.25"
+            );
+            assert_eq!(cpu_cmp.0, cpu_hits.len(), "{sample}: CPU ROI identity");
+            assert_eq!(cpu_hits.len(), single.len(), "{sample}: detection count");
+            let score_min = cpu_hits.iter().map(|hit| hit.score).fold(1.0f32, f32::min);
+            eprintln!(
+                "ROI_PHOTO {sample} detections={} min_score={score_min:.5}",
+                cpu_hits.len()
+            );
+        }
         let gpu_cmp = compare(&single, &batch);
         let source_cmp = compare(&cuda_pixels, &single);
         eprintln!("ROI_ABLATION {sample} cpu_cuda_pixels={pixels_cmp:?} cuda_pixels_gpu_source={source_cmp:?} cuda_pixels_ms={cuda_pixels_ms:.2}");
@@ -386,7 +422,7 @@ fn gpu_cascade_public_entry_real_replay() {
         total_hits += cpu_cmp.0;
         max_cpu_drift = max_cpu_drift.max(cpu_cmp.1);
         max_batch_drift = max_batch_drift.max(gpu_cmp.1);
-        if std::env::var_os("FB_ROI_CUDA_FP32").is_some() {
+        if photos.is_some() || std::env::var_os("FB_ROI_CUDA_FP32").is_some() {
             let rule = am_cascade_rule_t {
                 source_class_id: -1,
                 expand: 0.15,
@@ -431,9 +467,83 @@ fn gpu_cascade_public_entry_real_replay() {
             (code, id)
         };
         assert_eq!(submit(cpu_a, cpu_b, &gpu), (AM_ERR_SDK_NOT_SUPPORTED, 0));
-        if sample != "s1_f014" {
+        if sample != "s1_f014" && sample != "zidane" {
             continue;
         }
+        // Three logical lanes share a pair of model sessions. Keep all three
+        // accepted simultaneously before releasing the primary worker gate.
+        let peak_usage = State::get(ctx).unwrap();
+        let peak_entry = crate::domain().get(gpu_a).unwrap();
+        let peak_model = peak_entry.data::<ModelHandle>().unwrap();
+        let policy = am_realtime_policy_t {
+            max_inflight: 1,
+            slot_count: 3,
+            ..Default::default()
+        };
+        assert_eq!(unsafe { amv_set_realtime_policy(gpu_a as _, &policy) }, 0);
+        let bytes_per_job = 614400 + 4 * 640 * 640 * 12;
+        let idle_free = free_memory();
+        let done = std::sync::atomic::AtomicBool::new(false);
+        let (floor, max_admission, sampled) = std::thread::scope(|scope| {
+            let monitor = scope.spawn(|| {
+                let mut floor = usize::MAX;
+                let mut max_admission = 0;
+                let mut sampled = 0;
+                while !done.load(Ordering::Acquire) {
+                    floor = floor.min(free_memory());
+                    max_admission =
+                        max_admission.max(peak_usage.usage.preprocess.lock().unwrap()[0]);
+                    sampled += 1;
+                    std::thread::sleep(Duration::from_millis(2));
+                }
+                (floor, max_admission, sampled)
+            });
+            let _stop = StopSampler(&done);
+            for _ in 0..5 {
+                let gate = peak_model.session.lock().unwrap();
+                let mut ids = Vec::new();
+                for slot in 0..3 {
+                    let lane = am_infer_params_t {
+                        slot_key: slot,
+                        ..params
+                    };
+                    let mut id = 0;
+                    assert_eq!(
+                        unsafe {
+                            amv_infer_cascade_async(
+                                gpu_a as _, gpu_b as _, &gpu, &request, &lane, &mut id,
+                            )
+                        },
+                        0
+                    );
+                    assert!(id != 0);
+                    ids.push(id);
+                }
+                assert_eq!(
+                    peak_usage.usage.preprocess.lock().unwrap()[0],
+                    3 * bytes_per_job
+                );
+                assert_eq!(submit(gpu_a, gpu_b, &gpu), (AM_ERR_SDK_QUEUE_FULL, 0));
+                drop(gate);
+                for id in ids {
+                    state(ctx, id, AM_REQ_DONE as u32);
+                    let mut output = ptr::null_mut();
+                    assert_eq!(unsafe { amv_result_fetch(ctx as _, id, &mut output) }, 0);
+                    assert_eq!(hits(ctx, id, output).len(), batch.len());
+                }
+                assert_eq!(peak_usage.usage.preprocess.lock().unwrap()[0], 0);
+            }
+            drop(_stop);
+            monitor.join().unwrap()
+        });
+        eprintln!("ROI_MULTILANE lanes=3 jobs=15 samples={sampled} free_idle={idle_free} free_low={floor} free_after={} sampled_admission={max_admission} exact_admission={}",free_memory(),3*bytes_per_job);
+        assert!(sampled > 10);
+        let policy = am_realtime_policy_t {
+            max_inflight: 1,
+            slot_count: 1,
+            ..Default::default()
+        };
+        assert_eq!(unsafe { amv_set_realtime_policy(gpu_a as _, &policy) }, 0);
         let _ = call(cpu_a, cpu_b, &cpu);
         let model_entry = crate::domain().get(gpu_a).unwrap();
         let primary = model_entry.data::<ModelHandle>().unwrap();

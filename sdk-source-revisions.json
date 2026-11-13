@@ -1764,7 +1764,7 @@
     {
       "path": "crates/vision-ffi/src/inference/gpu_cascade_e2e_tests.rs",
       "previousSha256": null,
-      "sha256": "4129185b4b68948c024b0a20094a6b71532623604ce072eec482b6c866d410fd",
+      "sha256": "3eaa5c36e74e15f7cf50e9da2c36edc33c34150fea1b32979ce9cedbc3ae1dd5",
       "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry"
     },
     {
