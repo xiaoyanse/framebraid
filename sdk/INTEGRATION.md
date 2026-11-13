@@ -472,6 +472,6 @@ SDK 内部已修复：ORT IoBinding 对输出绑定的 MemoryInfo 按裸指针�
 
 ### GPU NV12 级联候选 / GPU NV12 cascade candidate
 
-当前研究分支在 ABI 1.5 通过 `AMV_CAP_GPU_CASCADE` 协商 GPU 输入。两级使用同一 Context 的 CUDA 设备 0 检测模型。默认逐 ROI，调用 `amv_model_configure_batching` 为二级模型启用攒批并将 max_batch_items 设为 4 后才合批。提交返回前纹理已复制到设备快照。遇到不支持或预处理队列满时，可使用相同画面的像素输入和 CPU 模型显式重试。设备后端缓存及工作区需另外留显存余量。默认 TF32 下合成回放曾出现低置信度首框切换。实景照片对拍使用显式 CUDA FP32，具体验证范围见交付状态。当前候选留在研究分支。
+ABI 1.5 通过 `AMV_CAP_GPU_CASCADE` 协商 GPU 输入。两级使用同一 Context 的 CUDA 设备 0 检测模型。默认逐 ROI，调用 `amv_model_configure_batching` 为二级模型启用攒批并将 max_batch_items 设为 4 后才合批。提交返回前纹理已复制到设备快照。遇到不支持或预处理队列满时，可使用相同画面的像素输入和 CPU 模型显式重试。设备后端缓存及工作区需另外留显存余量。默认 TF32 下合成回放曾出现低置信度首框切换。实景照片对拍使用显式 CUDA FP32，具体验证范围见交付状态。
 
 四帧严格对拍可在装载两级 CUDA 模型时使用 `AM_BACKEND_STRICT_CUDA_FP32`，仅关闭对应会话的 TF32。
