@@ -612,14 +612,14 @@
     {
       "path": "crates/sdk-abi/src/base.rs",
       "previousSha256": "47423241a0db43fe884e1af3b59478494de2ea9b18adf27b867c3bd078dcf08b",
-      "sha256": "f030d45997abfcb7c6829eb5172826bade1e0c35dad0e261ede587c51173616f",
-      "reason": "tracker batch contract: am_track_params_t + am_tracked_box_t + 4 APIs (create/update/reset/close); regen (94 layout assertions incl. hand-registered box size fix 48->40)"
+      "sha256": "e20ad07f97fb38158dcb02967f35343601c56d4d2b340c46fdd7afd1e2bcfc0c",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "bebda2aab254e923111e62dfa987af45217635701daae5dc1daf808009e0fe5d",
-      "reason": "v0.6.0 release bump: AM_ABI_VERSION 65538->65539 (C ABI 1.2->1.3, compatible additions: cascade+tracker+frame-export APIs), package 0.5.0->0.6.0, regen"
+      "sha256": "65f027c7972d47a0e3ff376cc350d31b361f1bfe6de9f330da01f799b02c892b",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/defaults.rs",
@@ -648,20 +648,20 @@
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "94a077d608a41d73b6fd8cb8556f2eca3cc359c826bfd749f1fd4e0091428ceb",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "9c986d2cb6a6e8f54b80f00dfda27a31a5868cf5256ee8306a9ed35dd62a0a9a",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "acd7e65355b82e5f38d7d0b325bcbc7c845690f14c9888f7042ecfa080531aa7",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "bca52f4635fc3778c29bcbe7ecc6f23616aa75867ee6629f9c4aa6b7c17f4d7a",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/fields_8.rs",
       "previousSha256": null,
-      "sha256": "f57cbc92572d0bfe770b2c98863f839e68dd459e6b487762871d324a31bd2863",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "8d02d3795ceb7548b41aa7a6d87f4e1cde8262e26c33abb4df966e527dfa6e97",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/layout_2.rs",
@@ -684,20 +684,20 @@
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "01eec91bde1f2e707e34b9d0270f3f46b8fdc6c3f1f5a7d4feb5bb1c226c7616",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "e69217302a2d8d749650be007373de5164cdffb45b89d2d90fda6ae0a8462755",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "0abde924eb65da94d85b4c25603bc917b1f5201ffd989b7ec22090432bb44a47",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "99498e9937b0a1883d4b74270b0d0c93ce5b2014b001cc784692458ce5b8a460",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/layout_8.rs",
       "previousSha256": null,
-      "sha256": "6e90ac65ab49a1831c1749d8f478771c515900f11a9e0ac4bcf662678ae8aa66",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "b3905a79c693c59b0a98a52b6fd971dc8c333f5730b5175117cc056e1b686140",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/layout_tests.rs",
@@ -732,20 +732,20 @@
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "bec174a7807d5d98e9eaf24a4530301027bb8994f660bfc4d05ae2df404ca526",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "e355936c488252acc23a66f3e9c1cf37e2273c57f31500a8847701096fd359a3",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "04e48bd068b6bc965951e7f1b2a02f8abdf74723be5c437e4b94bf771e0ce3c8",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "63285f4987d8b2699f9982ff01e40374dcd7e47624371c2831b5f6f4955cd8d5",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/types_8.rs",
       "previousSha256": null,
-      "sha256": "1d620c5b5b22042e1ea2b9156291b4c58eb800ee8fa4c230954afe4be04deeb8",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "9c0dece251a6153ebe186798df8b599ae91aa2290f5daddc61e5565c52d93064",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-support/build.rs",
@@ -900,14 +900,14 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "783fa7ca3c899c199a5ae3cf12152915b9df130a6e0cead13621f6a9f5eb8b54",
-      "reason": "cascade C1 impl; tracker impl (module wiring)；批C：batch_e2e_tests模块登记（FFI攒批真机门）; batch D: world real-weights e2e gates module registration"
+      "sha256": "8469a96ffaeab3f4a11cd6325d8294124a52dd0a15c06ed1c4d2fe0ae1f138fa",
+      "reason": "P1.3 pool module wiring + P1.5 pool_e2e_tests module declaration"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "a32d1809c7fab42f1d42d9b36cf4cafddd3a89059dbefb0aa09d316fcf616057",
-      "reason": "vocab A1/A2 batch (issue#9 second): contract (bind API + structures + TEXT_ENCODER=7 + err 1033) + engine (validate/encode/injection) + amv_vocab_bind export + run_ref; rebased onto seek-merged main, workspace green, gates green"
+      "sha256": "d9d822a84ee6384e2aa8a8a93d060a09d93d3ce0217cbc57cf3aa47cf6a51de6",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
     },
     {
       "path": "crates/vision-ffi/src/inference/models/metadata.rs",
@@ -972,14 +972,14 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/batching.rs",
       "previousSha256": null,
-      "sha256": "3436b318ffdaf19a39156ba8f1dfd39e63f4de43a358957b9c3e190d94976b96",
-      "reason": "cascade C1 impl；批C：AggKey增执行入口维度（BatchEntry张量/CPU图像/GPU帧——组装路径不同不混批，各自凑窗，键不匹配立即逐项执行）；job_native携带逐项params向量；批E：预处理入账分期（挂起期按capture实驻留、执行期补账合并/ORT份额解锁攒批窗口凑批；上限与护栏语义不变）"
+      "sha256": "3c3d5037e6b5ab5a72f8730bdf9e28db27c06da613269467c0410c6fe3f206f8",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/batching/tests.rs",
       "previousSha256": null,
-      "sha256": "a897ff9f2063b05f373e66982ab5535f919ebf1d729034d08bd25fb889ed82ec",
-      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged)"
+      "sha256": "2932e5d0ac0264be5b3ac7fc5c2aa984d8817e18b2ec461c252c5d2750017a54",
+      "reason": "test-debt cleanup cb72418 (ctx-guard RAII in e2e gates / poison-recovery lock acquire) and hotfix 314d2f8 exec_stage ordering fix — chain entries stale after those commits"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/budget.rs",
@@ -1056,8 +1056,8 @@
     {
       "path": "crates/vision-ffi/src/inference/swap_tests.rs",
       "previousSha256": null,
-      "sha256": "27a30324a090b646f367153620f0cab444245a4ab15624c81c10bb906103ace1",
-      "reason": "vocab A1/A2 batch: regenerated ABI shards aligned to seek-merged base"
+      "sha256": "9ea00b594cdcd42b3dff00c73fdb41bc9bbead0f80bf15f49007936f5ce87911",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
     },
     {
       "path": "crates/vision-ffi/src/inference/telemetry_tests.rs",
@@ -1512,8 +1512,8 @@
     {
       "path": "crates/vision-ffi/src/inference/exports.rs",
       "previousSha256": "e9853356a47e62016d9375fee9f0299bbdb849968e68387892797bff713e3b59",
-      "sha256": "41dce3942e38cc76f9757813022a7627a0a2d9e7206bbd770cd36d99476b8527",
-      "reason": "cascade C1 impl; batch D: vocab bind embed dim from last dim of second input (2-D and 3-D ranks alike)"
+      "sha256": "bf7182647eb85327df0fad671dc32cd3f8e0d963d16e361b1a2dd13b6f720308",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
     },
     {
       "path": "crates/vision-ffi/src/inference/receipt.rs",
@@ -1644,26 +1644,26 @@
     {
       "path": "crates/vision-ffi/src/inference/cascade_e2e_tests.rs",
       "previousSha256": null,
-      "sha256": "dba58202197fc9dabef50bfacadfc4f09bc3242d050feb3f1ffca01791ac5cad",
-      "reason": "cascade C1 observability: am_cascade_result_t tail skipped_count (three-state: null / empty+0 / skipped>0, integrator confirm-round note); regen + impl + e2e asserts"
+      "sha256": "054bd480a447d88b8e0da320b6fa8cbb8bfb2beb277ccf23d4dc7a80e176b8f1",
+      "reason": "test-debt cleanup cb72418 (ctx-guard RAII in e2e gates / poison-recovery lock acquire) and hotfix 314d2f8 exec_stage ordering fix — chain entries stale after those commits"
     },
     {
       "path": "crates/sdk-abi/src/fields_9.rs",
       "previousSha256": null,
-      "sha256": "c2bd93f7a4ea04aafa075cda6ca4e3f71bc4fc63b1c98aed6842155cec9ed69e",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "7dc371f6c8aa512dd415acb7d4c5744346a629f9f6744cb82929e34ddfb89265",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/layout_9.rs",
       "previousSha256": null,
-      "sha256": "0c580a60f6c8566c80242fd70e868d665d4feca225d13154abf3b8947f4d3db9",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "4aaafa5f8bbbdcda2236c92edee758dbe726250c6d8de7ca7cbf04477afa19b6",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/sdk-abi/src/types_9.rs",
       "previousSha256": null,
-      "sha256": "30c5d3cd4eb42dc6d7b8c81e3581684f2a7687f81c8748d12e0b16612c9ea50a",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "6425ea02dc578b27ca0f65ddf97e8c830f8c1a6767366e26e5ec632e238d3bf1",
+      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
     },
     {
       "path": "crates/vision/src/sdk/tracker.rs",
@@ -1716,14 +1716,38 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/exec_stage.rs",
       "previousSha256": null,
-      "sha256": "1ab88657ab3e9d248bd255e29f295bd459a440583bd48e46fea9564eb58c0b83",
-      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged)"
+      "sha256": "542f79e25309363a575b919b665dc107a84ea2896129f63fb582800c45f14a9a",
+      "reason": "test-debt cleanup cb72418 (ctx-guard RAII in e2e gates / poison-recovery lock acquire) and hotfix 314d2f8 exec_stage ordering fix — chain entries stale after those commits"
     },
     {
       "path": "crates/vision-ffi/src/inference/batch_e2e_tests.rs",
       "previousSha256": null,
-      "sha256": "f04aea6936986586bdd659255f8d07bc99b697044618b75ab567165264716562",
-      "reason": "B1.3 estimate refinement: encoded-path transient source plane removed from exec charge (serial prepare, zero co-existence window, decoder-side 64MB hard cap retained) + budget envelope host/device mixed-account annotation + B1.5 dual-model staggered e2e gate"
+      "sha256": "353673b6a69c8fc78f425a9e7265cbb9c46fe904444563bd178b202db2fc3022",
+      "reason": "test-debt cleanup cb72418 (ctx-guard RAII in e2e gates / poison-recovery lock acquire) and hotfix 314d2f8 exec_stage ordering fix — chain entries stale after those commits"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/pool.rs",
+      "previousSha256": null,
+      "sha256": "a398347b4264d770bf7b39b3992089d75fe6a02010b8f25e4564a855d45fe3ab",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/pool_tests.rs",
+      "previousSha256": null,
+      "sha256": "bea943b0cc67e2a89b8cb80f7412e6390a2aa891d20023e3fb0d83c9c986b7bb",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/exports_tests.rs",
+      "previousSha256": null,
+      "sha256": "6ecfae7fdf5c85f0578f7c0f37e86eda8ca89b4e40254719002173a5f4ab3084",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+    },
+    {
+      "path": "crates/vision-ffi/src/inference/pool_e2e_tests.rs",
+      "previousSha256": null,
+      "sha256": "d996ae479aadc2527351fc78c7f222e7b2009c602f902a8e7182e47b01b3080e",
+      "reason": "P1.5 pool e2e gates: GPU-direct sharded full flow + CPU-pixel batch-2 arm"
     }
   ]
 }

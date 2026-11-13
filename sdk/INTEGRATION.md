@@ -67,7 +67,51 @@ Python Pose 结果可在结果存活时调用 `result.copy_pose()` 取得独立 
 
 For local unreleased Python builds, `result.copy_pose()` copies pose boxes and keypoints while the result is alive. The copied tuple survives release; `result.view` remains a borrowed low-level view (shipped since v0.2.0).
 
-自适应攒批（v0.2.0 起随包）：`amv_model_configure_batching(model, &options)` 显式启用（`AM_BATCHING_ENABLE`，max_batch_items 2..64 或 0 取动态上限，max_wait_ms 0..5000，0 为即入即发：凑得满立即成批，凑不满不等待、按窗口截止语义逐项执行），传 NULL 关闭；仅动态批量轴模型、仅 AUTO 语义生效，固定批量轴返回 `vision.batchUnsupported`，不填伪样本。凑满/窗口截止/关闭排空触发单一物理批次，逐项 request_id/取消/TTL 不变；等待项计入既有队列与等待者上限。`amv_model_get_batching` 查询生效配置与累计计数（formed_batches/batched_items/timeout_batches/rejected_items，关闭清零）。合成数据单测与生成器同步已验，真实模型组批实测待验；绑定由生成链同步。图像输入项（含 GPU 帧直传入口）自批 C 起与张量项同等参与攒批（合同 §3.5 图像项攒批条）：CPU 图像与 GPU 帧按执行入口分窗不混批；GPU 帧在接受段同步完成预处理（纹理借用窗口在提交调用内闭合，合同 §3.3a 原语义），窗口挂起期持有的是设备输入缓冲而非纹理引用——异步 GPU 帧提交调用因此含一次 GPU 预处理（约毫秒级）耗时。容量注记：max_batch_items 避开 8（cuDNN 对 N=8 组合的已知次优，实测 1.16x vs 1.36x，R1.4）；GPU 帧窗口挂起最多缓存 max_batch_items 份 [1,3,H,W] 设备输入（640 档约 4.9MB/份）至 max_wait_ms。**部署内存规划**：CUDA 后端攒批的进程稳态足迹随批形状预热一次性抬升——实测 world 级双输入模型池化形态稳态约 2.9-3.0GB（批单位每 +1 约 +200-300MB；小模型远低），系统空闲内存低于稳态水位时页面压力使批执行延迟劣化直至无法凑批，部署时按目标 max_batch_items 预留（批 G 判别实验与 300s 稳态曲线实证，非泄漏）。逐项 decode 参数（confidence_threshold/max_det 等）随各请求逐项生效。**吞吐优先配置指导（批 I 实证，ORT 1.26/CUDA 12 口径；ORT 1.31/CUDA 13 于驱动 621.14 复测复现）**：CUDA 后端下批形状稳定比单批等待更重要——窗口截止批（N<max_batch_items）与凑满批交替会让 cuDNN 反复重规划，实测 6 路×批 4×wait=40ms 形态吞吐比全凑满低约 45%（约 1/3 批为截止触发、批均 N=2.0），甚至低于不攒批的逐项执行；max_wait_ms 应取"凑满一批的到达时间尺度"而非帧周期（8 路 25fps×批 4 实测 40ms 即 100% 凑满定形，非整倍/低负载形态实测需 120ms 才恢复 99.9% 凑满），定形后 p99 帧龄同步占优。max_wait_ms=0 即入即发：单帧提交形态等于逐项执行（形状恒定无重规划但无批收益，实测吞吐为定形批的 ~78%），仅适合低负载延迟敏感场景。ORT 1.31/CUDA 13 复测（621.14 驱动）两臂形态一致：8 路 w40=57.9 items/s 纯凑满（1868 批零截止）、6 路陷阱=34.8 items/s（约 1/2 批截止、批均 N=3.0，交替形态同构；交替惩罚幅度存在驱动敏感性——同口径病理驱动下为 27.2）。**多 Model 编排指导（sdk-b1 实证，同机同口径）**：同 ctx 多个 Model 实例各自攒批窗口共享 64MiB 预处理预算包络（host/device 混记总账，`amv_set_limits` 只能收紧）——**GPU 帧直传通道执行份额为零（设备侧组装），双 Model 批 4 实测 194.8 items/s（8 路@25fps 实质满额 97.4%，rejected=0），为高路数部署主推形态**；CPU 像素通道执行份额 24B/px，多 Model 高批形状份额叠加会触发准入拒绝——B1 起执行错峰槽将"拒绝形态"变为"零拒绝可用"但吞吐无增益（批 4=56.5≈单 Model 水平），**CPU 通道多 Model 最优为批 2（97.7 items/s，双 Model 各 4 路分组）**；多 Model 分组=接入侧连续分组绑定（SDK 无单例限制），每模型批形状按通道选（GPU 直传批 4/CPU 像素批 2）。
+自适应攒批（v0.2.0 起随包）：`amv_model_configure_batching(model, &options)` 显式启用（`AM_BATCHING_ENABLE`，max_batch_items 2..64 或 0 取动态上限，max_wait_ms 0..5000，0 为即入即发：凑得满立即成批，凑不满不等待、按窗口截止语义逐项执行），传 NULL 关闭；仅动态批量轴模型、仅 AUTO 语义生效，固定批量轴返回 `vision.batchUnsupported`，不填伪样本。凑满/窗口截止/关闭排空触发单一物理批次，逐项 request_id/取消/TTL 不变；等待项计入既有队列与等待者上限。`amv_model_get_batching` 查询生效配置与累计计数（formed_batches/batched_items/timeout_batches/rejected_items，关闭清零）。合成数据单测与生成器同步已验，真实模型组批实测待验；绑定由生成链同步。图像输入项（含 GPU 帧直传入口）自批 C 起与张量项同等参与攒批（合同 §3.5 图像项攒批条）：CPU 图像与 GPU 帧按执行入口分窗不混批；GPU 帧在接受段同步完成预处理（纹理借用窗口在提交调用内闭合，合同 §3.3a 原语义），窗口挂起期持有的是设备输入缓冲而非纹理引用——异步 GPU 帧提交调用因此含一次 GPU 预处理（约毫秒级）耗时。容量注记：max_batch_items 避开 8（cuDNN 对 N=8 组合的已知次优，实测 1.16x vs 1.36x，R1.4）；GPU 帧窗口挂起最多缓存 max_batch_items 份 [1,3,H,W] 设备输入（640 档约 4.9MB/份）至 max_wait_ms。**部署内存规划**：CUDA 后端攒批的进程稳态足迹随批形状预热一次性抬升——实测 world 级双输入模型池化形态稳态约 2.9-3.0GB（批单位每 +1 约 +200-300MB；小模型远低），系统空闲内存低于稳态水位时页面压力使批执行延迟劣化直至无法凑批，部署时按目标 max_batch_items 预留（批 G 判别实验与 300s 稳态曲线实证，非泄漏）。逐项 decode 参数（confidence_threshold/max_det 等）随各请求逐项生效。**吞吐优先配置指导（批 I 实证，ORT 1.26/CUDA 12 口径；ORT 1.31/CUDA 13 于驱动 621.14 复测复现）**：CUDA 后端下批形状稳定比单批等待更重要——窗口截止批（N<max_batch_items）与凑满批交替会让 cuDNN 反复重规划，实测 6 路×批 4×wait=40ms 形态吞吐比全凑满低约 45%（约 1/3 批为截止触发、批均 N=2.0），甚至低于不攒批的逐项执行；max_wait_ms 应取"凑满一批的到达时间尺度"而非帧周期（8 路 25fps×批 4 实测 40ms 即 100% 凑满定形，非整倍/低负载形态实测需 120ms 才恢复 99.9% 凑满），定形后 p99 帧龄同步占优。max_wait_ms=0 即入即发：单帧提交形态等于逐项执行（形状恒定无重规划但无批收益，实测吞吐为定形批的 ~78%），仅适合低负载延迟敏感场景。ORT 1.31/CUDA 13 复测（621.14 驱动）两臂形态一致：8 路 w40=57.9 items/s 纯凑满（1868 批零截止）、6 路陷阱=34.8 items/s（约 1/2 批截止、批均 N=3.0，交替形态同构；交替惩罚幅度存在驱动敏感性——同口径病理驱动下为 27.2）。**多 Model 预算包络与分通道批形状（sdk-b1 实证，同机同口径）**：同 ctx 多个 Model 实例各自攒批窗口共享 64MiB 预处理预算包络（host/device 混记总账，`amv_set_limits` 只能收紧）——**GPU 帧直传通道执行份额为零（设备侧组装），双 Model 批 4 实测 194.8 items/s（8 路@25fps 实质满额 97.4%，rejected=0）**；CPU 像素通道执行份额 24B/px，多 Model 高批形状份额叠加会触发准入拒绝——B1 起执行错峰槽将"拒绝形态"变为"零拒绝可用"但吞吐无增益（批 4=56.5≈单 Model 水平），**CPU 通道多 Model 最优为批 2（97.7 items/s，双 Model 各 4 路分组）**。分通道批形状指导值（GPU 直传批 4/CPU 像素批 2）即下文推理池 desc 的 batching 传值依据。
+
+**多 Model 编排主推：推理池编排 API（ABI 1.4 兼容新增，`AM_ABI_VERSION` 65540；随 sdk-p1 落地，尚未随公开版本发布——调用前先核 `amv_get_abi_version` ≥1.4，旧 DLL 缺新符号由加载期符号解析失败表达）**：一次调用创建 k 个分片 Model 实例（内部 load k 份独立实例+逐片攒批配置+预建 lane→shard 连续分组映射），把上文双 Model 实测形态固化为内建 API。提交路径零新增——借出句柄即普通 `amv_model_t`，现有 infer 家族原样使用；池内 Model 与手工 load 的 Model 行为语义全同（错峰执行槽、GPU 直传零执行份额旁路等预算语义内建继承）。
+
+- **`amv_pool_create(ctx, &desc, &out_pool)`**：`am_pool_desc_t` 全字段显式（先清零再填 `struct_size`）——`model`/`model_memory` 恰一非 NULL（k 片共用同一源描述，池内 load k 份独立实例；内存源 bytes 借用至 create 返回，逐片复制）；`shards` 2..=8（k=1 直接 `amv_model_load`，不设单片池）；`lanes` ≥ shards 且被 shards 整除（仅参与映射计算，不占 SDK 资源）；`batching` 逐片统一攒批配置（批形状按通道传指导值：GPU 帧直传批 4/CPU 像素批 2，见上文包络段；NULL=逐片不攒批）；`reserved`=0。校验按序短路，槽位预检先行——k 与 ctx 已登记模型合计超 `max_models` 返回 `sdk.resourceExhausted`（先于逐片 load）；任一分片 load/configure 失败原子回滚（已接管分片全部排空释放，不留半池），load 族错误原样透传，不支持攒批的模型形态返回 `vision.batchUnsupported` 整池失败。
+- **`amv_pool_lane_model(pool, lane, &out_model)`**：lane i → shard ⌊i×k/lanes⌋ 连续分组（shards=2/lanes=8 时 lane 0..3→shard 0、lane 4..7→shard 1）；lane 越界返回 `sdk.invalidArgument`。返回**借用句柄**——所有权归池、借用不增引用计数；句柄即普通 `amv_model_t`，infer 家族/`amv_model_get_info`/`amv_model_get_batching`/`amv_set_realtime_policy` 原样使用；**禁对借出句柄直调 `amv_model_close`**（直关按 `sdk.handleInvalid` 拒绝，排空关闭仅经 `amv_pool_close`）；线程安全只读查询（任意线程并发）。
+- **`amv_pool_close(pool, timeout_ms, &out_state)`**：两阶段——先逐片排空（复用 model close 语义，在途请求各自到达终态后逐片释放，片间顺序无关），`timeout_ms` 内未完成返回 `AM_LIFECYCLE_CLOSING`（资源保留），经 `amv_object_query_state` 轮询至 `AM_LIFECYCLE_CLOSED` 后 `amv_object_destroy`；重复 close 幂等返回 AM_OK。池为 ctx 子对象，ctx shutdown 时未显式关闭的池按父子顺序级联关闭；CLOSED 后全部借出句柄失效，后续使用返回 `sdk.handleClosed`。
+
+8 路 GPU 帧直传、双分片、批 4 的 desc 示例（C）：
+
+```c
+am_model_desc_t md; memset(&md, 0, sizeof md);
+md.struct_size = sizeof md;
+md.path_utf8  = "model.onnx";        /* k 片共用同一源描述 */
+md.load_mode  = AM_LOAD_PROFILE;
+md.profile_id = "detect-yolo-world-batch-v1";
+am_batching_options_t bo; memset(&bo, 0, sizeof bo);
+bo.struct_size     = sizeof bo;
+bo.abi_minor       = 4;              /* AM_ABI_VERSION 次版本；未来次版本被拒 */
+bo.max_batch_items = 4;              /* CPU 像素通道部署此处传 2 */
+bo.max_wait_ms     = 40;             /* 取凑满一批的到达时间尺度（见攒批段） */
+bo.flags           = AM_BATCHING_ENABLE;
+am_pool_desc_t pd; memset(&pd, 0, sizeof pd);
+pd.struct_size = sizeof pd;
+pd.model    = &md;
+pd.shards   = 2;
+pd.lanes    = 8;                     /* lane 0..3→shard 0、lane 4..7→shard 1 */
+pd.batching = &bo;
+amv_pool_t* pool = NULL;
+amv_pool_create(ctx, &pd, &pool);
+for (uint32_t lane = 0; lane < pd.lanes; ++lane) {
+    amv_model_t* m = NULL;
+    amv_pool_lane_model(pool, lane, &m);  /* 借用句柄；禁直调 amv_model_close */
+    /* 按 lane 提交：现有 infer 家族原样使用（GPU 帧直传/CPU 像素、sync/async） */
+}
+am_lifecycle_state_t st;
+if (amv_pool_close(pool, 5000, &st) == AM_LIFECYCLE_CLOSING) {
+    while (amv_object_query_state(pool, &st) == AM_OK && st != AM_LIFECYCLE_CLOSED) { /* 轮询 */ }
+}
+amv_object_destroy(pool);            /* 仅 CLOSED 可调；排空后借出句柄已失效 */
+```
+
+验证状态（诚实边界）：编排 API 语义经真装配 e2e 验证——GPU 直传 8 路双分片全流程（创建→逐 lane 取句柄→路由正确性→逐片身份→攒批窗口活跃→关闭排空守恒）与 CPU 像素批 2 臂均绿，全部真装配门（含两门池编排 e2e，共 15 门）同进程串行全绿；API 形态长稳窗口验证进行中（[P1.6 收数后回填]）。desc 完整字段与校验域见设计文档 §3.5a/§3.4a。**已知问题（退出期，运行期零影响）**：宿主进程退出阶段在池分片会话的 DLL 卸载（detach）路径上可能挂死（非池路径干净退出）——规避指引：退出前显式 `amv_pool_close` 排空（全部在途到达终态、数据已落）后再退；若 detach 仍挂可安全强杀进程（不影响数据完整性，关闭与落盘均在挂点之前完成）。归因修复列 v0.7.x 首个候选。
+
+**高级用法：手工双 Model 分组（池 API 之前的编排形态，仍受支持）**：不使用推理池时由接入方自行 load k 个 Model 实例并做连续分组绑定（SDK 无单例限制），逐个 `amv_model_configure_batching` 按通道选批形状（GPU 直传批 4/CPU 像素批 2），关闭时逐模型自行排空 close。预算语义与池形态一致——池内分片即普通 Model，与手工 Model 在同一 ctx 64MiB 包络内统一核算，两形态并存无额外编排语义。
 
 旧 `amv_query_backends` 现只读本 context 的显式 CUDA probe 缓存；需要设备判定时先调用 `amv_probe_inference_hardware`。hw_detected=0 需结合 note 区分未知和已确认无设备。
 

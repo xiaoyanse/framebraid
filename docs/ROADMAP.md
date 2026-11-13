@@ -8,13 +8,15 @@
 - **离线录像文件分析**：MP4 文件源 + seek → 解码 → 推理（录像 AI 复盘）；FILE 源 seek/倍速/循环已随 v0.5.0 交付（真机 seek 集成全绿）。
 - **帧抓图编码输出**：解码帧/推理关联帧导出 JPEG/PNG（与后续流编码输出共享编码器）——已随 v0.6.0 交付（`amc_frame_encode`）
 
-登记待实现（防遗忘，按需启动）：GPU 全程显存管线（CUDA/OpenVINO 推理验收；2026-11-06 研究阶段0产出：单路 GPU 直传基线已建——见 POC core-performance；A 线三靶点优化待多路数据定批）、Intel 核显 GPU 设备支持（OpenVINO 插件运行库已就绪，SDK 两处硬编码 CPU 设备待合同化放开——研究 R0.1 发现，无下游拉动暂缓）、运行期模型热切换、编码推流输出（RTMP/MP4）、Linux 移植、包管理器分发（PyPI/NuGet/crates.io）、多模型流水线、ARM64 Windows、GB28181 客户端、ONVIF 发现+取流（低优先）。
+登记待实现（防遗忘，按需启动）：GPU 全程显存管线（CUDA/OpenVINO 推理验收；2026-11-06 研究阶段0产出：单路 GPU 直传基线已建——见 POC core-performance；A 线三靶点优化待多路数据定批）、Intel 核显 GPU 设备支持（OpenVINO 插件运行库已就绪，SDK 两处硬编码 CPU 设备待合同化放开——研究 R0.1 发现，无下游拉动暂缓）、~~运行期模型热切换~~（已随 M5 `amv_model_swap` 交付，v0.3.0）、编码推流输出（RTMP/MP4）、Linux 移植、包管理器分发（PyPI/NuGet/crates.io）、多模型流水线、ARM64 Windows、GB28181 客户端、ONVIF 发现+取流（低优先）。
 
 2026-11-05 进度：ROI 区域裁剪推理（C1 级联，合同 §4.1，消费方确认冻结）、跨帧目标跟踪（§4.1b，SORT 级轻量关联，消费方确认）、单帧 JPEG/PNG 导出（§2.11）均已随 **v0.6.0 发布**（C ABI 1.3）。
 
 2026-11-07 进度（攒批/池化线）：图像项自适应攒批（批 C）落地——图像项（含 GPU 帧直传）与张量项同等参与攒批、GPU 帧预处理移至接受段（§3.3a 落地）、GPU 物理批设备侧组装、动态轴模型 run_batch 回归修复（R5 张量攒批自 10-29 损坏复原）；真机门（批合同/FFI 攒批×2/GPU 组装/vocab×2/m2b-repro）全绿，全量闸门过（workspace 499 绿/clippy 零告警/boundary 284）。池化 8 路对照实验完成（`POC/core-performance/briel-c-pooled.md`）：**负结论**——池化+攒批 AUTO 31.9fps vs 独立会话裸跑 109.6fps（同机况 3.4x 落后），但尾延迟显著更平滑（P99 114ms vs 348ms）。~~登记待办：①档案注册表演进…②预处理逐项入账口径重估~~（①已随 v0.6.2 批 D 完成、②前半已随批 E 完成——见 2026-11-12 条目）；②后半多物理批并行维持 PM 决策级待办（见 11-12 立项评估登记）；Intel 核显与 A 线多路定批维持原登记。
 
 2026-11-12 进度（攒批研究收口+v0.6.3）：批 F~I 研究链收口——单 session 并发 Run 出局（CUDA 内存损坏）、多 session 曲线 4 见顶、N 抖动交替惩罚确证（直连 2.3x）；批 I 定性 **N 抖动在 SDK 攒批路径可配置消解**（max_wait_ms 取凑满时间尺度；非整除路数陷阱=真实产品风险，配置指导覆盖，形状粘性合同扩展证伪不需要），落点 INTEGRATION 吞吐优先配置指导随 **v0.6.3 发布**（纯文档版+门禁债清偿：0.6.0 结构体零值语义标注 20 处+doc-coverage 补账+freeze 基线单文件归因重算）；131 复测锚点（621.14 驱动，616.56 事故链后）=8 路 w40 定形 57.9 items/s（零截止）/6 路陷阱 34.8（交替同构，幅度驱动敏感）。**登记待办（PM 决策级，立项评估已批）**：多 session 架构（单 session 单 CUDA 流串行吃掉合批收益，8 路@25fps 唯一可达路径；2 session×N4=177 items/s≈7.1 路当量已实测；代价=架构改动+每 session ≈1.1GB host/1GB GPU）——评估重点=资源账与 8 路可达性论证，结论报决策。
+
+2026-11-13 进度（多 Model 编排 API 化，sdk-p1）：推理池编排 API（ABI 1.4 兼容新增 65540：`amv_pool_create`/`amv_pool_lane_model`/`amv_pool_close`+`am_pool_desc_t`；B 案提交路径零新增）——P1.1 合同冻结（§3.5a/§3.4a，错误码零新增）、P1.2 生成链同步（freeze 基线升 r11）、P1.3 池实现（含 batching.rs TOCTOU 既有竞态附带修复）、P1.4 关键路径单测 11、P1.5 编排 e2e 两门（GPU 直传 8 路双分片全流程+CPU 像素批 2 臂，15 门同进程串行全绿）完成；通道前置长稳收数完成（~8h 窗口内存零爬升+GPU 事件日志零异常，P1.0 报告 `.local/evidence/sdk-p1-20261113/p0-soak-collection.md`）；P1.6 API 形态长稳在跑（[P1.6 收数后回填]）；验证记录汇总 `.local/evidence/sdk-p1-20261113/verification.md`。上表运行期模型热切换条目已划线（已随 M5 交付）。
 
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
