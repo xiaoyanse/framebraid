@@ -1128,8 +1128,8 @@
     {
       "path": "crates/vision/src/gpu/driver_sys.rs",
       "previousSha256": null,
-      "sha256": "59816c6162951633fdd63f6db1c2020b49c89e0feba4a6b0d580ec86eb87b750",
-      "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
+      "sha256": "4925f00082f4fb9512e6743561c1ddf1b0bb0656d0b2cd255adcbd9d5e9688c9",
+      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: 59816c6162951633fdd63f6db1c2020b49c89e0feba4a6b0d580ec86eb87b750"
     },
     {
       "path": "crates/vision/src/gpu/e2e_tests.rs",
@@ -1164,8 +1164,8 @@
     {
       "path": "crates/vision/src/gpu/pipeline.rs",
       "previousSha256": null,
-      "sha256": "9ab5225a2a23857d13e18facb80b82749fc198e80b25a498036683c9dda8775c",
-      "reason": "B2 gpu cold-start ordering fix: establish_context (cuInit+primary) moved before PTX kernel JIT (cuModuleLoadData) — cold business-thread first-touch no longer fails JIT(3); error-string mapping unchanged; cold-start regression test added"
+      "sha256": "20d3c4a0e6e231d6d6a5221438c76272de2248dea09888a571b1228606a02e5d",
+      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: 9ab5225a2a23857d13e18facb80b82749fc198e80b25a498036683c9dda8775c"
     },
     {
       "path": "crates/vision/src/gpu/preprocess_tests.rs",
@@ -1748,6 +1748,18 @@
       "previousSha256": null,
       "sha256": "d996ae479aadc2527351fc78c7f222e7b2009c602f902a8e7182e47b01b3080e",
       "reason": "P1.5 pool e2e gates: GPU-direct sharded full flow + CPU-pixel batch-2 arm"
+    },
+    {
+      "path": "crates/vision/src/gpu/nv12_letterbox.ptx",
+      "previousSha256": null,
+      "sha256": "e289c8e6b66fd0c6799454af69db8723e91452d3bf44ed49cefe6a5b2d4a1247",
+      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: new fingerprint entry"
+    },
+    {
+      "path": "crates/vision/src/gpu/pipeline/roi_prototype.rs",
+      "previousSha256": null,
+      "sha256": "f57aa922b2c8cfc8ba208534e4fc8ef8c4aabda99dad24082f02897efdeee2a7",
+      "reason": "GPU ROI research prototype at 68ea105cfa27: region-aware NV12 sampling and single source map/copy with direct ORT tensor slices; test-only multi-ROI orchestration, full-frame regression gate, no public contract change. Prior approved SHA-256: new fingerprint entry"
     }
   ]
 }

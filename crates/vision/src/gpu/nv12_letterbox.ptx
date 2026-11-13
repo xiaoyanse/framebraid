@@ -20,14 +20,18 @@
 	.param .u32 dst_h,
 	.param .u32 rw,
 	.param .u32 rh,
-	.param .u64 out_ptr
+	.param .u64 out_ptr,
+    .param .u32 pitch,
+    .param .u32 origin_x,
+    .param .u32 origin_y,
+    .param .u32 clamp_roi
 )
 {
 	.reg .pred p, q;
 	// %r1=x %r2=y %r3=dst_w %r4=dst_h %r5=rw %r6=rh %r7=left %r8=top
 	// %r9=dx %r10=dy %r11=tmp %r12=hw %r13=sx0 %r14=sy0 %r15=sx1 %r16=sy1
 	// %r17=wgridx %r18=wgridy %r19=uvsx0 %r20=uvsy0 %r21=uvsx1 %r22=uvsy1
-	.reg .b32 %r<23>;
+	.reg .b32 %r<26>;
 	// %f1..=coords/weights, %f10=Y %f11=U %f12=V
 	.reg .f32 %f<32>;
 	.reg .b64 %rd<12>;
@@ -101,7 +105,19 @@
 	mul.f32 %f1, %f2, %f8;
 	sub.f32 %f1, %f1, 0f3F000000;  // sy
 
-	// integer neighbors (clamped)
+    // ROI mode clamps interpolation to the cropped image before translating to the full planes.
+    ld.param.u32 %r23, [clamp_roi];
+    setp.ne.u32 q, %r23, 0;
+    sub.s32 %r11, %r17, 1;
+    cvt.rn.f32.s32 %f2, %r11;
+    @q max.f32 %f9, %f9, 0f00000000;
+    @q min.f32 %f9, %f9, %f2;
+    sub.s32 %r11, %r18, 1;
+    cvt.rn.f32.s32 %f2, %r11;
+    @q max.f32 %f1, %f1, 0f00000000;
+    @q min.f32 %f1, %f1, %f2;
+
+    // Integer neighbors (clamped within the ROI).
 	cvt.rzi.s32.f32 %r13, %f9;     // sx0 = floor(sx)
 	cvt.rzi.s32.f32 %r14, %f1;     // sy0
 	cvt.rn.f32.s32 %f2, %r13;
@@ -119,7 +135,16 @@
 	sub.s32 %r11, %r18, 1;
 	min.s32 %r16, %r16, %r11;
 
-	// Y bilinear: base = y*src_w + x
+    ld.param.u32 %r23, [origin_x];
+    ld.param.u32 %r24, [origin_y];
+    ld.param.u32 %r25, [pitch];
+    add.s32 %r13, %r13, %r23;
+    add.s32 %r15, %r15, %r23;
+    add.s32 %r14, %r14, %r24;
+    add.s32 %r16, %r16, %r24;
+    mov.u32 %r17, %r25;
+
+    // Y bilinear: base = y*src_w + x
 	mad.lo.s32 %r19, %r14, %r17, %r13;  // y00
 	mad.lo.s32 %r20, %r14, %r17, %r15;  // y01 (x+1)
 	mad.lo.s32 %r21, %r16, %r17, %r13;  // y10
@@ -154,13 +179,12 @@
 	shr.s32 %r19, %r13, 1;         // sxu from luma sx0
 	shr.s32 %r20, %r14, 1;         // syu from luma sy0
 	shr.s32 %r21, %r17, 1;         // uv_w
-	shr.s32 %r22, %r18, 1;         // uv_h
-	max.s32 %r19, %r19, 0;
-	max.s32 %r20, %r20, 0;
-	sub.s32 %r11, %r21, 1;
-	min.s32 %r19, %r19, %r11;
-	sub.s32 %r11, %r22, 1;
-	min.s32 %r20, %r20, %r11;
+    // Preserve the original full-frame UV bounds. ROI uses absolute coordinates.
+    @!q shr.s32 %r22, %r18, 1;
+    @!q sub.s32 %r11, %r21, 1;
+    @!q min.s32 %r19, %r19, %r11;
+    @!q sub.s32 %r11, %r22, 1;
+    @!q min.s32 %r20, %r20, %r11;
 	// single-sample UV (nearest; chroma low-pass inherent in NV12)
 	mad.lo.s32 %r11, %r20, %r21, %r19;
 	cvta.to.global.u64 %rd9, %rd2;

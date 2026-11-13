@@ -211,6 +211,28 @@ impl KernelModule {
         rh: u32,
         out_ptr: u64,
     ) -> Result<(), crate::Error> {
+        self.launch_region(
+            y_ptr, uv_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, false,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn launch_region(
+        &self,
+        y_ptr: u64,
+        uv_ptr: u64,
+        src_w: u32,
+        src_h: u32,
+        dst_w: u32,
+        dst_h: u32,
+        rw: u32,
+        rh: u32,
+        out_ptr: u64,
+        pitch: u32,
+        x: u32,
+        y: u32,
+        clamp_roi: bool,
+    ) -> Result<(), crate::Error> {
         let mut params = KernelParams::new();
         params.push_u64(y_ptr);
         params.push_u64(uv_ptr);
@@ -221,6 +243,10 @@ impl KernelModule {
         params.push_u32(rw);
         params.push_u32(rh);
         params.push_u64(out_ptr);
+        params.push_u32(pitch);
+        params.push_u32(x);
+        params.push_u32(y);
+        params.push_u32(u32::from(clamp_roi));
         let mut pointers: Vec<*mut c_void> = params
             .pointers()
             .into_iter()

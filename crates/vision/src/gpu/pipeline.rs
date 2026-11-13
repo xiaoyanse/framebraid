@@ -8,6 +8,9 @@ use super::driver_sys::{DriverApi, KernelModule};
 use super::iobinding::InferenceInput;
 use super::registry;
 use crate::Error;
+
+#[cfg(test)]
+mod roi_prototype;
 use std::ffi::c_void;
 use std::sync::{Arc, Mutex, OnceLock};
 
