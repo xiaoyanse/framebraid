@@ -253,7 +253,10 @@ fn gpu_cascade_public_entry_real_replay() {
         max_det: 1,
         ..Default::default()
     };
-    let call = |primary: usize, secondary: usize, input: &am_image_input_t| {
+    let call_with = |primary: usize,
+                     secondary: usize,
+                     input: &am_image_input_t,
+                     request: &am_cascade_request_t| {
         let begin = Instant::now();
         let mut output = ptr::null_mut();
         let mut id = 0;
@@ -262,7 +265,7 @@ fn gpu_cascade_public_entry_real_replay() {
                 primary as _,
                 secondary as _,
                 input,
-                &request,
+                request,
                 &params,
                 &mut output,
                 &mut id,
@@ -273,6 +276,9 @@ fn gpu_cascade_public_entry_real_replay() {
             hits(ctx, id, output),
             begin.elapsed().as_secs_f64() * 1000.0,
         )
+    };
+    let call = |primary, secondary, input: &am_image_input_t| {
+        call_with(primary, secondary, input, &request)
     };
     let mut total_hits = 0;
     let mut max_cpu_drift = 0.0f32;
@@ -380,6 +386,36 @@ fn gpu_cascade_public_entry_real_replay() {
         total_hits += cpu_cmp.0;
         max_cpu_drift = max_cpu_drift.max(cpu_cmp.1);
         max_batch_drift = max_batch_drift.max(gpu_cmp.1);
+        if std::env::var_os("FB_ROI_CUDA_FP32").is_some() {
+            let rule = am_cascade_rule_t {
+                source_class_id: -1,
+                expand: 0.15,
+                min_roi_size: 0.0001,
+                ..Default::default()
+            };
+            let dynamic = am_cascade_request_t {
+                rules: &rule,
+                rule_count: 1,
+                ..Default::default()
+            };
+            let (cpu_dynamic, _) = call_with(cpu_a, cpu_b, &cpu, &dynamic);
+            let (gpu_dynamic, _) = call_with(gpu_a, gpu_b, &gpu, &dynamic);
+            assert_eq!(cpu_dynamic.len(), 1, "{sample}: CPU dynamic ROI");
+            assert_eq!(gpu_dynamic.len(), 1, "{sample}: GPU dynamic ROI");
+            let (cpu_hit, gpu_hit) = (cpu_dynamic[0], gpu_dynamic[0]);
+            assert_eq!((cpu_hit.parent, gpu_hit.parent), (0, 0));
+            assert_eq!(cpu_hit.class, gpu_hit.class);
+            let delta = |left: [f32; 4], right: [f32; 4]| {
+                left.into_iter()
+                    .zip(right)
+                    .map(|(a, b)| (a - b).abs() * 640.0)
+                    .fold(0.0f32, f32::max)
+            };
+            let roi_px = delta(cpu_hit.roi, gpu_hit.roi);
+            let box_px = delta(cpu_hit.bounds, gpu_hit.bounds);
+            eprintln!("ROI_DYNAMIC {sample} roi_px={roi_px:.5} box_px={box_px:.5}");
+            assert!(roi_px < 0.5 && box_px < 3.0);
+        }
         let submit = |primary, secondary, input: &am_image_input_t| {
             let mut id = 0;
             let code = unsafe {
