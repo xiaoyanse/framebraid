@@ -118,6 +118,7 @@ fn realtime_policy_validates_bounds_and_takes_effect_on_model() {
         permit: Mutex::new(None),
         notify: Arc::default(),
         vocab: std::sync::RwLock::new(Arc::new(None)),
+        pool: AtomicUsize::new(0),
     });
     let key = domain().insert(ctx, handle.clone()).unwrap();
     state.models.fetch_add(1, Ordering::AcqRel);

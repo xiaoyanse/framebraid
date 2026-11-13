@@ -49,6 +49,7 @@ fn stub_model(ctx: usize) -> usize {
         permit: Mutex::new(None),
         notify: Arc::default(),
         vocab: std::sync::RwLock::new(Arc::new(None)),
+        pool: AtomicUsize::new(0),
     });
     let key = domain().insert(ctx, handle).unwrap();
     state.models.fetch_add(1, Ordering::AcqRel);
