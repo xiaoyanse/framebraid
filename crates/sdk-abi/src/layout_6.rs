@@ -281,67 +281,42 @@ fn am_batching_stats_t_matches_c() {
     );
 }
 #[test]
-fn am_preprocess_meta_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_preprocess_meta_t>(), 48);
-    assert_eq!(core::mem::align_of::<am_preprocess_meta_t>(), 4);
+fn am_pool_desc_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_pool_desc_t>(), 48);
+    assert_eq!(core::mem::align_of::<am_pool_desc_t>(), 8);
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, struct_size),
+        core::mem::offset_of!(am_pool_desc_t, struct_size),
         0,
-        "am_preprocess_meta_t.struct_size"
+        "am_pool_desc_t.struct_size"
     );
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, src_w),
-        4,
-        "am_preprocess_meta_t.src_w"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, src_h),
+        core::mem::offset_of!(am_pool_desc_t, model),
         8,
-        "am_preprocess_meta_t.src_h"
+        "am_pool_desc_t.model"
     );
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, dst_w),
-        12,
-        "am_preprocess_meta_t.dst_w"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, dst_h),
+        core::mem::offset_of!(am_pool_desc_t, model_memory),
         16,
-        "am_preprocess_meta_t.dst_h"
+        "am_pool_desc_t.model_memory"
     );
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, scale_x),
-        20,
-        "am_preprocess_meta_t.scale_x"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, scale_y),
+        core::mem::offset_of!(am_pool_desc_t, shards),
         24,
-        "am_preprocess_meta_t.scale_y"
+        "am_pool_desc_t.shards"
     );
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, crop_x),
+        core::mem::offset_of!(am_pool_desc_t, lanes),
         28,
-        "am_preprocess_meta_t.crop_x"
+        "am_pool_desc_t.lanes"
     );
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, crop_y),
+        core::mem::offset_of!(am_pool_desc_t, batching),
         32,
-        "am_preprocess_meta_t.crop_y"
+        "am_pool_desc_t.batching"
     );
     assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, pad_left),
-        36,
-        "am_preprocess_meta_t.pad_left"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, pad_top),
+        core::mem::offset_of!(am_pool_desc_t, reserved),
         40,
-        "am_preprocess_meta_t.pad_top"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_preprocess_meta_t, valid),
-        44,
-        "am_preprocess_meta_t.valid"
+        "am_pool_desc_t.reserved"
     );
 }

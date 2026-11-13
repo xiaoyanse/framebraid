@@ -63,6 +63,10 @@ pub struct amv_tracker_t {
     _opaque: [u8; 0],
 }
 #[repr(C)]
+pub struct amv_pool_t {
+    _opaque: [u8; 0],
+}
+#[repr(C)]
 pub struct amc_shared_pool_t {
     _opaque: [u8; 0],
 }

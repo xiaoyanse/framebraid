@@ -7,6 +7,8 @@
 本地R2新增ABI 1.1，以[兼容扩展冻结依据](dual-sdk-abi-freeze-v1.1.md)和当前freeze-v1.json为准；1.0正文与历史快照保留。JSON字段约束也纳入冻结：`sdk/abi/decode-hardware-report-v1.schema.json`。源码新增不等于已发布，旧v0.1.0制品仍为ABI 1.0。
 
 **ABI 1.2（v0.5.0，2026-11-04 兼容新增）**：`AM_ABI_VERSION` 65537→**65538**。新增面——camera：`amc_source_seek`（三档 `am_seek_mode_e`）/`amc_source_get_duration`/`amc_source_set_rate`/`amc_source_set_loop`（§2.4 FILE 阶段 2，EOF 复活+RESYNC 生效事实源语义）；vision：`amv_vocab_bind`（§4.1 词表绑定）+ `am_vocab_entry_t`/`am_vocab_hit_t`/`am_vocab_hit_map_t` + `amv_result_t` 尾部追加 `vocab_hits` 指针（P2/struct_size 协商）+ `AM_TASK_TEXT_ENCODER=7` + 错误码 `vision.vocabNotBound=1033`。既有语义零变更；旧消费者按 struct_size/枚举尾追加协商，不受影响。
+
+**ABI 1.4（P1 推理池，合同冻结 2026-11-13；实施随 P1.2+，v0.7 交付面）**：`AM_ABI_VERSION` 65539→**65540**（次版本兼容新增，主版本不变）。新增面——vision：推理池编排容器三导出 `amv_pool_create`/`amv_pool_lane_model`/`amv_pool_close`（§3.5a）+ 新结构 `am_pool_desc_t`（附录 §3.4a）。既有语义零变更：不改动任何既有结构布局、枚举值或导出签名，本版无尾部追加，既有读者按 struct_size 协商不受影响（可编译结构面零变化）；旧实现拒绝 1.4 初始化（§1.1 次版本规则），新导出仅对 `amv_get_abi_version` 报告 ≥1.4 的实现可用，调用方先查实际 ABI 再使用，旧 DLL 缺新符号由加载期符号解析失败表达。三导出与结构随生成链同步（P1.2，本文不勾选实施任务）。
 依据（冲突时以此顺序为准）：camera-sdk (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/camera-sdk/spec.md`)、inference-sdk (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/inference-sdk/spec.md`)、native-sdk-contract (historical host reference, not included: `../../openspec/changes/media-v2-h264-unified-player/specs/native-sdk-contract/spec.md`) 三份 delta spec > [dual-dll-sdk.md](dual-dll-sdk.md) > 本文。本文不勾选任何实施任务。
 
 **交付主体口径（2026-10-25 用户修正）**：交付物是可脱离 AM-RT 独立构建的**源码 SDK**（am-camera+am-vision+内部纯函数依赖+独立构建清单）；本文的 Windows x64 DLL 只是编译产物之一，非 Rust 宿主经本 C ABI 消费。首版验收仍 Windows x64；其他平台单列为「首版设计、后续平台实施」（不默认宣称编译或运行已通过，与 native spec 口径一致），不扩大首版。
@@ -840,6 +842,46 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
 - **OpenVINO 原生引擎（未发布兼容扩展，E1）**：`AM_BACKEND_OPENVINO_NATIVE=4` 作为第五推理路径（OpenVINO C API 直连，绕开 ORT OpenVINO EP 的 provider 桥接缺陷——2026-10-28 符号级证据：Intel provider wheel 的 C++ ABI 符号在所有公开运行库缺失）。矩阵第五行语义：hw=openvino.dll 在 runtime_dirs 可加载；deps=CPU 设备始终可用（GPU 设备枚举为增强项）；loadable=ov_core 初始化+模型编译成功；verified=真实推理成功一次。运行库约定（2026-11-03 对齐实现，接入方反馈 P0-1）：**运行库目录随 vision runtime_dirs 提供**——目录内须含 C API 库 `openvino_c.dll` 及其依赖闭包（`openvino.dll`+插件 DLL；Python wheel `site-packages/openvino/libs/` 即满足），独立于 onnxruntime.dll 目录（可并存，onnxruntime 目录不含 openvino_c 时不误报）；进程环境变量 `AM_SDK_OPENVINO_DIR` 为显式操作员覆盖，优先于 runtime_dirs（不设即用 runtime_dirs，此前版本仅认环境变量属实现缺陷已修复）。**版本线兼容矩阵（单一绑定，无版本分路径）**：2026.2.1（wheel，实测装载+编译+推理+对拍）、2026.1.0（vcpkg 11-DLL 闭包，实测同左）、2025.3.0（wheel，实测同左）——C API 符号集 2026 线 211 导出/2025 线 209 导出，绑定所用 28 符号三线全存在（2026 新增仅 2 个日志回调符号），元素类型枚举序数（F16=3/F32=4/I32=9/I64=10/U8=16）与 ov_shape_t/ov_version_t 布局及 ov_core_compile_model 变参签名逐项核对一致；升级大版本线仍须复核（ov_sys 模块约定不变）。候选失败详情（P0-1/P1-6）：装载/构造失败经 `amv_get_last_error` 携带定位原因（渠道+路径）、检测到的运行库版本与期望线（"expected OpenVINO C API 2025.x/2026.x line"），接入方不看源码即可定位；selection 报告仍只携带稳定错误键。**与 AM_BACKEND_OPENVINO=1（ORT EP 路径）语义区分**：1 走 ORT 会话的 OpenVINO EP（provider 可加载性受上述缺陷限制），4 走原生引擎（无 ORT 参与）。不支持该值的旧绑定收到 invalidArgument。策略回退：原生引擎失败（库缺失/模型格式不支持/设备不可用）回退 ORT CPU，回退原因进 selection 报告（不静默）。GPU 帧输入（§3.3a）适配位对两引擎统一（首版 OpenVINO 原生走 CPU 输入，GPU 帧直传为后续增强）。
 
 - **DirectML 后端（未发布兼容扩展，E2）**：`AM_BACKEND_DIRECTML=3` 作为第四推理路径（Windows 任意 GPU：Intel/AMD/NVIDIA）。矩阵第四行字段语义同其他后端（hw=运行库目录或系统含 DirectML.dll 且枚举到适配器；deps=d3d11+DirectML 运行库；loadable=ORT 会话以 DmlExecutionProvider 创建成功；verified=真实推理成功一次）。候选元组 device_id 忽略（EP 内部选卡，合同固定）；策略回退语义与其他后端一致。显式探测报告新增 directml 段（available；不承诺具体适配器型号）。不支持该值的旧绑定将收到 invalidArgument 而非未知崩溃。
+
+### 3.5a 推理池（多 Model 编排容器；P1，ABI 1.4 兼容新增）
+
+一次调用创建 k 个分片 Model（内部 load k 份独立实例 + 逐片 configure_batching + 预建 lane→shard 连续分组映射），把 B1 已实测的多 Model 手工编排形态（GPU 帧直传双 Model 批 4=8 路@25fps 97.4%）固化为 SDK 内建 API；desc 完整定义见附录 §3.4a。**提交路径零新增（B 案裁决）**：池只做编排容器——`amv_pool_lane_model` 返回的句柄即普通 `amv_model_t`，现有 infer 家族（图像 sync/async/批量/GPU 帧直传/张量/级联）、`amv_model_get_info`/`amv_model_get_batching`/`amv_set_realtime_policy` 原样使用；池内 Model 与手工 load 的 Model 行为语义全同（B1 错峰执行槽、GPU 直传零执行份额旁路等预算语义内建继承，零改动），不做 pool 级 submit 族与聚合 stats（YAGNI：逐片 get_batching 已覆盖）。
+
+```c
+/* 编排容器创建：desc.model/model_memory 二选一为分片模型源（k 片共用同一源描述，
+   池内 load k 份独立实例，路径/内存×档案/raw 均同现有 load 语义）；
+   desc.batching 非 NULL 时逐片执行 amv_model_configure_batching 同款配置；
+   分片数 k 与 ctx 已登记模型合计超 max_models 槽位 → sdk.resourceExhausted（B10）。
+   失败原子回滚：任一片 load/configure 失败，本次已接管分片全部按 model close
+   语义排空释放，out_pool=NULL，不留半池（对齐 amv_model_load_memory 失败释放条款） */
+AM_API am_status_t amv_pool_create(amv_context_t* ctx, const am_pool_desc_t* desc,
+                                   amv_pool_t** out_pool);
+/* lane→分片 Model 借用句柄：映射公式 lane i → shard ⌊i×k/lanes⌋（i 与 shard 均 0 起，
+   连续分组；shards=2/lanes=8 时 lane 0..3→shard 0、lane 4..7→shard 1）。
+   所有权归池、借用不增引用计数：池存活期内返回句柄可提交/查询；调用方不得对
+   返回句柄调用 amv_model_close（排空关闭仅经 amv_pool_close 执行，直调按
+   sdk.handleInvalid 拒绝）。pool_close 到达 CLOSED 后全部借出句柄失效，后续任何
+   使用返回 sdk.handleClosed（与 model close 后语义一致） */
+AM_API am_status_t amv_pool_lane_model(amv_pool_t* pool, uint32_t lane,
+                                       amv_model_t** out_model);
+/* 逐片排空关闭（复用 amv_model_close 语义，片间顺序无关）：在途请求各自到达终态
+   后逐片释放；timeout_ms 内未完成返回 out_state=CLOSING（资源保留），经
+   amv_object_query_state 轮询至 CLOSED；重复 close 幂等返回 AM_OK。池为 ctx
+   子对象：纳入 §1.1/§5.4 两阶段总则（query_state/object_request_close/
+   object_destroy 适用）；ctx shutdown 时未显式关闭的池按 §1.1 父子顺序级联关闭 */
+AM_API am_status_t amv_pool_close(amv_pool_t* pool, uint32_t timeout_ms,
+                                  am_lifecycle_state_t* out_state);
+```
+
+**参数与错误码**：
+
+- `amv_pool_create`：校验顺序——空参（ctx/desc/out_pool NULL=sdk.nullArgument）→ desc 域校验（shards 域外 0/1/>8=sdk.limitOutOfRange；lanes=0、lanes<shards、lanes 不被 shards 整除、模型源缺失或双给、reserved≠0=sdk.invalidArgument）→ 槽位记账（k 与该 ctx 已登记模型句柄数合计超 `am_limits_t.max_models`（§3.8/附录 §4）=sdk.resourceExhausted）→ 逐片 load（load 族错误原样透传：vision.modelLoadFailed/profileRequired/backendConflict 等，语义同 §3.2）→ 逐片 configure_batching（batching 非 NULL 时；分片为固定批量轴等不支持形态=vision.batchUnsupported，校验域同 §3.5 攒批段）。任一步失败原子回滚（见上）。成功后池内 k 片身份各自独立（`am_model_identity_t` 不串版）。
+- `amv_pool_lane_model`：pool/out_model NULL=sdk.nullArgument；lane ≥ lanes=sdk.invalidArgument（越界，映射域恒 [0,lanes)）；池已 close=sdk.handleClosed。成功 `*out_model` 恒非 NULL。
+- `amv_pool_close`：pool NULL=sdk.nullArgument；超时返回 AM_LIFECYCLE_CLOSING（§5.4 三段式第 2 步）；CLOSED 后重复 close 幂等 AM_OK，其余池业务调用返回 sdk.handleClosed；排空后借出分片句柄同步失效。
+
+**线程**：`amv_pool_lane_model` 为线程安全只读查询（任意线程并发，对齐 `amv_model_get_info`）；create/close 与 `amv_model_load`/`amv_model_close` 同类变更调用，按 ctx 变更类语义调用方外部串行；close 与借出句柄上的在途 infer 并发安全（排空覆盖全部在途请求，§5.4 关闭屏障）。
+
+**分通道批形状**：攒批配置由 desc 显式传（`am_batching_options_t.max_batch_items` 即批形状；无自动通道探测，YAGNI）——接入方按 INTEGRATION 多 Model 分通道指导传值（GPU 帧直传批 4 / CPU 像素批 2 文档指导值）；池不隐式改写、不按通道猜测。错误码 `vision.batchUnsupported` 的适用范围与运行期切换语义（configure 后新请求生效）同 §3.5 攒批段。
 
 ### 3.6 结果获取（B02 五类结构 / B03 快照闭环 / B08 所有权）
 

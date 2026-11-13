@@ -208,6 +208,9 @@ class am_batching_options_t(Structure):
 class am_batching_stats_t(Structure):
     pass
 
+class am_pool_desc_t(Structure):
+    pass
+
 class am_preprocess_meta_t(Structure):
     pass
 
@@ -323,6 +326,9 @@ class amv_model_t(Structure):
     pass
 
 class amv_tracker_t(Structure):
+    pass
+
+class amv_pool_t(Structure):
     pass
 
 class amc_shared_pool_t(Structure):
@@ -1239,6 +1245,13 @@ am_batching_stats_t._fields_ = [
     ("rejected_items", c_uint64),
 ]
 
+am_pose_detection_t._fields_ = [
+    ("bounds", c_float * 4),
+    ("confidence", c_float),
+    ("kpt_count", c_uint32),
+    ("keypoints", POINTER(am_keypoint_t)),
+]
+
 am_detect_result_t._fields_ = [
     ("count", c_uint32),
     ("boxes", POINTER(am_detect_box_t)),
@@ -1312,11 +1325,14 @@ am_image_input_t._fields_ = [
     ("gpu", POINTER(am_gpu_frame_ref_t)),
 ]
 
-am_pose_detection_t._fields_ = [
-    ("bounds", c_float * 4),
-    ("confidence", c_float),
-    ("kpt_count", c_uint32),
-    ("keypoints", POINTER(am_keypoint_t)),
+am_pool_desc_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("model", POINTER(am_model_desc_t)),
+    ("model_memory", POINTER(am_model_memory_desc_t)),
+    ("shards", c_uint32),
+    ("lanes", c_uint32),
+    ("batching", POINTER(am_batching_options_t)),
+    ("reserved", c_uint32),
 ]
 
 am_vocab_hit_map_t._fields_ = [
@@ -1409,7 +1425,7 @@ amv_result_t._fields_ = [
     ("cascade", POINTER(am_cascade_result_t)),
 ]
 
-AM_ABI_VERSION = 65539
+AM_ABI_VERSION = 65540
 AM_OK = 0
 AM_CODEC_H264 = 1
 AM_CODEC_H265 = 2
@@ -1689,6 +1705,9 @@ FUNCTIONS = {
     "amv_receipt_release": (am_status_t, [POINTER(am_batch_receipt_t)]),
     "amv_model_configure_batching": (am_status_t, [POINTER(amv_model_t), POINTER(am_batching_options_t)]),
     "amv_model_get_batching": (am_status_t, [POINTER(amv_model_t), POINTER(am_batching_options_t), POINTER(am_batching_stats_t)]),
+    "amv_pool_create": (am_status_t, [POINTER(amv_context_t), POINTER(am_pool_desc_t), POINTER(POINTER(amv_pool_t))]),
+    "amv_pool_lane_model": (am_status_t, [POINTER(amv_pool_t), c_uint32, POINTER(POINTER(amv_model_t))]),
+    "amv_pool_close": (am_status_t, [POINTER(amv_pool_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amv_result_notify_callback_set": (am_status_t, [POINTER(amv_model_t), am_result_notify_fn, c_void_p]),
     "amv_result_fetch": (am_status_t, [POINTER(amv_context_t), c_uint64, POINTER(POINTER(amv_result_t))]),
     "amv_result_ack": (am_status_t, [POINTER(amv_context_t), c_uint64]),

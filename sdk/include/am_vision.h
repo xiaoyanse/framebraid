@@ -61,6 +61,12 @@ AM_API am_status_t amv_infer_batch(amv_model_t* model, uint32_t item_count, cons
 AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
 AM_API am_status_t amv_model_configure_batching(amv_model_t* model, const am_batching_options_t* options);
 AM_API am_status_t amv_model_get_batching(amv_model_t* model, am_batching_options_t* out, am_batching_stats_t* stats);
+AM_API am_status_t amv_pool_create(amv_context_t* ctx, const am_pool_desc_t* desc,
+                                   amv_pool_t** out_pool);
+AM_API am_status_t amv_pool_lane_model(amv_pool_t* pool, uint32_t lane,
+                                       amv_model_t** out_model);
+AM_API am_status_t amv_pool_close(amv_pool_t* pool, uint32_t timeout_ms,
+                                  am_lifecycle_state_t* out_state);
 AM_API am_status_t amv_result_notify_callback_set(amv_model_t* model, am_result_notify_fn cb, void* user_data);
 AM_API am_status_t amv_result_fetch(amv_context_t* ctx, uint64_t request_id, amv_result_t** out_result);
 AM_API am_status_t amv_result_ack(amv_context_t* ctx, uint64_t request_id);

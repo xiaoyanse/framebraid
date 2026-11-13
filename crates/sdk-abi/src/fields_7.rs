@@ -1,5 +1,57 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_preprocess_meta_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, src_w),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, src_h),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, dst_w),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, dst_h),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, scale_x),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, scale_y),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, crop_x),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, crop_y),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, pad_left),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, pad_top),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_preprocess_meta_t, valid),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_tensor_out_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -185,18 +237,6 @@ impl AbiLayout for am_vocab_entry_t {
         (
             core::mem::offset_of!(am_vocab_entry_t, token_cols),
             core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_vocab_hit_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_vocab_hit_t, entry_index),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_vocab_hit_t, prompt_index),
-            core::mem::size_of::<i32>(),
         ),
     ];
 }

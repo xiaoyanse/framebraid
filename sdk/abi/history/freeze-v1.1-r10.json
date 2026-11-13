@@ -1,0 +1,64 @@
+{
+  "id": "am-sdk-cabi-1.1-20261027-r10",
+  "previousFreezeSha256": "560af017d486e125c88104040eb91e320aefd0157c19da659d17d1ce70ff0d3e",
+  "abiVersion": 65537,
+  "designFrozen": true,
+  "runtimeAcceptance": "pending",
+  "files": [
+    {
+      "path": "sdk/include/am_camera.h",
+      "sha256": "30cf23eac4beb3d0745a7333f84910fd4b3271f8a4efb05e28a5810c903a057c",
+      "bytes": 10738
+    },
+    {
+      "path": "sdk/include/am_vision.h",
+      "sha256": "9be536019419c5200b1d4dbfcfde6173108c06fd151a7e34dca893a941d21034",
+      "bytes": 8020
+    },
+    {
+      "path": "sdk/include/am_sdk_types.h",
+      "sha256": "c664648f0ad3cfd4a283fcc125afb32a233dbb702ec7919cd57121ce66076f07",
+      "bytes": 80046
+    },
+    {
+      "path": "sdk/abi/constants.json",
+      "sha256": "8520b6c752407a6c361d4d8b1d804b9bee1869a2604a7491005a4ced60bc923f",
+      "bytes": 2269
+    },
+    {
+      "path": "sdk/abi/defaults.json",
+      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010",
+      "bytes": 1923
+    },
+    {
+      "path": "sdk/abi/layout-win-x64.json",
+      "sha256": "81756134a1d67ca56cfcd19a3740e8ae956b013b2ea3b60a3fa597c25592059b",
+      "bytes": 26253
+    },
+    {
+      "path": "sdk/abi/decode-hardware-report-v1.schema.json",
+      "sha256": "6f0c7422415653b3c3b55e4f0fd91afac1539ca7e7c15e167aaf8079c52449d0",
+      "bytes": 3811
+    },
+    {
+      "path": "sdk/abi/inference-hardware-report-v1.schema.json",
+      "sha256": "2d6dd24d8400f100f3cdcb6ec8bcd0801b20c92aab8e9023d6f06f81a20e17a9",
+      "bytes": 2171
+    },
+    {
+      "path": "sdk/abi/inference-selection-v1.schema.json",
+      "sha256": "3c56be61e0c28e34a2fd012f1826d378ad5aa4d70ba313d8d5e8af8495cc3465",
+      "bytes": 2887
+    },
+    {
+      "path": "crates/vision/resources/profiles.json",
+      "sha256": "dd3ebfaa949179c3bdb8e21ce363a2ee12bdf9f9b1bf9a81acc3d10bd3c4a79d",
+      "bytes": 6994
+    },
+    {
+      "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",
+      "sha256": "77b2823b7ea9275d9b347c5d7f82b08f58941db8f0b7a3d19aea89836aa5eaed",
+      "bytes": 3490
+    }
+  ]
+}

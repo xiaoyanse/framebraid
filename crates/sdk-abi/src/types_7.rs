@@ -1,6 +1,40 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy)]
+pub struct am_preprocess_meta_t {
+    pub struct_size: u32,
+    pub src_w: u32,
+    pub src_h: u32,
+    pub dst_w: u32,
+    pub dst_h: u32,
+    pub scale_x: f32,
+    pub scale_y: f32,
+    pub crop_x: i32,
+    pub crop_y: i32,
+    pub pad_left: u32,
+    pub pad_top: u32,
+    pub valid: u32,
+}
+impl Default for am_preprocess_meta_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            src_w: Default::default(),
+            src_h: Default::default(),
+            dst_w: Default::default(),
+            dst_h: Default::default(),
+            scale_x: Default::default(),
+            scale_y: Default::default(),
+            crop_x: Default::default(),
+            crop_y: Default::default(),
+            pad_left: Default::default(),
+            pad_top: Default::default(),
+            valid: Default::default(),
+        }
+    }
+}
+#[repr(C)]
 #[derive(Clone, Copy, Default)]
 pub struct am_tensor_out_t {
     pub name: *const c_char,
@@ -95,10 +129,4 @@ impl Default for am_vocab_entry_t {
             token_cols: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_vocab_hit_t {
-    pub entry_index: i32,
-    pub prompt_index: i32,
 }

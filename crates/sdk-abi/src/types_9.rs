@@ -2,6 +2,26 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_realtime_policy_t {
+    pub struct_size: u32,
+    pub max_inflight: u32,
+    pub replace_oldest: u32,
+    pub slot_count: u32,
+    pub fair_round_robin: u32,
+}
+impl Default for am_realtime_policy_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            max_inflight: Default::default(),
+            replace_oldest: Default::default(),
+            slot_count: Default::default(),
+            fair_round_robin: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_limits_t {
     pub struct_size: u32,
     pub max_sources: u32,

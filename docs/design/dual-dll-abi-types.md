@@ -829,6 +829,41 @@ typedef struct am_batching_stats_s {   /* 累计只读计数；关闭状态查�
 } am_batching_stats_t;
 ```
 
+### 3.4a 推理池描述（P1，主文件 §3.5a；ABI 1.4 兼容新增）
+
+```c
+typedef struct amv_pool_s amv_pool_t;   /* 编排容器句柄（不透明；ctx 子对象，所有权归池） */
+
+typedef struct am_pool_desc_s {   /* P1 推理池：一次创建 k 个分片 Model + 逐片攒批配置
+                                     + lane→shard 连续分组映射（lane i → ⌊i×k/lanes⌋） */
+  uint32_t struct_size;            /* 显式（§1.4 全局规则）；小于 DLL 认识的最小版本=
+                                      sdk.structSizeInvalid；零值非法，无默认 */ /* explicit */
+  const am_model_desc_t* model;    /* 路径加载源：k 片共用同一 desc，池内 load k 份独立
+                                      实例（load_mode/profile_id/backend 逐片同源同配置，
+                                      语义同 amv_model_load）；与 model_memory 恰一非 NULL，
+                                      双给/双空=sdk.invalidArgument（zero 无默认） */
+  const am_model_memory_desc_t* model_memory;  /* 内存加载源：bytes 借用至 amv_pool_create
+                                      返回（逐片复制，语义同 amv_model_load_memory）；
+                                      NULL=不用内存源（zero=NULL=路径源模式） */
+  uint32_t shards;                 /* 分片数 k：2..=8（静态域与进程执行器槽位包络对齐）；
+                                      0/1/>8=sdk.limitOutOfRange（零值非法，无
+                                      默认——k=1 直接 amv_model_load，不设单片池）；域内
+                                      仍受 ctx max_models 槽位核算，超限=create 时
+                                      sdk.resourceExhausted（主文件 §3.5a） */ /* zero=invalid */
+  uint32_t lanes;                  /* 调用方 lane 总数：≥shards 且 lanes % shards==0；
+                                      0=sdk.invalidArgument（zero=invalid，无默认——lane
+                                      拓扑必须显式）；<shards 或不整除=sdk.invalidArgument；
+                                      仅参与映射计算，不占 SDK 资源 */ /* zero=invalid */
+  const am_batching_options_t* batching;  /* 逐片统一攒批配置（复用 am_batching_options_t
+                                      结构、校验域与三值语义，主文件 §3.5 攒批段）；
+                                      NULL=每片不启用攒批（zero=NULL=default，维持逐次
+                                      执行）；批形状按通道显式传（GPU 直传批 4/CPU 像素
+                                      批 2 文档指导值），池不自动探测；应用到不支持分片=
+                                      vision.batchUnsupported 整池失败回滚 */
+  uint32_t reserved;               /* 0；非 0=sdk.invalidArgument */ /* zero=default */
+} am_pool_desc_t;
+```
+
 ### 3.5 结果（B02 五类完整结构 / B08 所有权）
 
 ```c

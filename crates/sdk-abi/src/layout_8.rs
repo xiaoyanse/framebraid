@@ -1,6 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_vocab_hit_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_vocab_hit_t>(), 8);
+    assert_eq!(core::mem::align_of::<am_vocab_hit_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_t, entry_index),
+        0,
+        "am_vocab_hit_t.entry_index"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_vocab_hit_t, prompt_index),
+        4,
+        "am_vocab_hit_t.prompt_index"
+    );
+}
+#[test]
 fn am_vocab_hit_map_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_vocab_hit_map_t>(), 16);
     assert_eq!(core::mem::align_of::<am_vocab_hit_map_t>(), 8);
@@ -313,35 +328,5 @@ fn amv_result_t_matches_c() {
         core::mem::offset_of!(amv_result_t, cascade),
         216,
         "amv_result_t.cascade"
-    );
-}
-#[test]
-fn am_realtime_policy_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_realtime_policy_t>(), 20);
-    assert_eq!(core::mem::align_of::<am_realtime_policy_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, struct_size),
-        0,
-        "am_realtime_policy_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, max_inflight),
-        4,
-        "am_realtime_policy_t.max_inflight"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, replace_oldest),
-        8,
-        "am_realtime_policy_t.replace_oldest"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, slot_count),
-        12,
-        "am_realtime_policy_t.slot_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_realtime_policy_t, fair_round_robin),
-        16,
-        "am_realtime_policy_t.fair_round_robin"
     );
 }

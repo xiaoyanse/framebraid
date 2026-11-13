@@ -891,6 +891,19 @@
         "rejected_items": 32
       }
     },
+    "am_pool_desc_t": {
+      "size": 48,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "model": 8,
+        "model_memory": 16,
+        "shards": 24,
+        "lanes": 28,
+        "batching": 32,
+        "reserved": 40
+      }
+    },
     "am_preprocess_meta_t": {
       "size": 48,
       "align": 4,

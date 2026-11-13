@@ -164,35 +164,25 @@ impl Default for am_batching_stats_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
-pub struct am_preprocess_meta_t {
+pub struct am_pool_desc_t {
     pub struct_size: u32,
-    pub src_w: u32,
-    pub src_h: u32,
-    pub dst_w: u32,
-    pub dst_h: u32,
-    pub scale_x: f32,
-    pub scale_y: f32,
-    pub crop_x: i32,
-    pub crop_y: i32,
-    pub pad_left: u32,
-    pub pad_top: u32,
-    pub valid: u32,
+    pub model: *const am_model_desc_t,
+    pub model_memory: *const am_model_memory_desc_t,
+    pub shards: u32,
+    pub lanes: u32,
+    pub batching: *const am_batching_options_t,
+    pub reserved: u32,
 }
-impl Default for am_preprocess_meta_t {
+impl Default for am_pool_desc_t {
     fn default() -> Self {
         Self {
             struct_size: core::mem::size_of::<Self>() as u32,
-            src_w: Default::default(),
-            src_h: Default::default(),
-            dst_w: Default::default(),
-            dst_h: Default::default(),
-            scale_x: Default::default(),
-            scale_y: Default::default(),
-            crop_x: Default::default(),
-            crop_y: Default::default(),
-            pad_left: Default::default(),
-            pad_top: Default::default(),
-            valid: Default::default(),
+            model: Default::default(),
+            model_memory: Default::default(),
+            shards: Default::default(),
+            lanes: Default::default(),
+            batching: Default::default(),
+            reserved: Default::default(),
         }
     }
 }

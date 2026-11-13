@@ -1,5 +1,17 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_vocab_hit_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_vocab_hit_t, entry_index),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_vocab_hit_t, prompt_index),
+            core::mem::size_of::<i32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_vocab_hit_map_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -327,30 +339,6 @@ impl AbiLayout for amv_result_t {
         (
             core::mem::offset_of!(amv_result_t, cascade),
             core::mem::size_of::<*const am_cascade_result_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_realtime_policy_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_realtime_policy_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_realtime_policy_t, max_inflight),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_realtime_policy_t, replace_oldest),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_realtime_policy_t, slot_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_realtime_policy_t, fair_round_robin),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

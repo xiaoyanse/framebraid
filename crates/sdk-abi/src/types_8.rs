@@ -1,6 +1,12 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_vocab_hit_t {
+    pub entry_index: i32,
+    pub prompt_index: i32,
+}
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct am_vocab_hit_map_t {
     pub struct_size: u32,
@@ -120,26 +126,6 @@ impl Default for amv_result_t {
             infer_end_ms: Default::default(),
             vocab_hits: Default::default(),
             cascade: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_realtime_policy_t {
-    pub struct_size: u32,
-    pub max_inflight: u32,
-    pub replace_oldest: u32,
-    pub slot_count: u32,
-    pub fair_round_robin: u32,
-}
-impl Default for am_realtime_policy_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            max_inflight: Default::default(),
-            replace_oldest: Default::default(),
-            slot_count: Default::default(),
-            fair_round_robin: Default::default(),
         }
     }
 }

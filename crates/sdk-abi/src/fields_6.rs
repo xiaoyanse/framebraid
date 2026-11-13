@@ -224,54 +224,34 @@ impl AbiLayout for am_batching_stats_t {
         ),
     ];
 }
-impl AbiLayout for am_preprocess_meta_t {
+impl AbiLayout for am_pool_desc_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
-            core::mem::offset_of!(am_preprocess_meta_t, struct_size),
+            core::mem::offset_of!(am_pool_desc_t, struct_size),
             core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_preprocess_meta_t, src_w),
+            core::mem::offset_of!(am_pool_desc_t, model),
+            core::mem::size_of::<*const am_model_desc_t>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, model_memory),
+            core::mem::size_of::<*const am_model_memory_desc_t>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, shards),
             core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_preprocess_meta_t, src_h),
+            core::mem::offset_of!(am_pool_desc_t, lanes),
             core::mem::size_of::<u32>(),
         ),
         (
-            core::mem::offset_of!(am_preprocess_meta_t, dst_w),
-            core::mem::size_of::<u32>(),
+            core::mem::offset_of!(am_pool_desc_t, batching),
+            core::mem::size_of::<*const am_batching_options_t>(),
         ),
         (
-            core::mem::offset_of!(am_preprocess_meta_t, dst_h),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, scale_x),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, scale_y),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, crop_x),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, crop_y),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, pad_left),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, pad_top),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_preprocess_meta_t, valid),
+            core::mem::offset_of!(am_pool_desc_t, reserved),
             core::mem::size_of::<u32>(),
         ),
     ];
