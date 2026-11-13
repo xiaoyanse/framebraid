@@ -13,9 +13,9 @@ FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repo
 | Component | Purpose |
 | --- | --- |
 | **FrameBraid Media SDK** | ISAPI images, RTSP encoded streams, decoded frames, standalone decoding and pixel conversion |
-| **FrameBraid Vision SDK** | ONNX execution, bounded asynchronous work, raw tensors and profile-based postprocessing |
+| **FrameBraid Vision SDK** | ONNX execution, bounded asynchronous work, raw tensors, profile-based postprocessing, and multi-model orchestration via the inference pool |
 
-**Status: v0.6.5.** [Releases](https://github.com/xiaoyanse/framebraid/releases). C ABI 1.3 unchanged (v0.6.5: **hotfix for v0.6.4 — single-frame non-batched submissions were misreported as internalError(28); upgrade advised**; plus GPU cold-start ordering fix; v0.6.4's multi-model budget gains stand); the validated target is **Windows x64 CPU + hardware-decode probing**; Linux/macOS/mobile binaries and GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
+**Status: v0.7.0.** [Releases](https://github.com/xiaoyanse/framebraid/releases). C ABI moves to **1.4 as a compatible addition** (v0.7.0: **inference pool orchestration API — one call loads k shard models with a prebuilt lane→shard mapping; borrowed handles work with the existing infer family as-is; 8-lane GPU-direct dual-shard measured 194.8 items/s ≈ 97% of 8×25 fps demand**; plus a batching registry TOCTOU race fix); the validated target is **Windows x64 CPU + hardware-decode probing** — the 8-lane figure is a GPU research measurement on the release machine (RTX 5060, CUDA ORT), see the [integration guide](sdk/INTEGRATION.md); Linux/macOS/mobile binaries and formal GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
 
 
 ## Contents
@@ -38,7 +38,7 @@ All figures come from recorded, reproducible runs on the release machine (Window
 
 | Area | Measured result |
 | --- | --- |
-| Rust regression | 489 tests passing; clippy/fmt clean; source-fingerprint gate 282 files |
+| Rust regression | 528 tests passing; clippy/fmt clean; source-fingerprint gate 291 files |
 | ROI cascade (downstream-measured) | Small-object score 0.167 → 0.461, boxes 7 → 15 via ROI upscaling, not whole-frame resolution |
 | Open-vocabulary e2e | bind → auto-injection → within-entry merge → hits/labels → re-bind, all asserted over real ORT (synthetic dual models) |
 | Hardware decode matrix | H.264/H.265 360p–4K (incl. Main10) all D3D11VA-verified with software controls |
@@ -51,6 +51,7 @@ All figures come from recorded, reproducible runs on the release machine (Window
 | Shared-frame pool | borrow P50 ≈ 22 µs, return ≈ 25 µs, publish ≈ 1 ms at 1080p |
 | Explicit copy (1080p) | C# P50 ≈ 1 ms; Python ≈ 2.5–3.8 ms |
 | Adaptive batching | Six-scenario real-ORT suite passed; off by default |
+| Inference pool (8-lane GPU-direct, research rig) | 194.8 items/s ≈ 97% of 8×25 fps demand, zero rejections (dual-shard, batch-4, RTX 5060 + CUDA ORT) |
 | Package validation | C/C++17/C#/Python examples run from the clean unpacked package |
 
 Honest negatives are kept too: under the CPU-RGBA readback contract, hardware decode did **not** reduce process CPU time on the test GPUs (1/2/4 lanes consistent) — see [validation](docs/RELEASE_STATUS.md) before choosing backends.

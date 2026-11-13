@@ -13,9 +13,9 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | 组件 | 用途 |
 | --- | --- |
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
-| **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量及模型档案后处理 |
+| **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量、模型档案后处理及推理池多 Model 编排 |
 
-**当前状态：v0.6.5。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 1.3 不变（v0.6.5：**v0.6.4 热修——单帧非攒批提交被误报 internalError(28)，建议升级**；另含 GPU 冷启动顺序修复；v0.6.4 的多 Model 预算收益不变）；已验证范围为 **Windows x64 CPU 与硬解探测**；Linux/macOS/移动端二进制及 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.7.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 升至 **1.4（兼容新增）**（v0.7.0：**推理池编排 API——一次调用加载 k 个分片 Model 并预建 lane→shard 映射；借出句柄与既有 infer 家族原样配合；8 路 GPU 直传双分片实测 194.8 items/s≈8×25fps 需求的 97%**；另含攒批注册表 TOCTOU 竞态修复）；已验证范围为 **Windows x64 CPU 与硬解探测**——8 路数字为发布机 GPU 研究测量（RTX 5060、CUDA ORT），见[接入指南](sdk/INTEGRATION.md)；Linux/macOS/移动端二进制及正式 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
 ## 目录
@@ -38,7 +38,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 
 | 领域 | 实测结果 |
 | --- | --- |
-| Rust 回归 | 489 项测试通过；clippy/fmt 零告警；指纹闸门 282 文件 |
+| Rust 回归 | 528 项测试通过；clippy/fmt 零告警；指纹闸门 291 文件 |
 | ROI 级联（下游实测） | 小目标全图直检 0.167→ROI 放大 0.461、检出框 7→15（靠区域放大而非整图提分辨率） |
 | 开放词汇端到端 | 绑定→自动注入→组内合并→命中明细→换词全断言过（真实 ORT 合成双模型） |
 | FILE seek（真机 FFmpeg） | 三档 seek/EOF 复活/循环重放/EXACT 过滤集成全绿 |
@@ -51,6 +51,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | 共享帧池 | 借用 P50 ≈ 22 µs、归还 ≈ 25 µs、发布 ≈ 1 ms（1080p） |
 | 显式复制（1080p） | C# P50 ≈ 1 ms；Python ≈ 2.5～3.8 ms |
 | 自适应攒批 | 真实 ORT 六场景通过；默认关闭 |
+| 推理池（8 路 GPU 直传，研究测量） | 194.8 items/s≈8×25fps 需求的 97%，零拒绝（双分片、批 4、RTX 5060+CUDA ORT） |
 | 包级验证 | 四语言示例从干净解压包真实运行通过 |
 
 负结论同样如实保留：CPU RGBA 回读交付合同下，硬解在本机 GPU 上未降低进程 CPU 时间（1/2/4 路一致）——选型前请查阅[交付状态](docs/RELEASE_STATUS.md)。
