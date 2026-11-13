@@ -133,44 +133,44 @@ namespace AmrtSdk {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>();
                 image.kind = png ? 1U : 0U; image.encoded = arena.Bytes(bytes); image.encoded_size = (ulong)bytes.LongLength;
-                return Infer(arena, image, preprocessing, confidence, out request);
+                return InferImage(context, Raw, arena, image, preprocessing, confidence, out request);
             }
         }
         public ulong SubmitEncoded(byte[] bytes, bool png, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>();
                 image.kind = png ? 1U : 0U; image.encoded = arena.Bytes(bytes); image.encoded_size = (ulong)bytes.LongLength;
-                return Submit(arena, image, preprocessing, confidence);
+                return SubmitImage(Raw, arena, image, preprocessing, confidence);
             }
         }
         // 低层借用入口；调用方必须保护拥有者直到返回，优先用 owner.Pixels().Infer。
         public InferenceResult InferPixel(am_pixel_view_t pixel, out ulong request, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>(); image.kind = 2; image.view = arena.Struct(pixel);
-                return Infer(arena, image, preprocessing, confidence, out request);
+                return InferImage(context, Raw, arena, image, preprocessing, confidence, out request);
             }
         }
         // 默认复制接受的异步输入；提交返回前仍需保护拥有者，优先用 Pixels().Submit。
         public ulong SubmitPixel(am_pixel_view_t pixel, am_raw_preprocess_t? preprocessing, float confidence = 0.25F) {
             lock (Gate) using (Arena arena = new Arena()) {
                 am_image_input_t image = Arena.Sized<am_image_input_t>(); image.kind = 2; image.view = arena.Struct(pixel);
-                return Submit(arena, image, preprocessing, confidence);
+                return SubmitImage(Raw, arena, image, preprocessing, confidence);
             }
         }
-        private IntPtr Parameters(Arena arena, am_raw_preprocess_t? preprocessing, float confidence) {
+        private static IntPtr Parameters(Arena arena, am_raw_preprocess_t? preprocessing, float confidence) {
             am_infer_params_t p = Arena.Sized<am_infer_params_t>(); p.confidence_threshold = confidence;
             if (preprocessing.HasValue) p.raw_preprocess = arena.Struct(preprocessing.Value);
             return arena.Struct(p);
         }
-        private InferenceResult Infer(Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, float confidence, out ulong request) {
+        internal static InferenceResult InferImage(VisionContext context, IntPtr model, Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, float confidence, out ulong request) {
             IntPtr result;
-            int status = Native.amv_infer_image_sync(Raw, arena.Struct(image), Parameters(arena, preprocessing, confidence), out result, out request);
+            int status = Native.amv_infer_image_sync(model, arena.Struct(image), Parameters(arena, preprocessing, confidence), out result, out request);
             if (status == 9) throw new RequestTimeoutException(request);
-            Diagnostics.Check(status, "infer image", Raw, true); return new InferenceResult(context, result);
+            Diagnostics.Check(status, "infer image", model, true); return new InferenceResult(context, result);
         }
-        private ulong Submit(Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, float confidence) {
+        internal static ulong SubmitImage(IntPtr model, Arena arena, am_image_input_t image, am_raw_preprocess_t? preprocessing, float confidence) {
             ulong request;
-            Diagnostics.Check(Native.amv_infer_image_async(Raw, arena.Struct(image), Parameters(arena, preprocessing, confidence), out request), "submit inference", Raw, true);
+            Diagnostics.Check(Native.amv_infer_image_async(model, arena.Struct(image), Parameters(arena, preprocessing, confidence), out request), "submit inference", model, true);
             return request;
         }
     }

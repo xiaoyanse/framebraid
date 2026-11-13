@@ -38,6 +38,9 @@ namespace AmrtSdk {
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_init(IntPtr p, out IntPtr h);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_shutdown(IntPtr h, uint timeout, out uint state);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_object_destroy(IntPtr h);
+        [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_pool_create(IntPtr context, IntPtr desc, out IntPtr pool);
+        [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_pool_lane_model(IntPtr pool, uint lane, out IntPtr model);
+        [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_pool_close(IntPtr pool, uint timeout, out uint state);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_model_load(IntPtr h, IntPtr p, out IntPtr model);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_model_close(IntPtr h, uint timeout, out uint state);
         [DllImport("am_vision.dll", CallingConvention=Convention)] internal static extern int amv_vocab_bind(IntPtr detector, IntPtr textEncoder, IntPtr entries, uint entryCount);

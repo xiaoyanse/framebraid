@@ -273,6 +273,30 @@ class VisionContext(Context):
             self._check(self.library.amv_model_load(self.handle, c.byref(desc), c.byref(handle)), "load model")
             return Model(self, handle, self.library.amv_model_close)
 
+    def create_inference_pool(self, path, shards, lanes, profile=None,
+                              backend=a.AM_BACKEND_CPU, strict=True, intra_threads=0,
+                              max_batch_items=None, max_wait_ms=0):
+        if not 2 <= shards <= 8 or not shards <= lanes <= 0xffffffff or lanes % shards:
+            raise ValueError("Use 2 to 8 shards and a lane count divisible by shards")
+        with self._lock:
+            model, policy = sized(a.am_model_desc_t), sized(a.am_backend_policy_t)
+            model.path_utf8 = str(Path(path).resolve()).encode("utf-8")
+            model.load_mode = a.AM_LOAD_PROFILE if profile else a.AM_LOAD_RAW
+            model.profile_id = profile.encode("utf-8") if profile else None
+            policy.requested, policy.strict = backend, int(strict)
+            model.backend, model.intra_threads = c.pointer(policy), int(intra_threads)
+            desc = sized(a.am_pool_desc_t)
+            desc.shards, desc.lanes, desc.model = shards, lanes, c.pointer(model)
+            if max_batch_items is not None:
+                options = sized(a.am_batching_options_t)
+                options.flags = a.AM_BATCHING_ENABLE
+                options.max_batch_items, options.max_wait_ms = max_batch_items, max_wait_ms
+                desc.batching = c.pointer(options)
+            handle = c.POINTER(a.amv_pool_t)()
+            self._check(self.library.amv_pool_create(self._require(), c.byref(desc), c.byref(handle)),
+                        "create inference pool")
+            return InferencePool(self, handle, shards, lanes)
+
     def attach_pool(self, descriptor):
         handle = c.POINTER(a.amv_shared_pool_t)()
         with self._lock:
@@ -638,6 +662,53 @@ class Model(Resource):
             if self.handle and self._notify is not None:
                 self.enable_notifications(False)
             super().close(timeout_ms)
+
+
+class InferencePool(Resource):
+    def __init__(self, context, handle, shards, lanes):
+        super().__init__(context, handle, context.library.amv_pool_close)
+        self._lanes = lanes
+        self._lanes_per_shard = lanes // shards
+        self._shards = []
+        self._closing = False
+        # Capture every child before the native close invalidates lane lookup.
+        for lane in range(0, lanes, self._lanes_per_shard):
+            child = c.POINTER(a.amv_model_t)()
+            self._check(self.library.amv_pool_lane_model(handle, lane, c.byref(child)),
+                        "resolve inference shard")
+            self._shards.append(child)
+
+    def _lane(self, lane):
+        if self._closing:
+            raise RuntimeError("Inference pool is closing")
+        if not 0 <= lane < self._lanes:
+            raise ValueError("Lane is outside the inference pool")
+        self._require()
+        return Model(self.context, self._shards[lane // self._lanes_per_shard], None)
+
+    def infer_encoded(self, lane, data, **options):
+        with self._lock:
+            return self._lane(lane).infer_encoded(data, **options)
+
+    def infer_pixel(self, lane, pixels, **options):
+        # OwnedPixels acquires its owner lock before invoking the model.
+        with self._lock:
+            return pixels.infer(self._lane(lane), **options)
+
+    def close(self, timeout_ms=5000):
+        with self._lock:
+            if not self.handle:
+                return
+            self._closing = True
+            state = c.c_uint32()
+            self._check(self.library.amv_pool_close(self.handle, timeout_ms, c.byref(state)), "close pool")
+            if state.value != a.AM_LIFECYCLE_CLOSED:
+                raise TimeoutError("Inference pool is still closing; retry close")
+            while self._shards:
+                self._check(self.library.amv_object_destroy(self._shards[-1]), "destroy shard")
+                self._shards.pop()
+            self._check(self.library.amv_object_destroy(self.handle), "destroy pool")
+            self.handle = None
 
 
 def _read_decode_hardware_report(resource):

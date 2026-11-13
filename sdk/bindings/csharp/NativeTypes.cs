@@ -467,6 +467,26 @@ namespace AmrtSdk {
     }
 
     [StructLayout(LayoutKind.Sequential)]
+    public struct am_pool_desc_t {
+        public uint @struct_size;
+        public IntPtr @model;
+        public IntPtr @model_memory;
+        public uint @shards;
+        public uint @lanes;
+        public IntPtr @batching;
+        public uint @reserved;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_batching_options_t {
+        public uint @struct_size;
+        public uint @abi_minor;
+        public uint @max_batch_items;
+        public uint @max_wait_ms;
+        public uint @flags;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
     public struct am_model_memory_desc_t {
         public uint @struct_size;
         public IntPtr @bytes;
