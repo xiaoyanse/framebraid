@@ -609,15 +609,9 @@ impl RoiImage {
 /// 通道序交由 Pixels::rgb 处理）；NV12/其它逐像素经 Pixels::rgb 转 RGB8
 /// （正确性优先）。ROI 已 clamp 非退化，像素矩形恒非空。
 fn crop_roi(pixels: &Pixels<'_>, roi: [f32; 4]) -> RoiImage {
-    let (x0, y0) = (
-        (roi[0] * pixels.width as f32).floor() as usize,
-        (roi[1] * pixels.height as f32).floor() as usize,
-    );
-    let (x1, y1) = (
-        ((roi[2] * pixels.width as f32).ceil() as usize).clamp(x0 + 1, pixels.width as usize),
-        ((roi[3] * pixels.height as f32).ceil() as usize).clamp(y0 + 1, pixels.height as usize),
-    );
-    let (sub_w, sub_h) = (x1 - x0, y1 - y0);
+    let [x0, y0, sub_w, sub_h] =
+        gpu_cascade::roi_pixels(roi, pixels.width, pixels.height).map(|v| v as usize);
+    let y1 = y0 + sub_h;
     match pixels.format as i32 {
         AM_PF_RGB8 | AM_PF_BGR8 | AM_PF_RGBA8 => {
             let bpp = if pixels.format == AM_PF_RGBA8 as u32 {
@@ -641,7 +635,7 @@ fn crop_roi(pixels: &Pixels<'_>, roi: [f32; 4]) -> RoiImage {
         _ => {
             let mut data = Vec::with_capacity(sub_w * sub_h * 3);
             for y in y0..y1 {
-                for x in x0..x1 {
+                for x in x0..x0 + sub_w {
                     let rgb = pixels.rgb(x, y);
                     data.extend_from_slice(&[rgb[0] as u8, rgb[1] as u8, rgb[2] as u8]);
                 }
@@ -662,6 +656,8 @@ fn crop_roi(pixels: &Pixels<'_>, roi: [f32; 4]) -> RoiImage {
 /// 整请求失败；二级会话锁失败/句柄关闭/词表未绑=ROI 全跳过（cascade 空、
 /// 请求成功）；单 ROI 推理/解码失败跳过该 ROI。双会话锁按句柄键升序获取，
 /// 防对向级联（A→B 与 B→A 并发）互锁；同句柄兼任两级已在计划期拒绝。
+mod gpu_cascade;
+
 fn run_cascade(
     model: &ModelHandle,
     input: &Input,
@@ -685,23 +681,51 @@ fn run_cascade(
         secondary_guard = secondary_handle.and_then(|h| lock(&h.session).ok());
     }
     let session = primary_lock.as_mut().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
-    let (prepared_tensor, mapping) = image.prepare(
-        &session.inputs[0].name,
-        limits.preprocess_budget_bytes as usize,
-    )?;
+    let gpu = image.cascade_gpu.as_ref();
+    if gpu.is_some() && gpu_cascade::should_stop(model, secondary_handle, id)? {
+        return Err(AM_ERR_SDK_HANDLE_CLOSED);
+    }
+    let gpu_primary = gpu
+        .map(|snapshot| {
+            let (w, h) = snapshot.dimensions();
+            snapshot
+                .bind_regions(
+                    session.ort_session(),
+                    &session.inputs[0].name,
+                    image.preprocess.width,
+                    &[[0, 0, w, h]],
+                    false,
+                )
+                .map_err(|_| AM_ERR_VISION_INFERENCE_FAILED)
+        })
+        .transpose()?;
+    let cpu_primary = if gpu.is_none() {
+        Some(image.prepare(
+            &session.inputs[0].name,
+            limits.preprocess_budget_bytes as usize,
+        )?)
+    } else {
+        None
+    };
+    let mapping = gpu_primary
+        .as_ref()
+        .map(|(_, maps)| maps[0])
+        .or_else(|| cpu_primary.as_ref().map(|(_, map)| *map))
+        .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
     let queue_bytes = lock(&context.queues)?[AM_Q_RESULTS as usize].max_bytes;
     let available = limits
         .result_budget_bytes
         .min(queue_bytes)
         .saturating_sub(model.state.usage.bytes.load(Ordering::Acquire) as u64)
         as usize;
-    let raw_bytes = outputs_bytes(&session.outputs, available);
+    let injected = vocab_injection(model, session)?;
+    let vocab_layout = injected.as_ref().map(|(_, l)| l);
+    let raw_bytes = gpu_cascade::output_bytes(session, vocab_layout, available);
     let secondary_bytes = secondary_guard
         .as_ref()
         .and_then(|g| g.as_ref())
         .map(|s| outputs_bytes(&s.outputs, available))
         .unwrap_or(0);
-    // 预算：一级逻辑 + 二级单 ROI 输出×ROI 上限粗估（两级均 detect 档案，无掩膜项）。
     let reserve = raw_bytes
         .saturating_add(secondary_bytes.saturating_mul(cascade::MAX_ROIS))
         .saturating_add(512 * 1024)
@@ -715,15 +739,18 @@ fn run_cascade(
     } else {
         params.max_det as usize
     };
-    let injected = vocab_injection(model, session)?;
-    let vocab_layout = injected.as_ref().map(|(_, l)| l);
-    let mut infer_inputs: Vec<&sdk::TensorData> =
-        std::slice::from_ref(&prepared_tensor).iter().collect();
-    if let Some((tensor, _)) = injected.as_ref() {
-        infer_inputs.push(tensor);
-    }
     let start = am_sdk_support::clock::monotonic_ms();
-    let output = session.run_ref(&infer_inputs, reserve);
+    let output = if let Some((mut binding, _)) = gpu_primary {
+        gpu_cascade::bind_vocab(&mut binding, injected.as_ref().map(|(tensor, _)| tensor))?;
+        session.run_gpu(&binding, reserve)
+    } else {
+        let (prepared_tensor, _) = cpu_primary.as_ref().ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
+        let mut infer_inputs = vec![prepared_tensor];
+        if let Some((tensor, _)) = injected.as_ref() {
+            infer_inputs.push(tensor);
+        }
+        session.run_ref(&infer_inputs, reserve)
+    };
     model.refresh_selection(session);
     let raw = output.map_err(error)?;
     let prediction = decode_profile(
@@ -754,6 +781,9 @@ fn run_cascade(
         .unwrap_or_default();
     let rois = cascade::generate_rois(&primary_boxes, &job.spec.rules, &job.spec.static_rois);
     let mut secondary_session = secondary_guard.as_mut().and_then(|g| g.as_mut());
+    if gpu.is_some() && gpu_cascade::should_stop(model, secondary_handle, id)? {
+        return Err(AM_ERR_SDK_HANDLE_CLOSED);
+    }
     let secondary_vocab = match (secondary_handle, secondary_session.as_deref_mut()) {
         (Some(h), Some(s)) => vocab_injection(h, s).ok().flatten(),
         _ => None,
@@ -772,8 +802,24 @@ fn run_cascade(
                 .collect::<Option<Vec<_>>>()
         })
         .unwrap_or_default();
-    let cascade_data = match (secondary_session, secondary_name.as_deref()) {
-        (Some(s), Some(name)) => {
+    let cascade_data = match (secondary_session, secondary_name.as_deref(), gpu) {
+        (Some(s), Some(name), Some(snapshot)) => gpu_cascade::run_secondary(
+            model,
+            secondary_handle,
+            id,
+            snapshot,
+            s,
+            name,
+            &rois,
+            job.gpu_group.unwrap_or(1),
+            job.secondary_preprocess.width,
+            secondary_params,
+            max_det,
+            reserve,
+            secondary_vocab.as_ref(),
+            labels,
+        )?,
+        (Some(s), Some(name), None) => {
             let vocab = secondary_vocab.as_ref();
             let (boxes, hits, skipped) = image
                 .with_pixels(|pixels| {

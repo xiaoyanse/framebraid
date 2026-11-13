@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add opt-in GPU NV12 cascade input with one source copy and optional ROI batch 4 (C ABI 1.5). CPU/CUDA FP32 parity was verified locally with YOLO11n on two photographs. / 新增显式选择的 GPU NV12 级联输入，源帧一次搬运，批 4 显式可选（C ABI 1.5）。本机用 YOLO11n 完成两张实景照片的 CPU/CUDA FP32 对拍。
+
 - Add Python and C# inference pool wrappers with owned pixel submission and shard cleanup. / 新增 Python 和 C# 推理池封装，支持持有像素提交及分片清理。
 
 ## [0.7.0] - 2026-11-13

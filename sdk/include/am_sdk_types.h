@@ -132,7 +132,8 @@ typedef enum am_lifecycle_state_e { AM_LIFECYCLE_RUNNING = 0, AM_LIFECYCLE_CANCE
   AM_LIFECYCLE_CLOSING, AM_LIFECYCLE_CLOSED } am_lifecycle_state_e;
 typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DONE, AM_REQ_FAILED,
   AM_REQ_CANCELED, AM_REQ_EXPIRED, AM_REQ_REPLACED, AM_REQ_UNKNOWN } am_request_state_e;
-#define AM_ABI_VERSION UINT32_C(65540)
+#define AM_ABI_VERSION UINT32_C(65541)
+#define AM_BACKEND_STRICT_CUDA_FP32 UINT32_C(2)
 #define AM_OK UINT32_C(0)
 #define AM_BSF_ANNEXB UINT32_C(0)
 #define AM_BSF_LENGTH_PREFIX UINT32_C(1)
@@ -284,6 +285,7 @@ typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DON
 #define AMV_CAP_SHARED_FRAME_POOL (UINT64_C(1) << 8)
 #define AMV_CAP_ORDERED_SELECTION (UINT64_C(1) << 9)
 #define AMV_CAP_GPU_FRAME_INPUT (UINT64_C(1) << 10)
+#define AMV_CAP_GPU_CASCADE (UINT64_C(1) << 11)
 typedef int32_t am_status_t;  /* 0=AM_OK；非 0 为稳定数值错误码（§6/主文件 §7），字符串名可查 */
 typedef uint32_t am_lifecycle_state_t; /* 关闭查询输出；枚举常量见主文件§5.4，固定4字节 */
 
@@ -798,7 +800,7 @@ typedef struct am_backend_selection_s {
 typedef struct am_backend_policy_s {
   uint32_t struct_size;
   uint32_t requested;   /* am_backend_e */
-  uint32_t strict;      /* 1=严格（失败报错不回退）；0=允许回退，结果回填实际后端与原因 */
+  uint32_t strict;      /* 1=严格（失败报错不回退）；0=允许回退，结果回填实际后端与原因；ABI 1.5 起 2=严格 CUDA，关闭本会话 TF32，仅 requested=CUDA 合法 */
 } am_backend_policy_t;
 typedef struct am_raw_preprocess_s {   /* B05：RAW 模型图像入口的显式前处理声明 */
   uint32_t struct_size;

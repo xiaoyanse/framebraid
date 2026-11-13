@@ -438,8 +438,7 @@ mod tests {
         stream.extend_from_slice(b"\r\nContent-Type: image/jpeg\r\n\r\n");
         stream.extend_from_slice(&frame(b"payload"));
         stream.extend_from_slice(b"\r\n");
-        let mut outs = Vec::new();
-        outs = parser.feed(&stream);
+        let outs = parser.feed(&stream);
         assert!(
             outs.iter().any(|o| matches!(o, Output::Discarded)),
             "oversized terminated header must be counted, got {outs:?}"

@@ -253,7 +253,11 @@ unsafe fn load_inner(
     } else {
         unsafe { args::read(backend, std::mem::size_of::<am_backend_policy_t>()) }?
     };
-    if policy.requested > 4 || policy.strict > 1 {
+    let cuda_fp32 = policy.strict == AM_BACKEND_STRICT_CUDA_FP32;
+    if policy.requested > 4
+        || policy.strict > AM_BACKEND_STRICT_CUDA_FP32
+        || (cuda_fp32 && policy.requested != AM_BACKEND_CUDA as u32)
+    {
         return Err(AM_ERR_SDK_INVALID_ARGUMENT);
     }
     let runtime = context
@@ -335,12 +339,13 @@ unsafe fn load_inner(
                 .and(Err(error(failure.error))),
         }
     } else {
-        Model::load(
+        Model::load_with_precision(
             source,
             profile.as_deref(),
             policy.requested,
             policy.strict != 0,
             threads as usize,
+            cuda_fp32,
         )
         .map_err(error)
     };

@@ -173,3 +173,5 @@ v0.6.3 Windows x64 发布通过 **508 项 workspace Rust 测试**（代码与 v0
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse)。
 
 原始 SDK 代码采用 [Apache-2.0](LICENSE)，允许在遵守条款前提下商用与闭源使用。FFmpeg、ONNX Runtime、模型及其他依赖保留各自许可。见 [NOTICE](NOTICE) 与[第三方材料](sdk/third-party/README.md)。FFmpeg 运行库的 LGPL minimal 与 GPL 编码（libx264）构建如何选择、各自分发义务是什么，见[运行库许可选择指引](docs/RUNTIME-LICENSING.md)。
+
+未发布源码包含 ABI 1.5 可选 GPU 级联，启用方法与验证范围见[接入说明](sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade)。

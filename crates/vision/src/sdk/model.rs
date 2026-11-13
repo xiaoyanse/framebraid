@@ -211,6 +211,21 @@ impl Model {
         strict: bool,
         threads: usize,
     ) -> Result<Self> {
+        Self::load_with_precision(source, profile, backend, strict, threads, false)
+    }
+
+    /// Disable TF32 for this CUDA session only when explicitly requested.
+    pub fn load_with_precision(
+        source: ModelSource<'_>,
+        profile: Option<&str>,
+        backend: u32,
+        strict: bool,
+        threads: usize,
+        cuda_fp32: bool,
+    ) -> Result<Self> {
+        if cuda_fp32 && (backend != 2 || !strict) {
+            return Err(Error("sdk.invalidArgument".into()));
+        }
         use super::selection::{BackendSelectionPolicy, BackendTarget};
         let mut priority = vec![BackendTarget {
             backend,
@@ -227,8 +242,10 @@ impl Model {
             allow_fallback: !strict,
             budget_ms: 1500,
         };
-        Self::load_selected_inner(source, profile, &policy, threads, true, |_| Ok(()))
-            .map_err(|failure| failure.error)
+        Self::load_selected_inner(source, profile, &policy, threads, true, cuda_fp32, |_| {
+            Ok(())
+        })
+        .map_err(|failure| failure.error)
     }
     pub fn load_selected(
         source: ModelSource<'_>,
@@ -236,7 +253,7 @@ impl Model {
         policy: &super::selection::BackendSelectionPolicy,
         threads: usize,
     ) -> super::selection::SelectionResult<Self> {
-        Self::load_selected_inner(source, profile, policy, threads, false, |_| Ok(()))
+        Self::load_selected_inner(source, profile, policy, threads, false, false, |_| Ok(()))
     }
     /// 每候选原生构造前准入；函数必须短小，不得迁移仍在执行的旧会话。
     /// 调用方持有的预留须覆盖返回模型的整个寿命；准入函数本身不拥有许可。
@@ -247,7 +264,7 @@ impl Model {
         threads: usize,
         admit: impl FnMut(super::selection::BackendTarget) -> Result<()>,
     ) -> super::selection::SelectionResult<Self> {
-        Self::load_selected_inner(source, profile, policy, threads, false, admit)
+        Self::load_selected_inner(source, profile, policy, threads, false, false, admit)
     }
     pub fn selection_report(&self) -> &super::selection::BackendSelectionReport {
         &self.selection
@@ -258,6 +275,7 @@ impl Model {
         policy: &super::selection::BackendSelectionPolicy,
         threads: usize,
         legacy: bool,
+        cuda_fp32: bool,
         mut admit: impl FnMut(super::selection::BackendTarget) -> Result<()>,
     ) -> super::selection::SelectionResult<Self> {
         use super::selection::{self, BackendSelectionError, BackendSelectionReport};
@@ -293,7 +311,9 @@ impl Model {
                             native_code: failure.native_code,
                         },
                     )?),
-                    _ => ModelEngine::Ort(super::session::create(source, &bytes, target, threads)?),
+                    _ => ModelEngine::Ort(super::session::create(
+                        source, &bytes, target, threads, cuda_fp32,
+                    )?),
                 })
             })?;
             let actual_backend = selection.selected.map_or(0, |target| target.backend);

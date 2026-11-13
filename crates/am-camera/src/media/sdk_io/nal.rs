@@ -300,7 +300,7 @@ mod tests {
         raw.extend_from_slice(&0x1cfu32.to_be_bytes());
         // 补足 463 字节总长：4 头 + 459 数据。
         raw.extend_from_slice(&slice_nal);
-        raw.extend(std::iter::repeat(0x55).take(463 - slice_nal.len()));
+        raw.extend(std::iter::repeat_n(0x55, 463 - slice_nal.len()));
         assert!(raw.starts_with(&[0x00, 0x00, 0x01, 0xcf]));
         assert_eq!(raw.len(), 467);
         let converted = framing.packet(&raw, true, 1).unwrap();

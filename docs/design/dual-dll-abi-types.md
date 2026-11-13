@@ -591,7 +591,7 @@ typedef struct am_backend_selection_s {
 typedef struct am_backend_policy_s {
   uint32_t struct_size;
   uint32_t requested;   /* am_backend_e */
-  uint32_t strict;      /* 1=严格（失败报错不回退）；0=允许回退，结果回填实际后端与原因 */
+  uint32_t strict;      /* 1=严格（失败报错不回退）；0=允许回退，结果回填实际后端与原因；ABI 1.5 起 2=严格 CUDA，关闭本会话 TF32，仅 requested=CUDA 合法 */
 } am_backend_policy_t;
 typedef struct am_raw_preprocess_s {   /* B05：RAW 模型图像入口的显式前处理声明 */
   uint32_t struct_size;

@@ -1,5 +1,7 @@
 # FrameBraid 后续优化路线图
 
+GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/changes/sdk-gpu-roi-cascade/tasks.md)。后续验证覆盖冷启动显存峰值、多组独立会话及现场视频负载。
+
 - OpenVINO EP acceptance: blocked on Intel publishing a compatible provider/runtime wheel pair (symbol-level root cause: docs/verification/sdk-gpu-m1-openvino-blocker-20261028.md). DirectML enum extension is the evaluated fallback for Intel Arc GPUs.
 
 ## 下一轮方向 v0.3+（2026-10-28 负责人确认）

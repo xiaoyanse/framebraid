@@ -10,6 +10,7 @@ pub(super) fn create(
     bytes: &[u8],
     target: BackendTarget,
     threads: usize,
+    cuda_fp32: bool,
 ) -> std::result::Result<Session, AttemptError> {
     if !super::runtime::initialized() {
         return Err(AttemptError::key("vision.runtimeMissing", "runtime"));
@@ -42,10 +43,15 @@ pub(super) fn create(
             .build()
             .error_on_failure(),
         3 => ort::ep::DirectML::default().build(),
-        _ => ort::ep::CUDA::default()
-            .with_device_id(target.device_id as i32)
-            .build()
-            .error_on_failure(),
+        _ => {
+            let cuda = ort::ep::CUDA::default().with_device_id(target.device_id as i32);
+            let cuda = if cuda_fp32 {
+                cuda.with_tf32(false)
+            } else {
+                cuda
+            };
+            cuda.build().error_on_failure()
+        }
     };
     super::runtime::claim_backend(target.backend).map_err(|e| AttemptError {
         error: e,

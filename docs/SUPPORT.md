@@ -51,3 +51,5 @@ Finite local tests do not establish universal FPS, camera counts, lossless queue
 有限测试不保证通用 FPS、路数、无损队列、端到端延迟或 7×24 稳定性。设置预算、观测诊断并按负载验收。模型置信度不证明无危险，安全级停机须独立安全系统。
 
 This is a capability statement, not an additional license restriction. / 本文为能力说明，不增加许可限制。
+
+The opt-in ABI 1.5 GPU cascade is available in the unreleased source. See [the integration guide](../sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade).

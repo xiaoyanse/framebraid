@@ -1425,7 +1425,8 @@ amv_result_t._fields_ = [
     ("cascade", POINTER(am_cascade_result_t)),
 ]
 
-AM_ABI_VERSION = 65540
+AM_ABI_VERSION = 65541
+AM_BACKEND_STRICT_CUDA_FP32 = 2
 AM_OK = 0
 AM_CODEC_H264 = 1
 AM_CODEC_H265 = 2
@@ -1581,6 +1582,7 @@ AMV_CAP_PUSH_NOTIFY = 128
 AMV_CAP_SHARED_FRAME_POOL = 256
 AMV_CAP_ORDERED_SELECTION = 512
 AMV_CAP_GPU_FRAME_INPUT = 1024
+AMV_CAP_GPU_CASCADE = 2048
 
 FUNCTIONS = {
     "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),

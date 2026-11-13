@@ -43,6 +43,7 @@ pub struct Input {
     owner: Option<Owner>,
     /// GPU 帧（批 C 起为接受段预处理产物而非纹理引用）；None=非 GPU 帧输入。
     pub gpu: Option<GpuFrame>,
+    pub cascade_gpu: Option<am_vision_core::gpu::pipeline::Nv12Snapshot>,
     pub assoc: Option<am_frame_assoc_t>,
     pub preprocess: Preprocess,
 }
@@ -340,9 +341,38 @@ impl Plan {
     /// 调用方保证输入到返回持续有效；此函数只在全域预算预留成功后执行。
     /// GPU 帧（批 C）：预处理在此（接受段）同步完成，纹理借用随返回闭合。
     pub unsafe fn capture(&self, model: &ModelHandle) -> Result<Input> {
+        unsafe { self.capture_image(model, false) }
+    }
+
+    pub unsafe fn capture_image(&self, model: &ModelHandle, cascade: bool) -> Result<Input> {
+        let cascade_gpu = if cascade {
+            self.gpu
+                .map(|gpu| unsafe {
+                    use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
+                    let pipeline = GpuPipeline::global().map_err(|_| AM_ERR_SDK_NOT_SUPPORTED)?;
+                    pipeline
+                        .snapshot_nv12(&GpuFrameData {
+                            width: gpu.width,
+                            height: gpu.height,
+                            d3d_format: gpu.d3d_format,
+                            subresource: gpu.subresource,
+                            texture: gpu.texture,
+                        })
+                        .map_err(|e| {
+                            if e.0.starts_with("vision.") {
+                                error(e)
+                            } else {
+                                AM_ERR_VISION_INFERENCE_FAILED
+                            }
+                        })
+                })
+                .transpose()?
+        } else {
+            None
+        };
         let gpu = match self.gpu {
-            Some(reference) => Some(unsafe { capture_gpu(model, reference)? }),
-            None => None,
+            Some(reference) if !cascade => Some(unsafe { capture_gpu(model, reference)? }),
+            _ => None,
         };
         let mut input = Input {
             view: self.view,
@@ -350,6 +380,7 @@ impl Plan {
             encoded: Vec::new(),
             owner: None,
             gpu,
+            cascade_gpu,
             assoc: self.assoc,
             preprocess: self.preprocess,
         };

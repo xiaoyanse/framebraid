@@ -174,3 +174,5 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md). Do not post credentials, private stream
 Copyright 2026 [xiaoyanse](https://github.com/xiaoyanse).
 
 Original SDK code uses [Apache-2.0](LICENSE), allowing commercial and closed-source use subject to its terms. FFmpeg, ONNX Runtime, models and other dependencies retain their licenses. See [NOTICE](NOTICE) and [third-party materials](sdk/third-party/README.md). For choosing between the LGPL-minimal and GPL-encode (libx264) FFmpeg runtimes and the distribution obligations of each, see the [runtime licensing guide](docs/RUNTIME-LICENSING.md).
+
+The opt-in ABI 1.5 GPU cascade is available in the unreleased source. See [the integration guide](sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade).
