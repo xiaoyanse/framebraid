@@ -52,4 +52,4 @@ Finite local tests do not establish universal FPS, camera counts, lossless queue
 
 This is a capability statement, not an additional license restriction. / 本文为能力说明，不增加许可限制。
 
-The ABI 1.5 GPU cascade candidate and validation status are documented in [the integration guide](../sdk/INTEGRATION.md#gpu-nv12-级联候选--gpu-nv12-cascade-candidate).
+The opt-in ABI 1.5 GPU cascade is available in the unreleased source. See [the integration guide](../sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade).
