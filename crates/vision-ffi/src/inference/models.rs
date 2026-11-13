@@ -26,6 +26,9 @@ pub struct ModelHandle {
     /// 开放词汇词表快照（A1，§4.1）：bind 原子换代（写锁换 Arc），推理读锁快照——
     /// 在途请求用旧嵌入完成，新请求用新嵌入。
     pub vocab: RwLock<Arc<Option<am_vision_core::sdk::VocabEmbedding>>>,
+    /// 池借出标记（§3.5a）：0=调用方所有；非 0=所属池句柄键——amv_model_close
+    /// 据此拒绝直关借出分片，排空关闭仅经 amv_pool_close。
+    pub pool: AtomicUsize,
 }
 impl Managed for ModelHandle {
     fn as_any(&self) -> &dyn Any {
@@ -182,10 +185,34 @@ pub(super) unsafe fn load_for_swap(
 ) -> Result<usize> {
     unsafe { load_inner(ctx, mode, profile, backend, threads, source, LoadKind::Swap) }
 }
+/// 池分片加载（§3.5a）：资源记账仍挂 ctx，登记父级为池句柄（级联关闭/销毁
+/// 子先父后），不占用 swap 槽位。
+pub(super) unsafe fn load_shard(
+    ctx: usize,
+    pool: usize,
+    mode: u32,
+    profile: *const std::ffi::c_char,
+    backend: *const am_backend_policy_t,
+    threads: u32,
+    source: ModelSource<'_>,
+) -> Result<usize> {
+    unsafe {
+        load_inner(
+            ctx,
+            mode,
+            profile,
+            backend,
+            threads,
+            source,
+            LoadKind::Pool(pool),
+        )
+    }
+}
 
 enum LoadKind<'a> {
     Bind,
     Swap,
+    Pool(usize),
     Selected(
         &'a am_vision_core::sdk::selection::BackendSelectionPolicy,
         &'a super::selection::Attempt,
@@ -201,10 +228,11 @@ unsafe fn load_inner(
     source: ModelSource<'_>,
     kind: LoadKind<'_>,
 ) -> Result<usize> {
-    let (selected, bind_slot) = match kind {
-        LoadKind::Selected(policy, attempt) => (Some((policy, attempt)), false),
-        LoadKind::Bind => (None, true),
-        LoadKind::Swap => (None, false),
+    let (selected, bind_slot, parent) = match kind {
+        LoadKind::Selected(policy, attempt) => (Some((policy, attempt)), false, ctx),
+        LoadKind::Bind => (None, true, ctx),
+        LoadKind::Swap => (None, false, ctx),
+        LoadKind::Pool(parent) => (None, false, parent),
     };
     am_sdk_support::callbacks::reject_reentry()?;
     let active = crate::domain().active(ctx)?;
@@ -416,8 +444,9 @@ unsafe fn load_inner(
         permit: Mutex::new(Some(permit)),
         notify: Arc::default(),
         vocab: RwLock::new(Arc::new(None)),
+        pool: AtomicUsize::new(0),
     });
-    let key = crate::domain().insert(ctx, handle.clone())?;
+    let key = crate::domain().insert(parent, handle.clone())?;
     handle.info.key.store(key, Ordering::Release);
     if bind_slot {
         if let Ok(mut slots) = state.swap_slots.lock() {

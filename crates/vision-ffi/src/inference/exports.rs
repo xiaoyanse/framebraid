@@ -85,7 +85,11 @@ pub unsafe extern "C" fn amv_model_close(
         am_sdk_support::callbacks::reject_reentry()?;
         args::pointer(out)?;
         let entry = crate::domain().get(model as usize)?;
-        entry.data::<ModelHandle>()?;
+        let handle = entry.data::<ModelHandle>()?;
+        // 池借出分片（§3.5a）：排空关闭仅经 amv_pool_close，直调按借用语义拒绝。
+        if handle.pool.load(std::sync::atomic::Ordering::Acquire) != 0 {
+            return Err(AM_ERR_SDK_HANDLE_INVALID);
+        }
         out.write(crate::domain().close(model as usize, timeout)?);
         Ok(())
     })

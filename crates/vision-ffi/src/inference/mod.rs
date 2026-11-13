@@ -13,6 +13,11 @@ mod hardware;
 mod input;
 mod models;
 mod notify;
+mod pool;
+#[cfg(test)]
+mod pool_e2e_tests;
+#[cfg(test)]
+mod pool_tests;
 mod receipt;
 #[cfg(test)]
 mod receipt_tests;

@@ -78,10 +78,15 @@ pub(super) struct Registered {
 
 static REGISTRY: Mutex<Vec<Registered>> = Mutex::new(Vec::new());
 
-fn registered(key: usize, entry: &Arc<Entry>) -> Result<usize> {
-    let mut registry = lock(&REGISTRY)?;
+/// 持锁查找或登记；调用方必须在同一次持锁内使用返回项——索引跨锁复用会在
+/// 并发缩表（release/remove、测试 retain）后越界（TOCTOU，曾致 registry[index] panic）。
+fn upsert<'a>(
+    registry: &'a mut Vec<Registered>,
+    key: usize,
+    entry: &Arc<Entry>,
+) -> Result<&'a mut Registered> {
     if let Some(index) = registry.iter().position(|r| r.key == key) {
-        return Ok(index);
+        return Ok(&mut registry[index]);
     }
     registry.push(Registered {
         key,
@@ -92,7 +97,7 @@ fn registered(key: usize, entry: &Arc<Entry>) -> Result<usize> {
         stats: core::Stats::default(),
         coord: Coordinator::default(),
     });
-    Ok(registry.len() - 1)
+    Ok(registry.last_mut().expect("just pushed"))
 }
 
 /// 模型是否启用了攒批（仅动态批量轴可启用；未登记视为关闭）。
@@ -109,9 +114,8 @@ pub(in crate::inference) fn configure(
     entry: &Arc<Entry>,
     config: Option<core::Config>,
 ) -> Result<()> {
-    let index = registered(key, entry)?;
     let mut registry = lock(&REGISTRY)?;
-    let r = &mut registry[index];
+    let r = upsert(&mut registry, key, entry)?;
     if r.config != config {
         r.generation += 1;
     }
@@ -235,9 +239,8 @@ pub(in crate::inference) fn route(
 ) -> Vec<Job> {
     let mut held = Some(items);
     let routed: Result<Vec<Job>> = (|| {
-        let index = registered(key, entry)?;
         let mut registry = lock(&REGISTRY)?;
-        let r = &mut registry[index];
+        let r = upsert(&mut registry, key, entry)?;
         r.parallel = parallel;
         let now = Instant::now();
         let items = held.take().expect("items held until submit");
