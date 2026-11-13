@@ -176,29 +176,24 @@ fn reader_file_mode_reads_first_packet() {
     assert_eq!(reader.info().codec, 1, "expect h264");
     assert!(reader.info().width > 0, "probe should fill dimensions");
     let mut packets = 0;
-    loop {
-        match reader.read_packet_with_budget(|_| Ok(())).unwrap() {
-            Some(packet) => {
-                if packets < 3 {
-                    let types: Vec<u8> = packet
-                        .data
-                        .windows(4)
-                        .enumerate()
-                        .filter(|(_, w)| *w == [0u8, 0, 0, 1])
-                        .map(|(i, _)| packet.data[i + 4] & 31)
-                        .collect();
-                    eprintln!(
-                        "packet#{} key={} len={} types={:?}",
-                        packets,
-                        packet.keyframe,
-                        packet.data.len(),
-                        types
-                    );
-                }
-                packets += 1;
-            }
-            None => break,
+    while let Some(packet) = reader.read_packet_with_budget(|_| Ok(())).unwrap() {
+        if packets < 3 {
+            let types: Vec<u8> = packet
+                .data
+                .windows(4)
+                .enumerate()
+                .filter(|(_, w)| *w == [0u8, 0, 0, 1])
+                .map(|(i, _)| packet.data[i + 4] & 31)
+                .collect();
+            eprintln!(
+                "packet#{} key={} len={} types={:?}",
+                packets,
+                packet.keyframe,
+                packet.data.len(),
+                types
+            );
         }
+        packets += 1;
     }
     eprintln!(
         "reader file mode: {} packets, extradata {} bytes",

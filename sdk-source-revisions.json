@@ -138,8 +138,8 @@
     {
       "path": "crates/am-camera/src/media/multipart.rs",
       "previousSha256": null,
-      "sha256": "f34cfbf1ccad920be7e939f9e86e350664bf4f94d03292cabb46b77897e1877f",
-      "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 comment honesty, L2 dimension clamp; blind-spot regression tests x9; workspace 447 green"
+      "sha256": "c984705791511b17b0add12f59e2caf01c37dc812465cefba69ac6fa4a242eb2",
+      "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 comment honesty, L2 dimension clamp; blind-spot regression tests x9; workspace 447 green; test-only cleanup for strict Clippy at GPU ROI integration"
     },
     {
       "path": "crates/am-camera/src/media/pixel_ops.rs",
@@ -174,8 +174,8 @@
     {
       "path": "crates/am-camera/src/media/sdk_io/nal.rs",
       "previousSha256": "a5363ffc037e76ebb56bb5fceec8afbd8993176fc4c5e8d1fcfa25eef02bca04",
-      "sha256": "2cede55f775104380811c09721a92900871a21eea4dee6ee709ca8644f5761ed",
-      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 0f454d2da4b10d4f…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME"
+      "sha256": "580874a441a30db8565a28c03b119ed63c81b2326115287521d641a9c1256bf2",
+      "reason": "R3配置及framing分配前预留、Reader与包寿命拆账、探测复用预算和通知实际条目字节；兼容新增Rust预算入口，C ABI不变; previous SHA-256 0f454d2da4b10d4f…: FILE stage-1 final fix: Framing is_avcc chain-self-consistent detection (4-byte BE length < 0x200000 masquerades as 00 00 01 start code — proven on MP4/H.264), gate.started=true for file sources (non-IDR I-frames pass at file start), first packet random-access KEYFRAME; test-only cleanup for strict Clippy at GPU ROI integration"
     },
     {
       "path": "crates/am-camera/src/media/sdk_io/rtsp.rs",
@@ -186,8 +186,8 @@
     {
       "path": "crates/am-camera/src/media/sdk_io/tests.rs",
       "previousSha256": "e5d388b38affd066342ab305539a3f65e2c6924f41187e2e325b8638f9e02e74",
-      "sha256": "6c8110810b325e53f96b350310fdfded4452fba71c427268dfe369328dc27589",
-      "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
+      "sha256": "0f2c6bb596ce41baf86a7b640e08e0e316b68b108aab8d706d39a1e20dd6196c",
+      "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green; test-only cleanup for strict Clippy at GPU ROI integration"
     },
     {
       "path": "crates/am-camera/tests/jpeg_bench.rs",
