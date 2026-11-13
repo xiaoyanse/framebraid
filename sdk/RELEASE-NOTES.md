@@ -1,5 +1,17 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.7.1 (2026-11-13) — opt-in GPU NV12 cascade input + pool language wrappers
+
+Compatible-addition release, **C ABI at 1.5 (65541)** — all existing paths unchanged; both additions are opt-in.
+
+- **GPU NV12 cascade input (opt-in)**: the ROI cascade (crop → upscale → secondary detection) now runs device-side with **one source copy** — per-ROI by default, ROI batch 4 explicit. Measured (RTX 5060, CUDA ORT 1.31.1, driver 621.14): real YOLO11n on two photographs, CPU/CUDA FP32 max box delta 0.000077 px; dynamic-ROI replay boundary delta 0.00158 px; budget/cancel/two-stage-close semantics preserved. **ABI 1.5 session-level CUDA FP32 option**: TF32 default diverges from CPU at low-confidence picks (166 px first-pick swap traced to a 0.00001 score gap at threshold edge, reproduces on CPU pixels with a CUDA backend); the strict FP32 session option is the CPU-parity path (verified ≤0.0014 px). Honest boundaries: multi-session cold start, long-run and field load unverified; a 0xc0000409 teardown exit observed only in forced strict-parity failure mode needs follow-up; batch 4 was slower in photo runs — stays explicit opt-in.
+- **Python / C# inference pool wrappers**: owned pixel submission and shard cleanup for the v0.7.0 pool API; previous-version binding compatibility verified (v0.6.5 Python binding loading ABI 1.4 dual libs end-to-end).
+- Registered debt (non-blocking): am-camera-ffi ignore-gate harness configuration (8 of 19 gates blocked on lost loopback-RTSP setup and sample-variable mapping — outside this release's change radius); release-parallel codegen rustc crash on this machine worked around with single-job builds.
+
+Verification: PM independent re-run of the cascade gate green under FP32 strict parity (replay arm + real-YOLO11n photos arm); workspace 18 suites / 528 tests zero failures; vision-side real-machine gates **16 serial green in one process (39.03s)** including the new cascade gate; four ABI checks green (freeze at ABI 1.5, 11 artifacts); boundary 296 files. Evidence `.local/evidence/roi-production/`.
+
+/ 兼容新增版，**C ABI 至 1.5（65541）**——既有路径零变化，两项新增均显式选择。①GPU NV12 级联输入（opt-in）：ROI 级联（裁剪→放大→二级检测）设备侧执行，**源帧一次搬运**——默认逐 ROI，批 4 显式可选。实测（RTX 5060/CUDA ORT 1.31.1/621.14）：真实 YOLO11n 两张照片 CPU/CUDA FP32 最大框差 0.000077px；动态 ROI 回放边界差 0.00158px；预算/取消/两阶段关闭语义保持。**ABI 1.5 会话级 CUDA FP32 选项**：TF32 默认在低置信度候选上与 CPU 分歧（166px 首选框切换=阈值边缘 0.00001 分差，CPU 像素+CUDA 后端可复现）；严格 FP32 会话选项即 CPU 对拍路径（实测 ≤0.0014px）。诚实边界：多会话冷启动/长时/现场负载未验证；强制严格对拍失败模式下的 0xc0000409 退出异常待查；照片实测批 4 较慢——维持显式可选。②Python/C# 推理池封装：owned 像素提交+分片清理；旧版绑定兼容实证（v0.6.5 Python 绑定加载 ABI 1.4 双库端到端）。登记债（非阻塞）：am-camera-ffi 门 harness 配置（19 门中 8 门阻塞于散佚的回环 RTSP 搭建+样本变量映射，均在本版改动半径外）；本机 Release 并行 codegen 的 rustc 原生异常以单作业构建绕过。验证：PM 独立复跑级联门 FP32 严格对拍绿（回放臂+真实 YOLO11n 照片臂）；workspace 18 套件 528 测试零失败；vision 侧真机门 **16 门同进程串行全绿 39.03s**（含新级联门入列）；四检绿（freeze 至 ABI 1.5，11 工件）；boundary 296。证据 `.local/evidence/roi-production/`。
+
 ## v0.7.0 (2026-11-13) — inference pool orchestration API
 
 Feature release, **C ABI moves to 1.4 as a compatible addition** (65540; minor-version evolution, no breaking change — no tail appends, existing `struct_size` negotiation unaffected; DLLs reporting 1.3 reject 1.4 initialization per the minor-version rule, so pool consumers need the new DLLs while all existing paths behave identically).

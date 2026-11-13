@@ -15,7 +15,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量、模型档案后处理及推理池多 Model 编排 |
 
-**当前状态：v0.7.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 升至 **1.4（兼容新增）**（v0.7.0：**推理池编排 API——一次调用加载 k 个分片 Model 并预建 lane→shard 映射；借出句柄与既有 infer 家族原样配合；8 路 GPU 直传双分片实测 194.8 items/s≈8×25fps 需求的 97%**；另含攒批注册表 TOCTOU 竞态修复）；已验证范围为 **Windows x64 CPU 与硬解探测**——8 路数字为发布机 GPU 研究测量（RTX 5060、CUDA ORT），见[接入指南](sdk/INTEGRATION.md)；Linux/macOS/移动端二进制及正式 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.7.1。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 至 **1.5**（兼容新增：1.4 推理池编排 API——一次调用加载 k 个分片 Model 并预建 lane→shard 映射，8 路 GPU 直传双分片实测 194.8 items/s≈8×25fps 需求的 97%；1.5 显式选择的 GPU NV12 级联输入——源帧一次搬运、ROI 批 4 可选、会话级 CUDA FP32 对拍选项，默认逐 ROI）；另含攒批注册表 TOCTOU 竞态修复与 Python/C# 推理池封装。已验证范围为 **Windows x64 CPU 与硬解探测**——GPU 数字为发布机研究测量（RTX 5060、CUDA ORT），见[接入指南](sdk/INTEGRATION.md)；Linux/macOS/移动端二进制及正式 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
 ## 目录

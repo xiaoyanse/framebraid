@@ -1,10 +1,12 @@
 # Changelog / 变更记录
 
-## [Unreleased]
+## [0.7.1] - 2026-11-13
 
-- Add opt-in GPU NV12 cascade input with one source copy and optional ROI batch 4 (C ABI 1.5). CPU/CUDA FP32 parity was verified locally with YOLO11n on two photographs. / 新增显式选择的 GPU NV12 级联输入，源帧一次搬运，批 4 显式可选（C ABI 1.5）。本机用 YOLO11n 完成两张实景照片的 CPU/CUDA FP32 对拍。
+- Add opt-in GPU NV12 cascade input with one source copy and optional ROI batch 4 (C ABI 1.5; research line commits `b230ecd`..`ed51905`, bindings `0ad06fa`, quality `65b450c`/`196f6cb`; PM independent re-verification: gate rerun green under FP32 strict parity, both replay and real-YOLO11n photos arms). CPU/CUDA FP32 parity verified locally with YOLO11n on two photographs (max box delta 0.000077 px); dynamic-ROI replay boundary delta 0.00158 px, secondary remap 0.00034 px; budget/cancel/two-stage-close semantics preserved (queueFull reject → CANCELED ledger zero → reusable; ~1282 MiB device memory returned on session close). Default remains per-ROI with batch 4 explicit. Honest boundaries: multi-independent-session cold start, long-run and field load unverified; strict-parity failure mode shows a 0xc0000409 teardown exit needing follow-up; TF32 default keeps low-confidence divergence vs CPU — the ABI 1.5 session-level FP32 option is the parity path. / 新增显式选择的 GPU NV12 级联输入，源帧一次搬运，批 4 显式可选（C ABI 1.5；研究线提交 `b230ecd`..`ed51905`，绑定封装 `0ad06fa`，质量线 `65b450c`/`196f6cb`；PM 独立复验：FP32 严格对拍下门复跑绿，回放臂与真实 YOLO11n 照片臂均过）。本机 YOLO11n 两张实景照片 CPU/CUDA FP32 对拍最大框差 0.000077px；动态 ROI 回放边界差 0.00158px、二级回映差 0.00034px；预算/取消/两阶段关闭语义保持（queueFull 拒绝→CANCELED 账本归零→可复用；会话关闭设备内存回收 ~1282MiB）。默认逐 ROI，批 4 显式启用。诚实边界：多独立会话冷启动/长时/现场负载未验证；严格对拍失败模式的 0xc0000409 退出异常待查；TF32 默认与 CPU 存在低置信度分歧——ABI 1.5 会话级 FP32 选项为对拍路径。
 
-- Add Python and C# inference pool wrappers with owned pixel submission and shard cleanup. / 新增 Python 和 C# 推理池封装，支持持有像素提交及分片清理。
+- Add Python and C# inference pool wrappers with owned pixel submission and shard cleanup (`0ad06fa`, includes previous-version binding compatibility verification). / 新增 Python 和 C# 推理池封装，支持持有像素提交及分片清理（`0ad06fa`，含旧版本绑定兼容性验证）。
+
+- Release-gate environment debt registered: am-camera-ffi ignore gates (19) partially runnable — 12 green, 8 blocked on lost historical harness configuration (loopback RTSP server setup + sample-variable mapping), all outside this release's change radius; workspace unit coverage for the touched am-camera files is green. / 发布门环境债登记：am-camera-ffi ignore 门（19 个）部分可跑——12 绿 8 阻塞于散佚的历史 harness 配置（回环 RTSP 服务器搭建+样本变量映射），均在本版改动半径之外；所涉 am-camera 文件的 workspace 单测覆盖全绿。
 
 ## [0.7.0] - 2026-11-13
 
