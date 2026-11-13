@@ -23,6 +23,12 @@ namespace AmrtSdk {
                 finally { GC.KeepAlive(owner); }
             }
         }
+        public ulong Submit(InferencePool pool, uint lane, am_raw_preprocess_t? preprocessing = null, float confidence = 0.25F) {
+            lock (gate) {
+                try { return pool.SubmitPixel(lane, getPixel(), preprocessing, confidence); }
+                finally { GC.KeepAlive(owner); }
+            }
+        }
         public ulong Publish(SharedPublisher publisher) {
             lock (gate) {
                 try { return publisher.Publish(getPixel()); }

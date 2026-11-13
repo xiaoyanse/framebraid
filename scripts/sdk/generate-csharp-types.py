@@ -19,7 +19,7 @@ SELECTED = ["amc_init_params_t", "amv_init_params_t", "am_model_desc_t",
             "am_source_desc_t", "am_credential_data_t", "am_capture_request_t",
             "am_captured_image_t", "am_frame_sub_desc_t", "am_shared_pool_config_t",
             "am_shared_pool_attach_desc_t", "am_shared_frame_view_t", "am_backend_candidate_t",
-            "am_backend_selection_t", "am_model_memory_desc_t", "amv_capability_t", "amc_capability_t"]
+            "am_backend_selection_t", "am_pool_desc_t", "am_batching_options_t", "am_model_memory_desc_t", "amv_capability_t", "amc_capability_t"]
 
 
 def generate():

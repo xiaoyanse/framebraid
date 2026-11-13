@@ -112,9 +112,17 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--dll-dir", type=Path)
     parser.add_argument("--runtime-dir", type=Path)
-    parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--output", type=Path)
+    parser.add_argument("--python-only", action="store_true", help="Run Python unit checks without writing a report")
     parser.add_argument("--csc", type=Path, default=Path("C:/Windows/Microsoft.NET/Framework64/v4.0.30319/csc.exe"))
     args = parser.parse_args()
+    if args.python_only:
+        if args.output or args.dll_dir or args.runtime_dir:
+            parser.error("--python-only cannot be combined with runtime or report arguments")
+        suite = unittest.defaultTestLoader.loadTestsFromTestCase(LoaderTests)
+        raise SystemExit(not unittest.TextTestRunner().run(suite).wasSuccessful())
+    if args.output is None:
+        parser.error("--output is required unless --python-only is used")
     output = args.output.resolve()
     if output == ROOT or ROOT in output.parents:
         parser.error("Use a dedicated output directory outside the checkout")

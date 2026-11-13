@@ -109,6 +109,8 @@ if (amv_pool_close(pool, 5000, &st) == AM_LIFECYCLE_CLOSING) {
 amv_object_destroy(pool);            /* 仅 CLOSED 可调；排空后借出句柄已失效 */
 ```
 
+当前源码还提供推理池语言封装。Python 使用 `VisionContext.create_inference_pool`，在池上下文中调用 `pool.infer_pixel(lane, owner.pixels(), ...)`。C# 使用 `VisionContext.CreateInferencePool`，可通过 `owner.Pixels().Submit(pool, lane, ...)` 提交，或直接调用池的编码图像入口。两者均由池封装管理分片的关闭和销毁。异步请求仍通过 Vision Context 等待、读取和确认。
+
 验证状态（诚实边界）：编排 API 语义经真装配 e2e 验证——GPU 直传 8 路双分片全流程（创建→逐 lane 取句柄→路由正确性→逐片身份→攒批窗口活跃→关闭排空守恒）与 CPU 像素批 2 臂均绿，全部真装配门（含两门池编排 e2e，共 15 门）同进程串行全绿；API 形态长窗验证闭合（受控复跑进程级采样：池进程稳态 Priv 净增 <8MB/11min≪500MB 判据线+通道 8h 长稳背书；凌晨系统级内存事件归因为复合外部负载、池路径净健康，归因报告 `.local/evidence/sdk-p1-20261113/p16-attribution-report.md`）。desc 完整字段与校验域见设计文档 §3.5a/§3.4a。**已知问题（退出期，运行期零影响）**：宿主进程退出阶段在池分片会话的 DLL 卸载（detach）路径上可能挂死（非池路径干净退出）——规避指引：退出前显式 `amv_pool_close` 排空（全部在途到达终态、数据已落）后再退；若 detach 仍挂可安全强杀进程（不影响数据完整性，关闭与落盘均在挂点之前完成）。归因修复列 v0.7.x 首个候选。
 
 **高级用法：手工双 Model 分组（池 API 之前的编排形态，仍受支持）**：不使用推理池时由接入方自行 load k 个 Model 实例并做连续分组绑定（SDK 无单例限制），逐个 `amv_model_configure_batching` 按通道选批形状（GPU 直传批 4/CPU 像素批 2），关闭时逐模型自行排空 close。预算语义与池形态一致——池内分片即普通 Model，与手工 Model 在同一 ctx 64MiB 包络内统一核算，两形态并存无额外编排语义。
