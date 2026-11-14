@@ -1,5 +1,37 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_io_spec_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_io_spec_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_io_spec_t, name),
+            core::mem::size_of::<*const c_char>(),
+        ),
+        (
+            core::mem::offset_of!(am_io_spec_t, dtype),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_io_spec_t, shape),
+            core::mem::size_of::<*const i64>(),
+        ),
+        (
+            core::mem::offset_of!(am_io_spec_t, shape_len),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_io_spec_t, dyn_min),
+            core::mem::size_of::<*const i64>(),
+        ),
+        (
+            core::mem::offset_of!(am_io_spec_t, dyn_max),
+            core::mem::size_of::<*const i64>(),
+        ),
+    ];
+}
 impl AbiLayout for am_backend_actual_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -372,34 +404,6 @@ impl AbiLayout for am_cascade_rule_t {
         ),
         (
             core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
-            core::mem::size_of::<f32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_cascade_request_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_cascade_request_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_request_t, static_rois),
-            core::mem::size_of::<*const f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_request_t, static_roi_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_request_t, rules),
-            core::mem::size_of::<*const am_cascade_rule_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_request_t, rule_count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
             core::mem::size_of::<f32>(),
         ),
     ];

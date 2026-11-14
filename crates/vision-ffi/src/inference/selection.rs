@@ -5,6 +5,7 @@ use super::{
     state::{ControlCharge, State},
 };
 use am_sdk_support::{abi::*, args, context::Context, status, Result};
+use am_vision_core::sdk::device::DeviceSelector;
 use am_vision_core::sdk::selection::{
     BackendSelectionPolicy, BackendSelectionReport, BackendTarget,
 };
@@ -45,6 +46,34 @@ fn slot(context: &Context) -> Result<Arc<Slot>> {
         .downcast()
         .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)
 }
+/// 解析设备定向选择器（§3.5b）：NULL=不定向；结构/保留位/终结符错误同步返回；
+/// 零命中与实例越界在核心层 selection 消费点（模型加载）同步拒绝。
+unsafe fn device_selector(p: *const am_device_selector_t) -> Result<Option<DeviceSelector>> {
+    if p.is_null() {
+        return Ok(None);
+    }
+    let raw = unsafe { args::read(p, std::mem::size_of::<am_device_selector_t>()) }?;
+    if raw.reserved != 0 {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    if raw.match_utf8.is_null() || raw.match_bytes == 0 {
+        return Ok(None);
+    }
+    if raw.match_bytes as usize > SDK_MAX_STRING_BYTES as usize {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    // match_bytes 含 NUL 终结：末字节必须为 0、前缀无内嵌 NUL 且为合法 UTF-8。
+    let bytes = unsafe {
+        std::slice::from_raw_parts(raw.match_utf8.cast::<u8>(), raw.match_bytes as usize)
+    };
+    if bytes.last() != Some(&0) || bytes[..bytes.len() - 1].contains(&0) {
+        return Err(AM_ERR_SDK_UTF8_INVALID);
+    }
+    let needle =
+        std::str::from_utf8(&bytes[..bytes.len() - 1]).map_err(|_| AM_ERR_SDK_UTF8_INVALID)?;
+    Ok(Some(DeviceSelector::new(needle, raw.instance)))
+}
+
 pub(super) unsafe fn policy(p: *const am_backend_selection_t) -> Result<BackendSelectionPolicy> {
     let p = unsafe { args::read(p, std::mem::size_of::<am_backend_selection_t>()) }?;
     if p.candidate_count == 0 || p.candidate_count > 3 || p.allow_fallback > 1 {
@@ -58,10 +87,12 @@ pub(super) unsafe fn policy(p: *const am_backend_selection_t) -> Result<BackendS
             device_id: p.device_id,
         })
         .collect();
+    let device = unsafe { device_selector(p.device) }?;
     let result = BackendSelectionPolicy {
         priority,
         allow_fallback: p.allow_fallback != 0,
         budget_ms: p.budget_ms,
+        device,
     };
     result.validate().map_err(super::error)?;
     Ok(result)

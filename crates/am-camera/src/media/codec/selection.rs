@@ -15,6 +15,42 @@ pub enum HardwarePolicy {
     SoftwareOnly,
     PreferHardware,
 }
+
+/// 硬解适配器定向选择器（ABI 1.6 §3.5b）：描述子串（大小写不敏感）+实例序号消歧，
+/// 匹配域为 DXGI 适配器 Description（排除软件适配器），跨重启稳定（不依赖枚举序/LUID）。
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DeviceSelector {
+    needle: String,
+    instance: u32,
+}
+
+impl DeviceSelector {
+    pub fn new(needle: &str, instance: u32) -> Self {
+        Self {
+            needle: needle.to_lowercase(),
+            instance,
+        }
+    }
+    pub fn needle(&self) -> &str {
+        &self.needle
+    }
+    pub fn instance(&self) -> u32 {
+        self.instance
+    }
+}
+
+/// 定向匹配：非软件适配器中名字含子串的第 instance 个（0 起）；零命中/越界=None。
+pub fn select_adapter<'a>(
+    adapters: &'a [Adapter],
+    needle: &str,
+    instance: u32,
+) -> Option<&'a Adapter> {
+    let needle = needle.to_lowercase();
+    adapters
+        .iter()
+        .filter(|adapter| !adapter.software && adapter.name.to_lowercase().contains(&needle))
+        .nth(instance as usize)
+}
 #[derive(Clone, Debug, Serialize)]
 pub enum SelectionFailure {
     Inventory(ProbeError),
@@ -64,6 +100,20 @@ impl CpuDecoder {
         policy: HardwarePolicy,
         budget: Duration,
     ) -> Result<Selection> {
+        Self::create_with_selection(api, codec, extra, max_pixels, policy, budget, None)
+    }
+
+    /// 带设备定向的解码器创建（§3.5b）：零命中/实例越界同步拒绝（配置错误不静默
+    /// 回退其他适配器）；定向命中后硬解失败仍按 hw_policy 回退软解（定向与回退正交）。
+    pub fn create_with_selection(
+        api: Arc<FfmpegApi>,
+        codec: VideoCodec,
+        extra: &[u8],
+        max_pixels: u64,
+        policy: HardwarePolicy,
+        budget: Duration,
+        device: Option<&DeviceSelector>,
+    ) -> Result<Selection> {
         Self::create_with_adapter_source(
             api,
             codec,
@@ -72,9 +122,11 @@ impl CpuDecoder {
             policy,
             budget,
             hardware::adapters,
+            device,
         )
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn create_with_adapter_source(
         api: Arc<FfmpegApi>,
         codec: VideoCodec,
@@ -83,6 +135,7 @@ impl CpuDecoder {
         policy: HardwarePolicy,
         budget: Duration,
         adapters_source: impl FnOnce() -> std::result::Result<Vec<Adapter>, ProbeError>,
+        device: Option<&DeviceSelector>,
     ) -> Result<Selection> {
         let start = Instant::now();
         // 先校验共同参数并准备CPU后备；尚未送包，不在此处分配解码参考帧。
@@ -152,7 +205,18 @@ impl CpuDecoder {
                 Some(unsafe { Binding::format(&api, codec_ptr, support.backend) }.is_some());
         }
         let adapters = match adapters_source() {
-            Ok(adapters) => adapters,
+            Ok(adapters) => match device {
+                // 定向（§3.5b）：候选集缩为命中适配器；枚举成功而零命中/实例越界
+                // 是配置错误，同步拒绝（不静默回退其他适配器）。
+                None => adapters,
+                Some(selector) => {
+                    vec![
+                        select_adapter(&adapters, selector.needle(), selector.instance())
+                            .ok_or(DecodeError::InvalidDeviceSelector)?
+                            .clone(),
+                    ]
+                }
+            },
             Err(error) => {
                 return Ok(fallback(
                     cpu,
@@ -264,6 +328,39 @@ fn fallback(
 mod tests {
     use super::*;
 
+    fn stub_adapter(index: u32, name: &str, software: bool) -> Adapter {
+        Adapter {
+            index,
+            name: String::from(name),
+            vendor_id: 0,
+            device_id: 0,
+            luid: u64::from(index),
+            software,
+            dedicated_video_bytes: 0,
+            dxva2_index: None,
+            dxva2_mapping_error: None,
+        }
+    }
+
+    #[test]
+    fn device_selector_matches_substring_instance_and_skips_software() {
+        let adapters = vec![
+            stub_adapter(0, "Intel(R) Arc(TM) 140T GPU", false),
+            stub_adapter(1, "NVIDIA GeForce RTX 5060 Laptop GPU", false),
+            stub_adapter(2, "Intel(R) Arc(TM) 140T GPU", false),
+            stub_adapter(3, "Microsoft Basic Render Driver", true),
+        ];
+        // 大小写不敏感子串+实例序号消歧（同型号多实例，§3.5b）。
+        assert_eq!(select_adapter(&adapters, "140T", 0).unwrap().index, 0);
+        assert_eq!(select_adapter(&adapters, "140t", 1).unwrap().index, 2);
+        assert_eq!(select_adapter(&adapters, "RTX", 0).unwrap().index, 1);
+        // 匹配域排除软件适配器：WARP 命中子串也不可选。
+        assert!(select_adapter(&adapters, "basic render", 0).is_none());
+        // 零命中与实例越界均为 None（调用方按配置错误拒绝，不静默回退）。
+        assert!(select_adapter(&adapters, "missing", 0).is_none());
+        assert!(select_adapter(&adapters, "140T", 2).is_none());
+    }
+
     #[test]
     #[ignore = "需要显式FFmpeg运行库；模拟没有适配器"]
     fn no_adapter_retains_real_library_capabilities() {
@@ -277,6 +374,7 @@ mod tests {
             HardwarePolicy::PreferHardware,
             Duration::from_secs(5),
             || Ok(Vec::new()),
+            None,
         )
         .unwrap();
         assert!(selection.report.attempts.is_empty());
@@ -352,6 +450,7 @@ mod tests {
             HardwarePolicy::PreferHardware,
             Duration::from_secs(5),
             || Ok(vec![intel.clone()]),
+            None,
         )
         .expect("Intel 注入适配器源注入选择应成功");
         let selected = selection
@@ -467,6 +566,7 @@ mod tests {
             HardwarePolicy::PreferHardware,
             Duration::from_secs(5),
             || Ok(vec![ghost]),
+            None,
         )
         .expect("故障注入仍应返回CPU解码器");
         assert!(ghost_selection.report.selected.is_none());

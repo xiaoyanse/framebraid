@@ -47,6 +47,7 @@ fn parameter_rejection_is_atomic_and_serialization_keeps_its_own_credit() {
         abi: config(&raw),
         codec: VideoCodec::H264,
         extra: raw.to_vec(),
+        device: None,
     };
     let ctx = state.ctx.data::<Context>().unwrap();
     ctx.limits.lock().unwrap().frame_budget_bytes = 10;

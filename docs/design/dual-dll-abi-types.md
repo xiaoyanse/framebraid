@@ -445,7 +445,11 @@ typedef struct am_decoder_config_s {
   uint64_t extradata_size;
   uint32_t time_base_num, time_base_den;  /* 输出帧 PTS 时间基 */
   uint32_t queue_max_items; uint64_t queue_max_bytes;   /* 输入队列预算（§6） */
-  uint32_t reserved[4];
+  const am_device_selector_t* device;   /* ABI 1.6（v0.8）：硬解适配器定向（D3D11VA），NULL=默认策略；
+                                           匹配域排除软件适配器，零命中/instance 越界=
+                                           sdk.invalidArgument（PREFER_HW 下不回退其他适配器，
+                                           硬解本身失败仍按 hw_policy 回退软解——定向与回退正交） */
+  uint32_t reserved[3];
 } am_decoder_config_t;
 typedef struct am_decoder_input_s {   /* 提交单位=完整访问单元（AU）或带边界声明的包；
                                         任意切碎字节流拒绝（camera.codecUnsupported 附说明） */
@@ -545,7 +549,8 @@ typedef struct amv_capability_s {
   uint32_t feature_bits;   /* AMV_CAP_IMAGE_INPUT|TENSOR_INPUT|RAW_MODEL|MEMORY_MODEL(P1)|
                               IMAGE_PREPROCESS_RAW|BATCH|RESULT_RAW_TENSOR|PUSH_NOTIFY|
                               SHARED_FRAME_POOL（SDK-DEC-07 消费侧）|
-                              GPU_FRAME_INPUT（M2b bit10） */
+                              GPU_FRAME_INPUT（M2b bit10）|
+                              DEVICE_SELECTOR（v0.8 bit12：适配器定向选择器，ABI 1.6） */
   uint32_t dtype_bits;     /* AM_DTYPE_* 位集（§6；首版 F32/F16/I64/I32/U8，§9-O5） */
   uint32_t max_batch_items, max_models, infer_parallelism;
   uint64_t result_retention_default_ms;
@@ -580,12 +585,32 @@ typedef struct am_backend_matrix_s {
 ```c
 /* H5 r9：候选是固定布局叶子，后续新增参数通过外层指针结构演进。 */
 typedef struct am_backend_candidate_s { uint32_t backend; uint32_t device_id; } am_backend_candidate_t;
+/* v0.8（ABI 1.6 兼容新增）：适配器定向选择器——描述子串匹配+实例序号消歧，跨重启稳定
+   （不依赖 DXGI 枚举序/LUID，二者分别存在漂移与跨重启变化，sdk-v08 侦察实证）。
+   匹配对象=GPU 适配器描述（CUDA 设备名 / DXGI 适配器 Description），大小写不敏感子串；
+   匹配域排除软件适配器（WARP/软件渲染器）。
+   match_utf8=NULL 或 match_bytes=0：不定向（默认策略零变化，v0.8 前行为完全一致）。
+   零命中或 instance 越界：sdk.invalidArgument 拒绝（配置错误，strict 语义下不回退其他适配器）。
+   多实例（同型号核显多 LUID）用 instance 消歧；无枚举 API（YAGNI：通用子串 "arc"/"rtx"
+   可盲配，精确枚举需求出现再演进）。 */
+typedef struct am_device_selector_s {
+  uint32_t struct_size;      /* 显式初始化（sizeof），不可 0 */ /* explicit */
+  const char* match_utf8;    /* 大小写不敏感子串（如 "arc"/"rtx"/"140t"）；NULL=不定向 */ /* zero=default */
+  uint32_t match_bytes;      /* 含 NUL 字节数；0=不定向 */ /* zero=default */
+  uint32_t instance;         /* 同子串第 N 个匹配（0 起=首个匹配），多实例消歧 */ /* zero=default */
+  uint32_t reserved;         /* 必须 0 */ /* zero=invalid */
+} am_device_selector_t;
 typedef struct am_backend_selection_s {
   uint32_t struct_size;
   uint32_t candidate_count;              /* 1..3；禁止重复同backend/device */
   const am_backend_candidate_t* candidates;
   uint32_t allow_fallback;               /* 0只尝试首项；1按列表继续，不暗加CPU */
   uint32_t budget_ms;                    /* 1..5000；原生调用间检查的软预算 */
+  const am_device_selector_t* device;    /* ABI 1.6 尾追加：NULL=默认策略；定向 GPU 适配器。
+                                            对 CUDA 候选=子串匹配 CUDA 设备名（候选 device_id
+                                            同给时 selector 优先）；对 DML/OPENVINO(_NATIVE)=
+                                            匹配 DXGI 适配器；对 CPU 候选忽略。旧消费者按
+                                            struct_size 不传，行为零变化 */
 } am_backend_selection_t;
 
 typedef struct am_backend_policy_s {

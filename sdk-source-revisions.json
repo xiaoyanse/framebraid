@@ -12,8 +12,8 @@
     {
       "path": "crates/am-camera/src/media/codec.rs",
       "previousSha256": "db238d55f0d79f8b1fe49d837b5bb9f5333c314dd921bb774c1a75ecab4817e2",
-      "sha256": "6681ffa9ebb14c3831bb01a9c89a55511fe493644f34c384e3e3d0d6b2cd8d40",
-      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+      "sha256": "010ffa72e13c6a5b70f6899f2b0e0103a762514877e6ab8d7f457965cabc7006",
+      "reason": "sdk-v08 V8.3: DecodeError::InvalidDeviceSelector variant for selector zero-match/instance-overflow (config error, maps to sdk.invalidArgument)"
     },
     {
       "path": "crates/am-camera/src/media/codec/convert.rs",
@@ -48,8 +48,8 @@
     {
       "path": "crates/am-camera/src/media/codec/selection.rs",
       "previousSha256": null,
-      "sha256": "d1050db70f95541b80a10d9c32d1829d9621a16576010f9f6dc1681c1acacd8a",
-      "reason": "M3 reviewed Intel iGPU path measurements (Arc 140T D3D11VA H264/H265 verified via driver log, ghost-adapter fault injection, fallback matrix recheck); adapter-targeting gap honestly recorded; workspace 404 green"
+      "sha256": "12f9b17da36692f65dd57754a82163df8fe0cb4ee073c90e27cb6f6c30dae110",
+      "reason": "sdk-v08 V8.3 device targeting: DeviceSelector type + select_adapter pure matcher (case-insensitive substring, instance ordinal, software adapters excluded); create_with_selection narrows candidate set to the targeted adapter only - hardware failure on it still falls back per hw_policy (orthogonal semantics); default create_with_policy path unchanged (selector=None)"
     },
     {
       "path": "crates/am-camera/src/media/codec/tests.rs",
@@ -282,8 +282,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/config.rs",
       "previousSha256": "9d504128dd8b83e86ab16a001047e1900e88dd6a5a1e5d0241e6b8bc6aafdf57",
-      "sha256": "02760c0185135620b672ca4f9a5510b7fd030d1e85045c3c5964ff5f411e34e0",
-      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged；v0.3.2 batch D：FfmpegLoadError 新增 version 字段的构造点同步（None 兜底）; previous SHA-256 dd420d6093e93b67…: FILE stage-1 fix: Reader file_first first-packet-keyframe (file start = random access point, Framing prepends parameter sets)"
+      "sha256": "50423dce2b79667a452607663ea76b71a591289fe3705497d55567ae641bd715",
+      "reason": "sdk-v08 V8.3: parse am_decoder_config_t.device (contract 3.5b validation: struct size, reserved, NUL-terminated utf8); DecodeError::InvalidDeviceSelector maps to sdk.invalidArgument; parsing domain tests"
     },
     {
       "path": "crates/camera-ffi/src/decoder/diagnostics.rs",
@@ -306,8 +306,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "5da224fe84bd6af61ff2ecce39b8accb2b1ec2b5760311ab81ee693f71ead581",
-      "reason": "M2a reviewed GPU frame metadata extraction, shared texture frames config, best-effort handle query (platform QI refusal documented) and D3D11VA GetDesc slot fix; real NVIDIA D3D11VA test; C ABI unchanged"
+      "sha256": "21ede76d64045d5837e29bde8e4884f0547bac9a16cf03ef5679dfa0c289e117",
+      "reason": "sdk-v08 V8.3: decoder create/reset passes parsed selector into create_with_selection"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -330,8 +330,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/retained/tests.rs",
       "previousSha256": null,
-      "sha256": "d9d69fa71f7809319f1a9db548e129c9a1f718edecb567c007b2d8f22335d843",
-      "reason": "R3 standalone decoder configuration and parameter cache pre-admission, immutable shared reset configuration, atomic cache updates and allocation-free compatible NAL visitor; native and ownership validation; C ABI unchanged"
+      "sha256": "9449b0a808872736fc9714b9ace476ff0998daf198cdea0160752026473e5147",
+      "reason": "sdk-v08 V8.3: test Config literal gains device field"
     },
     {
       "path": "crates/camera-ffi/src/decoder/tests.rs",
@@ -474,8 +474,8 @@
     {
       "path": "crates/camera-ffi/src/subscriptions/hub.rs",
       "previousSha256": "3f72a71551e2a207dfea086b86648de02224cb2df07da00f29310a7eb138d6c5",
-      "sha256": "8f5ceecbf04fdf9d829e96c910b5fb0b3dbd016af3c0a225adfd06b8a15e9c6f",
-      "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
+      "sha256": "c3592d8623be5c01ebeeb269816ccdd4065bc41d81c5b90e1cf86666573f3b6a",
+      "reason": "sdk-v08 V8.3: subscription decode config construction gains device:None (RTSP source targeting not in contract scope)"
     },
     {
       "path": "crates/camera-ffi/src/subscriptions/hub/consume.rs",
@@ -618,8 +618,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "1840a3c6088cceda90499c9b7f1277839202464a58535332a4c6b693fcc61c48",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 65f027c7972d47a0e3ff376cc350d31b361f1bfe6de9f330da01f799b02c892b"
+      "sha256": "7e0d4b77af32402a021fd897b58ad3be87440a488ab065fe108333afa781a288",
+      "reason": "sdk-v08 device selector (ABI 1.6 compatible addition): AM_ABI_VERSION 65541->65542 and AMV_CAP_DEVICE_SELECTOR bit 12, per contract sections 3.5b (main) and 3.1 (types). Default policy unchanged; selector is opt-in. Prior approved SHA-256 (gpu-roi r12 baseline): 1840a3c6088cceda90499c9b7f1277839202464a58535332a4c6b693fcc61c48"
     },
     {
       "path": "crates/sdk-abi/src/defaults.rs",
@@ -630,74 +630,74 @@
     {
       "path": "crates/sdk-abi/src/fields_2.rs",
       "previousSha256": "186054fbc46c1ab5460b6c616d25be2c731c9ff098c8a395f1130ef6d9861786",
-      "sha256": "7cc650497b2e5e9488c536026aaaf92eee116f51195dcc2a70294c0e8ffcdcfe",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "8bbf40023ff133045fd8fe97823901aecacad4508de41f5c2c6980c6230ac6a1",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/fields_4.rs",
       "previousSha256": "264a66eedc78912e040c20c5df24d9a03387273120f1a3e46c202b1a053ab556",
-      "sha256": "b247b07bce47f3fed4afb7b77080f3584938f9a39e69f0b8952722e32a792f81",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "a133e55d355929cc5e6ec8b6b63343bd27451352826404d658b87eb4f1400e0d",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/fields_5.rs",
       "previousSha256": "3b6ea29a7f3357e92fb104bbd8740f2ff8fa5eff3f3de51f721d207dca18170f",
-      "sha256": "6e0076f07beb8674d522397d827e6f124dd3d9bb12a8d0f4b019294252ba0ced",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "667be34634df40bc0321519fac20015c09e5c45312c14c0342a99f965e5620af",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "9c986d2cb6a6e8f54b80f00dfda27a31a5868cf5256ee8306a9ed35dd62a0a9a",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "25c84345a65942c40c5b06b336738c6030c2cfde0f3cddfc04f8a6fabc951cf8",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "bca52f4635fc3778c29bcbe7ecc6f23616aa75867ee6629f9c4aa6b7c17f4d7a",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "4a04ffd2f0fdcb25dad3da5d40e36c34f9c21b6449f10e904038a583f81bcc67",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/fields_8.rs",
       "previousSha256": null,
-      "sha256": "8d02d3795ceb7548b41aa7a6d87f4e1cde8262e26c33abb4df966e527dfa6e97",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "70abd44e730e202c4e08e0045826dc3da6ad213a148b83e7c8055396a12e7161",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_2.rs",
       "previousSha256": "16d44dc4cd219a590b0758d145807d22dfbb96aa6689ce67ce2fd6e0c1849c3f",
-      "sha256": "14bd82da191adde72fc6a09a3ecb24f114d96bbe0e80de51a706c852bf22cc26",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "0e824bf440ac72e4676d8892f1a2b552f271f4acf9da526504edfa0c05e3f8c2",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_4.rs",
       "previousSha256": "c75ceb94a9756cc6f1b306ec94334c1b7ddd9919bb374503a87f9a59c5112d36",
-      "sha256": "57ef8c0cb46871b548f2cd9a86c455bb39361b4579a58ea4021aa601ae79d6dd",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "677da96eafe37552790ee87dfb9bb3e0a4cd5839ee6197b307635c8def983bb1",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_5.rs",
       "previousSha256": "c07e83d301c98b7df6962d8c4ddea1f3b60d2958be323b9a59ca0bb308f49c5f",
-      "sha256": "abcd71819612ecc59a00a960bfd91057eedc24e0fe15051b30dd183bab1ca151",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "272b9a578460ee056c00dcf1b682ac52211f63de8933b28589741b72f3053c48",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "e69217302a2d8d749650be007373de5164cdffb45b89d2d90fda6ae0a8462755",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "e6e01d219ae5b0ad94386fe4544ad6d9f2fbd5d2fc4d45f26bf3b3a25cf2e996",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "99498e9937b0a1883d4b74270b0d0c93ce5b2014b001cc784692458ce5b8a460",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "4dfc3a099b0ff4f8d009aa777e625ca447e2c866d077e9f46cefe0366f7f2a78",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_8.rs",
       "previousSha256": null,
-      "sha256": "b3905a79c693c59b0a98a52b6fd971dc8c333f5730b5175117cc056e1b686140",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "f0a1a6f86a88d3b3367cb98a19b6d604bdd58c028025f3a215a41723304dd594",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_tests.rs",
@@ -714,38 +714,38 @@
     {
       "path": "crates/sdk-abi/src/types_2.rs",
       "previousSha256": "f5443f1866806724d4d7d0dfdbad12e18dc25255ee33c6d8e50bd75a5658c7c4",
-      "sha256": "ace455035a49265501c8ca1d0bbbb5aafdc824c06de5eb25e0071cb7a2b24dca",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "7c0555842e353a7242bb63a241b4d6cfe8eb836c441d64c2edbb8e08040b640b",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/types_4.rs",
       "previousSha256": "941040d1aaae58ec6e04e58aad256d3b80608e27ec6f7051992a2ffcb2146d36",
-      "sha256": "66a1be2670fe30eec4da3908ecfdfa94bebdd7c0543deefcd5f2c35cd0043990",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "dfdb09c3c3560af17fe8ab8b2960ca3180c0717a7124e37aadc5812aab787d27",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/types_5.rs",
       "previousSha256": "fe3595c3037833a1f5ebb72388f15af2d44349df8110e78549bc95b0a898be65",
-      "sha256": "d89e23c9c8c02949f5c7ab6a9f520a1c9f68039e46e2b0a2a84fa80d70613496",
-      "reason": "frame export contract: amc_frame_encode + am_frame_encode_opts_t (JPEG/PNG single-frame, capacity-insufficient limitOutOfRange + required per report convention); regen 165 fn / 93 struct"
+      "sha256": "f3401b942919e2e6af3a741e781f1212d09045ed564c4e38798dccb7df9c0073",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "e355936c488252acc23a66f3e9c1cf37e2273c57f31500a8847701096fd359a3",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "7ecd9ecba141af04c24f3284347e4d498c31dbb2be6207cd61c0ed8040c15a62",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "63285f4987d8b2699f9982ff01e40374dcd7e47624371c2831b5f6f4955cd8d5",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "9a86feafe3e49191cf22c49ee8a0aaf0a808959ebb10a8fc3ebb093e1c05a9e4",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/types_8.rs",
       "previousSha256": null,
-      "sha256": "9c0dece251a6153ebe186798df8b599ae91aa2290f5daddc61e5565c52d93064",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "1c7d0fb7a7bc4a99089e2a3e5df6bb62334d73ac39a91f064203497c0e5d79f2",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-support/build.rs",
@@ -870,8 +870,8 @@
     {
       "path": "crates/vision-ffi/src/inference/backends.rs",
       "previousSha256": "358f4e20c2af958beea4d0577fd7bb2af60e8ad593f789f98ce1776e7255554d",
-      "sha256": "3beb94003f403e885ccc34d6555c5f5e110ef8a111936edd7843fce1f806d106",
-      "reason": "audit clearance batch 2026-11-04: P1 multipart header cap on terminated branch + repro test, P3 challenge-cache comment honesty, L2 negative dimension clamp; blind-spot regression tests x9 (7 gaps + stats/copy_report parity); workspace 447 green"
+      "sha256": "76c073cc38eced75cc5e9f27370dc86bcd94cc2bdda82eefd86b376d74e93c86",
+      "reason": "sdk-v08 V8.3: query matrix exposes 5 rows (backend=4 OpenVINO native row added per contract)"
     },
     {
       "path": "crates/vision-ffi/src/inference/batch_exports.rs",
@@ -906,8 +906,8 @@
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "66e4e9e4ba4259250967ea5842c3981dde85175c85ae4558f6daf37d677b1078",
-      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+      "sha256": "6a1f43b1d2b4d2a72a07a3ca5aaa6db7d407eda16a202b584f61f6c2a661be65",
+      "reason": "sdk-v08 V8.3: device_utf8 from core device_label - fixes DML rows reporting CPU and adds OpenVINO native label (debt from recon 2.1)"
     },
     {
       "path": "crates/vision-ffi/src/inference/models/metadata.rs",
@@ -1032,14 +1032,14 @@
     {
       "path": "crates/vision-ffi/src/inference/selection_tests.rs",
       "previousSha256": null,
-      "sha256": "b1edcb767f854415d8595d7f809c8f27dd63df9dd51fd863b332ba23b2a969e6",
-      "reason": "H5 ordered model selection, bounded C reports, actual device ownership and generated additive ABI; reviewed local-only stage, legacy layouts preserved"
+      "sha256": "e53f306512afe7c45545c0e94c49b1dd8ee45f6fffac06a46c465e5ac4ad71e9",
+      "reason": "sdk-v08 V8.3: selector parsing domain tests (null/empty/reserved/no-NUL/embedded-NUL/short struct size)"
     },
     {
       "path": "crates/vision-ffi/src/inference/selection.rs",
       "previousSha256": null,
-      "sha256": "9d6fd74dacb1b4595327114209511b845524d7151a4c08b9b607cfaa5b28d963",
-      "reason": "R3 bounded borrowed hardware-report serialization and fixed service-body measurements; unchanged C ABI and JSON fields, checked targeted capacity and native decoding/fallback"
+      "sha256": "2c547a67143cb67e5f41154b89e28d94a032a795c64cc3f99adaf86592f34e1a",
+      "reason": "sdk-v08 V8.3: parse am_backend_selection_t.device per contract (struct size, reserved, NUL-terminated match bytes -> utf8Invalid, NULL/empty = no targeting)"
     },
     {
       "path": "crates/vision-ffi/src/inference/state.rs",
@@ -1074,8 +1074,8 @@
     {
       "path": "crates/vision-ffi/src/lib.rs",
       "previousSha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847",
-      "sha256": "d57d204a9a30bc96b793234d20b94e1c413fef0049156dc91e72c9c77e667b5b",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 65fe4d0115e899b6c6d2de9caa44cb3f6aef76e3cd3bb9250680644d2400cd7c"
+      "sha256": "970a0ddc97676c0c947efca5f1c56d9146070a449f8f6b20be696b4769448927",
+      "reason": "sdk-v08 V8.3: AMV_CAP_DEVICE_SELECTOR capability bit (bit 12) advertised"
     },
     {
       "path": "crates/vision-types/src/lib.rs",
@@ -1218,14 +1218,14 @@
     {
       "path": "crates/vision/src/sdk/mod.rs",
       "previousSha256": "a3f47db523cfcf972aba3f9ed76395dca0e051d68fbd396e9d7539953e715026",
-      "sha256": "bf1067f233418cdedecc3106ac100f146052a1cfed8323b53aee72dab3cbe7fd",
-      "reason": "cascade C1 impl; tracker impl (module wiring)；批B：element() dtype→ORT 元素类型映射提为 crate 内共享导出（GPU 绑定与 run_ref 输入构造同构复用）"
+      "sha256": "1d2a85255b304008d2e6fadccdc25bcb183f23a312d7a5c5fac5fea954678d2c",
+      "reason": "sdk-v08 V8.3: register sdk::device module"
     },
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "05edfc9f9465c18ae6f8d68cf11de54b6267222dad3143dfbacb9961a5325510",
-      "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green；批B：element() 可见性提为 pub(crate)（供 gpu/iobinding vocab 绑定复用，无行为变化）；批C：extract_outputs批轴检查复原为与本次实际输入首轴对照（M2b 49d8a10误改为与声明batch相等，动态轴模型N>1合批自彼时起整批失败——R5攒批损坏，批合同门重跑捕获），expected经参数传入（run_ref取输入首轴/run_gpu取绑定批长），漂移拒斥语义保留; batch D: profile load match accepts symbolic model dims under pinned fixed profile dims (world H/W symbolic vs profile-pinned 640); input_hw helper (concrete model dims else profile) for GPU paths"
+      "sha256": "59806682e0b2e8fc8de17a4aaf7c392b5d4f67094dd1d7074f3154b39ab3ec04",
+      "reason": "sdk-v08 V8.3 device targeting: resolve selector to rewritten candidates at selection consumption point (zero-match/instance-overflow rejected synchronously as sdk.invalidArgument; selector overrides CUDA device_id), pass ov_gpu flag into session creation, register E1 native engine observation bit, expose device_label for am_backend_actual_t.device_utf8"
     },
     {
       "path": "crates/vision/src/sdk/vocab.rs",
@@ -1266,8 +1266,8 @@
     {
       "path": "crates/vision/src/sdk/runtime.rs",
       "previousSha256": "56c1c4a476dc9627ca2490438dd9fed8e929ee401ba4a742a61038c67a8e5418",
-      "sha256": "bc0e7db07a269bbf304e65186f89ab629a691374fa7b8a9067e686ff5f32dd22",
-      "reason": "Rust后端查询移除隐式驱动探测，显式报告需驱动初始化及有效设备数；E2 DirectML后端枚举扩展（第四推理路径）；feedback P0-1 OV2026：note_openvino_dirs/runtime 失败详情读写清零转发（E1 运行库随 runtime_dirs 提供的合同接线）"
+      "sha256": "b93f747e97333eb160262957014014266b9301f20b3275b811e57b917470c761",
+      "reason": "sdk-v08 V8.3: backend matrix fifth row (backend=4 OpenVINO native per contract: deps=CPU always, hw=openvino_c in runtime_dirs, no ORT readiness gate, no accelerator-domain conflict); DirectML deps accepts system DirectML.dll fallback per E2 contract; tests for both"
     },
     {
       "path": "crates/vision/src/sdk/runtime/devices.rs",
@@ -1284,20 +1284,20 @@
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
       "previousSha256": null,
-      "sha256": "fec7f590db03da01250ebc87565fbf5763175a5b77f5417ea9af9a95923f9cfc",
-      "reason": "R3 probe backing/complete result ownership and pre-copy admission, cache optional under pressure, native IO preflight with real CPU boundary; C ABI unchanged"
+      "sha256": "4683d900ff3d888878b14553854ed259d83b7b12184442ee8f95174e97568a96",
+      "reason": "sdk-v08 V8.3: policy construction gains device:None (no behavioral change to existing assertions)"
     },
     {
       "path": "crates/vision/src/sdk/selection.rs",
       "previousSha256": null,
-      "sha256": "db05dc3ecfa8c223f3ff427dbe86b83bdc245b3320f1c2838428cb5619c31395",
-      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only"
+      "sha256": "5e44e9cbf71ad8bdd260b0d8e8caa7412678de227d4291c7ebe8388848dafa9e",
+      "reason": "sdk-v08 V8.3: BackendSelectionPolicy carries optional DeviceSelector (None = default policy unchanged)"
     },
     {
       "path": "crates/vision/src/sdk/session.rs",
       "previousSha256": null,
-      "sha256": "edb220783af4abd7592b02f29da58063ae7e4ca7a9f3d0968ec1d71debccefea",
-      "reason": "H5 reviewed bounded Rust backend selection, explicit device inventory and native CPU/DLL regression; C ABI unchanged, accelerated and recovery acceptance remain open; no publication；E2 DirectML后端枚举扩展（第四推理路径）"
+      "sha256": "22ac81ba282f6f7f748c2edb99bcf8c017df7930eac95e5b5ec2af8af34afca7",
+      "reason": "sdk-v08 V8.3: DirectML::with_device_id from selector-resolved DXGI ordinal (0 keeps EP default); OpenVINO EP device type GPU when targeted, CPU otherwise (existing behavior unchanged without selector)"
     },
     {
       "path": "crates/vision/src/sdk/tests.rs",
@@ -1650,20 +1650,20 @@
     {
       "path": "crates/sdk-abi/src/fields_9.rs",
       "previousSha256": null,
-      "sha256": "7dc371f6c8aa512dd415acb7d4c5744346a629f9f6744cb82929e34ddfb89265",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "acb59d93bf9d1ad559b2ee42276d05edc93c2521990c789324f1b5e0f9822dcd",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/layout_9.rs",
       "previousSha256": null,
-      "sha256": "4aaafa5f8bbbdcda2236c92edee758dbe726250c6d8de7ca7cbf04477afa19b6",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "7f647fc6ccd6655b965a09d2037e0734387dfd02d8e5c764f197f6255694b99d",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/sdk-abi/src/types_9.rs",
       "previousSha256": null,
-      "sha256": "6425ea02dc578b27ca0f65ddf97e8c830f8c1a6767366e26e5ec632e238d3bf1",
-      "reason": "P1.2 generator sync: inference-pool declarations (ABI 1.4 compatible addition, AM_ABI_VERSION 65540, am_pool_desc_t + three amv_pool_* exports; layout registered via clang static-assert probe due to broken gcc toolchain)"
+      "sha256": "8141fc6e9c6ab752ca4d8a59994bdd5e4d8df32c6d193c0cf783c1c2012eb2a3",
+      "reason": "sdk-v08 V8.3 generator resync: device selector types (contract 3.5b, ABI 1.6) - am_device_selector_t plus tail device pointer on am_backend_selection_t/am_decoder_config_t; constants.json inputs corrected this batch (AM_ABI_VERSION 65542, AMV_CAP_DEVICE_SELECTOR bit 12, abiMinor 6); layouts hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests)"
     },
     {
       "path": "crates/vision/src/sdk/tracker.rs",
@@ -1778,6 +1778,12 @@
       "previousSha256": null,
       "sha256": "6955d2f082b197132e2606b493593b6035dc848d145d508c58a964171e87eb60",
       "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry"
+    },
+    {
+      "path": "crates/vision/src/sdk/device.rs",
+      "previousSha256": null,
+      "sha256": "4cb0270edf3ba8f66ef237a69932f8991707c96b21390e97ba3616c9cf679e9b",
+      "reason": "sdk-v08 V8.3 new module: device selector (contract 3.5b) - substring+instance matching, CUDA device-name and DXGI adapter enumeration, per-candidate target resolution with stub-testable pure logic"
     }
   ]
 }

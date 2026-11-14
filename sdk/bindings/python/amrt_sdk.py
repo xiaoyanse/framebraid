@@ -127,6 +127,9 @@ class am_backend_matrix_t(Structure):
 class am_backend_candidate_t(Structure):
     pass
 
+class am_device_selector_t(Structure):
+    pass
+
 class am_backend_selection_t(Structure):
     pass
 
@@ -616,35 +619,24 @@ am_frame_encode_opts_t._fields_ = [
     ("reserved", c_uint32 * 5),
 ]
 
-am_decoder_config_t._fields_ = [
+am_decoder_input_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("flags", c_uint32),
+    ("size", c_uint64),
+    ("data", POINTER(c_uint8)),
+    ("pts", c_int64),
+    ("dts", c_int64),
+]
+
+am_decoder_info_t._fields_ = [
     ("struct_size", c_uint32),
     ("codec", c_uint32),
     ("bitstream_format", c_uint32),
     ("output_pixel_format", c_uint32),
     ("hw_policy", c_uint32),
-    ("extradata", POINTER(c_uint8)),
-    ("extradata_size", c_uint64),
-    ("time_base_num", c_uint32),
-    ("time_base_den", c_uint32),
-    ("queue_max_items", c_uint32),
-    ("queue_max_bytes", c_uint64),
-    ("reserved", c_uint32 * 4),
-]
-
-am_decoder_status_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("state", am_decoder_state_e),
-    ("decoder_generation", c_uint32),
+    ("hw_accelerated", c_uint32),
+    ("backend_name_utf8", c_char_p),
     ("config_generation", c_uint32),
-    ("queue_items", c_uint32),
-    ("queue_bytes", c_uint64),
-]
-
-am_capture_request_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("output_kind", c_uint32),
-    ("deadline_ms", c_uint32),
-    ("reserved", c_uint32 * 4),
 ]
 
 am_capture_continuous_desc_t._fields_ = [
@@ -979,13 +971,13 @@ am_frame_meta_t._fields_ = [
     ("transform", am_spatial_transform_t),
 ]
 
-am_decoder_input_t._fields_ = [
+am_decoder_status_t._fields_ = [
     ("struct_size", c_uint32),
-    ("flags", c_uint32),
-    ("size", c_uint64),
-    ("data", POINTER(c_uint8)),
-    ("pts", c_int64),
-    ("dts", c_int64),
+    ("state", am_decoder_state_e),
+    ("decoder_generation", c_uint32),
+    ("config_generation", c_uint32),
+    ("queue_items", c_uint32),
+    ("queue_bytes", c_uint64),
 ]
 
 am_capture_stats_t._fields_ = [
@@ -1183,15 +1175,11 @@ am_frame_view_t._fields_ = [
     ("color_range", c_uint32),
 ]
 
-am_decoder_info_t._fields_ = [
+am_capture_request_t._fields_ = [
     ("struct_size", c_uint32),
-    ("codec", c_uint32),
-    ("bitstream_format", c_uint32),
-    ("output_pixel_format", c_uint32),
-    ("hw_policy", c_uint32),
-    ("hw_accelerated", c_uint32),
-    ("backend_name_utf8", c_char_p),
-    ("config_generation", c_uint32),
+    ("output_kind", c_uint32),
+    ("deadline_ms", c_uint32),
+    ("reserved", c_uint32 * 4),
 ]
 
 amv_capability_t._fields_ = [
@@ -1348,31 +1336,12 @@ am_shared_frame_view_t._fields_ = [
     ("borrow_id", c_uint64),
 ]
 
-am_backend_selection_t._fields_ = [
+am_device_selector_t._fields_ = [
     ("struct_size", c_uint32),
-    ("candidate_count", c_uint32),
-    ("candidates", POINTER(am_backend_candidate_t)),
-    ("allow_fallback", c_uint32),
-    ("budget_ms", c_uint32),
-]
-
-am_batch_item_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("image", POINTER(am_image_input_t)),
-    ("tensor_count", c_uint32),
-    ("tensors", POINTER(am_tensor_in_t)),
-    ("slot_key", c_uint64),
-    ("raw_preprocess", POINTER(am_raw_preprocess_t)),
-]
-
-am_segment_result_t._fields_ = [
-    ("count", c_uint32),
-    ("instances", POINTER(am_segment_instance_t)),
-]
-
-am_scale_preset_t._fields_ = [
-    ("width", c_uint32),
-    ("height", c_uint32),
+    ("match_utf8", c_char_p),
+    ("match_bytes", c_uint32),
+    ("instance", c_uint32),
+    ("reserved", c_uint32),
 ]
 
 am_model_info_t._fields_ = [
@@ -1387,6 +1356,41 @@ am_model_info_t._fields_ = [
     ("execution", am_backend_actual_t),
 ]
 
+am_pose_result_t._fields_ = [
+    ("count", c_uint32),
+    ("detections", POINTER(am_pose_detection_t)),
+]
+
+am_scale_preset_t._fields_ = [
+    ("width", c_uint32),
+    ("height", c_uint32),
+]
+
+am_decoder_config_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("codec", c_uint32),
+    ("bitstream_format", c_uint32),
+    ("output_pixel_format", c_uint32),
+    ("hw_policy", c_uint32),
+    ("extradata", POINTER(c_uint8)),
+    ("extradata_size", c_uint64),
+    ("time_base_num", c_uint32),
+    ("time_base_den", c_uint32),
+    ("queue_max_items", c_uint32),
+    ("queue_max_bytes", c_uint64),
+    ("device", POINTER(am_device_selector_t)),
+    ("reserved", c_uint32 * 3),
+]
+
+am_batch_item_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("image", POINTER(am_image_input_t)),
+    ("tensor_count", c_uint32),
+    ("tensors", POINTER(am_tensor_in_t)),
+    ("slot_key", c_uint64),
+    ("raw_preprocess", POINTER(am_raw_preprocess_t)),
+]
+
 am_frame_sub_desc_t._fields_ = [
     ("struct_size", c_uint32),
     ("pixel_format", c_uint32),
@@ -1399,9 +1403,18 @@ am_frame_sub_desc_t._fields_ = [
     ("frame_kind", c_uint32),
 ]
 
-am_pose_result_t._fields_ = [
+am_segment_result_t._fields_ = [
     ("count", c_uint32),
-    ("detections", POINTER(am_pose_detection_t)),
+    ("instances", POINTER(am_segment_instance_t)),
+]
+
+am_backend_selection_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("candidate_count", c_uint32),
+    ("candidates", POINTER(am_backend_candidate_t)),
+    ("allow_fallback", c_uint32),
+    ("budget_ms", c_uint32),
+    ("device", POINTER(am_device_selector_t)),
 ]
 
 amv_result_t._fields_ = [
@@ -1425,7 +1438,7 @@ amv_result_t._fields_ = [
     ("cascade", POINTER(am_cascade_result_t)),
 ]
 
-AM_ABI_VERSION = 65541
+AM_ABI_VERSION = 65542
 AM_BACKEND_STRICT_CUDA_FP32 = 2
 AM_OK = 0
 AM_CODEC_H264 = 1
@@ -1583,6 +1596,7 @@ AMV_CAP_SHARED_FRAME_POOL = 256
 AMV_CAP_ORDERED_SELECTION = 512
 AMV_CAP_GPU_FRAME_INPUT = 1024
 AMV_CAP_GPU_CASCADE = 2048
+AMV_CAP_DEVICE_SELECTOR = 4096
 
 FUNCTIONS = {
     "amc_probe_decode_hardware": (am_status_t, [POINTER(amc_context_t), c_uint32, c_uint32]),

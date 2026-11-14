@@ -1,6 +1,46 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_pool_desc_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_pool_desc_t>(), 48);
+    assert_eq!(core::mem::align_of::<am_pool_desc_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, struct_size),
+        0,
+        "am_pool_desc_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, model),
+        8,
+        "am_pool_desc_t.model"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, model_memory),
+        16,
+        "am_pool_desc_t.model_memory"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, shards),
+        24,
+        "am_pool_desc_t.shards"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, lanes),
+        28,
+        "am_pool_desc_t.lanes"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, batching),
+        32,
+        "am_pool_desc_t.batching"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_pool_desc_t, reserved),
+        40,
+        "am_pool_desc_t.reserved"
+    );
+}
+#[test]
 fn am_preprocess_meta_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_preprocess_meta_t>(), 48);
     assert_eq!(core::mem::align_of::<am_preprocess_meta_t>(), 4);
@@ -268,35 +308,5 @@ fn am_detect_result_t_matches_c() {
         core::mem::offset_of!(am_detect_result_t, boxes),
         8,
         "am_detect_result_t.boxes"
-    );
-}
-#[test]
-fn am_vocab_entry_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_vocab_entry_t>(), 32);
-    assert_eq!(core::mem::align_of::<am_vocab_entry_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_vocab_entry_t, struct_size),
-        0,
-        "am_vocab_entry_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_vocab_entry_t, label_utf8),
-        8,
-        "am_vocab_entry_t.label_utf8"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_vocab_entry_t, token_ids),
-        16,
-        "am_vocab_entry_t.token_ids"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_vocab_entry_t, token_rows),
-        24,
-        "am_vocab_entry_t.token_rows"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_vocab_entry_t, token_cols),
-        28,
-        "am_vocab_entry_t.token_cols"
     );
 }

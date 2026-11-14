@@ -28,6 +28,30 @@ impl AbiLayout for am_backend_candidate_t {
         ),
     ];
 }
+impl AbiLayout for am_device_selector_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_device_selector_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_device_selector_t, match_utf8),
+            core::mem::size_of::<*const c_char>(),
+        ),
+        (
+            core::mem::offset_of!(am_device_selector_t, match_bytes),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_device_selector_t, instance),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_device_selector_t, reserved),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_backend_selection_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -49,6 +73,10 @@ impl AbiLayout for am_backend_selection_t {
         (
             core::mem::offset_of!(am_backend_selection_t, budget_ms),
             core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_backend_selection_t, device),
+            core::mem::size_of::<*const am_device_selector_t>(),
         ),
     ];
 }
@@ -225,38 +253,6 @@ impl AbiLayout for am_model_swap_desc_t {
         (
             core::mem::offset_of!(am_model_swap_desc_t, reserved),
             core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_io_spec_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_io_spec_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_io_spec_t, name),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_io_spec_t, dtype),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_io_spec_t, shape),
-            core::mem::size_of::<*const i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_io_spec_t, shape_len),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_io_spec_t, dyn_min),
-            core::mem::size_of::<*const i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_io_spec_t, dyn_max),
-            core::mem::size_of::<*const i64>(),
         ),
     ];
 }

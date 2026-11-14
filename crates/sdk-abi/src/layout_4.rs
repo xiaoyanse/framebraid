@@ -36,8 +36,38 @@ fn am_backend_candidate_t_matches_c() {
     );
 }
 #[test]
+fn am_device_selector_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_device_selector_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_device_selector_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_device_selector_t, struct_size),
+        0,
+        "am_device_selector_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_device_selector_t, match_utf8),
+        8,
+        "am_device_selector_t.match_utf8"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_device_selector_t, match_bytes),
+        16,
+        "am_device_selector_t.match_bytes"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_device_selector_t, instance),
+        20,
+        "am_device_selector_t.instance"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_device_selector_t, reserved),
+        24,
+        "am_device_selector_t.reserved"
+    );
+}
+#[test]
 fn am_backend_selection_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_backend_selection_t>(), 24);
+    assert_eq!(core::mem::size_of::<am_backend_selection_t>(), 32);
     assert_eq!(core::mem::align_of::<am_backend_selection_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_backend_selection_t, struct_size),
@@ -63,6 +93,11 @@ fn am_backend_selection_t_matches_c() {
         core::mem::offset_of!(am_backend_selection_t, budget_ms),
         20,
         "am_backend_selection_t.budget_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_selection_t, device),
+        24,
+        "am_backend_selection_t.device"
     );
 }
 #[test]
@@ -283,45 +318,5 @@ fn am_model_swap_desc_t_matches_c() {
         core::mem::offset_of!(am_model_swap_desc_t, reserved),
         20,
         "am_model_swap_desc_t.reserved"
-    );
-}
-#[test]
-fn am_io_spec_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_io_spec_t>(), 56);
-    assert_eq!(core::mem::align_of::<am_io_spec_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, struct_size),
-        0,
-        "am_io_spec_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, name),
-        8,
-        "am_io_spec_t.name"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, dtype),
-        16,
-        "am_io_spec_t.dtype"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, shape),
-        24,
-        "am_io_spec_t.shape"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, shape_len),
-        32,
-        "am_io_spec_t.shape_len"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, dyn_min),
-        40,
-        "am_io_spec_t.dyn_min"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_io_spec_t, dyn_max),
-        48,
-        "am_io_spec_t.dyn_max"
     );
 }

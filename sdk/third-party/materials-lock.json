@@ -10,6 +10,13 @@
       "bytes": 13658075
     },
     {
+      "id": "ort-dml-wheel",
+      "file": "onnxruntime_directml-1.24.4-cp313-cp313-win_amd64.whl",
+      "url": "https://pypi.org/pypi/onnxruntime-directml/1.24.4",
+      "sha256": "2f1031cb2281e5b27cca9efe0b9399317c7286e4d226f7a79d4ab79bbd94d19e",
+      "bytes": 25112253
+    },
+    {
       "id": "ffmpeg-distribution",
       "file": "ffmpeg-N-127941-g303510f9d1-win64-lgpl-shared.zip",
       "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-10-22-13-06/ffmpeg-N-127941-g303510f9d1-win64-lgpl-shared.zip",
@@ -66,6 +73,24 @@
     }
   ],
   "binaries": [
+    {
+      "group": "onnxruntime-directml",
+      "file": "onnxruntime.dll",
+      "sha256": "3345de4dc2bb7a71ed615e711db3bb47b532b1e1e3ca9b3aae4eb6e02e286dd2",
+      "artifact": "ort-dml-wheel"
+    },
+    {
+      "group": "onnxruntime-directml",
+      "file": "DirectML.dll",
+      "sha256": "9f7d19ab3bec5488bbcd572942c202c8ad2cd23d4f6ecf00000a2200e574b6c9",
+      "artifact": "ort-dml-wheel"
+    },
+    {
+      "group": "onnxruntime-directml",
+      "file": "onnxruntime_providers_shared.dll",
+      "sha256": "0c97b41d3c76f5ccc00c79d7afc4a2bd654544f78ce8bc1d6739ff71059e5843",
+      "artifact": "ort-dml-wheel"
+    },
     {
       "group": "ffmpeg",
       "file": "avcodec-63.dll",

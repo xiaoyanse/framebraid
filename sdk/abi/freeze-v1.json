@@ -1,7 +1,7 @@
 {
-  "id": "am-sdk-cabi-1.5-gpu-roi-r12",
-  "previousFreezeSha256": "87b909eb57ebd957244069cc50904abcaf7fd6b22450c55f959d73922f90419e",
-  "abiVersion": 65541,
+  "id": "am-sdk-cabi-1.6-device-selector-r13",
+  "previousFreezeSha256": "c16e5c9446179c165682e90b8173fdea7788e59421ee0094ad86190633383deb",
+  "abiVersion": 65542,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
   "files": [
@@ -17,13 +17,13 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "13b94eaefeaf40033061105c964982221fc7e2f7d5a7aab434ee8d6e5c234c89",
-      "bytes": 83160
+      "sha256": "b48eb02b63603a55f73733f7aee32a4ea52fa6566412b2897cbd8f7ea7c66e96",
+      "bytes": 85690
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "503c2406eaf0c00e12c622b5e7ec630417884a9618d5821a05d2231896817f8d",
-      "bytes": 2322
+      "sha256": "6011a00ecfbd2f0a4fbcfeeff169893fe3234db9f51ae49e698750ac8b94e9bf",
+      "bytes": 2343
     },
     {
       "path": "sdk/abi/defaults.json",
@@ -32,13 +32,13 @@
     },
     {
       "path": "sdk/abi/layout-win-x64.json",
-      "sha256": "34b1981ecbdd141f6ba239f716d0e57ae810404c974b6b5b8fb0d61ad7c5b972",
-      "bytes": 26511
+      "sha256": "46df6825dafa0f06fa878e102b0247ed01bba34e08dfa54e726e89896fe555bf",
+      "bytes": 26780
     },
     {
       "path": "sdk/abi/decode-hardware-report-v1.schema.json",
-      "sha256": "6f0c7422415653b3c3b55e4f0fd91afac1539ca7e7c15e167aaf8079c52449d0",
-      "bytes": 3811
+      "sha256": "dfd333ccb6af19e04ea68ad950f3b507172e4fb9c8ea677bf9aaef42249142f0",
+      "bytes": 3849
     },
     {
       "path": "sdk/abi/inference-hardware-report-v1.schema.json",

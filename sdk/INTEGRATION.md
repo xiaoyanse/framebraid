@@ -38,6 +38,8 @@ This Rust helper has bounded payload and item retention, keyframe-safe resynchro
 
 有序推理后端选择（v0.2.0 起随包，ABI 1.1 r9），使用时检查`AMV_CAP_ORDERED_SELECTION`。路径和内存均可选择；最多3个(backend, device_id)候选，CPU=0、OpenVINO CPU=1、CUDA=2。`allow_fallback=false`只尝试首项；没有列CPU就不会回退CPU；`budget_ms`为1～5000软预算，不能强杀原生Session构造。运行库仍由调用方初始化，不自动替换CPU/GPU版ORT。
 
+设备定向选择器（v0.8 起随包，ABI 1.6），使用时检查`AMV_CAP_DEVICE_SELECTOR`：多 GPU 机器上默认后端跟随设备枚举序（跨重启可能漂移），可用 `am_device_selector_t`（描述子串+实例序号，如 "rtx 5060"/"arc 140t"）在 `am_backend_selection_t.device` 与 `am_decoder_config_t.device` 显式定向；匹配域排除软件适配器，子串零命中或实例越界返回 `sdk.invalidArgument`（配置错误，不静默换卡），不传该字段行为与旧版完全一致。CUDA 候选子串命中后覆盖候选 device_id；DirectML 按 DXGI 适配器序号定向；OpenVINO 定向 GPU 设备（原生引擎 backend=4 暂仅 CPU，定向时返回 notSupported）。解码定向与 `hw_policy` 回退正交：定向核显后硬解失败仍回退软解。
+
 ```python
 with VisionContext(dll_path, [ort_directory]) as ctx:
     with ctx.load_model_selected(model_path, [(2, 0), (0, 0)],

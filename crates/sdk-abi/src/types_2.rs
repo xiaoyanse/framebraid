@@ -218,7 +218,8 @@ pub struct am_decoder_config_t {
     pub time_base_den: u32,
     pub queue_max_items: u32,
     pub queue_max_bytes: u64,
-    pub reserved: [u32; 4],
+    pub device: *const am_device_selector_t,
+    pub reserved: [u32; 3],
 }
 impl Default for am_decoder_config_t {
     fn default() -> Self {
@@ -234,7 +235,8 @@ impl Default for am_decoder_config_t {
             time_base_den: Default::default(),
             queue_max_items: Default::default(),
             queue_max_bytes: Default::default(),
-            reserved: [Default::default(); 4],
+            device: Default::default(),
+            reserved: [Default::default(); 3],
         }
     }
 }

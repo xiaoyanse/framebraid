@@ -13,6 +13,9 @@ pub struct BackendSelectionPolicy {
     pub priority: Vec<BackendTarget>,
     pub allow_fallback: bool,
     pub budget_ms: u32,
+    /// 设备定向选择器（ABI 1.6 §3.5b）：None=默认策略零变化；Some 时在 selection
+    /// 消费点按候选匹配域解析（零命中/实例越界=sdk.invalidArgument 同步拒绝）。
+    pub device: Option<super::device::DeviceSelector>,
 }
 impl BackendSelectionPolicy {
     pub fn validate(&self) -> Result<()> {
@@ -169,6 +172,7 @@ mod tests {
             ],
             allow_fallback: true,
             budget_ms: 1000,
+            device: None,
         }
     }
     #[test]

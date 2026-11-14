@@ -152,7 +152,7 @@ fn make_inner(ctx: &Arc<CameraState>, cfg: Arc<OwnedConfig>) -> Result<Inner> {
     }
     let buffers = buffers::Buffers::new(ctx, cfg.abi.queue_max_items as usize)?;
     let gate = BudgetedGate::new(ctx, &cfg)?;
-    let selected = CpuDecoder::create_with_policy(
+    let selected = CpuDecoder::create_with_selection(
         runtime(ctx)?,
         cfg.codec,
         &cfg.extra,
@@ -163,6 +163,7 @@ fn make_inner(ctx: &Arc<CameraState>, cfg: Arc<OwnedConfig>) -> Result<Inner> {
             HardwarePolicy::PreferHardware
         },
         Duration::from_millis(1500),
+        cfg.device.as_ref(),
     )
     .map_err(convert)?;
     Ok(Inner {
