@@ -306,8 +306,8 @@
     {
       "path": "crates/camera-ffi/src/decoder/mod.rs",
       "previousSha256": "8de1d164f8a8854c7695e28f23b47fca383eadce8e33afc441209bf0ac88222b",
-      "sha256": "21ede76d64045d5837e29bde8e4884f0547bac9a16cf03ef5679dfa0c289e117",
-      "reason": "sdk-v08 V8.3: decoder create/reset passes parsed selector into create_with_selection"
+      "sha256": "0fc053fbae1eb7c8dd212f21d1c0eeeb55de1a7d7e02e1ae170d2578538b32ce",
+      "reason": "sdk-v08 V8.5: register device_selector_tests module (targeted-Arc D3D11VA e2e gate, test-only; C ABI unchanged; interim state 21ede76d = V8.3 selector pass-through)"
     },
     {
       "path": "crates/camera-ffi/src/decoder/receive.rs",
@@ -900,8 +900,8 @@
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
       "previousSha256": "22fd81aaaaee437f5839aa03437fa4fdddf9ab56d277836e78c5cd63e7b508de",
-      "sha256": "e9cc953cb7570fc22e8b03302f97428dc05f2e75f1dcb56ff2adbb276af20661",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 8469a96ffaeab3f4a11cd6325d8294124a52dd0a15c06ed1c4d2fe0ae1f138fa"
+      "sha256": "3d2c477b4bbc46a5e63c6f65c338151b5e9a961ca7c031ee81ed05c2474406e9",
+      "reason": "sdk-v08 V8.5: register device_selector_e2e_tests module (DML device-selector e2e gate, test-only; C ABI unchanged; interim states 8469a96f GPU cascade / e9cc953c cascade hardening)"
     },
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
