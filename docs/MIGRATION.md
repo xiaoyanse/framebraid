@@ -71,7 +71,7 @@ All opt-in — staying put requires no change. Capability-check before submittin
 
 Behavior stays as in 1.4 (per-ROI, TF32 default) with no compatibility risk; you only forgo the single source copy and strict parity.
 
-## ABI 1.5 → 1.6（**未发布 / Unreleased**：合同冻结于设计文档 §3.5b，实现位于 `sdk-v08-wip` 分支，未随任何公开版本发布）
+## ABI 1.5 → 1.6（v0.8.0，`AM_ABI_VERSION` 65542；合同 §3.5b）
 
 **变了什么 / What changed**：设备定向选择器 `am_device_selector_t`（`AM_ABI_VERSION` 65541→65542 计划值）：`match_utf8` 大小写不敏感子串 + `instance` 实例序号（同子串第 N 个匹配，0 起）定向具体适配器——CUDA 候选匹配 CUDA 设备名，DML/OpenVINO 候选与硬解（`am_decoder_config_t.device`）匹配 DXGI 适配器 Description；匹配域排除软件适配器。selection 尾部追加选择器指针、decoder 配置定向、能力位 `AMV_CAP_DEVICE_SELECTOR`（bit12）。**默认零变化**：selector 为 NULL 或 `match_bytes=0` 时不定向，行为与 1.5 完全一致。
 
@@ -81,9 +81,9 @@ The device-targeted selector `am_device_selector_t` (planned `AM_ABI_VERSION` 65
 
 Deployments on multi-GPU machines relying on device enumeration order — the order drifts across machines/reboots (observed: DXGI index 0 resolved to the iGPU in one snapshot and the dGPU in another), which is not an explainable default.
 
-**怎么迁 / How to migrate**：**（本节为未发布合同预读，勿在生产消费）**先查能力位与 ABI ≥1.6；跨重启稳定的定向键为"厂商名+型号子串"（如 `rtx 5060`/`arc 140t`），同型号多实例配 `instance` 消歧；selector 与 CUDA 既有 `device_id` 并存时 **selector 优先**；零命中或 `instance` 越界返回 `sdk.invalidArgument`（配置错误，不静默回退其他适配器）。定向与后端回退正交——定向核显后硬解失败仍按 PREFER_HW 回退软解。
+**怎么迁 / How to migrate**：先查能力位与 ABI ≥1.6；跨重启稳定的定向键为"厂商名+型号子串"（如 `rtx 5060`/`arc 140t`），同型号多实例配 `instance` 消歧；selector 与 CUDA 既有 `device_id` 并存时 **selector 优先**；零命中或 `instance` 越界返回 `sdk.invalidArgument`（配置错误，不静默回退其他适配器）。定向与后端回退正交——定向核显后硬解失败仍按 PREFER_HW 回退软解。
 
-**(Unreleased contract preview — do not consume in production.)** Capability-check and require ABI ≥1.6; the reboot-stable key is a vendor+model substring (e.g. `rtx 5060`/`arc 140t`), with `instance` disambiguating same-model multiples; when both a selector and a CUDA `device_id` are given, the selector wins; zero hits or an out-of-range `instance` return `sdk.invalidArgument` (a configuration error — never a silent fallback to another adapter). Targeting is orthogonal to backend fallback chains.
+Capability-check and require ABI ≥1.6; the reboot-stable key is a vendor+model substring (e.g. `rtx 5060`/`arc 140t`), with `instance` disambiguating same-model multiples; when both a selector and a CUDA `device_id` are given, the selector wins; zero hits or an out-of-range `instance` return `sdk.invalidArgument` (a configuration error — never a silent fallback to another adapter). Targeting is orthogonal to backend fallback chains.
 
 **不迁会怎样 / If you don't migrate**：与 1.5 行为一致，跟随默认枚举序；在枚举序漂移的机器上可能落到非预期适配器，需自行以诊断报告核对实际后端设备。
 
