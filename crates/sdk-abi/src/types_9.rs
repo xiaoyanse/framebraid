@@ -2,6 +2,52 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct amv_result_t {
+    pub struct_size: u32,
+    pub request_id: u64,
+    pub task: am_task_e,
+    pub frame: *const am_frame_assoc_t,
+    pub model: am_model_identity_t,
+    pub execution: am_backend_actual_t,
+    pub transform: *const am_preprocess_meta_t,
+    pub pose: am_pose_result_t,
+    pub detect: am_detect_result_t,
+    pub classify: am_classify_result_t,
+    pub segment: am_segment_result_t,
+    pub obb: am_obb_result_t,
+    pub raw_output_count: u32,
+    pub raw_outputs: *const am_tensor_out_t,
+    pub infer_start_ms: i64,
+    pub infer_end_ms: i64,
+    pub vocab_hits: *const am_vocab_hit_map_t,
+    pub cascade: *const am_cascade_result_t,
+}
+impl Default for amv_result_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            request_id: Default::default(),
+            task: Default::default(),
+            frame: Default::default(),
+            model: Default::default(),
+            execution: Default::default(),
+            transform: Default::default(),
+            pose: Default::default(),
+            detect: Default::default(),
+            classify: Default::default(),
+            segment: Default::default(),
+            obb: Default::default(),
+            raw_output_count: Default::default(),
+            raw_outputs: Default::default(),
+            infer_start_ms: Default::default(),
+            infer_end_ms: Default::default(),
+            vocab_hits: Default::default(),
+            cascade: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_realtime_policy_t {
     pub struct_size: u32,
     pub max_inflight: u32,

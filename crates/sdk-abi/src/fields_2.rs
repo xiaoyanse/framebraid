@@ -377,8 +377,12 @@ impl AbiLayout for am_decoder_config_t {
             core::mem::size_of::<u64>(),
         ),
         (
+            core::mem::offset_of!(am_decoder_config_t, device),
+            core::mem::size_of::<*const am_device_selector_t>(),
+        ),
+        (
             core::mem::offset_of!(am_decoder_config_t, reserved),
-            core::mem::size_of::<[u32; 4]>(),
+            core::mem::size_of::<[u32; 3]>(),
         ),
     ];
 }

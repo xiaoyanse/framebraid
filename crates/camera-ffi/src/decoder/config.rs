@@ -1,6 +1,6 @@
 use super::*;
 use am_camera_core::media::{
-    codec::visit_access_units,
+    codec::{selection::DeviceSelector, visit_access_units},
     ffmpeg_lib::{probe_dirs, FfmpegApi, FfmpegLoadError},
 };
 use std::path::PathBuf;
@@ -36,14 +36,45 @@ pub struct Config {
     pub abi: am_decoder_config_t,
     pub extra: Vec<u8>,
     pub codec: VideoCodec,
+    /// 设备定向选择器（§3.5b）：None=默认策略零变化；解析后的匹配在 decoder
+    /// create/reset 的设备选择点执行（零命中=sdk.invalidArgument 同步返回）。
+    pub device: Option<DeviceSelector>,
 }
 unsafe impl Send for Config {}
+/// 解析 am_decoder_config_t.device（§3.5b）：NULL=不定向；结构/保留位/终结符
+/// 错误在此同步返回；零命中与实例越界在设备选择点（make_inner）拒绝。
+unsafe fn device_selector(pointer: *const am_device_selector_t) -> Result<Option<DeviceSelector>> {
+    if pointer.is_null() {
+        return Ok(None);
+    }
+    let raw = unsafe { args::read(pointer, size_of::<am_device_selector_t>()) }?;
+    if raw.reserved != 0 {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    if raw.match_utf8.is_null() || raw.match_bytes == 0 {
+        return Ok(None);
+    }
+    if raw.match_bytes as usize > SDK_MAX_STRING_BYTES as usize {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    // match_bytes 含 NUL 终结：末字节必须为 0、前缀无内嵌 NUL 且为合法 UTF-8。
+    let bytes = unsafe {
+        std::slice::from_raw_parts(raw.match_utf8.cast::<u8>(), raw.match_bytes as usize)
+    };
+    if bytes.last() != Some(&0) || bytes[..bytes.len() - 1].contains(&0) {
+        return Err(AM_ERR_SDK_UTF8_INVALID);
+    }
+    let needle =
+        std::str::from_utf8(&bytes[..bytes.len() - 1]).map_err(|_| AM_ERR_SDK_UTF8_INVALID)?;
+    Ok(Some(DeviceSelector::new(needle, raw.instance)))
+}
 impl Config {
     pub unsafe fn read(
         pointer: *const am_decoder_config_t,
         mut reserve: impl FnMut(usize) -> Result<()>,
     ) -> Result<Self> {
         let mut abi = unsafe { args::read(pointer, size_of::<am_decoder_config_t>()) }?;
+        let device = unsafe { device_selector(abi.device) }?;
         let codec = match abi.codec {
             AM_CODEC_H264 => VideoCodec::H264,
             AM_CODEC_H265 => VideoCodec::H265,
@@ -93,7 +124,12 @@ impl Config {
             abi.output_pixel_format = AM_PF_RGBA8 as u32;
         }
         abi.extradata = std::ptr::null();
-        Ok(Self { abi, extra, codec })
+        Ok(Self {
+            abi,
+            extra,
+            codec,
+            device,
+        })
     }
 }
 pub fn runtime(state: &CameraState) -> Result<Arc<FfmpegApi>> {
@@ -316,6 +352,8 @@ pub fn convert(e: DecodeError) -> i32 {
         DecodeError::AllocationFailed => AM_ERR_SDK_OUT_OF_MEMORY,
         DecodeError::FrameTooLarge => AM_ERR_SDK_RESOURCE_EXHAUSTED,
         DecodeError::Drained => AM_ERR_SDK_DRAINED,
+        // 定向零命中/实例越界（§3.5b）：配置错误同步拒绝。
+        DecodeError::InvalidDeviceSelector => AM_ERR_SDK_INVALID_ARGUMENT,
         _ => AM_ERR_CAMERA_CODEC_UNSUPPORTED,
     }
 }
@@ -323,6 +361,68 @@ pub fn convert(e: DecodeError) -> i32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn device_selector_contract_is_validated_on_config_read() {
+        let needle = b"Arc 140T\0";
+        let make = |match_bytes: u32, reserved: u32, struct_size: u32| am_device_selector_t {
+            struct_size,
+            match_utf8: needle.as_ptr().cast(),
+            match_bytes,
+            instance: 1,
+            reserved,
+        };
+        let mut abi = am_decoder_config_t {
+            struct_size: size_of::<am_decoder_config_t>() as u32,
+            codec: AM_CODEC_H264,
+            bitstream_format: AM_BSF_ANNEXB,
+            output_pixel_format: AM_PF_RGBA8 as u32,
+            hw_policy: 0,
+            ..Default::default()
+        };
+        let mut read = |selector: *const am_device_selector_t| {
+            abi.device = selector;
+            unsafe { Config::read(&abi, |_| Ok(())) }
+        };
+        // NULL 与空 match_bytes 均为不定向：默认策略零变化（§3.5b）。
+        let empty = make(0, 0, size_of::<am_device_selector_t>() as u32);
+        assert!(read(std::ptr::null()).unwrap().device.is_none());
+        assert!(read(&empty).unwrap().device.is_none());
+        // 合法定向：needle 小写化+instance 透传。
+        let valid = make(
+            needle.len() as u32,
+            0,
+            size_of::<am_device_selector_t>() as u32,
+        );
+        let parsed = read(&valid).unwrap().device.unwrap();
+        assert_eq!(parsed.needle(), "arc 140t");
+        assert_eq!(parsed.instance(), 1);
+        // reserved≠0 = sdk.invalidArgument。
+        let reserved = make(
+            needle.len() as u32,
+            1,
+            size_of::<am_device_selector_t>() as u32,
+        );
+        assert_eq!(
+            read(&reserved).map(|_| ()).unwrap_err(),
+            AM_ERR_SDK_INVALID_ARGUMENT
+        );
+        // 无 NUL 终结 = sdk.utf8Invalid。
+        let unterminated = make(
+            needle.len() as u32 - 1,
+            0,
+            size_of::<am_device_selector_t>() as u32,
+        );
+        assert_eq!(
+            read(&unterminated).map(|_| ()).unwrap_err(),
+            AM_ERR_SDK_UTF8_INVALID
+        );
+        // struct_size 非法 = sdk.structSizeInvalid。
+        let short = make(needle.len() as u32, 0, 8);
+        assert_eq!(
+            read(&short).map(|_| ()).unwrap_err(),
+            AM_ERR_SDK_STRUCT_SIZE_INVALID
+        );
+    }
     #[test]
     fn h264_combined_sets_and_idr_in_one_packet_is_ready() {
         // FILE 源 framing 输出形态：SPS+PPS 前置与 IDR 同包（Annex-B）。

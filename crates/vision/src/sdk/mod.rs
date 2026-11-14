@@ -2,6 +2,7 @@
 mod batch;
 pub mod batching;
 pub mod cascade;
+pub mod device;
 pub mod encoded;
 mod model;
 mod onnx;

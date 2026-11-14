@@ -1,6 +1,41 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_cascade_request_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_cascade_request_t>(), 40);
+    assert_eq!(core::mem::align_of::<am_cascade_request_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_request_t, struct_size),
+        0,
+        "am_cascade_request_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_request_t, static_rois),
+        8,
+        "am_cascade_request_t.static_rois"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_request_t, static_roi_count),
+        16,
+        "am_cascade_request_t.static_roi_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_request_t, rules),
+        24,
+        "am_cascade_request_t.rules"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_request_t, rule_count),
+        32,
+        "am_cascade_request_t.rule_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
+        36,
+        "am_cascade_request_t.secondary_confidence"
+    );
+}
+#[test]
 fn am_cascade_hit_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_cascade_hit_t>(), 20);
     assert_eq!(core::mem::align_of::<am_cascade_hit_t>(), 4);
@@ -278,45 +313,5 @@ fn am_batching_stats_t_matches_c() {
         core::mem::offset_of!(am_batching_stats_t, rejected_items),
         32,
         "am_batching_stats_t.rejected_items"
-    );
-}
-#[test]
-fn am_pool_desc_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_pool_desc_t>(), 48);
-    assert_eq!(core::mem::align_of::<am_pool_desc_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, struct_size),
-        0,
-        "am_pool_desc_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, model),
-        8,
-        "am_pool_desc_t.model"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, model_memory),
-        16,
-        "am_pool_desc_t.model_memory"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, shards),
-        24,
-        "am_pool_desc_t.shards"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, lanes),
-        28,
-        "am_pool_desc_t.lanes"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, batching),
-        32,
-        "am_pool_desc_t.batching"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_pool_desc_t, reserved),
-        40,
-        "am_pool_desc_t.reserved"
     );
 }

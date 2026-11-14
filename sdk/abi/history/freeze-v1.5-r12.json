@@ -1,0 +1,64 @@
+{
+  "id": "am-sdk-cabi-1.5-gpu-roi-r12",
+  "previousFreezeSha256": "87b909eb57ebd957244069cc50904abcaf7fd6b22450c55f959d73922f90419e",
+  "abiVersion": 65541,
+  "designFrozen": true,
+  "runtimeAcceptance": "pending",
+  "files": [
+    {
+      "path": "sdk/include/am_camera.h",
+      "sha256": "30cf23eac4beb3d0745a7333f84910fd4b3271f8a4efb05e28a5810c903a057c",
+      "bytes": 10738
+    },
+    {
+      "path": "sdk/include/am_vision.h",
+      "sha256": "e3137ae1ba24889b06aa54d028d8b253191b91f3e180ad66c5ffb40fc46f78ea",
+      "bytes": 8440
+    },
+    {
+      "path": "sdk/include/am_sdk_types.h",
+      "sha256": "13b94eaefeaf40033061105c964982221fc7e2f7d5a7aab434ee8d6e5c234c89",
+      "bytes": 83160
+    },
+    {
+      "path": "sdk/abi/constants.json",
+      "sha256": "503c2406eaf0c00e12c622b5e7ec630417884a9618d5821a05d2231896817f8d",
+      "bytes": 2322
+    },
+    {
+      "path": "sdk/abi/defaults.json",
+      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010",
+      "bytes": 1923
+    },
+    {
+      "path": "sdk/abi/layout-win-x64.json",
+      "sha256": "34b1981ecbdd141f6ba239f716d0e57ae810404c974b6b5b8fb0d61ad7c5b972",
+      "bytes": 26511
+    },
+    {
+      "path": "sdk/abi/decode-hardware-report-v1.schema.json",
+      "sha256": "6f0c7422415653b3c3b55e4f0fd91afac1539ca7e7c15e167aaf8079c52449d0",
+      "bytes": 3811
+    },
+    {
+      "path": "sdk/abi/inference-hardware-report-v1.schema.json",
+      "sha256": "2d6dd24d8400f100f3cdcb6ec8bcd0801b20c92aab8e9023d6f06f81a20e17a9",
+      "bytes": 2171
+    },
+    {
+      "path": "sdk/abi/inference-selection-v1.schema.json",
+      "sha256": "3c56be61e0c28e34a2fd012f1826d378ad5aa4d70ba313d8d5e8af8495cc3465",
+      "bytes": 2887
+    },
+    {
+      "path": "crates/vision/resources/profiles.json",
+      "sha256": "dd3ebfaa949179c3bdb8e21ce363a2ee12bdf9f9b1bf9a81acc3d10bd3c4a79d",
+      "bytes": 6994
+    },
+    {
+      "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",
+      "sha256": "77b2823b7ea9275d9b347c5d7f82b08f58941db8f0b7a3d19aea89836aa5eaed",
+      "bytes": 3490
+    }
+  ]
+}

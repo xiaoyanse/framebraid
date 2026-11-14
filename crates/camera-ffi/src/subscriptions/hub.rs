@@ -649,6 +649,7 @@ fn configuration(codec: VideoCodec, info: &StreamInfo) -> Config {
         },
         extra: info.extradata.clone(),
         codec,
+        device: None,
     }
 }
 fn is_random(codec: VideoCodec, bytes: &[u8]) -> bool {

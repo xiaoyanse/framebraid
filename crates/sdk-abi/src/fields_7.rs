@@ -1,5 +1,37 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_pool_desc_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_pool_desc_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, model),
+            core::mem::size_of::<*const am_model_desc_t>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, model_memory),
+            core::mem::size_of::<*const am_model_memory_desc_t>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, shards),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, lanes),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, batching),
+            core::mem::size_of::<*const am_batching_options_t>(),
+        ),
+        (
+            core::mem::offset_of!(am_pool_desc_t, reserved),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_preprocess_meta_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -213,30 +245,6 @@ impl AbiLayout for am_detect_result_t {
         (
             core::mem::offset_of!(am_detect_result_t, boxes),
             core::mem::size_of::<*const am_detect_box_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_vocab_entry_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_vocab_entry_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_vocab_entry_t, label_utf8),
-            core::mem::size_of::<*const c_char>(),
-        ),
-        (
-            core::mem::offset_of!(am_vocab_entry_t, token_ids),
-            core::mem::size_of::<*const i64>(),
-        ),
-        (
-            core::mem::offset_of!(am_vocab_entry_t, token_rows),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_vocab_entry_t, token_cols),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

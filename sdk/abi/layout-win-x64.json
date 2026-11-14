@@ -401,7 +401,7 @@
       }
     },
     "am_decoder_config_t": {
-      "size": 80,
+      "size": 88,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -415,7 +415,8 @@
         "time_base_den": 44,
         "queue_max_items": 48,
         "queue_max_bytes": 56,
-        "reserved": 64
+        "device": 64,
+        "reserved": 72
       }
     },
     "am_decoder_input_t": {
@@ -563,15 +564,27 @@
         "device_id": 4
       }
     },
+    "am_device_selector_t": {
+      "size": 32,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "match_utf8": 8,
+        "match_bytes": 16,
+        "instance": 20,
+        "reserved": 24
+      }
+    },
     "am_backend_selection_t": {
-      "size": 24,
+      "size": 32,
       "align": 8,
       "offsets": {
         "struct_size": 0,
         "candidate_count": 4,
         "candidates": 8,
         "allow_fallback": 16,
-        "budget_ms": 20
+        "budget_ms": 20,
+        "device": 24
       }
     },
     "am_backend_policy_t": {

@@ -1,8 +1,8 @@
 {
  "abiMajor": 1,
- "abiMinor": 5,
+ "abiMinor": 6,
  "constants": {
-  "AM_ABI_VERSION": 65541,
+  "AM_ABI_VERSION": 65542,
   "AM_BACKEND_STRICT_CUDA_FP32": 2,
   "AM_OK": 0,
   "AM_CODEC_H264": 1,
@@ -103,6 +103,7 @@
   "SHARED_FRAME_POOL",
   "ORDERED_SELECTION",
   "GPU_FRAME_INPUT",
-  "GPU_CASCADE"
+  "GPU_CASCADE",
+  "DEVICE_SELECTOR"
  ]
 }

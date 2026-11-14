@@ -883,6 +883,19 @@ AM_API am_status_t amv_pool_close(amv_pool_t* pool, uint32_t timeout_ms,
 
 **分通道批形状**：攒批配置由 desc 显式传（`am_batching_options_t.max_batch_items` 即批形状；无自动通道探测，YAGNI）——接入方按 INTEGRATION 多 Model 分通道指导传值（GPU 帧直传批 4 / CPU 像素批 2 文档指导值）；池不隐式改写、不按通道猜测。错误码 `vision.batchUnsupported` 的适用范围与运行期切换语义（configure 后新请求生效）同 §3.5 攒批段。
 
+### 3.5b 设备定向选择器（v0.8，ABI 1.6 兼容新增）
+
+多 GPU 机器（独显+核显/同型号多实例）上，默认后端策略跟随设备枚举序——枚举序本身跨机器/跨重启漂移（sdk-v08 侦察实证：DXGI index 0 在两次快照中分别为核显与独显），不构成可解释的默认。本节提供**显式适配器定向**（`am_device_selector_t`，types §3.1）：
+
+- **匹配语义**：`match_utf8` 为大小写不敏感子串，匹配对象——CUDA 候选=CUDA 设备名；DML/OPENVINO(_NATIVE) 候选=DXGI 适配器 Description；硬解（`am_decoder_config_t.device`）=DXGI 适配器 Description。匹配域排除软件适配器（WARP/软件渲染器）。`instance` 取同子串第 N 个匹配（0 起），用于同型号多实例消歧（如 Arc 核显双实例双 LUID）。
+- **键稳定性**：描述子串+实例序号跨重启稳定（不依赖 DXGI 枚举序与 LUID——前者漂移、后者跨重启变化）。跨重启仍唯一的定向以"厂商名+型号子串"为准（"rtx 5060"/"arc 140t"）；裸厂商名（"arc"）在多实例机器配 instance 消歧。
+- **默认零变化**：selector 为 NULL 或 `match_bytes=0` 时不定向，行为与 v0.8 前完全一致（含默认策略的枚举序跟随——本节不改变默认，只提供显式覆盖）。能力位 `AMV_CAP_DEVICE_SELECTOR`（bit12）声明本能力。
+- **校验与错误**：`struct_size` 非法=sdk.structSizeInvalid；`reserved≠0`=sdk.invalidArgument；零命中（无适配器匹配子串）或 `instance` 越界=sdk.invalidArgument（配置错误，不静默回退其他适配器）；match 字节数与内容不一致（无 NUL 终结）=sdk.utf8Invalid。错误在 selection 消费点（`amv_context_initialize` 的 selection 校验段）与 decoder create 时同步返回，不产生部分初始化状态。
+- **定向与回退正交**：selector 定的是"用哪个适配器"；后端回退链（`allow_fallback`/`hw_policy`）定的是"该后端不可用时换哪条路径"。定向命中后，该后端自身的失败/回退语义不变（如硬解定向核显后硬解失败仍按 PREFER_HW 回退软解；推理候选链的下一候选不再受已定向候选的 selector 影响——selector 只作用于其匹配域内的候选）。
+- **CUDA device_id 并存**：CUDA 候选既有 `device_id`（CUDA 枚举索引）继续有效；selection.device 同给时 **selector 优先**（描述子串跨重启稳定，device_id 跟随 CUDA 枚举序），二者冲突（子串命中的设备与 device_id 不同）以 selector 命中为准。渐进统一：新代码建议 selector。
+- **DML 部署约束（运行库层，非本节合同强制）**：DML ORT 包与 CPU/CUDA 线 ORT 同进程互斥（B14 单一兼容 ORT 约束）——DML 形态按专用进程部署（INTEGRATION 指导），`vision.backendConflict` 报告机制不变。
+- **线程**：selector 仅在 selection 消费点读取（init/decoder create），之后 SDK 内部持有解析结果；调用方可在 init 返回后释放 selector 内存。只读结构无并发约束。
+
 ### 3.6 结果获取（B02 五类结构 / B03 快照闭环 / B08 所有权）
 
 ```c

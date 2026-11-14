@@ -6,6 +6,8 @@ mod batching_exports;
 mod cascade;
 #[cfg(test)]
 mod cascade_e2e_tests;
+#[cfg(test)]
+mod device_selector_e2e_tests;
 mod exports;
 #[cfg(test)]
 mod exports_tests;

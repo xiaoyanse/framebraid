@@ -11,6 +11,7 @@ pub(super) fn create(
     target: BackendTarget,
     threads: usize,
     cuda_fp32: bool,
+    ov_gpu: bool,
 ) -> std::result::Result<Session, AttemptError> {
     if !super::runtime::initialized() {
         return Err(AttemptError::key("vision.runtimeMissing", "runtime"));
@@ -38,11 +39,21 @@ pub(super) fn create(
     let provider = match target.backend {
         0 => ort::ep::CPU::default().build().error_on_failure(),
         1 => ort::ep::OpenVINO::default()
-            .with_device_type("CPU")
+            // 定向（§3.5b）：OV 设备粒度为单 "GPU"；默认保持 CPU（既有行为零变化）。
+            .with_device_type(if ov_gpu { "GPU" } else { "CPU" })
             .with_num_threads(threads)
             .build()
             .error_on_failure(),
-        3 => ort::ep::DirectML::default().build(),
+        // 定向（§3.5b）：device_id 由 selector 解析为 DXGI 序号（外部候选恒 0）；
+        // 0 保持 EP 默认选卡（既有行为零变化）。
+        3 => {
+            let directml = if target.device_id != 0 {
+                ort::ep::DirectML::default().with_device_id(target.device_id as i32)
+            } else {
+                ort::ep::DirectML::default()
+            };
+            directml.build()
+        }
         _ => {
             let cuda = ort::ep::CUDA::default().with_device_id(target.device_id as i32);
             let cuda = if cuda_fp32 {

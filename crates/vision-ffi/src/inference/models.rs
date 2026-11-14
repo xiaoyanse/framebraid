@@ -385,15 +385,10 @@ unsafe fn load_inner(
                     .map_err(|_| AM_ERR_SDK_INVALID_ARGUMENT)?,
                 mode,
                 actual: model.actual_backend,
-                device: CString::new(match model.actual_backend {
-                    1 => "OpenVINO:CPU".to_owned(),
-                    2 => format!(
-                        "CUDA:{}",
-                        model.selection_report().selected.map_or(0, |v| v.device_id)
-                    ),
-                    _ => "CPU".to_owned(),
-                })
-                .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?,
+                // 设备标签由核心层 selection 结果回填（CUDA:{ordinal}/DML[:{dxgi}]/
+                // OpenVINO:{CPU|GPU}）——v0.8 修正 DML 误写 "CPU" 与 E1 缺标签。
+                device: CString::new(model.device_label.clone())
+                    .map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?,
                 fallback_reason: if model.fallback {
                     Some(
                         CString::new(if selected.is_some() {

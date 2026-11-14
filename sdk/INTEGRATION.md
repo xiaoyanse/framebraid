@@ -38,6 +38,8 @@ This Rust helper has bounded payload and item retention, keyframe-safe resynchro
 
 有序推理后端选择（v0.2.0 起随包，ABI 1.1 r9），使用时检查`AMV_CAP_ORDERED_SELECTION`。路径和内存均可选择；最多3个(backend, device_id)候选，CPU=0、OpenVINO CPU=1、CUDA=2。`allow_fallback=false`只尝试首项；没有列CPU就不会回退CPU；`budget_ms`为1～5000软预算，不能强杀原生Session构造。运行库仍由调用方初始化，不自动替换CPU/GPU版ORT。
 
+设备定向选择器（ABI 1.6 兼容新增，随 sdk-v08 落地、随 v0.8.0 发布，当前 v0.7.2 公开包不含）：多 GPU 机器上默认后端跟随设备枚举序（跨重启可能漂移），可用 `am_device_selector_t`（描述子串+实例序号）在 `am_backend_selection_t.device` 与 `am_decoder_config_t.device` 显式定向；完整用法、C 示例、DML 部署约束与 OpenVINO 现状见下文[设备定向（Device Selector）](#设备定向device-selector--设备定向选择器)节。
+
 ```python
 with VisionContext(dll_path, [ort_directory]) as ctx:
     with ctx.load_model_selected(model_path, [(2, 0), (0, 0)],
@@ -48,6 +50,52 @@ with VisionContext(dll_path, [ort_directory]) as ctx:
 加载失败的`SdkError.attempt_id`或C# `out attemptId`非0时，可读context尝试报告；只保留最近开始的一次，已覆盖返回resultExpired。成功模型有独立缓存，Run计数仅代表core执行/输出，不代表业务已消费。旧入口返回legacy_model而不虚构新诊断。C查询采用容量+required含NUL模式，详见ABI §3.2和`inference-selection-v1.schema.json`；查询不触发驱动/ORT操作。C#完整示例见`examples/Selection.cs`，调用示例以CPU版ORT作strict负向控制。
 
 Python方法`load_model_memory_selected`与C# `LoadModelMemorySelected`复制接受的模型字节；原数据可在加载返回后回收。结果拥有其设备/回退字符串，模型关闭后仍可读到结果release。多模型诊断计control额度，资源不足明确拒绝，不增默认额度。加速实机/故障恢复/长跑尚未验收，见[阶段记录](../docs/verification/sdk-h5-ordered-selection-20261026.md)。
+
+## 设备定向（Device Selector）/ 设备定向选择器
+
+设备定向选择器（ABI 1.6 兼容新增，`AM_ABI_VERSION` 65542；随 sdk-v08 落地、随 v0.8.0 发布，当前 v0.7.2 公开包不含——调用前先按本节能力协商检查）。合同见设计文档 §3.5b 与 types §3.1。
+
+**为什么需要**：多 GPU 机器（独显+核显/同型号多实例）上默认后端策略跟随设备枚举序，而 DXGI/CUDA 枚举序本身跨机器、跨重启漂移，不构成可解释的默认。定向键=**适配器描述子串+实例序号**：`am_device_selector_t` 的 `match_utf8` 为大小写不敏感子串（如 "arc 140t"/"rtx 5060"），`instance` 取同子串第 N 个匹配（0 起）消歧同型号多实例（如 Arc 核显双实例双 LUID）；跨重启稳定的定向以「厂商名+型号」子串为准，裸厂商名（"arc"）在多实例机器配 `instance` 消歧。匹配域排除软件适配器（WARP/软件渲染器）。子串+实例序号不依赖 DXGI 枚举序与 LUID（前者漂移、后者跨重启变化）。
+
+**挂载点**：推理侧 `am_backend_selection_t.device`（随 `amv_model_load_selected`/`amv_model_load_memory_selected` 消费）；解码侧 `am_decoder_config_t.device`（`amc_decoder_create` 消费，定向 D3D11VA 硬解适配器）。不传（NULL 或 `match_bytes=0`）不定向，行为与旧版完全一致。
+
+**匹配语义**：CUDA 候选=子串匹配 CUDA 设备名；DirectML/OpenVINO 候选=DXGI 适配器 Description；硬解=DXGI 适配器 Description。**CUDA 候选既有 `device_id` 继续有效，selector 与 device_id 同给时 selector 优先**（子串跨重启稳定、device_id 跟随 CUDA 枚举序；冲突时以 selector 命中为准）——新代码建议 selector。
+
+**错误与回退语义**：子串零命中或 `instance` 越界=`sdk.invalidArgument` 同步拒绝（配置错误，不静默换卡、不回退其他适配器）；`struct_size` 非法=`sdk.structSizeInvalid`，`reserved≠0`=`sdk.invalidArgument`，match 无 NUL 终结=`sdk.utf8Invalid`。错误在消费点（init 的 selection 校验段/decoder create）同步返回，不产生部分初始化状态。**定向与回退正交**：selector 定「用哪个适配器」，回退链定「该后端不可用时换哪条路径」——定向核显后硬解失败仍按 `hw_policy`（PREFER_HW）回退软解；推理候选链中已定向候选失败后，下一候选不再受该 selector 影响。
+
+**能力协商（完整用法）**：①加载后先核 `amv_get_abi_version` ≥1.6（旧 DLL 按次版本规则拒绝 1.6 初始化，缺新符号由加载期符号解析失败表达）；②`amv_query_capability(ctx, &out)` 检查 `out.feature_bits & AMV_CAP_DEVICE_SELECTOR`（bit12）——置位才可用本节能力，未置位按旧版行为（不传 selector）；③解码定向以 `amc_decoder_create` 的实际返回为准，零命中同码 `sdk.invalidArgument` 同步拒绝。能力查询与实际支持一致，未验证状态如实报告，不把能力位当验收。
+
+C 示例（match:"Arc" 定向核显 DML 推理；解码侧同构——`am_decoder_config_t.device = &sel` 指向同一结构）：
+
+```c
+am_device_selector_t sel; memset(&sel, 0, sizeof sel);
+sel.struct_size = sizeof sel;
+sel.match_utf8  = "Arc";          /* 大小写不敏感子串；"arc 140t" 更精确 */
+sel.match_bytes = 4;              /* 含 NUL 字节数 */
+sel.instance    = 0;              /* 同子串首个匹配（双 Arc 实例按序消歧） */
+
+am_backend_candidate_t cands[1] = { { AM_BACKEND_DIRECTML, 0 } };
+am_backend_selection_t sel_cfg; memset(&sel_cfg, 0, sizeof sel_cfg);
+sel_cfg.struct_size     = sizeof sel_cfg;
+sel_cfg.candidate_count = 1;
+sel_cfg.candidates      = cands;
+sel_cfg.allow_fallback  = 0;      /* strict；回退链与定向正交（见上） */
+sel_cfg.device          = &sel;   /* 不定向=NULL，行为与旧版一致 */
+
+amv_model_t* m = NULL; uint64_t attempt = 0;
+int rc = amv_model_load_selected(ctx, &md, &sel_cfg, &m, &attempt);
+if (rc != AM_OK) { /* rc=3 sdk.invalidArgument：零命中/越界=配置错误，检查子串拼写 */ }
+```
+
+**部署约束（DML 运行库形态，重要）**：
+
+- 每进程单一兼容 ORT 运行库（B14 单一 ORT 合同）。**DML 包（PyPI `onnxruntime-directml` wheel，实测 1.24.4）与 CPU/CUDA 线 ORT 同进程互斥**：DML 会话已初始化后，同进程再以 CUDA 线 ORT 目录加载（legacy `amv_model_load` 与 selection 入口均实证）返回 `vision.backendConflict`（rc 1026）——SDK 显式拒绝而非静默混载，反向顺序对称；被拒后 DML 会话继续推理不受影响。
+- 因此 **DML 形态按专用进程部署**：该进程 vision `runtime_dirs` 只传 DML 包目录，`AM_SDK_ORT_DIR` 与进程 PATH 也不挂 CUDA 线 ORT 目录；CUDA 与 DML 需求分进程承载。CUDA 线与 CPU 线沿用既有形态不变。
+- DML 依赖检查按合同支持系统回退：运行库目录缺 DirectML.dll 时检查系统 DirectML 可见性（实测 System32 DirectML 1.15.6 可用，SDK 优先使用包内自带副本）。
+
+**OpenVINO 现状（如实登记）**：原生引擎（backend=4，E1）当前运行库仅含 CPU 插件——selector 定向 GPU 返回 `sdk.notSupported`（不静默回退 CPU），GPU 插件支持登记为后续项。OV EP 线（backend=1）当前 provider 运行库加载失败（Error 127），selector→OV-GPU 代码路径在位但暂无法端到端验证。
+
+验证状态（诚实边界）：定向实现经真机端到端验证——Intel Arc 140T 核显上 DML 定向推理（4 路）与 D3D11VA 定向硬解（4 路）并发表跑 10 分钟稳定，零命中同步拒绝双侧实证；性能分列、互斥实证与采样口径见[交付状态](../docs/RELEASE_STATUS.md)。未测边界如实登记：真实模型（YOLO 级）核显/独显算力分列未测；4 解码器并发创建个别 rc8 未定位（多路并解语义不受影响）；OV native GPU notSupported 如上。
 
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
@@ -111,7 +159,7 @@ amv_object_destroy(pool);            /* 仅 CLOSED 可调；排空后借出句�
 
 当前源码还提供推理池语言封装。Python 使用 `VisionContext.create_inference_pool`，在池上下文中调用 `pool.infer_pixel(lane, owner.pixels(), ...)`。C# 使用 `VisionContext.CreateInferencePool`，可通过 `owner.Pixels().Submit(pool, lane, ...)` 提交，或直接调用池的编码图像入口。两者均由池封装管理分片的关闭和销毁。异步请求仍通过 Vision Context 等待、读取和确认。
 
-验证状态（诚实边界）：编排 API 语义经真装配 e2e 验证——GPU 直传 8 路双分片全流程（创建→逐 lane 取句柄→路由正确性→逐片身份→攒批窗口活跃→关闭排空守恒）与 CPU 像素批 2 臂均绿，全部真装配门（含两门池编排 e2e，共 15 门）同进程串行全绿；API 形态长窗验证闭合（受控复跑进程级采样：池进程稳态 Priv 净增 <8MB/11min≪500MB 判据线+通道 8h 长稳背书；凌晨系统级内存事件归因为复合外部负载、池路径净健康，归因报告 `.local/evidence/sdk-p1-20261113/p16-attribution-report.md`）。desc 完整字段与校验域见设计文档 §3.5a/§3.4a。**已知问题（退出期，运行期零影响）**：宿主进程退出阶段在池分片会话的 DLL 卸载（detach）路径上可能挂死（非池路径干净退出）——规避指引：退出前显式 `amv_pool_close` 排空（全部在途到达终态、数据已落）后再退；若 detach 仍挂可安全强杀进程（不影响数据完整性，关闭与落盘均在挂点之前完成）。归因修复列 v0.7.x 首个候选。
+验证状态（诚实边界）：编排 API 语义经真装配 e2e 验证——GPU 直传 8 路双分片全流程（创建→逐 lane 取句柄→路由正确性→逐片身份→攒批窗口活跃→关闭排空守恒）与 CPU 像素批 2 臂均绿，全部真装配门（含两门池编排 e2e，共 15 门）同进程串行全绿；API 形态长窗验证闭合（受控复跑进程级采样：池进程稳态 Priv 净增 <8MB/11min≪500MB 判据线+通道 8h 长稳背书；凌晨系统级内存事件归因为复合外部负载、池路径净健康，归因报告 `.local/evidence/sdk-p1-20261113/p16-attribution-report.md`）。desc 完整字段与校验域见设计文档 §3.5a/§3.4a。**历史说明（退出期 detach 挂死，v0.7.2 已根治）**：v0.7.1 及之前版本的宿主进程退出阶段可能在池分片会话的 DLL 卸载（detach）路径上挂死（非池路径干净退出）——根因为 GPU 纹理注册缓存的 atexit 清理运行在 DllMain 上下文持 loader lock，v0.7.2 删除 atexit 登记改为末位会话释放时显式清理（根因分析与验证见 CHANGELOG 0.7.2）。v0.7.2 及之后版本无需退出规避操作；v0.7.1 及之前版本的规避指引（退出前显式 `amv_pool_close` 排空、挂点强杀不损数据完整性）见当版 RELEASE-NOTES。
 
 **高级用法：手工双 Model 分组（池 API 之前的编排形态，仍受支持）**：不使用推理池时由接入方自行 load k 个 Model 实例并做连续分组绑定（SDK 无单例限制），逐个 `amv_model_configure_batching` 按通道选批形状（GPU 直传批 4/CPU 像素批 2），关闭时逐模型自行排空 close。预算语义与池形态一致——池内分片即普通 Model，与手工 Model 在同一 ctx 64MiB 包络内统一核算，两形态并存无额外编排语义。
 

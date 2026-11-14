@@ -56,6 +56,9 @@ pub unsafe extern "C" fn amv_query_capability(
                 | AMV_CAP_RESULT_RAW_TENSOR
                 | AMV_CAP_PUSH_NOTIFY
                 | AMV_CAP_ORDERED_SELECTION
+                // 设备定向选择器（§3.5b，ABI 1.6）：参数解析能力恒在；
+                // 定向零命中按 sdk.invalidArgument 拒绝而非能力缺失。
+                | AMV_CAP_DEVICE_SELECTOR
                 // GPU 帧直传按实际可载置位（审计 A4）：无 CUDA 运行库的机器
                 // 不得宣称该能力，查询与实际支持保持一致。
                 | if am_vision_core::gpu::pipeline::GpuPipeline::available() {

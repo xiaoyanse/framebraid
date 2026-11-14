@@ -464,6 +464,7 @@ namespace AmrtSdk {
         public IntPtr @candidates;
         public uint @allow_fallback;
         public uint @budget_ms;
+        public IntPtr @device;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -523,7 +524,7 @@ namespace AmrtSdk {
     }
 
     public static class AbiConstants {
-        public const uint AbiVersion = 65541U;
+        public const uint AbiVersion = 65542U;
         public const uint PixelViewMagic = 1095585880U;
         public const uint SubscriptionPull = 1U;
     }

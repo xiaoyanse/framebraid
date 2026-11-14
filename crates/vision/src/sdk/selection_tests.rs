@@ -19,6 +19,7 @@ fn native_success_is_observed_when_output_budget_rejects_delivery() {
         priority: vec![cpu],
         allow_fallback: false,
         budget_ms: 5000,
+        device: None,
     };
     let mut model = Model::load_selected(ModelSource::Path(&path), None, &policy, 1).unwrap();
     assert_eq!(model.inputs.len(), 1);
@@ -72,6 +73,7 @@ fn native_run_failure_is_reported_once_without_automatic_replay_or_model_switch(
         priority: vec![cpu],
         allow_fallback: false,
         budget_ms: 5000,
+        device: None,
     };
     let mut model = Model::load_selected(ModelSource::Path(&path), None, &policy, 1).unwrap();
     let input = TensorData::new(
@@ -118,6 +120,7 @@ fn selected_models_prove_cpu_fallback_strict_and_execution_not_public_fields() {
         priority: vec![cuda, cpu],
         allow_fallback: true,
         budget_ms: 5000,
+        device: None,
     };
     let mut model = Model::load_selected(ModelSource::Path(&path), None, &policy, 1).unwrap();
     assert_eq!(model.selection_report().selected, Some(cpu));
@@ -196,6 +199,7 @@ fn selection_single_cpu_preserves_bytes_and_quantifies_load_and_run_overhead() {
         }],
         allow_fallback: false,
         budget_ms: 5000,
+        device: None,
     };
     for round in 0..3 {
         let order = if round % 2 == 0 {

@@ -2,6 +2,30 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_pool_desc_t {
+    pub struct_size: u32,
+    pub model: *const am_model_desc_t,
+    pub model_memory: *const am_model_memory_desc_t,
+    pub shards: u32,
+    pub lanes: u32,
+    pub batching: *const am_batching_options_t,
+    pub reserved: u32,
+}
+impl Default for am_pool_desc_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            model: Default::default(),
+            model_memory: Default::default(),
+            shards: Default::default(),
+            lanes: Default::default(),
+            batching: Default::default(),
+            reserved: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_preprocess_meta_t {
     pub struct_size: u32,
     pub src_w: u32,
@@ -109,24 +133,4 @@ pub struct am_tracked_box_t {
 pub struct am_detect_result_t {
     pub count: u32,
     pub boxes: *const am_detect_box_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_vocab_entry_t {
-    pub struct_size: u32,
-    pub label_utf8: *const c_char,
-    pub token_ids: *const i64,
-    pub token_rows: u32,
-    pub token_cols: u32,
-}
-impl Default for am_vocab_entry_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            label_utf8: Default::default(),
-            token_ids: Default::default(),
-            token_rows: Default::default(),
-            token_cols: Default::default(),
-        }
-    }
 }

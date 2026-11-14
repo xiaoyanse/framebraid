@@ -1,6 +1,101 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn amv_result_t_matches_c() {
+    assert_eq!(core::mem::size_of::<amv_result_t>(), 224);
+    assert_eq!(core::mem::align_of::<amv_result_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, struct_size),
+        0,
+        "amv_result_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, request_id),
+        8,
+        "amv_result_t.request_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, task),
+        16,
+        "amv_result_t.task"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, frame),
+        24,
+        "amv_result_t.frame"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, model),
+        32,
+        "amv_result_t.model"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, execution),
+        56,
+        "amv_result_t.execution"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, transform),
+        88,
+        "amv_result_t.transform"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, pose),
+        96,
+        "amv_result_t.pose"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, detect),
+        112,
+        "amv_result_t.detect"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, classify),
+        128,
+        "amv_result_t.classify"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, segment),
+        144,
+        "amv_result_t.segment"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, obb),
+        160,
+        "amv_result_t.obb"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, raw_output_count),
+        176,
+        "amv_result_t.raw_output_count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, raw_outputs),
+        184,
+        "amv_result_t.raw_outputs"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, infer_start_ms),
+        192,
+        "amv_result_t.infer_start_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, infer_end_ms),
+        200,
+        "amv_result_t.infer_end_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, vocab_hits),
+        208,
+        "amv_result_t.vocab_hits"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, cascade),
+        216,
+        "amv_result_t.cascade"
+    );
+}
+#[test]
 fn am_realtime_policy_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_realtime_policy_t>(), 20);
     assert_eq!(core::mem::align_of::<am_realtime_policy_t>(), 4);

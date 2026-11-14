@@ -153,13 +153,23 @@ pub fn query(dirs: &[String]) -> Result<Vec<BackendStatus>> {
     query_snapshot(dirs, CudaSnapshot::Unprobed)
 }
 
+/// 系统级 DirectML 运行库可见性（E2 合同"或系统可解析"路径）：仅查 System32
+/// 文件存在，不在矩阵查询路径加载系统库。
+fn system_directml_available() -> bool {
+    if !cfg!(windows) {
+        return false;
+    }
+    std::env::var_os("SystemRoot")
+        .is_some_and(|root| Path::new(&root).join(r"System32\DirectML.dll").is_file())
+}
+
 /// 仅读取调用方提供的可见性快照，不调用原生硬件驱动。
 pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<BackendStatus>> {
     let state = observations()?;
     let ready = initialized();
-    Ok((0..4)
+    Ok((0..5)
         .map(|backend| {
-            let dependencies = dirs.iter().any(|d| {
+            let mut dependencies = dirs.iter().any(|d| {
                 let d = Path::new(d);
                 if !d.join(library_name()).is_file() {
                     return false;
@@ -167,9 +177,11 @@ pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<Backend
                 match backend {
                     0 => true,
                     3 => {
-                        // DirectML（E2）：运行库目录自含 DirectML.dll 或系统可解析。
+                        // DirectML（E2）：运行库目录自含 DirectML.dll 或系统可解析
+                        //（onnxruntime 本体仍须目录提供，系统回退只覆盖 DML 运行时）。
                         d.join(if cfg!(windows) { "DirectML.dll" } else { "libdirectml.so" })
                             .is_file()
+                            || system_directml_available()
                     }
                     1 => {
                         d.join(if cfg!(windows) {
@@ -191,17 +203,33 @@ pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<Backend
                         .is_file(),
                 }
             });
-            let conflict = backend != 0 && state.accelerator_domain.is_some_and(|b| b != backend);
-            let loaded =
-                !conflict && ready && dependencies && state.loaded_mask & (1 << backend) != 0;
+            if backend == 4 {
+                // E1（合同 §3.1 引擎段）：deps=CPU 设备始终可用；
+                // hw=openvino_c 运行库在 runtime_dirs 可加载（存在性，不在查询时加载）。
+                dependencies = true;
+            }
+            let hardware = match backend {
+                0 => true,
+                1 => cfg!(target_arch = "x86_64"),
+                4 => dirs.iter().any(|d| {
+                    Path::new(d)
+                        .join(crate::engine::ov_sys::library_name())
+                        .is_file()
+                }),
+                _ => cuda == CudaSnapshot::Present,
+            };
+            // E1 走 OpenVINO C API 直连（无 ORT 参与），不占加速域也不要求 ORT 就绪。
+            let conflict = backend != 0
+                && backend != 4
+                && state.accelerator_domain.is_some_and(|b| b != backend);
+            let loaded = !conflict
+                && (backend == 4 || ready)
+                && dependencies
+                && state.loaded_mask & (1 << backend) != 0;
             BackendStatus {
                 backend,
                 dependencies,
-                hardware: match backend {
-                    0 => true,
-                    1 => cfg!(target_arch = "x86_64"),
-                    _ => cuda == CudaSnapshot::Present,
-                },
+                hardware,
                 loaded,
                 executed: loaded && state.executed_mask & (1 << backend) != 0,
                 note: if backend == 2 && conflict && cuda == CudaSnapshot::Unprobed {
@@ -216,6 +244,8 @@ pub fn query_snapshot(dirs: &[String], cuda: CudaSnapshot) -> Result<Vec<Backend
                     c"cuda-hardware-unknown; probe-failed; check-detailed-report"
                 } else if backend == 2 && cuda == CudaSnapshot::Absent {
                     c"cuda-no-device; explicit-probe-observed-zero"
+                } else if backend == 4 && !hardware {
+                    c"openvino-native-runtime-not-in-dirs; optional-candidate; cpu-device-always-available"
                 } else if conflict {
                     c"vision.backendConflict"
                 } else if !dependencies {
@@ -306,6 +336,59 @@ mod backend_tests {
             assert!(rows[2].note.to_str().unwrap().contains(reason));
         }
         assert!(query_snapshot(&[], CudaSnapshot::Present).unwrap()[2].hardware);
+    }
+    #[test]
+    fn openvino_native_row_follows_the_fifth_row_contract() {
+        // E1（合同 §3.1 引擎段）：deps=CPU 设备始终可用；hw=openvino_c 运行库在
+        // runtime_dirs 可加载；loaded/executed=本进程真实编译/推理观察位。
+        let rows = query_snapshot(&[], CudaSnapshot::Unprobed).unwrap();
+        assert_eq!(rows.len(), 5, "矩阵须含 backend=0..4 五行");
+        let e1 = &rows[4];
+        assert_eq!(e1.backend, 4);
+        assert!(e1.dependencies);
+        assert!(!e1.hardware, "空 runtime_dirs：openvino_c 不可加载");
+        assert!(!e1.loaded && !e1.executed);
+        assert!(e1
+            .note
+            .to_str()
+            .unwrap()
+            .contains("openvino-native-runtime-not-in-dirs"));
+        // 提供 openvino_c 运行库目录时 hw 置位（存在性检查，不实际加载）。
+        let dir = std::env::temp_dir().join("amv-v08-e1-matrix-probe");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("openvino_c.dll"), b"").unwrap();
+        let rows = query_snapshot(
+            &[dir.to_string_lossy().into_owned()],
+            CudaSnapshot::Unprobed,
+        )
+        .unwrap();
+        assert!(rows[4].hardware, "目录含 openvino_c.dll：hw 置位");
+        assert!(!rows[4].loaded, "观察位须由真实模型编译登记，不由查询置位");
+        std::fs::remove_file(dir.join("openvino_c.dll")).unwrap();
+        std::fs::remove_dir(&dir).unwrap();
+    }
+    #[test]
+    fn dml_dependency_accepts_system_directml_fallback() {
+        // E2 合同（§3.1 E2 段）：deps=目录自含 DirectML.dll 或系统可解析——
+        // 本机 System32 含 DirectML.dll（sdk-v08 侦察 §4.1），目录仅提供
+        // onnxruntime.dll 时 deps 亦成立。
+        let dir = std::env::temp_dir().join("amv-v08-dml-deps-probe");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join("onnxruntime.dll"), b"").unwrap();
+        let dirs = [dir.to_string_lossy().into_owned()];
+        let without_system = !system_directml_available();
+        let rows = query_snapshot(&dirs, CudaSnapshot::Unprobed).unwrap();
+        let dml = &rows[3];
+        if without_system {
+            assert!(!dml.dependencies, "无系统 DirectML 且目录缺失：deps 不成立");
+        } else {
+            assert!(
+                dml.dependencies,
+                "系统 DirectML 可解析：deps 成立（合同回退路径）"
+            );
+        }
+        std::fs::remove_file(dir.join("onnxruntime.dll")).unwrap();
+        std::fs::remove_dir(&dir).unwrap();
     }
     #[test]
     fn readiness_snapshot_does_not_wait_for_native_initialization_lock() {

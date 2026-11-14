@@ -382,7 +382,7 @@ fn am_frame_sub_desc_t_matches_c() {
 }
 #[test]
 fn am_decoder_config_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_decoder_config_t>(), 80);
+    assert_eq!(core::mem::size_of::<am_decoder_config_t>(), 88);
     assert_eq!(core::mem::align_of::<am_decoder_config_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_decoder_config_t, struct_size),
@@ -440,8 +440,13 @@ fn am_decoder_config_t_matches_c() {
         "am_decoder_config_t.queue_max_bytes"
     );
     assert_eq!(
-        core::mem::offset_of!(am_decoder_config_t, reserved),
+        core::mem::offset_of!(am_decoder_config_t, device),
         64,
+        "am_decoder_config_t.device"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_decoder_config_t, reserved),
+        72,
         "am_decoder_config_t.reserved"
     );
 }

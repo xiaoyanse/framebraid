@@ -14,10 +14,11 @@ use std::{path::Path, sync::Mutex};
 mod backends_tests;
 
 static INITIALIZATION: Mutex<Option<i32>> = Mutex::new(None);
-pub struct Rows(pub Box<[am_backend_row_t; 4]>);
+/// 矩阵五行（0..4）：backend=4（OpenVINO 原生，E1）随 v0.8 补齐（合同 §3.1 引擎段）。
+pub struct Rows(pub Box<[am_backend_row_t; 5]>);
 impl Default for Rows {
     fn default() -> Self {
-        Self(Box::new([am_backend_row_t::default(); 4]))
+        Self(Box::new([am_backend_row_t::default(); 5]))
     }
 }
 // note仅指向静态字符串；同ctx下一次查询是公布的有效期终点。
@@ -117,7 +118,7 @@ pub unsafe extern "C" fn amv_query_backends(
         args::write(
             out,
             am_backend_matrix_t {
-                row_count: 4,
+                row_count: 5,
                 rows: rows.0.as_ptr(),
                 ..Default::default()
             },

@@ -1,5 +1,33 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_cascade_request_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_cascade_request_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_request_t, static_rois),
+            core::mem::size_of::<*const f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_request_t, static_roi_count),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_request_t, rules),
+            core::mem::size_of::<*const am_cascade_rule_t>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_request_t, rule_count),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
+            core::mem::size_of::<f32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_cascade_hit_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -221,38 +249,6 @@ impl AbiLayout for am_batching_stats_t {
         (
             core::mem::offset_of!(am_batching_stats_t, rejected_items),
             core::mem::size_of::<u64>(),
-        ),
-    ];
-}
-impl AbiLayout for am_pool_desc_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_pool_desc_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_pool_desc_t, model),
-            core::mem::size_of::<*const am_model_desc_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_pool_desc_t, model_memory),
-            core::mem::size_of::<*const am_model_memory_desc_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_pool_desc_t, shards),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_pool_desc_t, lanes),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_pool_desc_t, batching),
-            core::mem::size_of::<*const am_batching_options_t>(),
-        ),
-        (
-            core::mem::offset_of!(am_pool_desc_t, reserved),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

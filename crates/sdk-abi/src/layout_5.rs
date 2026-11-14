@@ -1,6 +1,46 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_io_spec_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_io_spec_t>(), 56);
+    assert_eq!(core::mem::align_of::<am_io_spec_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, struct_size),
+        0,
+        "am_io_spec_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, name),
+        8,
+        "am_io_spec_t.name"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, dtype),
+        16,
+        "am_io_spec_t.dtype"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, shape),
+        24,
+        "am_io_spec_t.shape"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, shape_len),
+        32,
+        "am_io_spec_t.shape_len"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, dyn_min),
+        40,
+        "am_io_spec_t.dyn_min"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_io_spec_t, dyn_max),
+        48,
+        "am_io_spec_t.dyn_max"
+    );
+}
+#[test]
 fn am_backend_actual_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_backend_actual_t>(), 32);
     assert_eq!(core::mem::align_of::<am_backend_actual_t>(), 8);
@@ -358,40 +398,5 @@ fn am_cascade_rule_t_matches_c() {
         core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
         12,
         "am_cascade_rule_t.min_roi_size"
-    );
-}
-#[test]
-fn am_cascade_request_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_cascade_request_t>(), 40);
-    assert_eq!(core::mem::align_of::<am_cascade_request_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_request_t, struct_size),
-        0,
-        "am_cascade_request_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_request_t, static_rois),
-        8,
-        "am_cascade_request_t.static_rois"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_request_t, static_roi_count),
-        16,
-        "am_cascade_request_t.static_roi_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_request_t, rules),
-        24,
-        "am_cascade_request_t.rules"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_request_t, rule_count),
-        32,
-        "am_cascade_request_t.rule_count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_request_t, secondary_confidence),
-        36,
-        "am_cascade_request_t.secondary_confidence"
     );
 }

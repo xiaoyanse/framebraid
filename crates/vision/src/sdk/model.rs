@@ -199,6 +199,9 @@ pub struct Model {
     pub outputs: Vec<TensorInfo>,
     pub profile: Option<&'static profiles::Profile>,
     pub actual_backend: u32,
+    /// 实际执行设备标签（am_backend_actual_t.device_utf8 语义）：CUDA:{ordinal}/
+    /// DML[{:dxgi}]/OpenVINO:{CPU|GPU}/CPU——定向命中后反映解析结果（§3.5b）。
+    pub device_label: String,
     pub fallback: bool,
     pub(super) batch: u32,
     selection: super::selection::BackendSelectionReport,
@@ -241,6 +244,7 @@ impl Model {
             priority,
             allow_fallback: !strict,
             budget_ms: 1500,
+            device: None,
         };
         Self::load_selected_inner(source, profile, &policy, threads, true, cuda_fp32, |_| {
             Ok(())
@@ -278,7 +282,9 @@ impl Model {
         cuda_fp32: bool,
         mut admit: impl FnMut(super::selection::BackendTarget) -> Result<()>,
     ) -> super::selection::SelectionResult<Self> {
-        use super::selection::{self, BackendSelectionError, BackendSelectionReport};
+        use super::selection::{
+            self, BackendSelectionError, BackendSelectionPolicy, BackendSelectionReport,
+        };
         policy.validate().map_err(|error| BackendSelectionError {
             error,
             report: Box::new(BackendSelectionReport::default()),
@@ -288,6 +294,39 @@ impl Model {
             if threads == 0 {
                 return Err(Error("sdk.invalidArgument".into()));
             }
+            // 定向解析（§3.5b）：按候选匹配域枚举并重写候选 device_id；零命中/实例
+            // 越界在此同步拒绝，不进入任何候选的原生构造（不产生部分初始化）。
+            let (cuda_names, dxgi) = match policy.device.as_ref() {
+                None => (Vec::new(), Vec::new()),
+                Some(_) => {
+                    let need_cuda = policy.priority.iter().any(|t| t.backend == 2);
+                    let need_dxgi = policy
+                        .priority
+                        .iter()
+                        .any(|t| t.backend == 1 || t.backend == 3);
+                    (
+                        need_cuda
+                            .then(super::device::cuda_device_names)
+                            .unwrap_or_default(),
+                        if need_dxgi {
+                            super::device::dxgi_adapters()?
+                        } else {
+                            Vec::new()
+                        },
+                    )
+                }
+            };
+            let (priority, ov_gpu) = super::device::resolve_targets(
+                &policy.priority,
+                policy.device.as_ref(),
+                &cuda_names,
+                &dxgi,
+            )?;
+            selection.candidates = priority.clone();
+            let effective = BackendSelectionPolicy {
+                priority,
+                ..policy.clone()
+            };
             let p = profile.map(profiles::find).transpose()?;
             let bytes = source::read(source)?;
             super::onnx::validate_external(
@@ -297,7 +336,7 @@ impl Model {
                     _ => None,
                 },
             )?;
-            let engine = selection::choose(policy, legacy, &mut selection, |target| {
+            let engine = selection::choose(&effective, legacy, &mut selection, |target| {
                 admit(target).map_err(|error| selection::AttemptError {
                     error,
                     stage: "resource_admission",
@@ -312,11 +351,32 @@ impl Model {
                         },
                     )?),
                     _ => ModelEngine::Ort(super::session::create(
-                        source, &bytes, target, threads, cuda_fp32,
+                        source, &bytes, target, threads, cuda_fp32, ov_gpu,
                     )?),
                 })
             })?;
+            // E1 原生引擎不经 ORT 会话路径；编译成功在此登记观察位（矩阵第五行）。
+            if matches!(&engine, ModelEngine::Ov(_)) {
+                super::runtime::loaded(4);
+            }
             let actual_backend = selection.selected.map_or(0, |target| target.backend);
+            let device_label = match selection.selected {
+                Some(target) => match target.backend {
+                    1 => (if ov_gpu {
+                        "OpenVINO:GPU"
+                    } else {
+                        "OpenVINO:CPU"
+                    })
+                    .to_owned(),
+                    2 => format!("CUDA:{}", target.device_id),
+                    3 if target.device_id != 0 => format!("DML:{}", target.device_id),
+                    3 => "DML".to_owned(),
+                    // E1 引擎设备硬编码 CPU（GPU 定向按 notSupported 拒绝，§3.5b）。
+                    4 => "OpenVINO:CPU".to_owned(),
+                    _ => "CPU".to_owned(),
+                },
+                None => "CPU".to_owned(),
+            };
             let (inputs, outputs, batch) = match &engine {
                 ModelEngine::Ort(session) => ort_io_and_batch(session)?,
                 ModelEngine::Ov(engine) => (engine.inputs.clone(), engine.outputs.clone(), 0),
@@ -364,6 +424,7 @@ impl Model {
                 outputs,
                 profile: p,
                 actual_backend,
+                device_label,
                 fallback: selection.attempts.len() > 1,
                 batch,
                 selection: selection.clone(),

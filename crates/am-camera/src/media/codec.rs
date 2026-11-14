@@ -28,6 +28,9 @@ pub enum DecodeError {
     Runtime(i32),
     FrameTooLarge,
     Drained,
+    /// 设备定向选择器零命中或实例越界（§3.5b）：配置错误，同步拒绝，
+    /// 不静默回退其他适配器（FFI 层映射 sdk.invalidArgument）。
+    InvalidDeviceSelector,
 }
 type Result<T> = std::result::Result<T, DecodeError>;
 #[derive(Clone, Copy, Debug)]

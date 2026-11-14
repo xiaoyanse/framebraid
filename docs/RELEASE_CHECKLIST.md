@@ -21,6 +21,8 @@ v0.2.1 实例：1-4 路并发；ISAPI HTTP 抓图 + RTSP H.264/H.265 + MJPEG 流
 
 ## 基线与场景要件 / Baseline & scenario gate（发版前必跑）
 
+- [ ] **改动工具合规性自查**（2026-11-15 协调线令，sed 二次违纪后机制化）：版本 bump/文档改动/diff 产出前核验——全部代码与配置文件改动仅经 Edit/Write 工具（数据文件生成脚本除外且须显式说明）；发现脚本改码立即停止并按登记处置（第三次违纪=无条件撤销重做）
+
 - [ ] 基线三件（`scripts/sdk/baselines/`）：`baseline_decode.py`（解码配对）、`baseline_capture_cadence.py`（节拍精度）、`baseline_lanes.py`（多路线性度）带 `--baseline recorded.json` 全过
 - [ ] 场景五件（`scripts/sdk/scenarios/`）：`scenario_budget_4k.py`、`scenario_cadence.py`、`scenario_mjpeg_stream.py`、`scenario_fault_observability.py`、`scenario_binding_load.py` 全过
 - [ ] 命令样例：`python scripts/sdk/baselines/baseline_decode.py --dll-dir <release> --runtime-dir <ffmpeg bin> --baseline scripts/sdk/baselines/recorded.json`

@@ -24,12 +24,33 @@ pub struct am_backend_candidate_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_device_selector_t {
+    pub struct_size: u32,
+    pub match_utf8: *const c_char,
+    pub match_bytes: u32,
+    pub instance: u32,
+    pub reserved: u32,
+}
+impl Default for am_device_selector_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            match_utf8: Default::default(),
+            match_bytes: Default::default(),
+            instance: Default::default(),
+            reserved: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_backend_selection_t {
     pub struct_size: u32,
     pub candidate_count: u32,
     pub candidates: *const am_backend_candidate_t,
     pub allow_fallback: u32,
     pub budget_ms: u32,
+    pub device: *const am_device_selector_t,
 }
 impl Default for am_backend_selection_t {
     fn default() -> Self {
@@ -39,6 +60,7 @@ impl Default for am_backend_selection_t {
             candidates: Default::default(),
             allow_fallback: Default::default(),
             budget_ms: Default::default(),
+            device: Default::default(),
         }
     }
 }
@@ -175,30 +197,6 @@ impl Default for am_model_swap_desc_t {
             slot_key: Default::default(),
             flags: Default::default(),
             reserved: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_io_spec_t {
-    pub struct_size: u32,
-    pub name: *const c_char,
-    pub dtype: u32,
-    pub shape: *const i64,
-    pub shape_len: u32,
-    pub dyn_min: *const i64,
-    pub dyn_max: *const i64,
-}
-impl Default for am_io_spec_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            name: Default::default(),
-            dtype: Default::default(),
-            shape: Default::default(),
-            shape_len: Default::default(),
-            dyn_min: Default::default(),
-            dyn_max: Default::default(),
         }
     }
 }
