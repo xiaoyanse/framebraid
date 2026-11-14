@@ -240,3 +240,201 @@ fn decoder_device_selector_targets_intel_igpu_and_rejects_zero_match() {
     assert_eq!(unsafe { crate::amc_shutdown(ctx, 100, &mut lifecycle) }, 0);
     assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
 }
+
+/// Q1 诊断（sdk-q1-20261115）：4 路并发 `amc_decoder_create` 个别 rc=8 的复现与归因。
+/// 每变体独立 ctx；逐轮快照 control 队列账本（controls/control_bytes）定位拒绝源。
+/// 变体（FB_Q1_MODE，默认 all）：lanes4=仅 4 路并发（V8.5 原始形态）；fifth=先存活
+/// 第 5 个解码器再并发 4 路（算术边界：恰 1 路 rc=8）；fifth_smallq=同 fifth 但浸泡路
+/// queue_max_items=16（验证约束源=control 字节数而非解码器个数）；destroy_race=第 5 个
+/// 解码器销毁与 4 路创建同窗竞速（V8.5 疑似时序，只统计不断言）。
+struct Q1Create {
+    rc: i32,
+    handle: *mut amc_decoder_t,
+}
+unsafe impl Send for Q1Create {}
+
+fn q1_setup() -> *mut amc_context_t {
+    let directory = std::env::var("AM_RT_FFMPEG_DIR").expect("缺少隔离运行库目录");
+    let path = CString::new(directory).unwrap();
+    let dirs = [path.as_ptr()];
+    let params = amc_init_params_t {
+        abi_version: AM_ABI_VERSION,
+        runtime_dirs_utf8: dirs.as_ptr(),
+        runtime_dir_count: 1,
+        ..Default::default()
+    };
+    let mut ctx = std::ptr::null_mut();
+    assert_eq!(unsafe { crate::amc_init(&params, &mut ctx) }, 0);
+    ctx
+}
+
+/// 同款定向 config（默认队列=64 槽；queue_items>0 时覆盖）；返回 (rc, 句柄)。
+unsafe fn q1_create(ctx: *mut amc_context_t, queue_items: u32) -> Q1Create {
+    let (_text, selector) = selector_of("Arc");
+    let cfg = am_decoder_config_t {
+        codec: AM_CODEC_H264,
+        bitstream_format: AM_BSF_ANNEXB,
+        output_pixel_format: AM_PF_RGBA8 as u32,
+        hw_policy: AM_DHW_PREFER_HW as u32,
+        time_base_num: 1,
+        time_base_den: 1000,
+        queue_max_items: queue_items,
+        device: &selector,
+        ..Default::default()
+    };
+    let mut dec = std::ptr::null_mut();
+    let rc = unsafe { amc_decoder_create(ctx, &cfg, &mut dec) };
+    Q1Create { rc, handle: dec }
+}
+
+fn q1_ledger(ctx: *mut amc_context_t) -> (usize, usize) {
+    crate::frames::camera_state(ctx as usize)
+        .unwrap()
+        .control_usage_snapshot()
+        .unwrap()
+}
+
+fn q1_teardown(dec: *mut amc_decoder_t) {
+    if dec.is_null() {
+        return;
+    }
+    let mut lifecycle = 0;
+    assert_eq!(unsafe { amc_decoder_close(dec, 2000, &mut lifecycle) }, 0);
+    assert_eq!(crate::amc_object_destroy(dec.cast()), 0);
+}
+
+/// 4 路并发创建一轮；destroy_race 模式下附带一个与创建同窗销毁的第 5 个解码器。
+fn q1_round(
+    ctx: *mut amc_context_t,
+    queue_items: u32,
+    racer: Option<*mut amc_decoder_t>,
+) -> Vec<Q1Create> {
+    let barrier = std::sync::Barrier::new(4 + usize::from(racer.is_some()));
+    let results: std::sync::Mutex<Vec<Q1Create>> = std::sync::Mutex::new(Vec::new());
+    let ctx_addr: CtxAddr = ctx as usize;
+    let racer_addr: Option<usize> = racer.map(|handle| handle as usize);
+    std::thread::scope(|scope| {
+        let barrier = &barrier;
+        if let Some(racer_addr) = racer_addr {
+            scope.spawn(move || {
+                barrier.wait();
+                q1_teardown(racer_addr as *mut amc_decoder_t);
+            });
+        }
+        let lanes: Vec<_> = (0..4)
+            .map(|_| {
+                scope.spawn(move || {
+                    barrier.wait();
+                    unsafe { q1_create(ctx_addr as *mut amc_context_t, queue_items) }
+                })
+            })
+            .collect();
+        for lane in lanes {
+            let created = lane.join().expect("lane 线程");
+            results.lock().unwrap().push(Q1Create {
+                rc: created.rc,
+                handle: created.handle,
+            });
+        }
+    });
+    let mut created = results.into_inner().unwrap();
+    created.sort_by_key(|lane| lane.rc);
+    created
+}
+
+#[test]
+#[ignore = "需要AM_RT_FFMPEG_DIR（本机 Arc 核显定向 D3D11VA）；Q1 rc8 诊断（sdk-q1-20261115）"]
+fn decoder_concurrent_create_rc8_reproduction() {
+    let rounds: usize = std::env::var_os("FB_Q1_ROUNDS")
+        .map(|v| v.to_string_lossy().parse().expect("数值环境变量"))
+        .unwrap_or(12);
+    let mode = std::env::var_os("FB_Q1_MODE")
+        .map(|v| v.to_string_lossy().into_owned())
+        .unwrap_or_else(|| "all".into());
+    let variants: &[&str] = if mode == "all" {
+        &["lanes4", "fifth", "fifth_smallq", "destroy_race"]
+    } else {
+        &[mode.as_str()]
+    };
+    for variant in variants {
+        let ctx = q1_setup();
+        let baseline = q1_ledger(ctx);
+        eprintln!(
+            "Q1 variant={variant} rounds={rounds} baseline_ledger=(controls={},bytes={})",
+            baseline.0, baseline.1
+        );
+        let mut anomalies = 0usize;
+        for round in 0..rounds {
+            let (queue_items, racer, mut extra_cleanup) = match *variant {
+                // 第 5 个解码器默认队列存活，占满 headroom 后并发 4 路。
+                "fifth" | "fifth_smallq" => {
+                    let extra = unsafe { q1_create(ctx, 0) };
+                    assert_eq!(extra.rc, 0, "前置第 5 解码器创建应成功");
+                    let items = if *variant == "fifth_smallq" { 16 } else { 0 };
+                    (items, None, Some(extra.handle))
+                }
+                // 销毁竞速：先建第 5 个，销毁线程与 4 路创建同 barrier 起跑；
+                // 句柄由竞速线程在轮内销毁，轮末不再重复清理。
+                "destroy_race" => {
+                    let extra = unsafe { q1_create(ctx, 0) };
+                    assert_eq!(extra.rc, 0, "前置第 5 解码器创建应成功");
+                    (0, Some(extra.handle), None)
+                }
+                _ => (0, None, None),
+            };
+            let lanes = q1_round(ctx, queue_items, racer);
+            let mut codes = [0i32; 4];
+            for (index, lane) in lanes.iter().enumerate() {
+                codes[index] = lane.rc;
+            }
+            let exhausted = codes
+                .iter()
+                .filter(|rc| **rc == AM_ERR_SDK_RESOURCE_EXHAUSTED)
+                .count();
+            eprintln!(
+                "Q1 {variant} round={round} rcs={codes:?} ledger=({:?})",
+                q1_ledger(ctx)
+            );
+            for lane in &lanes {
+                q1_teardown(lane.handle);
+            }
+            if let Some(extra) = extra_cleanup.take() {
+                q1_teardown(extra);
+            }
+            match *variant {
+                // 4 路独占（V8.5 原始形态）：全部应成功——出现任何 rc=8 即真竞态信号。
+                "lanes4" => assert_eq!(
+                    exhausted, 0,
+                    "lanes4 第 {round} 轮出现 rc=8：并发创建存在真实竞态 codes={codes:?}"
+                ),
+                // 算术边界：5 份 13408B 必然恰拒 1 路（control 队列上限 65536）。
+                "fifth" => assert_eq!(
+                    exhausted, 1,
+                    "fifth 第 {round} 轮应恰 1 路 rc=8（其余成功）codes={codes:?}"
+                ),
+                // 队列 16 槽时单路计费缩小，5 路共存应全部成功。
+                "fifth_smallq" => assert_eq!(
+                    exhausted, 0,
+                    "fifth_smallq 第 {round} 轮不应拒绝 codes={codes:?}"
+                ),
+                // 竞速窗口：结果取决于销毁释放与创建准入的先后，只统计。
+                _ => anomalies += usize::from(exhausted > 0),
+            }
+            assert_eq!(
+                q1_ledger(ctx),
+                baseline,
+                "{variant} 第 {round} 轮销毁后账本未回落基线（计费泄漏）"
+            );
+        }
+        if *variant == "destroy_race" {
+            eprintln!(
+                "Q1 destroy_race rounds={rounds} rounds_with_rc8={anomalies} rate={:.0}%",
+                anomalies as f64 / rounds as f64 * 100.0
+            );
+        }
+        let mut lifecycle = 0;
+        assert_eq!(unsafe { crate::amc_shutdown(ctx, 100, &mut lifecycle) }, 0);
+        assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
+    }
+    eprintln!("Q1 done");
+}
