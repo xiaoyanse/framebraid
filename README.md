@@ -18,8 +18,18 @@ FrameBraid is a Rust source SDK with a C ABI for C, C++, C# and Python. One repo
 **Status: v0.7.2.** [Releases](https://github.com/xiaoyanse/framebraid/releases). C ABI at **1.5** (compatible additions: 1.4 inference pool orchestration API — one call loads k shard models with a prebuilt lane→shard mapping, 8-lane GPU-direct dual-shard measured 194.8 items/s ≈ 97% of 8×25 fps demand; 1.5 opt-in GPU NV12 cascade input with one source copy, optional ROI batch 4 and a session-level CUDA FP32 parity option, default per-ROI). v0.7.2 quality batch: **pool-exit detach hang root-fixed** (DllMain/loader-lock COM release in the NVIDIA driver; the strict-parity fail-mode 0xC0000409 exit eliminated with it), multi-session cold start verified (full-slot 7 sessions, zero rejects, GPU peak = steady), camera-gate harness rebuilt (all 20 gates green, config re-anchored in a one-click script). Plus a batching registry TOCTOU race fix and Python/C# inference pool wrappers. The validated target is **Windows x64 CPU + hardware-decode probing** — GPU figures are research measurements on the release machine (RTX 5060, CUDA ORT), see the [integration guide](sdk/INTEGRATION.md); Linux/macOS/mobile binaries and formal GPU inference acceptance are separate. See [validation scope](docs/RELEASE_STATUS.md).
 
 
+## Distribution forms
+
+Four consumption forms under the unified release architecture (2026-11-15):
+
+- **Git tag anchor — current primary form.** Downstream Cargo git dependencies pin a tag (`tag = "vX.Y.Z"`) or the underlying commit (`rev = <full commit hash>`); the dual-hash anchor discipline (tag object hash + commit) is in the [release checklist](docs/RELEASE_CHECKLIST.md).
+- **Release assets.** Each published tag's GitHub Release carries the bare DLLs, the Windows x64 SDK zip, the source archive, `SHA256SUMS.txt` and `build-record.json` — see [releases](https://github.com/xiaoyanse/framebraid/releases) and the [prebuilt guide](docs/USE_PREBUILT.md).
+- **Source archive.** `FrameBraid-SDK-source-<ver>.zip` (git archive of the tagged commit) builds per [getting started](docs/GETTING_STARTED.md).
+- **Registry — planned, not enabled.** Token-protected static hosting (plan B) is pre-authorized pending trigger conditions (second consumer / cross-machine CI); until it is enabled, git tag anchors remain the primary form. See the [roadmap](docs/ROADMAP.md) 2026-11-15 entry.
+
 ## Contents
 
+- [Distribution forms](#distribution-forms)
 - [Where it fits](#where-it-fits)
 - [Media SDK](#media-sdk)
 - [Vision SDK](#vision-sdk)

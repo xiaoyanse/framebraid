@@ -1,0 +1,38 @@
+# docs 过时说法扫描登记（doc-refresh-20261115，统一发布架构纪律层实施批）
+
+日期：2026-11-15。范围：`docs/` 顶层 md + `docs/design/` 合同文档的**当前面向**陈述；**只登记不改**（本批任务 1-5 明确改动范围外的文件一律不动）。事实基线：main@04f0d66 的 CHANGELOG.md / docs/RELEASE_STATUS.md（当前公开版 v0.7.2，C ABI 1.5）。
+
+## 扫描口径
+
+- `docs/verification/*.md` 为带日期的过程证据记录，按仓惯例不作为"当前陈述"扫描，跳过。
+- `docs/RELEASE_STATUS.md` 各版本历史快照按统一发布设计（2026-11-15 §8-6）"旧快照只读不回写"，不列为过时项；页首当前状态行已正确（v0.7.2/1.5）。
+- "过时"判定 = 已修复问题仍写已知问题 / 已交付能力仍写规划中或未发布 / 版本口径落后于当前发布。
+
+## 清单
+
+| # | 位置 | 过时点 | 建议 |
+| --- | --- | --- | --- |
+| 1 | docs/README.md:30 | "Current C ABI is **1.3**（65539…）"——当前为 1.5/65541（v0.7.1 起），兼容新增清单缺 1.4 推理池与 1.5 GPU 级联/FP32 | 更新为 1.5/65541 并补 1.4/1.5 两条；顺手在文档索引表补 MIGRATION.md 一行（本批新增文档，当前未被索引） |
+| 2 | docs/SUPPORT.md:45 | "v0.7.0 uses C ABI 1.4"——当前发布 v0.7.2，ABI 1.5 | 版本句更新到 v0.7.2/1.5 |
+| 3 | docs/SUPPORT.md:23 | "current" 验证锚点指向 RELEASE_STATUS 的 v0.7.0 快照段 | 锚点改指 v0.7.2 快照段（`#v072-验证状态快照`） |
+| 4 | docs/SUPPORT.md:55 | "The opt-in ABI 1.5 GPU cascade is available in the unreleased source"——已随 v0.7.1 发布 | 改为已发布口径（与本批 GETTING_STARTED 修正同款句式） |
+| 5 | README.md:178 / README.zh-CN.md:177 | 同上"unreleased source/未发布源码包含 ABI 1.5 可选 GPU 级联"——已随 v0.7.1 发布 | 改为已发布口径（两根 README 的该句在本批任务 4 范围外，登记待批） |
+| 6 | docs/EXTENSION_CAPABILITIES.md:3 | 总标注"状态：**提案，未实施**"——其中 A1+A2+A4（词表绑定，v0.5.0）与 C1（ROI 级联，v0.6.0）已交付（CHANGELOG 有据），ROADMAP:23 仍把读者引到本文衔接 | 头部改"部分条目已交付（A1/A2/A4/C1 随 v0.5.0/v0.6.0），其余为提案"，或逐条目加状态标注 |
+| 7 | docs/ROADMAP.md:3 | 顶部"后续验证覆盖冷启动显存峰值、多组独立会话及现场视频负载"——多组独立会话冷启动已随 v0.7.2 补验（满槽 7 会话 120s 零拒绝） | 收窄为剩余未验项（级联对×N 并发冷启动、小时级长时、现场负载） |
+| 8 | docs/ROADMAP.md §8 阶段登记表（R4/R5 行） | R5 行"组批…整包未完成"——自适应攒批已随 v0.2.0、推理池编排已随 v0.7.0 交付；R4 行"未开工"——语言封装（owned pixels/结构化复制/池封装）已多轮交付 | 阶段表刷新（R1～R5 工作包框架早于 v0.5+ 交付，PM 决策刷新口径） |
+| 9 | docs/GETTING_STARTED.md:5 / .zh-CN.md:5 | 入口固定指向 v0.1.0 下载包，当前发布 v0.7.2 且根 README 已索引四形态 | 指向 releases 页/最新 tag（低优先） |
+| 10 | docs/USE_PREBUILT.md:5-7 | 指南限定 "v0.1.0 developer preview" 包；对 v0.1.0 本身仍准确，但无更新包指引 | 加一句"后续 Windows 包同布局"或更新指向（低优先/可选） |
+| 11 | docs/design/dual-dll-abi.md（多处标签） | "未发布兼容扩展"标签中已发布者：§3.5 自适应攒批 R5-2.1（v0.2.0）、§2.6a M2a GPU 帧订阅（v0.3.0）、§3.3a M2b GPU 帧输入（v0.3.0 主线）、§2.10 帧编码/存档/推流（v0.3.0）；E2 DirectML 未查到发布记录（维持未发布口径） | 合同文档属受控源，按仓规则先改设计稿再动正文：建议一次性标签刷新或头部注明"部分未发布扩展已随后续版本发布"（低优先；改动须走合同变更纪律） |
+| 12 | docs/design/dual-sdk-abi-freeze-v1.1.md:5 | "1.1尚未发布"——ABI 1.1 r9 已随 v0.2.0 发布 | 历史冻结记录，头部状态注即可（低优先） |
+
+## 范围外已知项（INTEGRATION.md 由另一在途工作占用，本批不动）
+
+- sdk/INTEGRATION.md:72——推理池 API 段标注"尚未随公开版本发布"：已随 v0.7.0 发布。
+- sdk/INTEGRATION.md:114——池退出 detach 挂死"已知问题+退出规避指引"：v0.7.2 已根治（`registry::release_for_shutdown` 显式清理）；统一发布设计 §8-1 已计划改写为"已修复（v0.7.2）"并保留历史版本对照。
+
+## 本批已修正项（登记留档）
+
+- docs/GETTING_STARTED.md:107 / .zh-CN.md:107——"unreleased source/未发布源码包含 ABI 1.5 可选 GPU 级联"已随任务 5 改为"已随 v0.7.1 发布"（中英同步）。
+- docs/GETTING_STARTED 两文新增推理池 API 指引（任务 5）。
+
+工具合规：本登记及本批全部改动均由 Edit/Write 工具完成，无脚本改文件。

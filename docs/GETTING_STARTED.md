@@ -102,6 +102,6 @@ Do not fix loader errors with random DLL copies or silently change backends when
 
 ## Beyond the first call
 
-Once the basic infer loop works: runtime [open-vocabulary binding](../sdk/INTEGRATION.md) (custom word lists without re-exporting weights), [ROI cascade](../sdk/INTEGRATION.md) (small-object detection via region upscaling), [cross-frame tracking](../sdk/INTEGRATION.md) (stable IDs for rule engines) and [single-frame export](../sdk/INTEGRATION.md) (evidence JPEG/PNG) compose into a full detection chain. Rust callers: see `examples/vision_cascade_tracker.rs`.
+Once the basic infer loop works: runtime [open-vocabulary binding](../sdk/INTEGRATION.md) (custom word lists without re-exporting weights), [ROI cascade](../sdk/INTEGRATION.md) (small-object detection via region upscaling), [cross-frame tracking](../sdk/INTEGRATION.md) (stable IDs for rule engines) and [single-frame export](../sdk/INTEGRATION.md) (evidence JPEG/PNG) compose into a full detection chain. Multi-model orchestration is covered by the inference pool API section of the [integration guide](../sdk/INTEGRATION.md) (one call loads k shard models with a prebuilt lane→shard mapping; since v0.7.0 — check `amv_get_abi_version` ≥ 1.4 before use). Rust callers: see `examples/vision_cascade_tracker.rs`.
 
-The opt-in ABI 1.5 GPU cascade is available in the unreleased source. See [the integration guide](../sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade).
+The opt-in GPU NV12 cascade (ABI 1.5) shipped in v0.7.1. See [the integration guide](../sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade).

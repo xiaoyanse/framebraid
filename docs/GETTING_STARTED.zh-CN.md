@@ -102,6 +102,6 @@ SDK 所有结果/帧用 SDK 释放，请求确认不代替结果释放。先关�
 
 ## 第一个调用之后
 
-基础推理链跑通后：运行期[开放词汇绑定](../sdk/INTEGRATION.md)（不重导权重换词表）、[ROI 级联](../sdk/INTEGRATION.md)（区域放大小目标检测）、[跨帧跟踪](../sdk/INTEGRATION.md)（规则引擎要的稳定 ID）与[单帧导出](../sdk/INTEGRATION.md)（取证 JPEG/PNG）可组合成完整检测链。Rust 调用方见 `examples/vision_cascade_tracker.rs`。
+基础推理链跑通后：运行期[开放词汇绑定](../sdk/INTEGRATION.md)（不重导权重换词表）、[ROI 级联](../sdk/INTEGRATION.md)（区域放大小目标检测）、[跨帧跟踪](../sdk/INTEGRATION.md)（规则引擎要的稳定 ID）与[单帧导出](../sdk/INTEGRATION.md)（取证 JPEG/PNG）可组合成完整检测链。多 Model 编排见[接入说明](../sdk/INTEGRATION.md)推理池 API 段（一次调用加载 k 个分片 Model 并预建 lane→shard 映射，v0.7.0 起——使用前核 `amv_get_abi_version` ≥1.4）。Rust 调用方见 `examples/vision_cascade_tracker.rs`。
 
-未发布源码包含 ABI 1.5 可选 GPU 级联，启用方法与验证范围见[接入说明](../sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade)。
+GPU NV12 级联（ABI 1.5，显式可选）已随 v0.7.1 发布，启用方法与验证范围见[接入说明](../sdk/INTEGRATION.md#gpu-nv12-级联--gpu-nv12-cascade)。

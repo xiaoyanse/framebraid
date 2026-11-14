@@ -83,6 +83,11 @@ v0.3.2 起最低形态：
 
 > 教训登记（2026-11-03，v0.3.2）：首版 windows zip 混入 3 个 .pyc 且缺 build-record.json，发布前核查发现后清污重打包——本段即该教训的制度化。
 
+## Version consistency & compatibility matrix / 版本一致性与兼容矩阵（定版提交前核对，2026-11-15 统一发布架构纪律层新增）
+
+- [ ] **vl 锚点核对（兼容矩阵联合验证）**：发版前核对 vl-SDK 固定引用方当前 pin（tag 双哈希锚点或 rev）与本版组合验证声明是否仍成立——当前基线 **framebraid v0.7.2 × vl v0.6.3 无已知冲突**（AM-RT 链消费中）。pin 发生变化、或本版改动半径触及 vl 消费面（ABI/绑定/包形态）时，先按联合验证跑对方消费冒烟再定版；组合验证声明随下游通知附件发布并回填本项。
+- [ ] **版本四点一致校验**：**crate 版本（workspace Cargo.toml）= 发布版本（CHANGELOG 定版段）= tag 版本 = build-record 版本**，定版提交前单点核对；任一点不一致即中止定版并先对齐，不得带差异发版（统一发版管线单 rev 驱动的前提检查）。
+
 ## Publication authorization and scope / 发布授权与范围
 
 - [x] FrameBraid is the public SDK maintenance source; host version-pinning migration is separate work.

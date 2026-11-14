@@ -20,6 +20,8 @@ GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/change
 
 2026-11-13 进度（多 Model 编排 API 化，sdk-p1）：推理池编排 API（ABI 1.4 兼容新增 65540：`amv_pool_create`/`amv_pool_lane_model`/`amv_pool_close`+`am_pool_desc_t`；B 案提交路径零新增）——P1.1 合同冻结（§3.5a/§3.4a，错误码零新增）、P1.2 生成链同步（freeze 基线升 r11）、P1.3 池实现（含 batching.rs TOCTOU 既有竞态附带修复）、P1.4 关键路径单测 11、P1.5 编排 e2e 两门（GPU 直传 8 路双分片全流程+CPU 像素批 2 臂，15 门同进程串行全绿）完成；通道前置长稳收数完成（~8h 窗口内存零爬升+GPU 事件日志零异常，P1.0 报告 `.local/evidence/sdk-p1-20261113/p0-soak-collection.md`）；P1.6 API 形态长稳按组合论证收口（受控复跑进程级采样：池进程稳态 Priv 净增 <8MB/11min≪500MB 判据线+通道 8h 长稳背书；凌晨 8.6GB 系统级内存事件归因复合外部负载、复跑窗口进程级抓证当场复现，归因报告 `.local/evidence/sdk-p1-20261113/p16-attribution-report.md`；完整 4h 长窗定量列为可选补强）；验证记录汇总 `.local/evidence/sdk-p1-20261113/verification.md`。上表运行期模型热切换条目已划线（已随 M5 交付）。
 
+2026-11-15 进度（v0.7.2 已发，串行链在途）：**v0.7.2 质量收尾批已发布**（C ABI 不变 1.5：池退出 detach 挂死根治+严格对拍失败模式 0xC0000409 消除+多会话冷启动补验+相机门 harness 债清偿 20 门全绿）。对照决策人既批串行链 **v0.7.2 → v0.8 Intel 核显 → v0.8.x RTMP**，当前在途三项：① v0.8 核显主线——设备定向选择器（ABI 1.6 合同冻结于设计文档 §3.5b，实现主体在 `sdk-v08-wip` 分支推进，**未发布**，解决多 GPU 机器枚举序漂移的显式适配器定向）；② 统一发布架构纪律层实施启动（framebraid×vl 两仓同规：版本四点一致/双哈希锚点/校验和/兼容矩阵，新增检查项见 RELEASE_CHECKLIST"版本一致性与兼容矩阵"段，ABI 演进迁移说明见 MIGRATION.md）；③ registry 分发（B 案 token 保护静态托管）预授挂触发条件——第二消费方/跨机 CI 等条件到达后启用，启用时点按仓治理方裁，git tag 锚点维持现役主形态。
+
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
 ---

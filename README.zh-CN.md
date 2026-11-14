@@ -18,8 +18,18 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 **当前状态：v0.7.2。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 至 **1.5**（兼容新增：1.4 推理池编排 API——一次调用加载 k 个分片 Model 并预建 lane→shard 映射，8 路 GPU 直传双分片实测 194.8 items/s≈8×25fps 需求的 97%；1.5 显式选择的 GPU NV12 级联输入——源帧一次搬运、ROI 批 4 可选、会话级 CUDA FP32 对拍选项，默认逐 ROI）。v0.7.2 质量批：**池退出挂死根治**（DllMain/loader lock 下 NVIDIA 驱动内 COM 释放永久等待；严格对拍失败模式的 0xC0000409 退出随之一并消除）、多会话冷启动已验证（满槽 7 会话零拒绝、GPU 峰值=稳态）、相机门 harness 重建（20 门全绿+一键脚本沉淀）。另含攒批注册表 TOCTOU 竞态修复与 Python/C# 推理池封装。已验证范围为 **Windows x64 CPU 与硬解探测**——GPU 数字为发布机研究测量（RTX 5060、CUDA ORT），见[接入指南](sdk/INTEGRATION.md)；Linux/macOS/移动端二进制及正式 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
+## 分发包形态
+
+统一发布架构下的四种消费形态（2026-11-15）：
+
+- **git tag 锚点——现役主形态。** 下游 Cargo git 依赖以 tag（`tag = "vX.Y.Z"`）或底层 commit（`rev = <完整哈希>`）固定引用；双哈希锚点纪律（tag 对象哈希+底层 commit）见[发布清单](docs/RELEASE_CHECKLIST.md)。
+- **Release 资产。** 已发布 tag 的 GitHub Release 携带裸 DLL、Windows x64 SDK zip、源码包、`SHA256SUMS.txt` 与 `build-record.json`——见[发布页](https://github.com/xiaoyanse/framebraid/releases)与[预编译包指南](docs/USE_PREBUILT.md)。
+- **源码包。** `FrameBraid-SDK-source-<ver>.zip`（对应 tag 提交的 git archive），按[快速接入](docs/GETTING_STARTED.zh-CN.md)构建。
+- **registry——规划中未启用。** B 案 token 保护静态托管已预授、挂触发条件（第二消费方/跨机 CI）；启用前 git tag 锚点维持主形态，见[路线图](docs/ROADMAP.md) 2026-11-15 条目。
+
 ## 目录
 
+- [分发包形态](#分发包形态)
 - [适用场景](#适用场景)
 - [Media SDK](#media-sdk)
 - [Vision SDK](#vision-sdk)
