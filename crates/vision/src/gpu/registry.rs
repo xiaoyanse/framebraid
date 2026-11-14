@@ -134,37 +134,30 @@ impl Default for TextureRegistry {
     }
 }
 
-/// 进程级注册缓存（GpuPipeline 与退出清理共享）。
+/// 进程级注册缓存（GpuPipeline 与显式关闭清理共享）。
 static REGISTRY: OnceLock<Mutex<TextureRegistry>> = OnceLock::new();
 
 pub fn global() -> &'static Mutex<TextureRegistry> {
-    REGISTRY.get_or_init(|| {
-        register_exit_cleanup();
-        Mutex::new(TextureRegistry::new())
-    })
+    REGISTRY.get_or_init(|| Mutex::new(TextureRegistry::new()))
 }
 
-// ucrt/libc 的 atexit（Rust 运行时已链接，无新依赖）。
-extern "C" {
-    fn atexit(cb: extern "C" fn()) -> i32;
-}
-
-/// 退出清理登记：初始化发生在 cudart 加载之后，atexit LIFO 语义使本清理
-/// 先于 cudart/驱动的退出路径执行——否则残留的 D3D11 注册资源在驱动
-/// teardown 阶段被访问，进程 fail-fast（实测 0xC0000409，判决实验见
-/// .local/tests/gpu-pipeline-opt）。清理时纹理仍被 ComRef 保活、d3d11
-/// 尚未卸载，unregister 安全。
-fn register_exit_cleanup() {
-    let code = unsafe { atexit(exit_cleanup) };
-    debug_assert_eq!(code, 0, "atexit 登记失败（退出清理缺失）");
-}
-
-extern "C" fn exit_cleanup() {
+/// 显式关闭路径的注册清理（sdk-p2 T1）：在最后一个推理会话释放时由 FFI
+/// 层调用，unregister/COM Release 均发生在调用方线程（无 loader lock、
+/// 驱动工作线程存活），D3D11 对象销毁可正常完成。
+///
+/// 不得在 DLL 的 onexit/DLL_PROCESS_DETACH 上下文做本清理（旧 atexit 方案）：
+/// 该表在 DllMain 内执行——持 loader lock，COM Release 触发的纹理销毁在
+/// nvwgf2umx 内部同步等待永不完成（实测挂死）；ExitProcess 直退路径下更
+/// 早于本清理的 cudart detach 已带着残留注册拆 primary 上下文（实测
+/// 0xC0000005 回调已释放地址）。未显式 close 的宿主由 OS 回收，SDK 不在
+/// detach 上下文补做阻塞清理。
+pub fn release_for_shutdown() {
     if let Some(registry) = REGISTRY.get() {
-        // 退出阶段无并发；try_lock 保守处理（锁被持有则跳过，残留由驱动兜底）
-        if let Ok(mut registry) = registry.try_lock() {
-            registry.drain();
-        }
+        // 与管线取用同款毒化恢复；末位会话已释放，无并发取用者。
+        let mut registry = registry
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        registry.drain();
     }
 }
 

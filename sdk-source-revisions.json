@@ -960,8 +960,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler.rs",
       "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-      "sha256": "790201ff4fedbfc3269bf31ef150fc2f4135a9ffd6a2f31546bace0c748cd096",
-      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged)"
+      "sha256": "1493dad037d63eef55759b44027dd4198c789ad98d1e054106f272088cf7f111",
+      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged); sdk-p2 T1: drain GPU texture registry at last session release after engine join (exit-safety fix, see crates/vision/src/gpu/registry.rs entry)"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
@@ -1710,8 +1710,8 @@
     {
       "path": "crates/vision/src/gpu/registry.rs",
       "previousSha256": null,
-      "sha256": "afe7bd6b34c8bab9fbe2082ead5c1a9dafb50e15b0a85786765498c082e7f833",
-      "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16+atexit退出清理）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）"
+      "sha256": "e6ca2ffbbfc2dd5f5588df1b807be12701c1e1095a59f6a97d65f8194f8d7682",
+      "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）；sdk-p2 T1：atexit 退出清理移除（DLL onexit/DllMain 上下文持 loader lock 执行 COM Release/驱动调用，实测退出挂死与 0xC0000005），改为显式关闭路径 drain（FFI scheduler 末位会话释放调用 release_for_shutdown），未显式 close 的宿主不在 detach 上下文补做阻塞清理"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/exec_stage.rs",

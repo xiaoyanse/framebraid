@@ -1,5 +1,15 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.7.2 (2026-11-15) — quality batch: pool-exit hang root fix + verification completions
+
+Quality release, **C ABI unchanged at 1.5** — swap the DLLs to pick up the fixes.
+
+- **Pool-exit DLL-detach hang — root-caused and fixed** (the v0.7.0 known issue): host processes using the inference pool could hang at exit. Root cause (cdb-verified, two variants): the GPU texture registry's `atexit` cleanup ran in `DllMain` detach context holding the loader lock — its final-reference COM Release entered the NVIDIA D3D driver and waited forever (hang); on `ExitProcess` paths the same residual registration was torn by cudart's earlier detach into freed addresses (0xC0000409 crash — also the v0.7.1 strict-parity fail-mode exit, eliminated with this same fix). The atexit registration is gone; the registry now drains explicitly when the last inference session is released, on the caller thread. Verified: minimal repro and pool_soak (without the old TerminateProcess workaround) exit 0; 16 vision gates green ×2; workspace 18 suites. Known cost: close-then-reopen hosts re-register textures (milliseconds per texture).
+- **Multi-session cold start verified** (was an honest boundary in v0.7.1): ctx capacity = max_models 8 slots confirmed by slot pre-check; a full slot of 7 independent CUDA sessions ran 120s with zero rejects — GPU peak equals steady state at 5378 MiB/8151 MiB (no cold-start spike), host private bytes flat at 6.72 GB, all sessions cold-started in <30s including warmup. Still unverified: cascaded session pairs ×N concurrent cold start, hour-scale runs, field load.
+- **Camera-gate harness rebuilt**: all 20 am-camera-ffi ignore gates green (previously 8 blocked on lost configuration); config anchored in a one-click script + mapping README (loopback RTSP via in-repo MediaMTX). No SDK behavior change — test infrastructure only.
+
+/ 质量收尾版，C ABI 不变（1.5），换 DLL 即得。①池退出 detach 挂死根治（v0.7.0 已知问题）：根因 cdb 双变体实证——atexit 清理在 DllMain 上下文持 loader lock，末引用 COM Release 进 NVIDIA 驱动永久等待（挂死）；ExitProcess 路径同残留被 cudart 先序 detach 拆进已释放地址（0xC0000409=v0.7.1 失败模式退出异常，同根消除）。修复=删 atexit 改末位会话显式清理；验证=最小复现与 pool_soak（去 TerminateProcess 绕过）exit 0+16 门×2+workspace 全绿；代价=close 重开会话重注册毫秒级。②多会话冷启动补验：容量 8 槽位实测；满槽 7 独立会话 120s 零拒绝、GPU 峰=稳态 5378MiB 无尖峰、host 6.72GB 平稳、冷启动 <30s；级联对×N/小时级/现场负载仍未测。③相机门 harness 重建：20 门全绿+一键脚本沉淀（纯测试设施，SDK 行为零变化）。
+
 ## v0.7.1 (2026-11-13) — opt-in GPU NV12 cascade input + pool language wrappers
 
 Compatible-addition release, **C ABI at 1.5 (65541)** — all existing paths unchanged; both additions are opt-in.
