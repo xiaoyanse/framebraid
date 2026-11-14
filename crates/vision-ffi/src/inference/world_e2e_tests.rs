@@ -610,35 +610,59 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
         0,
         "动态批轴档案可启用攒批"
     );
-    let ids: Vec<u64> = FRAMES
-        .iter()
-        .map(|f| submit_gpu_async(f, threshold))
-        .collect();
-    for (index, (frame, id)) in FRAMES.iter().zip(&ids).enumerate() {
-        assert_eq!(wait_terminal(ctx, *id), AM_REQ_DONE, "{frame} 攒批终态");
-        let (batched, batched_raw) = fetch_boxes(ctx, *id, 3);
-        assert_raw_close(
-            &singles[index].1,
-            &batched_raw,
-            0.02,
-            1e-5,
-            &format!("攒批 vs 单帧 {frame}"),
+    // 攒批凑满段可重试（sdk-q1 加固）：窗口截止前四提交的接受段开销在系统重载
+    // （内存压态/调度饥饿）下可能超时致 batched=3（v0.8.0 定版实证+协调裁定登记
+    // 的负载敏感形态）——失败时整段重跑（reconfigure 重置统计，目的不降标：
+    // 每轮仍须真实凑满 4 项同一物理批），三次未凑满才判失败（持续重载或回归，
+    // 如实暴露）。对拍/背压断言失败不重试（数值回归必须立即失败）。
+    let mut last_note = String::new();
+    for attempt in 1..=3 {
+        if attempt > 1 {
+            assert_eq!(
+                unsafe { amv_model_configure_batching(detector as _, &options) },
+                0,
+                "攒批重试重配置"
+            );
+        }
+        let ids: Vec<u64> = FRAMES
+            .iter()
+            .map(|f| submit_gpu_async(f, threshold))
+            .collect();
+        for (index, (frame, id)) in FRAMES.iter().zip(&ids).enumerate() {
+            assert_eq!(wait_terminal(ctx, *id), AM_REQ_DONE, "{frame} 攒批终态");
+            let (batched, batched_raw) = fetch_boxes(ctx, *id, 3);
+            assert_raw_close(
+                &singles[index].1,
+                &batched_raw,
+                0.02,
+                1e-5,
+                &format!("攒批 vs 单帧 {frame}"),
+            );
+            assert_boxes_match(&singles[index].0, &batched, 1, 0.9, None);
+        }
+        let mut current = am_batching_options_t::default();
+        let mut stats = am_batching_stats_t::default();
+        assert_eq!(
+            unsafe { amv_model_get_batching(detector as _, &mut current, &mut stats) },
+            0
         );
-        assert_boxes_match(&singles[index].0, &batched, 1, 0.9, None);
+        eprintln!(
+            "[world-gpu] 攒批统计 attempt={attempt} formed={} batched={} rejected={}",
+            stats.formed_batches, stats.batched_items, stats.rejected_items
+        );
+        assert_eq!(stats.rejected_items, 0, "不应触发准入背压");
+        if stats.formed_batches >= 1 && stats.batched_items >= 4 {
+            break;
+        }
+        last_note = format!(
+            "attempt {attempt}: formed={} batched={}",
+            stats.formed_batches, stats.batched_items
+        );
+        assert!(
+            attempt < 3,
+            "四帧计入成批项三轮未凑满（{last_note}；持续重载或回归）"
+        );
     }
-    let mut current = am_batching_options_t::default();
-    let mut stats = am_batching_stats_t::default();
-    assert_eq!(
-        unsafe { amv_model_get_batching(detector as _, &mut current, &mut stats) },
-        0
-    );
-    eprintln!(
-        "[world-gpu] 攒批统计 formed={} batched={} rejected={}",
-        stats.formed_batches, stats.batched_items, stats.rejected_items
-    );
-    assert!(stats.formed_batches >= 1, "真实 PROFILE 图像攒批成批");
-    assert!(stats.batched_items >= 4, "四帧计入成批项");
-    assert_eq!(stats.rejected_items, 0, "不应触发准入背压");
     unsafe { amv_model_close(detector as _, 0, std::ptr::null_mut()) };
     unsafe { amv_model_close(tower as _, 0, std::ptr::null_mut()) };
 }

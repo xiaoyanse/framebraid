@@ -15,6 +15,7 @@
 | Implementation goals and tasks / 实施目标与任务 | [SDK OpenSpec](../openspec/README.md) |
 | Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、阶段成果与MET-2验收；整包未完成 |
 | Current validation / 当前验证 | [Local Release status / 本地 Release 状态](RELEASE_STATUS.md) |
+| ABI upgrade notes / ABI 版本迁移 | [Migration guide / 迁移指南](MIGRATION.md) — per-step migration notes / 逐版本迁移说明 |
 | Charts and numeric observations / 图表及数值观察 | [Test observations / 测试资料](BENCHMARKS.md) |
 | Goals and acceptance / 指标与验收目标 | [MET-2](PERFORMANCE_ACCEPTANCE.md) · [历史评价复核](verification/sdk-metrics-review-20261026.md) — resource offload, useful delivery and scenario goals / 主目标与保护指标分开 |
 | Reproducible SDK performance tools / 可复现基准工具 | [Performance measurement / 性能测量](PERFORMANCE.md) — local tools, boundaries and current limitations / 本地工具、计时边界与未验项 |
@@ -27,7 +28,7 @@
 
 - [Media C API](../sdk/include/am_camera.h), [Vision C API](../sdk/include/am_vision.h), [shared types](../sdk/include/am_sdk_types.h).
 - [ABI design](design/dual-dll-abi.md) and [type contracts](design/dual-dll-abi-types.md).
-- Current C ABI is **1.3** (`AM_ABI_VERSION` 65539; compatible additions over 1.0: capabilities/hardware probing, shared frames, FILE source seek/rate/loop, open-vocabulary binding, ROI cascade, tracking, frame export). Freeze history: [ABI 1.1 extension](design/dual-sdk-abi-freeze-v1.1.md) and [probe/report verification](verification/sdk-r2-abi11-hardware-20261026.md).
+- Current C ABI is **1.6** (`AM_ABI_VERSION` 65542; compatible additions over 1.0: capabilities/hardware probing, shared frames, FILE source seek/rate/loop, open-vocabulary binding, ROI cascade, tracking, frame export; 1.4 inference pool orchestration, 1.5 opt-in GPU NV12 cascade input with session-level FP32 option, 1.6 device-targeting selector). Freeze history: [ABI 1.1 extension](design/dual-sdk-abi-freeze-v1.1.md) and [probe/report verification](verification/sdk-r2-abi11-hardware-20261026.md).
 - [Delivery boundaries](design/dual-dll-sdk.md).
 - [Native hardware discovery / 原生硬件发现](design/native-hardware.md) — local Rust work, separate from frozen C ABI and public CPU assets.
 - [Shared frames](design/dual-sdk-shared-frames.md) and [layout](design/dual-sdk-shared-layout-v1.md).
