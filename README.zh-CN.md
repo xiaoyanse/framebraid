@@ -110,7 +110,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 
 ## 源码构建
 
-下载的 Windows 包内含 `bin/win-x64` 时，直接按[预编译包指南](docs/USE_PREBUILT.md)使用，无需编译。
+使用下载的 Windows 包而非源码构建时，直接按[预编译包指南](docs/USE_PREBUILT.md)使用，无需编译。
 
 Windows x64：Rust 1.90+、x64 MSVC 构建工具与 Windows SDK；首次构建拉取锁定的 Cargo 依赖。Node.js/Python 仅用于维护工具或 Python 示例，预编译 DLL 加载不需要。
 
