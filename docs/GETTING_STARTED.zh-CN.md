@@ -2,7 +2,7 @@
 
 [English](GETTING_STARTED.md) · [文档入口](README.md)
 
-适用于 Windows x64 源码仓库或 [v0.1.0 下载包](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0)。已有具名本地 Release 候选验证，见[候选身份及结果](RELEASE_STATUS.md)。下面命令构建自己的制品，不把已有验证结论自动套到新构建。
+适用于 Windows x64 源码仓库或[已发布版本包](https://github.com/xiaoyanse/framebraid/releases)（当前版本与验证记录见[交付状态](RELEASE_STATUS.md)）。下面命令构建自己的制品，不把已发布验证结论自动套到新构建。
 
 ## 1. 构建
 

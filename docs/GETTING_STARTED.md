@@ -2,7 +2,7 @@
 
 [中文](GETTING_STARTED.zh-CN.md) · [Documentation](README.md)
 
-Use the Windows x64 source checkout or [v0.1.0 download](https://github.com/xiaoyanse/framebraid/releases/tag/v0.1.0). A scoped local Release candidate was verified; see [candidate identity and results](RELEASE_STATUS.md). The commands below build your own binaries and do not transfer that acceptance to another build.
+Use the Windows x64 source checkout or a [published release package](https://github.com/xiaoyanse/framebraid/releases) (see [RELEASE_STATUS](RELEASE_STATUS.md) for the current version and its verification record). The commands below build your own binaries and do not transfer any published acceptance to another build.
 
 ## 1. Build
 

@@ -8,8 +8,19 @@ Download from [GitHub Releases](https://github.com/xiaoyanse/framebraid/releases
 as the separate source ZIP so documentation/profile paths and rebuild inputs
 remain consistent. You do not need to compile that source to use the DLLs.
 
+> **Layout change since v0.2.0 / v0.2.0 起布局变更**: the v0.1.0 preview used the
+> four-directory layout described above. Later Windows packages (v0.2.0 through
+> the current release) ship a different single-tree layout —
+> `windows-x64/sdk/` containing `am_camera.dll`, `am_vision.dll`, `include/`,
+> `bindings/`, `INTEGRATION.md`, `RELEASE-NOTES.md` and `SHA256SUMS.txt`, with
+> `LICENSE` and `build-record.json` beside it; runtime libraries are not bundled.
+> For those packages follow the paths in the package's own `RELEASE-NOTES.md`
+> and `INTEGRATION.md` instead of the `bin/win-x64` layout below.
+
 适用于含上述目录的 Windows x64 开发者预览包，从 GitHub Releases 下载。
 Windows 包附同源源码以便文档和复建保持一致；直接用 DLL 无需编译源码。
+
+> **v0.2.0 起布局变更**：v0.1.0 预览包为上述四目录布局；此后（v0.2.0 至当前版本）Windows 包为单树布局——`windows-x64/sdk/` 内含 `am_camera.dll`、`am_vision.dll`、`include/`、`bindings/`、`INTEGRATION.md`、`RELEASE-NOTES.md` 与 `SHA256SUMS.txt`，旁附 `LICENSE` 与 `build-record.json`，运行库不随包分发。使用新包时以下方 `bin/win-x64` 布局为准的路径段不适用，以包内 `RELEASE-NOTES.md` 与 `INTEGRATION.md` 为准。
 
 ## 1. Paths / 路径
 
