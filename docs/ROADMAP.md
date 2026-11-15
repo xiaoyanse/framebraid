@@ -24,6 +24,8 @@ GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/change
 
 2026-11-15 进度（串行链第三环 RTMP，sdk-rtmp-wip 分支在途）：**RTMP 推流真机验证+可观测补强**落地——ABI 1.6→1.7 兼容新增 65543（`amc_stream_get_status` 只读状态快照：连接/重连计数/推送字节/退避档/最近失败；错误码零新增；freeze r13→r14+23 条指纹登记，`am_stream_status_t` 布局基线复用路径手工登记+layout 测试交叉验证）；**首次真机 RTMP 服务端回环门全绿**（MediaMTX v1.21.3 rtmp-gate.yml@11935：ffprobe h264/flv+ffmpeg 2s 接收窗口+杀服务端断线重连臂+重启续推，门进 run-camera-gates.ps1 批 RTMP；关闭 S5 期"RTMP 对端未验"欠账）；顺带修复门暴露的两处既有重连缺陷（预算耗尽不累计重连计数；单段中断线上暴露的连接失败被归一 Timeout 致重试单发终止）。上表"编码推流输出（RTMP/MP4）"登记项：MP4 已随 v0.3.0 交付、RTMP 推流导出自 v0.3.0 在+真机对端验证本轮闭环，**sink 化（一次编码多端分发）与 rtmps/rtmpt 前缀放开维持 1.8+ 登记不启动**。诚实边界：仅回环验证，跨机/公网对端与小时级长稳未测。汇总见[交付状态](RELEASE_STATUS.md)当前源码验证节。
 
+2026-11-16 进度（第三环 RTMP 边界补验，sdk-rtmp-multi-wip 分支在途）：**多路并发 RTMP 推流验证**落地（纯验证+测试扩展，ABI/API 零变化；清偿上条"多路并发未测"边界）——新 ignore 门 `rtmp_multi_lane_gate_pushes_concurrent_streams`（run-camera-gates.ps1 批 RTMP）：单 ctx N 路并发会话推同一 MediaMTX 实例不同路径 `live/lane{N}`，每路互不相同编码尺寸为串流断言载体（串流必致 ffprobe 宽高失配+单视频流断言），逐路收流校验+逐路状态导出（CONNECTED/字节独立累计/零重连）+逐路三段式关闭；4 路两轮全绿、单路门零回归（42.71s=基线）；边界探测 6/8 路全绿且 MediaMTX 日志实证 8 路独立发布——**8 路到顶为门尺寸表容量而非系统上限**（MediaMTX 默认会话无上限、SDK 每路 256B 控制元数据 8 路仅占 64KiB 池 2KiB、门时长与 4 路持平），>8 路未验如实登记。验证 `.local/evidence/sdk-rtmp-multi-20261116/`。
+
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
 ---
