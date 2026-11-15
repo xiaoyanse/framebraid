@@ -26,6 +26,8 @@ GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/change
 
 2026-11-16 进度（第三环 RTMP 边界补验，sdk-rtmp-multi-wip 分支在途）：**多路并发 RTMP 推流验证**落地（纯验证+测试扩展，ABI/API 零变化；清偿上条"多路并发未测"边界）——新 ignore 门 `rtmp_multi_lane_gate_pushes_concurrent_streams`（run-camera-gates.ps1 批 RTMP）：单 ctx N 路并发会话推同一 MediaMTX 实例不同路径 `live/lane{N}`，每路互不相同编码尺寸为串流断言载体（串流必致 ffprobe 宽高失配+单视频流断言），逐路收流校验+逐路状态导出（CONNECTED/字节独立累计/零重连）+逐路三段式关闭；4 路两轮全绿、单路门零回归（42.71s=基线）；边界探测 6/8 路全绿且 MediaMTX 日志实证 8 路独立发布——**8 路到顶为门尺寸表容量而非系统上限**（MediaMTX 默认会话无上限、SDK 每路 256B 控制元数据 8 路仅占 64KiB 池 2KiB、门时长与 4 路持平），>8 路未验如实登记。验证 `.local/evidence/sdk-rtmp-multi-20261116/`。
 
+2026-11-16 进度（v0.8.0 边界清偿，sdk-bench 实验批）：**真实模型三后端算力分列实测**落地（清偿 v0.8.0 边界"真实模型核显/独显算力分列未测"；纯实验+harness，POC 零 tracked 改动）——真实 YOLO11n 在 CUDA@5060/DML@Arc 140T/CPU 三后端×批 1/攒批 4 双形态（独立进程互斥隔离，3×60s 中位）：run 段 GPU 对 CPU 加速 2~3×（合成口径"无分列"被真实模型打破）；端到端被 CPU 预处理拉平一半（prepare 三后端同值、占 GPU 臂约半——GPU 帧直传为下一步明确杠杆）；小模型单帧 DML@核显快于 CUDA@独显；**攒批方向后端分裂（选型要点）：CUDA 攒批正收益、DML/CPU 攒批负收益——攒批只推 CUDA 线**。绝对数值按口径纪律不进公开文档（完整矩阵见 `.local/evidence/sdk-bench-20261116/realmodel-split.md`）。
+
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
 ---
