@@ -9,7 +9,7 @@ OpenVINO 原生引擎（backend=4）GPU 定向贯通（清偿 v0.8.0 诚实边�
 
 ## v0.8.0 验证状态快照
 
-设备定向选择器（sdk-v08 线，当前源码领先公开版 v0.7.2；ABI 1.6 兼容新增 65542，合同 §3.5b+types §3.1 `am_device_selector_t`）：适配器描述子串+实例序号显式定向 GPU 适配器（定向键跨重启稳定，不依赖 DXGI 枚举序与 LUID），vision（`am_backend_selection_t.device`，CUDA 候选 selector 优先于既有 device_id）与 camera（`am_decoder_config_t.device`，D3D11VA）双侧贯通；匹配域排除软件适配器，零命中/实例越界 `sdk.invalidArgument` 同步拒绝，定向与回退正交（定向核显后硬解失败仍按 PREFER_HW 回退软解）。顺带三债修复：DirectML 会话选择报告 device 字段误写 "CPU" 改真值；DML 依赖检查按合同回退系统 DirectML 可见性（System32 1.15.6 实测含单测）；后端共存矩阵补缺失的 OpenVINO 原生（backend=4）行。
+设备定向选择器（sdk-v08 线，随 v0.8.0 发布；ABI 1.6 兼容新增 65542，合同 §3.5b+types §3.1 `am_device_selector_t`）：适配器描述子串+实例序号显式定向 GPU 适配器（定向键跨重启稳定，不依赖 DXGI 枚举序与 LUID），vision（`am_backend_selection_t.device`，CUDA 候选 selector 优先于既有 device_id）与 camera（`am_decoder_config_t.device`，D3D11VA）双侧贯通；匹配域排除软件适配器，零命中/实例越界 `sdk.invalidArgument` 同步拒绝，定向与回退正交（定向核显后硬解失败仍按 PREFER_HW 回退软解）。顺带三债修复：DirectML 会话选择报告 device 字段误写 "CPU" 改真值；DML 依赖检查按合同回退系统 DirectML 可见性（System32 1.15.6 实测含单测）；后端共存矩阵补缺失的 OpenVINO 原生（backend=4）行。
 
 门口径：vision **17 门=两批两进程**（DML/CUDA ORT 同进程互斥是部署形态，见下）——批一 16 门 CUDA ORT 进程（`--skip device_selector_e2e`）16 passed 48.33s，批二新门 `device_selector_e2e_targets_intel_igpu`（DML ORT 专进程）1 passed 多次复跑绿；camera **21 门**（新门 `decoder_device_selector_targets_intel_igpu_and_rejects_zero_match` 入列一键脚本，SUMMARY 21/21）。**定版时点登记例外（协调裁定 2026-11-15）**：world_e2e 攒批时序门（40ms 窗口四帧断言）负载敏感——定版窗口系统内存压态（free 7.8-16.7%，外部构建负载）下批跑+单跑红（batched 3/4），轻载全绿历史链完整（v0.7.2 发版 16 门 39s/V8.3 分支 3 轮 50-53s/单跑 2.6s）+改动面零交集非回归；**负载退后已即时补验：单跑绿（6.62s，2026-11-15 定版同日）——登记升级为"负载敏感 flaky、轻载稳定绿"**。新门断言面：定向 Arc 命中 device_label 真值+候选 device_id 精确回读+逐帧推理身份断言（DML 最大偏差 0.000000）/对照臂 match:"RTX" 命中独显同款跑通/零命中 rc 3 双侧同步拒绝+零句柄/多路浸泡。
 

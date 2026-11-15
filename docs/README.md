@@ -13,7 +13,7 @@
 | Platform/feature limits / 平台与能力限制 | [Support / 支持边界](SUPPORT.md) |
 | Runtime environment variables / 运行时环境变量 | [Registry / 登记表](ENVVARS.md) — all `AM_RT_*`/`AM_SDK_*` variables; new variables must register here first |
 | Implementation goals and tasks / 实施目标与任务 | [SDK OpenSpec](../openspec/README.md) |
-| Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、阶段成果与MET-2验收；整包未完成 |
+| Future priorities / 后续优化路线 | [Roadmap / 分阶段路线图](ROADMAP.md) — prioritized performance work, reference index and quantitative gates / 性能优先排期、阶段成果与MET-2验收；各阶段交付与剩余开放项见 §8 |
 | Current validation / 当前验证 | [Local Release status / 本地 Release 状态](RELEASE_STATUS.md) |
 | ABI upgrade notes / ABI 版本迁移 | [Migration guide / 迁移指南](MIGRATION.md) — per-step migration notes / 逐版本迁移说明 |
 | Charts and numeric observations / 图表及数值观察 | [Test observations / 测试资料](BENCHMARKS.md) |

@@ -60,3 +60,7 @@
 | 15 | docs/SUPPORT.md 辅助 Rust H264Hub 段 | "Local unreleased auxiliary Rust H264Hub"——H264Hub 诊断快照已随 v0.6.1 进 CHANGELOG（Rust 直依赖面），unreleased 说法疑似过时 | 核实该段所述 16 源额度等特性的实际发布载体后改口径（低优先） |
 
 工具合规：本登记及本批全部改动均由 Edit/Write 工具完成，无脚本改文件。
+
+## 第三批清偿记录（2026-11-15，演化模式顺手项，fast-worker 代理+PM 验收）
+
+#13/#14/#15 已清偿：#13 docs/README Roadmap 行尾改"各阶段交付与剩余开放项见 §8"；#14 RELEASE_STATUS v0.8.0 快照首句改"随 v0.8.0 发布"（旧快照节只读未动）；#15 核实后改口径——16 源额度随 v0.2.0 发布（CHANGELOG [0.2.0] 节界核对+诊断快照 v0.6.1 双证据）、SUPPORT 句改 "(shipped in v0.2.0)"。新观察：ROADMAP:23 "当前源码验证节"措辞指向落空（现为"v0.8.0 验证状态快照"，链接仍达页面级）——第四批候选。
