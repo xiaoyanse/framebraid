@@ -511,3 +511,272 @@ fn rtmp_loopback_gate_pushes_valid_stream_and_exports_status() {
 
     server.kill();
 }
+
+// ── 回环 RTMP 多路真机门（同 MediaMTX 实例并发多路径推流，清偿"多路并发未测"边界）──
+
+/// 多路尺寸表：互不相同的宽高是"互不串流"的端到端断言载体——若 lane_i 的
+/// URL 上收到其它路的流，ffprobe 的宽高断言必然失败。全部偶数（H.264 要求）。
+const RTMP_MULTI_LANE_SPECS: [(u32, u32); 8] = [
+    (320, 240),
+    (352, 288),
+    (384, 288),
+    (416, 336),
+    (448, 336),
+    (480, 384),
+    (512, 400),
+    (544, 416),
+];
+
+/// 泵线程结果：累计成功帧数，或首次 write 失败的描述。
+type PumpOutcome = Result<u64, String>;
+
+fn spawn_lane_probe(ffprobe: &str, url: &str) -> std::process::Child {
+    std::process::Command::new(ffprobe)
+        .args([
+            "-v",
+            "error",
+            "-rtmp_live",
+            "live",
+            "-probesize",
+            "50000",
+            "-i",
+            url,
+            "-show_entries",
+            "stream=codec_name,width,height:format=format_name",
+            "-of",
+            "default=nokey=0",
+        ])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("ffprobe 启动失败")
+}
+
+fn spawn_lane_pull(url: &str) -> std::process::Child {
+    std::process::Command::new("ffmpeg")
+        .args([
+            "-v",
+            "error",
+            "-rtmp_live",
+            "live",
+            "-i",
+            url,
+            "-t",
+            "2",
+            "-f",
+            "null",
+            "-",
+        ])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::piped())
+        .spawn()
+        .expect("ffmpeg 启动失败")
+}
+
+#[test]
+#[ignore = "回环 RTMP 多路真机门：需本机 MediaMTX+rtmp-gate.yml、系统 ffprobe/ffmpeg 与 AM_RT_FFMPEG_DIR 运行库；由 run-camera-gates.ps1 批 RTMP 调度（默认 4 路并发；AM_SDK_RTMP_GATE_LANES=2..=8 供边界探测复跑）"]
+fn rtmp_multi_lane_gate_pushes_concurrent_streams() {
+    let lanes = std::env::var("AM_SDK_RTMP_GATE_LANES")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+        .unwrap_or(4);
+    assert!(
+        (2..=RTMP_MULTI_LANE_SPECS.len()).contains(&lanes),
+        "AM_SDK_RTMP_GATE_LANES 须在 2..={}",
+        RTMP_MULTI_LANE_SPECS.len()
+    );
+    let base = std::env::var("AM_SDK_RTMP_GATE_MULTI_BASE")
+        .unwrap_or_else(|_| "rtmp://127.0.0.1:11935/live".to_string());
+    let ffprobe = std::env::var("AM_SDK_FFPROBE").unwrap_or_else(|_| "ffprobe".to_string());
+
+    let mut server = ServerGuard::start();
+    assert!(
+        wait_tcp_open(11935, 60),
+        "mediamtx 未在 127.0.0.1:11935 监听（rtmp-gate.yml）"
+    );
+
+    unsafe {
+        let ctx = rtmp_gate_ctx();
+
+        // 阶段一：同 ctx 并发 open 各路（同服务端实例、不同路径、不同尺寸配置）。
+        let mut streams: Vec<(*mut amc_stream_t, String, (u32, u32))> = Vec::new();
+        for (lane, &(width, height)) in RTMP_MULTI_LANE_SPECS[..lanes].iter().enumerate() {
+            let url = format!("{base}/lane{lane}");
+            let url_c = std::ffi::CString::new(url.clone()).unwrap();
+            let cfg = am_encoder_config_t {
+                width,
+                height,
+                bitrate_kbps: 1500,
+                gop_size: 30,
+                fps_num: 30,
+                fps_den: 1,
+                queue_max_items: 64,
+                queue_max_bytes: 1 << 20,
+                ..Default::default()
+            };
+            let mut stream = std::ptr::null_mut();
+            assert_eq!(
+                amc_stream_open(ctx, url_c.as_ptr(), &cfg, &mut stream),
+                0,
+                "lane {lane} 首连 RTMP 服务端失败（服务端已监听）"
+            );
+            streams.push((stream, url, (width, height)));
+        }
+
+        // open 后各路状态：全部已连接、零计数、无失败——并发首连互不干扰。
+        for (lane, (stream, _, _)) in streams.iter().enumerate() {
+            let status = rtmp_gate_status(*stream);
+            assert_eq!(status.connection_state, AM_STREAM_CONNECTED, "lane {lane}");
+            assert_eq!(status.reconnect_attempts, 0, "lane {lane} 首连不计重连");
+            assert_eq!(status.bytes_written, 0, "lane {lane} 尚未写帧");
+            assert_eq!(status.backoff_ms, 0, "lane {lane} 从未退避");
+            assert_eq!(status.last_error_status, 0, "lane {lane} 无失败");
+        }
+
+        // 阶段二：每路独立泵线程（独立合成帧，尺寸匹配本路配置）30fps 并发写帧。
+        let pump_stop = Arc::new(AtomicBool::new(false));
+        let pumps: Vec<_> = streams
+            .iter()
+            .enumerate()
+            .map(|(lane, (stream, _, _))| {
+                let stop = pump_stop.clone();
+                let key = *stream as usize;
+                std::thread::spawn(move || -> PumpOutcome {
+                    let (width, height) = RTMP_MULTI_LANE_SPECS[lane];
+                    let mut buffer = vec![0u8; (width as usize) * (height as usize) * 4];
+                    for (i, byte) in buffer.iter_mut().enumerate() {
+                        *byte = ((i + lane * 37) % 251) as u8;
+                    }
+                    let view = am_frame_view_t {
+                        width,
+                        height,
+                        format: AM_PF_RGBA8 as u32,
+                        plane_count: 1,
+                        planes: [
+                            buffer.as_ptr(),
+                            std::ptr::null(),
+                            std::ptr::null(),
+                            std::ptr::null(),
+                        ],
+                        strides: [width * 4, 0, 0, 0],
+                        plane_size_bytes: [buffer.len() as u64, 0, 0, 0],
+                        ..Default::default()
+                    };
+                    let pixel = am_pixel_view_t {
+                        magic: AM_PIXEL_VIEW_MAGIC,
+                        view: &view,
+                        ..Default::default()
+                    };
+                    let handle = key as *mut amc_stream_t;
+                    let mut frames = 0u64;
+                    while !stop.load(Ordering::Acquire) {
+                        let rc = amc_stream_write(handle, &pixel);
+                        if rc != 0 {
+                            return Err(format!("lane {lane} write rc={rc}（已推 {frames} 帧）"));
+                        }
+                        frames += 1;
+                        std::thread::sleep(std::time::Duration::from_millis(33));
+                    }
+                    Ok(frames)
+                })
+            })
+            .collect();
+
+        // 建立发布路径：MediaMTX 在数据流动 ~1-2s 后才把路径置为 available，
+        // 先并发泵 ~2.5s 再开始收流验证（期间各路持续泵送）。
+        std::thread::sleep(std::time::Duration::from_millis(2_500));
+
+        // 阶段三：逐路 ffprobe 收流校验（未过的路并行重试，至多 5 轮）——
+        // h264 + 本路宽高 + flv + 单视频流（width= 恰一次：两路共用同一路径会
+        // 出现两个 STREAM 块）。宽高即"互不串流"断言：串流必致尺寸失配。
+        let mut verified = vec![false; lanes];
+        let mut probe_failures: Vec<String> = Vec::new();
+        for round in 0..5 {
+            let pending: Vec<(usize, std::process::Child)> = streams
+                .iter()
+                .enumerate()
+                .filter(|(lane, _)| !verified[*lane])
+                .map(|(lane, (_, url, _))| (lane, spawn_lane_probe(&ffprobe, url)))
+                .collect();
+            for (lane, mut probe) in pending {
+                let (rc, out, err) = finish_child(&mut probe, 5_000);
+                let (width, height) = RTMP_MULTI_LANE_SPECS[lane];
+                if rc == Some(0)
+                    && out.contains("codec_name=h264")
+                    && out.contains(&format!("width={width}"))
+                    && out.contains(&format!("height={height}"))
+                    && out.contains("format_name=flv")
+                    && out.matches("width=").count() == 1
+                {
+                    verified[lane] = true;
+                } else {
+                    probe_failures.push(format!(
+                        "round {round} lane {lane} rc={rc:?} out={out} err={err}"
+                    ));
+                }
+            }
+            if verified.iter().all(|v| *v) {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
+        assert!(
+            verified.iter().all(|v| *v),
+            "ffprobe 逐路收流校验未全过：{probe_failures:?}"
+        );
+
+        // 阶段四：并行 2 秒接收窗口（每路 ffmpeg 拉流解码，时长证据）。
+        let pulls: Vec<(usize, std::process::Child)> = streams
+            .iter()
+            .enumerate()
+            .map(|(lane, (_, url, _))| (lane, spawn_lane_pull(url)))
+            .collect();
+        for (lane, mut pull) in pulls {
+            let (rc, _out, err) = finish_child(&mut pull, 10_000);
+            assert_eq!(rc, Some(0), "lane {lane} ffmpeg 2 秒接收窗口失败：{err}");
+        }
+
+        // 阶段五：停泵回收——各路必须全程健康（零 write 失败）且帧数合理。
+        pump_stop.store(true, Ordering::Release);
+        for (lane, pump) in pumps.into_iter().enumerate() {
+            match pump.join().expect("泵线程 panic") {
+                Ok(frames) => assert!(frames >= 30, "lane {lane} 泵送帧数不足（{frames} < 30）"),
+                Err(failure) => panic!("lane {lane} 泵送失败：{failure}"),
+            }
+        }
+
+        // 阶段六：状态导出——各路独立 CONNECTED + 字节独立累计 + 零重连零失败
+        //（字节互不串账的 SDK 侧证据：各会话计数器独立）。
+        for (lane, (stream, _, _)) in streams.iter().enumerate() {
+            let status = rtmp_gate_status(*stream);
+            assert_eq!(
+                status.connection_state, AM_STREAM_CONNECTED,
+                "lane {lane} 健康推送后必须仍连接"
+            );
+            assert!(status.bytes_written > 0, "lane {lane} 推送字节必须累计");
+            assert_eq!(status.reconnect_attempts, 0, "lane {lane} 健康期不产生重连");
+            assert_eq!(status.backoff_ms, 0, "lane {lane} 从未退避");
+            assert_eq!(status.last_error_status, 0, "lane {lane} 无失败");
+        }
+
+        // 阶段七：三段式关闭各路 + ctx 收口。
+        for (lane, (stream, _, _)) in streams.iter().enumerate() {
+            let mut lifecycle = 0u32;
+            assert_eq!(
+                amc_stream_close(*stream, 5_000, &mut lifecycle),
+                0,
+                "lane {lane}"
+            );
+            assert_eq!(lifecycle, AM_LIFECYCLE_CLOSED as u32, "lane {lane}");
+            assert_eq!(crate::amc_object_destroy(stream.cast()), 0, "lane {lane}");
+        }
+        let mut lifecycle = 0u32;
+        assert_eq!(crate::amc_shutdown(ctx, 5_000, &mut lifecycle), 0);
+        assert_eq!(lifecycle, AM_LIFECYCLE_CLOSED as u32);
+        assert_eq!(crate::amc_object_destroy(ctx.cast()), 0);
+    }
+
+    server.kill();
+}
