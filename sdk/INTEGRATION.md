@@ -97,6 +97,48 @@ if (rc != AM_OK) { /* rc=3 sdk.invalidArgument：零命中/越界=配置错误�
 
 验证状态（诚实边界）：定向实现经真机端到端验证——Intel Arc 140T 核显上 DML 定向推理（4 路）与 D3D11VA 定向硬解（4 路）并发表跑 10 分钟稳定，零命中同步拒绝双侧实证；OV 原生 GPU 定向（selector "arc"→OV GPU 编译+真实推理+同进程 GPU/CPU 统计对拍，与 CUDA 线 ORT 同进程共存无互斥——OV 原生不经 ORT 进程域）已验；不可达定向（DXGI 命中独显而 OV GPU 域仅核显）按候选失败回退、strict 拒绝，已验。性能分列、互斥实证与采样口径见[交付状态](../docs/RELEASE_STATUS.md)。未测边界如实登记：真实模型（YOLO 级）核显/独显算力分列未测；4 解码器并发创建个别 rc8 未定位（多路并解语义不受影响）；OV 原生 GPU 数值与 CPU 存在隐式 FP16 级漂移（插件官方默认行为，详见交付状态）。
 
+## GPU 帧直传部署侧启用（CUDA 输入路径）
+
+图像推理支持 GPU 帧直传输入（合同 [§3.3a](../docs/design/dual-dll-abi.md)）：`am_image_input_t.kind=AM_IMG_GPU_FRAME` + 尾部 `am_gpu_frame_ref_t`，帧保持 D3D11 纹理形态直达推理会话——NV12 采样→resize/letterbox/normalize 的预处理在 GPU 完成（CUDA kernel），经 IOBinding 直达 CUDA EP 输入张量，全程零 CPU 回读。
+
+**何时选直传**：模型会话为 CUDA 后端，且源帧已是同进程 D3D11 纹理——典型是相机 D3D11VA 硬解订阅（合同 §2.6a `frame_kind=1`，经 `amc_gpu_frame_desc`/`amc_gpu_frame_texture` 组装帧引用）或宿主自产纹理。源帧在 CPU 内存时直传不适用：为直传先把像素上传成纹理反而多一次复制，走像素路径（`AM_IMG_PIXEL_VIEW`/encoded）即可。收益定性：CPU 像素路径的预处理段（三后端实测同值）约占帧延迟一半，直传后该段几乎全额收回，端到端同环对照达数倍级；剩余瓶颈转移到推理执行本身。不支持直传的会话（非 CUDA EP、互操作不可用）显式返回 `notSupported` 不静默降级，是否回退像素路径由宿主决策——像素路径永远可用，构成自然回退。
+
+**启用步骤**：
+
+1. **能力协商**：`amv_query_capability` 检查 `feature_bits & AMV_CAP_GPU_FRAME_INPUT`（bit10）。能力位为双条件（编译编入 + 当前运行库 CUDA 互操作入口可用）；查询本身不触发 CUDA 初始化。
+2. **纹理要求**：同进程 D3D11 NV12 纹理（`d3d_format=103`）。借用语义：同步调用借用至返回，异步调用借用至请求接受（GPU 预处理在接受段同步完成，纹理不跨异步生命周期）；借用期内宿主不得归还或释放帧。
+3. **组装帧引用**：`am_gpu_frame_ref_t` 清零后填 `struct_size`、`width`/`height`、`d3d_format=103`、`subresource`、`texture`（主交付物，同进程纹理指针）；`shared_nt_handle` 可选、不可得填 0；`flags`/`reserved` 置 0；`assoc` 可选关联帧身份。相机硬解订阅经 `amc_gpu_frame_desc` + `amc_gpu_frame_texture` 组装；宿主自建纹理直接填指针。
+4. **构造输入并提交**：`am_image_input_t.kind=AM_IMG_GPU_FRAME` + 尾部 `gpu` 指向帧引用，经 `amv_infer_image_sync`/`_async` 提交；结果 release/ack 语义与像素路径一致。完整调用序：`amv_init → amv_query_capability → amv_model_load_selected（CUDA 定向，见上文[设备定向（Device Selector）](#设备定向device-selector--设备定向选择器)节）→ amv_infer_image_*（GPU_FRAME）→ amv_result_release/amv_result_ack`。参考调用序见 `POC/core-performance/baseline/src/bin/realmodel-gpu-direct.rs`。
+
+```c
+am_gpu_frame_ref_t ref; memset(&ref, 0, sizeof ref);
+ref.struct_size = sizeof ref;
+ref.width = 640;  ref.height = 640;
+ref.d3d_format = 103;             /* DXGI_FORMAT_NV12 */
+ref.subresource  = 0;
+ref.texture      = tex;           /* 同进程 D3D11 纹理指针；借用期内有效 */
+
+am_image_input_t input; memset(&input, 0, sizeof input);
+input.struct_size = sizeof input;
+input.kind = AM_IMG_GPU_FRAME;
+input.gpu  = &ref;
+
+am_infer_params_t params; memset(&params, 0, sizeof params);
+params.struct_size = sizeof params;
+params.confidence_threshold = 0.25f;   /* 对齐档案默认；0=不过滤直通 */
+
+amv_result_t* result = NULL; uint64_t id = 0;
+int rc = amv_infer_image_sync(model, &input, &params, &result, &id);
+/* 同步返回后借用即结束，纹理可归还或复用 */
+```
+
+**知悉项**：
+
+- **色彩域固定 BT.601**：直传 CUDA kernel 固定 BT.601 limited 采样；像素路径可显式传 `color_matrix`（如 BT.709）。检测数稳定、top 置信度存在微漂移（实测在档）；绝对精度敏感场景（阈值边缘目标）应知悉此固定域差异。
+- **显存预算**：较像素路径约 +95MiB/路量级（纹理驻留 + 互操作管线 + 设备张量常驻），多路部署按此量级预留显存余量。
+- **动态批模型规划批形态前先跑符号维探针**：输出声明为全符号维（如 `[-1,-1,-1]`）的模型，在 FFI 面物理批形态（离线批/攒批窗口）恒 `resourceExhausted`——模型侧输出声明约束，非直传合同约束。探针用法（`--probe-offline` 三面探针）见 `.local/evidence/sdk-bench-gpu-20261116/gpu-direct-arm.md`。
+- 直传臂实测证据与诚实边界（单会话串行形态、纹理驻留形态、多路走多会话/池形态）见上报告；多路部署的攒批窗口批形状指导值（GPU 直传批 4/CPU 像素批 2）见下文自适应攒批与推理池段。
+
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
 Rust `runtime::query` 不再隐式探测 CUDA；需判定设备时显式 `devices::probe`，再将 `CudaSnapshot::from_probe` 传入 `query_snapshot`。
