@@ -1,15 +1,19 @@
-//! OpenVINO 原生推理引擎：内存加载 → CPU 编译 → 同步推理；候选失败回退 ORT CPU。
+//! OpenVINO 原生推理引擎：内存加载 → 按目标设备编译（CPU 默认/GPU 定向）→ 同步推理；
+//! 候选失败回退 ORT CPU。GPU 定向（§3.5b）：DXGI 命中适配器 → OV GPU 设备域可用性
+//! 检查 + FULL_DEVICE_NAME 身份核对（厂商级防静默换卡），多 GPU 域内按 needle+instance
+//! 消歧；OV C API 无 DXGI↔OV 设备级映射，边界见 resolve_gpu_device。
 #![allow(non_snake_case)]
 use super::ov_sys::{
     self, ov_compiled_model_t, ov_core_t, ov_element_type_e, ov_infer_request_t, ov_model_t,
-    ov_output_const_port_t, ov_status_e, ov_tensor_t, OvApi, OV_OK, OV_TYPE_F16, OV_TYPE_F32,
-    OV_TYPE_I32, OV_TYPE_I64, OV_TYPE_U8,
+    ov_output_const_port_t, ov_status_e, ov_tensor_t, ElementLine, OvApi, OV_OK, OV_TYPE_F16,
+    OV_TYPE_F32, OV_TYPE_I32, OV_TYPE_I64, OV_TYPE_U8,
 };
+use crate::sdk::device::DeviceSelector;
 use crate::sdk::{TensorData, TensorInfo};
 use crate::{Error, Result};
-use std::ffi::{c_char, c_void, CStr};
+use std::ffi::{c_char, c_void, CStr, CString};
 use std::ptr::null_mut;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 /// 候选失败：错误键须精确 "vision.backendStrictUnavailable"（selection 回退按精确 key 匹配）。
 #[derive(Debug)]
@@ -27,6 +31,16 @@ pub(crate) struct OvInferError {
     pub error: Error,
 }
 
+/// 编译目标设备：Cpu 与 E1 首版行为完全一致；Gpu 为 §3.5b 定向（selector 的
+/// needle/instance 进 OV 设备域消歧，vendor 为 DXGI 命中适配器的厂商核对词）。
+pub(crate) enum CompileDevice<'a> {
+    Cpu,
+    Gpu {
+        selector: &'a DeviceSelector,
+        vendor: Option<&'static str>,
+    },
+}
+
 /// 持有 core→model→compiled→request→tensor 全链；字段顺序即释放顺序。
 pub(crate) struct OpenvinoEngine {
     request: *mut ov_infer_request_t,
@@ -37,6 +51,15 @@ pub(crate) struct OpenvinoEngine {
     api: Arc<OvApi>,
     pub(crate) inputs: Vec<TensorInfo>,
     pub(crate) outputs: Vec<TensorInfo>,
+    /// 实际编译设备（OV 设备名："CPU" 或 GPU 域设备名）；定向核对与标签用。
+    pub(crate) device: String,
+}
+
+impl OpenvinoEngine {
+    /// 是否编译在 GPU 设备域（am_backend_actual_t.device_utf8 "OpenVINO:GPU" 语义）。
+    pub(crate) fn is_gpu(&self) -> bool {
+        self.device == "GPU" || self.device.starts_with("GPU.")
+    }
 }
 
 impl Drop for OpenvinoEngine {
@@ -65,38 +88,71 @@ impl Drop for OpenvinoEngine {
 /// 并发使用仍由 ModelHandle 的 Mutex 串行化（同 ORT Session 的 Send 语义）。
 unsafe impl Send for OpenvinoEngine {}
 
-/// ov 元素类型 → TensorData dtype 合同值（sdk/model.rs byte_count 同套编码）。
-fn map_element_type(element: ov_element_type_e) -> Result<u32> {
-    match element {
-        OV_TYPE_F32 => Ok(0),
-        OV_TYPE_F16 => Ok(1),
-        OV_TYPE_I64 => Ok(2),
-        OV_TYPE_I32 => Ok(3),
-        OV_TYPE_U8 => Ok(4),
-        _ => Err(Error("vision.tensorTypeUnsupported".into())),
-    }
+/// ov 元素类型 → TensorData dtype 合同值（sdk/model.rs byte_count 同套编码）；
+/// 序数按运行库线选表（2025.0.x 旧序数经 ElementLine 适配）。
+fn map_element_type(element: ov_element_type_e, line: ElementLine) -> Result<u32> {
+    let mapped = match line {
+        ElementLine::Current => match element {
+            OV_TYPE_F32 => Some(0),
+            OV_TYPE_F16 => Some(1),
+            OV_TYPE_I64 => Some(2),
+            OV_TYPE_I32 => Some(3),
+            OV_TYPE_U8 => Some(4),
+            _ => None,
+        },
+        ElementLine::Legacy2025_0 => match element {
+            ov_sys::OV_TYPE_F32_2025_0 => Some(0),
+            ov_sys::OV_TYPE_F16_2025_0 => Some(1),
+            ov_sys::OV_TYPE_I64_2025_0 => Some(2),
+            ov_sys::OV_TYPE_I32_2025_0 => Some(3),
+            ov_sys::OV_TYPE_U8_2025_0 => Some(4),
+            _ => None,
+        },
+    };
+    mapped.ok_or_else(|| Error("vision.tensorTypeUnsupported".into()))
 }
 
 /// TensorData dtype → ov 元素类型（输入张量创建用，map_element_type 的逆映射）。
-fn element_type_of(dtype: u32) -> Result<ov_element_type_e> {
-    match dtype {
-        0 => Ok(OV_TYPE_F32),
-        1 => Ok(OV_TYPE_F16),
-        2 => Ok(OV_TYPE_I64),
-        3 => Ok(OV_TYPE_I32),
-        4 => Ok(OV_TYPE_U8),
-        _ => Err(Error("vision.tensorTypeUnsupported".into())),
-    }
+fn element_type_of(dtype: u32, line: ElementLine) -> Result<ov_element_type_e> {
+    let element = match dtype {
+        0 => match line {
+            ElementLine::Current => OV_TYPE_F32,
+            ElementLine::Legacy2025_0 => ov_sys::OV_TYPE_F32_2025_0,
+        },
+        1 => match line {
+            ElementLine::Current => OV_TYPE_F16,
+            ElementLine::Legacy2025_0 => ov_sys::OV_TYPE_F16_2025_0,
+        },
+        2 => match line {
+            ElementLine::Current => OV_TYPE_I64,
+            ElementLine::Legacy2025_0 => ov_sys::OV_TYPE_I64_2025_0,
+        },
+        3 => match line {
+            ElementLine::Current => OV_TYPE_I32,
+            ElementLine::Legacy2025_0 => ov_sys::OV_TYPE_I32_2025_0,
+        },
+        4 => match line {
+            ElementLine::Current => OV_TYPE_U8,
+            ElementLine::Legacy2025_0 => ov_sys::OV_TYPE_U8_2025_0,
+        },
+        _ => return Err(Error("vision.tensorTypeUnsupported".into())),
+    };
+    Ok(element)
 }
 
 /// 端口规格校验：拒绝空/超长/含非正维（动态 shape 首版不支持，走 ORT 候选）。
-fn tensor_spec(name: &str, dims: &[i64], element: ov_element_type_e) -> Result<TensorInfo> {
+fn tensor_spec(
+    name: &str,
+    dims: &[i64],
+    element: ov_element_type_e,
+    line: ElementLine,
+) -> Result<TensorInfo> {
     if dims.is_empty() || dims.len() > 8 || dims.iter().any(|d| *d <= 0) {
         return Err(Error("vision.ioUnsupported".into()));
     }
     Ok(TensorInfo {
         name: name.into(),
-        dtype: map_element_type(element)?,
+        dtype: map_element_type(element, line)?,
         shape: dims.to_vec(),
     })
 }
@@ -122,12 +178,15 @@ fn ov_try(status: ov_status_e, stage: &'static str) -> std::result::Result<(), C
     }
 }
 
-/// 期望的运行库线（失败详情用；符号集/枚举/结构在两线逐项核对一致）。
+/// 期望的运行库线（失败详情用；符号集/结构逐线核对一致，元素序数 2025.0.x 经线适配）。
 const EXPECTED_LINE: &str = "expected OpenVINO C API 2025.x/2026.x line (openvino_c.dll)";
 
 /// 编译并装配引擎；候选失败统一 backendStrictUnavailable 触发 selection 回退。
 /// 每次尝试先清零旧失败详情；装载/构造失败时记录检测版本与期望线（进 last_error 详情）。
-pub(crate) fn create(bytes: &[u8]) -> std::result::Result<OpenvinoEngine, CreateFailure> {
+pub(crate) fn create(
+    bytes: &[u8],
+    target: CompileDevice<'_>,
+) -> std::result::Result<OpenvinoEngine, CreateFailure> {
     ov_sys::clear_load_failure();
     let api = OvApi::load().map_err(|failure| {
         ov_sys::note_load_failure(format!(
@@ -136,7 +195,7 @@ pub(crate) fn create(bytes: &[u8]) -> std::result::Result<OpenvinoEngine, Create
         ));
         fail("runtime")
     })?;
-    let built = unsafe { build(api.clone(), bytes) };
+    let built = unsafe { build(api.clone(), bytes, target) };
     if let Err(failure) = &built {
         let version = api.version();
         let detected = if version.is_empty() {
@@ -144,17 +203,33 @@ pub(crate) fn create(bytes: &[u8]) -> std::result::Result<OpenvinoEngine, Create
         } else {
             format!("detected runtime {version}")
         };
+        let gpu_note = match (failure.stage, gpu_domain_detail()) {
+            ("gpu_device", Some(detail)) => format!("; {detail}"),
+            _ => String::new(),
+        };
         ov_sys::note_load_failure(format!(
-            "openvino native engine failed at {} (native_code={:?}, {detected}); {EXPECTED_LINE}",
+            "openvino native engine failed at {} (native_code={:?}, {detected}){gpu_note}; {EXPECTED_LINE}",
             failure.stage, failure.native_code
         ));
     }
     built
 }
 
+/// GPU 域解析失败详情（最近一次枚举的设备域快照；仅 gpu_device 阶段附带）。
+fn gpu_domain_detail() -> Option<String> {
+    GPU_DOMAIN_SNAPSHOT
+        .lock()
+        .ok()
+        .and_then(|slot| slot.clone())
+}
+
+/// GPU 定向解析的设备域快照（诊断用；resolve_gpu_device 写入，create 失败详情读）。
+static GPU_DOMAIN_SNAPSHOT: Mutex<Option<String>> = Mutex::new(None);
+
 unsafe fn build(
     api: Arc<OvApi>,
     bytes: &[u8],
+    target: CompileDevice<'_>,
 ) -> std::result::Result<OpenvinoEngine, CreateFailure> {
     let stage = "model_session";
     let mut engine = OpenvinoEngine {
@@ -166,8 +241,16 @@ unsafe fn build(
         api: api.clone(),
         inputs: Vec::new(),
         outputs: Vec::new(),
+        device: String::new(),
     };
     ov_try((api.core_create)(&mut engine.core), "core_create")?;
+    let device = match target {
+        CompileDevice::Cpu => c"CPU".to_owned(),
+        CompileDevice::Gpu { selector, vendor } => {
+            resolve_gpu_device(&api, engine.core, selector, vendor)?
+        }
+    };
+    engine.device = device.to_string_lossy().into_owned();
     // ONNX 内存加载不使用 weights（仅 IR 需要）；中途失败由 Drop 兜住已建句柄。
     ov_try(
         (api.read_model_from_memory_buffer)(
@@ -183,7 +266,7 @@ unsafe fn build(
         (api.compile_model)(
             engine.core,
             engine.model,
-            c"CPU".as_ptr(),
+            device.as_ptr(),
             0,
             &mut engine.compiled,
         ),
@@ -204,6 +287,105 @@ unsafe fn build(
         stage,
     )?;
     Ok(engine)
+}
+
+/// GPU 定向解析：枚举 OV 设备域 → 取 GPU 设备（"GPU"/"GPU.N"）→ 纯函数选定 →
+/// 编译设备名。无 GPU 设备（CPU 插件运行库）或定向不可达（needle/instance 在 OV
+/// 域无消歧命中且非单设备回退，或厂商核对不符）按候选失败（stage=gpu_device）回退，
+/// 不静默换设备编译。
+unsafe fn resolve_gpu_device(
+    api: &OvApi,
+    core: *mut ov_core_t,
+    selector: &DeviceSelector,
+    vendor: Option<&'static str>,
+) -> std::result::Result<CString, CreateFailure> {
+    let mut devices = ov_sys::ov_available_devices_t {
+        devices: null_mut(),
+        size: 0,
+    };
+    ov_try(
+        (api.core_get_available_devices)(core, &mut devices),
+        "gpu_device",
+    )?;
+    let names: Vec<String> = if devices.devices.is_null() {
+        Vec::new()
+    } else {
+        std::slice::from_raw_parts(devices.devices, devices.size)
+            .iter()
+            .filter(|p| !p.is_null())
+            .map(|p| CStr::from_ptr(*p).to_string_lossy().into_owned())
+            .collect()
+    };
+    (api.available_devices_free)(&mut devices);
+    let gpu_devices: Vec<(String, String)> = names
+        .iter()
+        .filter(|name| name.as_str() == "GPU" || name.starts_with("GPU."))
+        .map(|name| (name.clone(), full_device_name(api, core, name)))
+        .collect();
+    if let Ok(mut slot) = GPU_DOMAIN_SNAPSHOT.lock() {
+        let listing = gpu_devices
+            .iter()
+            .map(|(name, full)| format!("{name}=\"{full}\""))
+            .collect::<Vec<_>>()
+            .join(", ");
+        *slot = Some(format!("ov gpu device domain [{listing}]"));
+    }
+    match pick_gpu_device(&gpu_devices, selector.needle(), selector.instance(), vendor) {
+        Some(name) => CString::new(name.as_str()).map_err(|_| fail("gpu_device")),
+        None => Err(fail("gpu_device")),
+    }
+}
+
+/// 设备全名读取（FULL_DEVICE_NAME）；失败返回空串（该设备仍可作为单设备回退候选，
+/// 仅失去 needle 命中资格）。
+unsafe fn full_device_name(api: &OvApi, core: *mut ov_core_t, device: &str) -> String {
+    let Ok(key) = CString::new(device) else {
+        return String::new();
+    };
+    let mut value: *mut c_char = null_mut();
+    if (api.core_get_property)(core, key.as_ptr(), c"FULL_DEVICE_NAME".as_ptr(), &mut value)
+        != OV_OK
+        || value.is_null()
+    {
+        return String::new();
+    }
+    let name = CStr::from_ptr(value).to_string_lossy().into_owned();
+    (api.free)(value);
+    name
+}
+
+/// 纯函数设备选定（无 FFI，单测直测）：优先 needle 在 FULL_DEVICE_NAME 域的
+/// 子串命中（第 instance 个命中消歧）；无命中时仅当 OV 域恰一个 GPU 设备才回退
+/// （OV 设备全名与 DXGI Description 文本不同源，单设备域无歧义）；最终经厂商
+/// 核对词把关（DXGI 命中适配器厂商须出现在选定设备全名，防跨厂商静默换卡）。
+/// 返回编译用 OV 设备名。
+fn pick_gpu_device(
+    gpu_devices: &[(String, String)],
+    needle: &str,
+    instance: u32,
+    vendor: Option<&'static str>,
+) -> Option<String> {
+    let needle = needle.to_lowercase();
+    let matched = gpu_devices
+        .iter()
+        .filter(|(_, full)| full.to_lowercase().contains(&needle))
+        .nth(instance as usize);
+    let candidate = match matched {
+        Some((name, _)) => Some(name.clone()),
+        None if gpu_devices.len() == 1 => Some(gpu_devices[0].0.clone()),
+        None => None,
+    }?;
+    if let Some(token) = vendor {
+        let full = gpu_devices
+            .iter()
+            .find(|(name, _)| *name == candidate)
+            .map(|(_, full)| full.to_lowercase())
+            .unwrap_or_default();
+        if !full.contains(token) {
+            return None;
+        }
+    }
+    Some(candidate)
 }
 
 /// 收集单输入/多输出的端口规格；输出数超 SDK 合同（1..=32）按候选失败回退。
@@ -279,7 +461,7 @@ unsafe fn port_info(
         CStr::from_ptr(name_ptr).to_string_lossy().into_owned()
     };
     (api.free)(name_ptr);
-    let built = tensor_spec(&name, &dims, element);
+    let built = tensor_spec(&name, &dims, element, api.element_line());
     (api.output_const_port_free)(port);
     built.map_err(|_| fail(stage))
 }
@@ -290,7 +472,7 @@ unsafe fn create_input_tensor(
     info: &TensorInfo,
     stage: &'static str,
 ) -> std::result::Result<*mut ov_tensor_t, CreateFailure> {
-    let element = element_type_of(info.dtype).map_err(|_| fail(stage))?;
+    let element = element_type_of(info.dtype, api.element_line()).map_err(|_| fail(stage))?;
     let mut dims = info.shape.clone();
     let shape = ov_sys::ov_shape_t {
         rank: dims.len() as i64,
@@ -414,11 +596,12 @@ impl OpenvinoEngine {
                 error: Error("vision.inferenceFailed".into()),
             });
         }
-        let dtype = map_element_type(element).map_err(|error| OvInferError {
-            native_ok: true,
-            native_code: None,
-            error,
-        })?;
+        let dtype =
+            map_element_type(element, self.api.element_line()).map_err(|error| OvInferError {
+                native_ok: true,
+                native_code: None,
+                error,
+            })?;
         let info = TensorInfo {
             name: name_spec.name.clone(),
             dtype,
@@ -542,6 +725,11 @@ mod tests {
     }
 
     fn moment_max_rel(a: &[f32], b: &[f32]) -> f32 {
+        moment_rels(a, b).into_iter().fold(0.0f32, f32::max)
+    }
+
+    /// 四统计量（min/max/mean/std）各自相对差：mean/std 稳健、min/max 近零敏感。
+    fn moment_rels(a: &[f32], b: &[f32]) -> [f32; 4] {
         fn moments(v: &[f32]) -> (f32, f32, f32, f32) {
             let n = v.len() as f32;
             let mean = v.iter().sum::<f32>() / n;
@@ -566,35 +754,144 @@ mod tests {
             let diff = (x - y).abs();
             diff / x.abs().max(y.abs()).max(1e-6)
         })
-        .fold(0.0f32, f32::max)
+        .collect::<Vec<_>>()
+        .try_into()
+        .expect("四统计量定长")
     }
 
     #[test]
-    fn element_type_round_trip_covers_supported_dtypes() {
-        for (ov_value, dtype) in [
-            (OV_TYPE_F32, 0u32),
-            (OV_TYPE_F16, 1),
-            (OV_TYPE_I64, 2),
-            (OV_TYPE_I32, 3),
-            (OV_TYPE_U8, 4),
-        ] {
-            assert_eq!(map_element_type(ov_value).unwrap(), dtype);
-            assert_eq!(element_type_of(dtype).unwrap(), ov_value);
+    fn element_type_round_trip_covers_supported_dtypes_on_both_lines() {
+        for line in [ElementLine::Current, ElementLine::Legacy2025_0] {
+            for (ov_value, dtype) in match line {
+                ElementLine::Current => [
+                    (OV_TYPE_F32, 0u32),
+                    (OV_TYPE_F16, 1),
+                    (OV_TYPE_I64, 2),
+                    (OV_TYPE_I32, 3),
+                    (OV_TYPE_U8, 4),
+                ],
+                ElementLine::Legacy2025_0 => [
+                    (ov_sys::OV_TYPE_F32_2025_0, 0u32),
+                    (ov_sys::OV_TYPE_F16_2025_0, 1),
+                    (ov_sys::OV_TYPE_I64_2025_0, 2),
+                    (ov_sys::OV_TYPE_I32_2025_0, 3),
+                    (ov_sys::OV_TYPE_U8_2025_0, 4),
+                ],
+            } {
+                assert_eq!(map_element_type(ov_value, line).unwrap(), dtype);
+                assert_eq!(element_type_of(dtype, line).unwrap(), ov_value);
+            }
         }
-        assert!(map_element_type(OV_TYPE_STRING).is_err());
-        assert!(element_type_of(9).is_err());
+        // 跨线序数互不认账：两线仅 4/10 数值重叠（语义不同，按线选表正是关键），
+        // 其余各自独有值在对侧线必须拒收（如当前线 F16=3/U8=16、旧线 F32=5/U8=17）。
+        assert!(map_element_type(OV_TYPE_F16, ElementLine::Legacy2025_0).is_err());
+        assert!(map_element_type(OV_TYPE_I32, ElementLine::Legacy2025_0).is_err());
+        assert!(map_element_type(OV_TYPE_U8, ElementLine::Legacy2025_0).is_err());
+        assert!(map_element_type(ov_sys::OV_TYPE_F32_2025_0, ElementLine::Current).is_err());
+        assert!(map_element_type(ov_sys::OV_TYPE_I64_2025_0, ElementLine::Current).is_err());
+        assert!(map_element_type(ov_sys::OV_TYPE_U8_2025_0, ElementLine::Current).is_err());
+        // STRING 不在 TensorData 合同内，两线均拒收。
+        assert!(map_element_type(OV_TYPE_STRING, ElementLine::Current).is_err());
+        assert!(map_element_type(
+            super::ov_sys::OV_TYPE_STRING_2025_0,
+            ElementLine::Legacy2025_0
+        )
+        .is_err());
+        assert!(element_type_of(9, ElementLine::Current).is_err());
+        assert!(element_type_of(9, ElementLine::Legacy2025_0).is_err());
+    }
+
+    #[test]
+    fn element_line_follows_build_number_prefix() {
+        use super::ov_sys::element_line_of_version;
+        assert_eq!(
+            element_line_of_version("2025.0.0-17942-1f68be9f594-releases/2025/0"),
+            ElementLine::Legacy2025_0
+        );
+        for build in [
+            "2025.1.0-…",
+            "2025.3.0-…",
+            "2026.1.0-12852c161c.clean",
+            "2026.2.1-…",
+            "",
+        ] {
+            assert_eq!(element_line_of_version(build), ElementLine::Current);
+        }
     }
 
     #[test]
     fn tensor_spec_rejects_dynamic_or_oversized_shapes() {
-        let ok = tensor_spec("images", &[1, 3, 640, 640], OV_TYPE_F32).unwrap();
+        let ok = tensor_spec(
+            "images",
+            &[1, 3, 640, 640],
+            OV_TYPE_F32,
+            ElementLine::Current,
+        )
+        .unwrap();
         assert_eq!(ok.name, "images");
         assert_eq!(ok.dtype, 0);
         assert_eq!(ok.shape, vec![1, 3, 640, 640]);
         for dims in [&[][..], &[0][..], &[-1][..], &[1, 3, -1, 3][..]] {
-            assert!(tensor_spec("x", dims, OV_TYPE_F32).is_err());
+            assert!(tensor_spec("x", dims, OV_TYPE_F32, ElementLine::Current).is_err());
         }
-        assert!(tensor_spec("x", &[1i64; 9], OV_TYPE_F32).is_err());
+        assert!(tensor_spec("x", &[1i64; 9], OV_TYPE_F32, ElementLine::Current).is_err());
+    }
+
+    #[test]
+    fn pick_gpu_device_matches_needle_then_single_fallback_and_guards_vendor() {
+        let domain = vec![
+            (
+                "GPU".to_owned(),
+                "Intel(R) Arc(TM) Graphics (iGPU)".to_owned(),
+            ),
+            (
+                "GPU.1".to_owned(),
+                "Intel(R) Arc(TM) A770 Graphics".to_owned(),
+            ),
+        ];
+        // needle 命中（大小写不敏感）+instance 消歧。
+        assert_eq!(
+            pick_gpu_device(&domain, "arc", 0, None).as_deref(),
+            Some("GPU")
+        );
+        assert_eq!(
+            pick_gpu_device(&domain, "a770", 0, None).as_deref(),
+            Some("GPU.1")
+        );
+        assert_eq!(
+            pick_gpu_device(&domain, "arc", 1, None).as_deref(),
+            Some("GPU.1")
+        );
+        // 无命中且多设备域：拒绝（不猜枚举序）。
+        assert_eq!(pick_gpu_device(&domain, "rtx", 0, None), None);
+        // 厂商核对：DXGI 命中 NVIDIA 但 OV 域全 Intel——拒绝（不静默换卡）。
+        assert_eq!(pick_gpu_device(&domain, "arc", 0, Some("nvidia")), None);
+        assert_eq!(
+            pick_gpu_device(&domain, "arc", 0, Some("intel")).as_deref(),
+            Some("GPU")
+        );
+        // 单设备域回退：needle 未命中（OV 名与 DXGI 文本不同源）仍可用唯一 GPU。
+        let single = vec![(
+            "GPU".to_owned(),
+            "Intel(R) Arc(TM) Graphics (iGPU)".to_owned(),
+        )];
+        assert_eq!(
+            pick_gpu_device(&single, "140t", 0, Some("intel")).as_deref(),
+            Some("GPU")
+        );
+        assert_eq!(pick_gpu_device(&single, "140t", 0, Some("nvidia")), None);
+        // 单设备域 instance 越界仍按回退可用（消歧只在命中域内生效）。
+        assert_eq!(
+            pick_gpu_device(&single, "140t", 3, Some("intel")).as_deref(),
+            Some("GPU")
+        );
+        // 空域：拒绝。
+        assert_eq!(pick_gpu_device(&[], "arc", 0, None), None);
+        // 未知厂商（None 核对词）：不做厂商筛。
+        assert_eq!(
+            pick_gpu_device(&single, "140t", 0, None).as_deref(),
+            Some("GPU")
+        );
     }
 
     #[test]
@@ -625,7 +922,7 @@ mod tests {
             Ok(api) => api,
             Err(failure) => panic!("运行库加载失败: {}", failure.reason),
         };
-        let engine = match unsafe { build(api.clone(), &bytes) } {
+        let engine = match unsafe { build(api.clone(), &bytes, CompileDevice::Cpu) } {
             Ok(engine) => engine,
             Err(failure) => panic!(
                 "构造失败 stage={} code={:?} msg={}",
@@ -847,7 +1144,7 @@ mod tests {
         let original = std::env::var_os("AM_SDK_OPENVINO_DIR");
         std::env::remove_var("AM_SDK_OPENVINO_DIR");
         super::ov_sys::reset_runtime_dir_for_tests();
-        let failure = match create(b"onnx-bytes") {
+        let failure = match create(b"onnx-bytes", CompileDevice::Cpu) {
             Ok(_) => panic!("无运行库应候选失败"),
             Err(failure) => failure,
         };
@@ -891,7 +1188,8 @@ mod tests {
             original.to_string_lossy().into_owned(),
         ]);
         let bytes = std::fs::read(PARITY_MODEL).expect("模型文件缺失");
-        let engine = create(&bytes).expect("runtime_dirs 登记后应能装载原生引擎");
+        let engine =
+            create(&bytes, CompileDevice::Cpu).expect("runtime_dirs 登记后应能装载原生引擎");
         assert_eq!(engine.inputs.len(), 1);
         let len = crate::sdk::byte_count(engine.inputs[0].dtype, &engine.inputs[0].shape).unwrap();
         let input = TensorData::new(engine.inputs[0].clone(), &vec![0u8; len]).unwrap();
@@ -903,6 +1201,133 @@ mod tests {
             "runtime-dirs wiring: outputs={} runtime={}",
             outputs.len(),
             engine.api.version()
+        );
+    }
+
+    /// GPU 定向选择器政策（§3.5b）：候选 (4,0)+回退 (0,0)，device=needle。
+    fn gpu_policy(needle: &str) -> crate::sdk::selection::BackendSelectionPolicy {
+        crate::sdk::selection::BackendSelectionPolicy {
+            priority: vec![
+                BackendTarget {
+                    backend: 4,
+                    device_id: 0,
+                },
+                BackendTarget {
+                    backend: 0,
+                    device_id: 0,
+                },
+            ],
+            allow_fallback: true,
+            budget_ms: 1500,
+            device: Some(crate::sdk::device::DeviceSelector::new(needle, 0)),
+        }
+    }
+
+    /// GPU 定向真机门（OV 2025.0.0 运行库=ort-ov-124-final 实测）：DXGI 命中核显 →
+    /// OV GPU 域可用性+身份核对 → GPU 编译+真实推理；同进程与 CPU 引擎统计对拍
+    /// （OV 设备全名文本与 DXGI 不同源，needle 用 "arc" 命中两侧）。
+    #[test]
+    #[ignore = "GPU 定向真机门：AM_SDK_OPENVINO_DIR 指向含 GPU 插件的 OpenVINO 运行库（ort-ov-124-final）"]
+    fn gpu_selector_compiles_and_infers_on_openvino_gpu() {
+        let _env = env_lock();
+        restore_ov_dir();
+        let source = ModelSource::Path(Path::new(PARITY_MODEL));
+        let mut gpu_model =
+            Model::load_selected(source, None, &gpu_policy("arc"), 2).expect("GPU 定向加载");
+        assert_eq!(gpu_model.actual_backend, 4, "必须真实落在 OV 原生 GPU");
+        assert_eq!(gpu_model.device_label, "OpenVINO:GPU");
+        let input = TensorData::new(gpu_model.inputs[0].clone(), &parity_input_bytes())
+            .expect("GPU 输入构造");
+        let gpu_out = gpu_model
+            .run(std::slice::from_ref(&input), 64 << 20)
+            .expect("OV 原生 GPU 推理");
+        assert!(!gpu_out.is_empty());
+        // 同进程双引擎（GPU 定向 + 无 selector 的 CPU 默认路径）零变化对照：
+        // 旧入口（无 selector）仍编译 CPU，两侧输出统计对拍。
+        let mut cpu_model = Model::load(source, None, 4, false, 2).expect("OV 原生 CPU 加载");
+        assert_eq!(cpu_model.actual_backend, 4);
+        assert_eq!(cpu_model.device_label, "OpenVINO:CPU");
+        let cpu_input = TensorData::new(cpu_model.inputs[0].clone(), &parity_input_bytes())
+            .expect("CPU 输入构造");
+        let cpu_out = cpu_model
+            .run(std::slice::from_ref(&cpu_input), 64 << 20)
+            .expect("OV 原生 CPU 推理");
+        assert_eq!(gpu_out.len(), cpu_out.len(), "GPU/CPU 输出张量数不一致");
+        for (index, (gpu, cpu)) in gpu_out.iter().zip(&cpu_out).enumerate() {
+            assert_eq!(gpu.info.shape, cpu.info.shape, "输出{index} shape 不一致");
+            let left = gpu.floats().expect("GPU 输出应为 f32");
+            let right = cpu.floats().expect("CPU 输出应为 f32");
+            assert_eq!(left.len(), right.len());
+            // 分统计量对拍：OV Intel GPU 插件对 f32 模型做隐式 FP16 精度变换（官方
+            // 默认行为），GPU/CPU 漂移类 ~1e-3——稳健统计量（mean/std）按 1e-2 门，
+            // min/max 在随机尾部分布上对近零值极敏感（相对差被 1e-6 地板放大）按 5e-2。
+            // 实测（2026-11-15，Arc 140T/OV 2025.0.0）：min=1.4e-2 max=1.7e-4
+            // mean=3.2e-3 std=2.0e-3。
+            let [min_rel, max_rel, mean_rel, std_rel] = moment_rels(left, right);
+            println!(
+                "gpu-parity output[{index}] elements={} min={min_rel:.3e} max={max_rel:.3e} mean={mean_rel:.3e} std={std_rel:.3e}",
+                left.len()
+            );
+            assert!(
+                mean_rel <= 1.0e-2 && std_rel <= 1.0e-2,
+                "输出{index} GPU/CPU 稳健统计量超差 mean={mean_rel:.3e} std={std_rel:.3e}"
+            );
+            assert!(
+                min_rel <= 5.0e-2 && max_rel <= 5.0e-2,
+                "输出{index} GPU/CPU 极值统计量超差 min={min_rel:.3e} max={max_rel:.3e}"
+            );
+        }
+        println!(
+            "ovgpu gate: device_label={} backend={} outputs={}",
+            gpu_model.device_label,
+            gpu_model.actual_backend,
+            gpu_out.len()
+        );
+    }
+
+    /// GPU 定向不可达真机门：needle 命中 DXGI 独显（本机 NVIDIA，OV GPU 域仅 Intel）
+    /// → 候选失败 stage=gpu_device（厂商核对拒绝，不静默换 Intel 卡）→ 回退 ORT CPU
+    /// 真实推理；strict 单候选正确报错不回退。
+    #[test]
+    #[ignore = "GPU 定向不可达真机门：AM_SDK_OPENVINO_DIR 同上 + AM_RT_ORT_LIBRARY/AM_RT_ORT_GPU_LIBRARY（回退臂）"]
+    fn gpu_selector_unreachable_adapter_fails_candidate_and_falls_back() {
+        let _env = env_lock();
+        restore_ov_dir();
+        ensure_ort_ready();
+        let source = ModelSource::Path(Path::new(PARITY_MODEL));
+        let mut model = Model::load_selected(source, None, &gpu_policy("rtx"), 2)
+            .expect("不可达定向应回退 ORT CPU");
+        assert_eq!(model.actual_backend, 0, "应回退 ORT CPU");
+        assert!(model.fallback);
+        let report = model.selection_report();
+        assert_eq!(report.attempts.len(), 2);
+        let gpu = &report.attempts[0];
+        assert_eq!(gpu.target.backend, 4);
+        assert_eq!(gpu.stage, "gpu_device");
+        assert_eq!(
+            gpu.error.as_deref(),
+            Some("vision.backendStrictUnavailable")
+        );
+        assert_eq!(report.attempts[1].target.backend, 0);
+        assert_eq!(report.attempts[1].stage, "session_created");
+        let bytes = vec![0u8; byte_count(model.inputs[0].dtype, &model.inputs[0].shape).unwrap()];
+        let input = TensorData::new(model.inputs[0].clone(), &bytes).expect("输入构造");
+        model
+            .run(std::slice::from_ref(&input), 64 << 20)
+            .expect("回退后的 ORT CPU 模型应可真实推理");
+        let mut strict = gpu_policy("rtx");
+        strict.priority.truncate(1);
+        strict.allow_fallback = false;
+        let failure = match Model::load_selected(source, None, &strict, 2) {
+            Err(failure) => failure,
+            Ok(_) => panic!("strict 不可达定向应报错"),
+        };
+        assert_eq!(failure.error.0, "vision.backendStrictUnavailable");
+        assert_eq!(failure.report.attempts.len(), 1);
+        assert_eq!(failure.report.attempts[0].stage, "gpu_device");
+        println!(
+            "ovgpu unreachable: fallback=ort-cpu strict-error=vision.backendStrictUnavailable report={}",
+            serde_json::to_string(model.selection_report()).unwrap()
         );
     }
 }

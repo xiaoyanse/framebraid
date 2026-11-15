@@ -93,9 +93,9 @@ if (rc != AM_OK) { /* rc=3 sdk.invalidArgument：零命中/越界=配置错误�
 - 因此 **DML 形态按专用进程部署**：该进程 vision `runtime_dirs` 只传 DML 包目录，`AM_SDK_ORT_DIR` 与进程 PATH 也不挂 CUDA 线 ORT 目录；CUDA 与 DML 需求分进程承载。CUDA 线与 CPU 线沿用既有形态不变。
 - DML 依赖检查按合同支持系统回退：运行库目录缺 DirectML.dll 时检查系统 DirectML 可见性（实测 System32 DirectML 1.15.6 可用，SDK 优先使用包内自带副本）。
 
-**OpenVINO 现状（如实登记）**：原生引擎（backend=4，E1）当前运行库仅含 CPU 插件——selector 定向 GPU 返回 `sdk.notSupported`（不静默回退 CPU），GPU 插件支持登记为后续项。OV EP 线（backend=1）当前 provider 运行库加载失败（Error 127），selector→OV-GPU 代码路径在位但暂无法端到端验证。
+**OpenVINO 现状（如实登记）**：原生引擎（backend=4，E1）GPU 定向已交付（2026-11-15 sdk-ovgpu）——selector 定向经 DXGI 存在性校验后在引擎装载期按 OV 自身设备域解析（可用性检查+FULL_DEVICE_NAME 身份核对+厂商把关，见合同 §3.5b 定向粒度条），运行库无 GPU 插件或定向适配器不可达=候选失败（stage=`gpu_device`）按回退链处理，不静默编译 CPU、不跨厂商换卡；**GPU 会话需要含 GPU 插件的运行库目录**（本仓验证载体=ORT OpenVINO EP 包线 `.local/runtimes/ort-ov-124-final`，OpenVINO 2025.0.0，元素类型序数由 SDK 按运行库版本自动适配；仅 CPU 插件目录如 vcpkg 闭包仍只能 CPU 编译）。不传 selector 的 backend=4 行为与既往完全一致（CPU）。OV EP 线（backend=1）当前 provider 运行库加载失败（Error 127），selector→OV-GPU 代码路径在位但暂无法端到端验证。
 
-验证状态（诚实边界）：定向实现经真机端到端验证——Intel Arc 140T 核显上 DML 定向推理（4 路）与 D3D11VA 定向硬解（4 路）并发表跑 10 分钟稳定，零命中同步拒绝双侧实证；性能分列、互斥实证与采样口径见[交付状态](../docs/RELEASE_STATUS.md)。未测边界如实登记：真实模型（YOLO 级）核显/独显算力分列未测；4 解码器并发创建个别 rc8 未定位（多路并解语义不受影响）；OV native GPU notSupported 如上。
+验证状态（诚实边界）：定向实现经真机端到端验证——Intel Arc 140T 核显上 DML 定向推理（4 路）与 D3D11VA 定向硬解（4 路）并发表跑 10 分钟稳定，零命中同步拒绝双侧实证；OV 原生 GPU 定向（selector "arc"→OV GPU 编译+真实推理+同进程 GPU/CPU 统计对拍，与 CUDA 线 ORT 同进程共存无互斥——OV 原生不经 ORT 进程域）已验；不可达定向（DXGI 命中独显而 OV GPU 域仅核显）按候选失败回退、strict 拒绝，已验。性能分列、互斥实证与采样口径见[交付状态](../docs/RELEASE_STATUS.md)。未测边界如实登记：真实模型（YOLO 级）核显/独显算力分列未测；4 解码器并发创建个别 rc8 未定位（多路并解语义不受影响）；OV 原生 GPU 数值与 CPU 存在隐式 FP16 级漂移（插件官方默认行为，详见交付状态）。
 
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
@@ -397,9 +397,9 @@ v0.3.0 起公开的三组扩展入口。合同语义以 [ABI 设计](../docs/des
 
 第五推理路径：OpenVINO C API 直连（`openvino_c.dll`），不经 ORT 的 OpenVINO EP。与 `AM_BACKEND_OPENVINO=1`（ORT 会话 + OpenVINO EP，provider 桥接受 Intel provider 运行库符号缺失限制）是两条不同路径：4 = 原生引擎、无 ORT 参与。
 
-- **前置运行库（v0.3.2 起与 runtime_dirs 打通）**：运行库目录随 vision `amv_init` 的 `runtime_dirs` 提供——目录内须含 `openvino_c.dll` 及其依赖闭包（openvino 主库/插件、ONNX 前端等；Python wheel `site-packages/openvino/libs/` 即满足，wheel 闭包无需 vcpkg 版的 libprotobuf/abseil 传递依赖文件）。进程环境变量 `AM_SDK_OPENVINO_DIR` 为显式操作员覆盖，优先于 `runtime_dirs`（不设即用 runtime_dirs）。定位不到、缺文件或符号缺失都按候选失败进入 selection 报告；`onnxruntime.dll` 与 `openvino_c.dll` 可在不同目录并存，ORT 路径不受影响。
-- **版本线**：单一绑定覆盖 2025.x/2026.x 两线（C API 符号集/元素类型枚举/结构布局逐项核对一致，无需版本分路径）；实测矩阵 2026.2.1（wheel）/ 2026.1.0（vcpkg，逐符号核签 28 个 FFI 符号 + 真实对拍）/ 2025.3.0（wheel）三线装载+编译+推理+对拍全过，登记以[交付状态](../docs/RELEASE_STATUS.md)为准。候选失败详情（`amv_get_last_error`）携带定位原因（渠道+路径）、检测到的运行库版本与期望版本线（反馈 P0-1/P1-6），不再需要对照文档倒推。
-- **参数**：经有序选择 `amv_model_load_selected` 候选 `(4, 0)`（backend=4、device_id=0），或旧入口 backend 策略 requested=4 + strict/回退语义。OpenVINO 首版固定 CPU 设备并显式配置线程。
+- **前置运行库（v0.3.2 起与 runtime_dirs 打通）**：运行库目录随 vision `amv_init` 的 `runtime_dirs` 提供——目录内须含 `openvino_c.dll` 及其依赖闭包（openvino 主库/插件、ONNX 前端等；Python wheel `site-packages/openvino/libs/` 即满足，wheel 闭包无需 vcpkg 版的 libprotobuf/abseil 传递依赖文件）。**GPU 定向会话需闭包含 GPU 插件**（`openvino_intel_gpu_plugin.dll`，如 ORT OpenVINO EP 包线 ort-ov-124-final/OpenVINO wheel；GPU 插件可达性以运行库发现机制为准——核显在无注册 OpenCL ICD 时经 Windows 驱动店发现实测可用）。进程环境变量 `AM_SDK_OPENVINO_DIR` 为显式操作员覆盖，优先于 `runtime_dirs`（不设即用 runtime_dirs）。定位不到、缺文件或符号缺失都按候选失败进入 selection 报告；`onnxruntime.dll` 与 `openvino_c.dll` 可在不同目录并存，ORT 路径不受影响。
+- **版本线**：单一绑定覆盖 2025.x/2026.x 两线（C API 符号集/结构布局逐项核对一致，无需版本分路径）；实测矩阵 2026.2.1（wheel）/ 2026.1.0（vcpkg，逐符号核签 28 个 FFI 符号 + 真实对拍）/ 2025.3.0（wheel）/ 2025.0.0（ORT OpenVINO EP 包线 ort-ov-124-final，含 GPU 插件；元素类型序数为 2025.0.x 旧表，SDK 按运行库 buildNumber 自动选线适配）四线装载+编译+推理+对拍全过（2025.0.0 线另过 GPU 定向编译推理），登记以[交付状态](../docs/RELEASE_STATUS.md)为准。候选失败详情（`amv_get_last_error`）携带定位原因（渠道+路径）、检测到的运行库版本与期望版本线（反馈 P0-1/P1-6；GPU 定向失败附 OV 设备域快照），不再需要对照文档倒推。
+- **参数**：经有序选择 `amv_model_load_selected` 候选 `(4, 0)`（backend=4、device_id=0），或旧入口 backend 策略 requested=4 + strict/回退语义。设备：不传 selector 固定 CPU（默认零变化）；随 `am_backend_selection_t.device` 传 selector 即 GPU 定向（DXGI 存在性校验+OV 设备域解析，语义与粒度边界见上方设备定向节与合同 §3.5b）。
 - **错误处理**：strict 候选失败返回 `vision.backendStrictUnavailable`，selection 报告含逐候选尝试阶段与错误（如 stage=runtime）；允许回退时回退 ORT CPU，回退原因进 selection 报告，不静默降级。回退矩阵（目录缺失 / 环境未设 / strict 拒绝）已实测。
 - **已知限制**：不支持该枚举值的旧绑定收到 `sdk.invalidArgument`。GPU 帧直传为后续增强，首版原生引擎走 CPU 输入（GPU 帧输入能力位对两引擎统一按实际可载置位）。CPU+单加速后端约束保持；同进程多套 OpenVINO 副本或预载冲突不在承诺内。
 

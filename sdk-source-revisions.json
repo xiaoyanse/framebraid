@@ -1110,14 +1110,14 @@
     {
       "path": "crates/vision/src/engine/openvino.rs",
       "previousSha256": null,
-      "sha256": "4de7046c7eb77bdff0b321b155d3e68a2dfb3bafdef5aeb87feddf08341b4ec5",
-      "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）"
+      "sha256": "5304da2c38c074ddb28de8e2993745bef730db68940fd97abaee6baf33602611",
+      "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）；sdk-ovgpu GPU 定向贯通：compile_model 设备从硬编码 CPU 贯通 CompileDevice（Cpu 零变化/Gpu=枚举 ov_core_get_available_devices→FULL_DEVICE_NAME 身份核对+厂商把关+单设备回退，pick_gpu_device 纯函数可单测；无 GPU 域/定向不可达=候选失败 stage=gpu_device 不静默换设备）+元素类型序数按运行库线适配（2025.0.x 旧序数表）+真机门 2（GPU 编译推理+GPU/CPU 统计对拍；不可达定向回退+strict 拒绝）"
     },
     {
       "path": "crates/vision/src/engine/ov_sys.rs",
       "previousSha256": null,
-      "sha256": "761ef16deb9d51266658dd2c822298994ea2c9cd28a9ed457f8007809e64549d",
-      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）"
+      "sha256": "debddd748467144924c3028d62bf1c7b4098bb5e50eda9b67f7f559fc08dcb4f",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）；sdk-ovgpu：+3 符号（ov_core_get_available_devices/ov_available_devices_free/ov_core_get_property，ov_available_devices_t 结构）+ElementLine 元素序数线（buildNumber 2025.0.x 前缀=旧序数 +1 表，2025.1.0 起并入当前布局——2025.0.0/2025.1.0/2025.3.0/2026.1.0 头文件逐项核对；ort-ov-124-final 运行库实测即 2025.0.0）"
     },
     {
       "path": "crates/vision/src/gpu/cuda_sys.rs",
@@ -1224,8 +1224,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "59806682e0b2e8fc8de17a4aaf7c392b5d4f67094dd1d7074f3154b39ab3ec04",
-      "reason": "sdk-v08 V8.3 device targeting: resolve selector to rewritten candidates at selection consumption point (zero-match/instance-overflow rejected synchronously as sdk.invalidArgument; selector overrides CUDA device_id), pass ov_gpu flag into session creation, register E1 native engine observation bit, expose device_label for am_backend_actual_t.device_utf8"
+      "sha256": "014472dc9abfbc95baae2806b47cfdbef8f23899945ea58e88c5dfff31d64190",
+      "reason": "sdk-v08 V8.3 device targeting: resolve selector to rewritten candidates at selection consumption point (zero-match/instance-overflow rejected synchronously as sdk.invalidArgument; selector overrides CUDA device_id), pass ov_gpu flag into session creation, register E1 native engine observation bit, expose device_label for am_backend_actual_t.device_utf8；sdk-ovgpu: OV-native candidates join the selector DXGI match domain (need_dxgi covers backend 4), GPU targeting passes selector+vendor guard word into the engine, device_label reflects the actually compiled engine device (OpenVINO:GPU when the OV GPU domain is used); selector-absent backend 4 stays CPU (zero behavior change)"
     },
     {
       "path": "crates/vision/src/sdk/vocab.rs",
@@ -1782,8 +1782,8 @@
     {
       "path": "crates/vision/src/sdk/device.rs",
       "previousSha256": null,
-      "sha256": "4cb0270edf3ba8f66ef237a69932f8991707c96b21390e97ba3616c9cf679e9b",
-      "reason": "sdk-v08 V8.3 new module: device selector (contract 3.5b) - substring+instance matching, CUDA device-name and DXGI adapter enumeration, per-candidate target resolution with stub-testable pure logic"
+      "sha256": "544308467b0b16ce4a7c7f4cce223377ed44f56ad0f73c13e6def0241941a1a6",
+      "reason": "sdk-v08 V8.3 new module: device selector (contract 3.5b) - substring+instance matching, CUDA device-name and DXGI adapter enumeration, per-candidate target resolution with stub-testable pure logic；sdk-ovgpu: backend-4 arm unlocked from sdk.notSupported to DXGI presence validation + vendor guard word (DxgiAdapter gains VendorId, vendor_token maps Intel/NVIDIA/AMD; ResolvedSelection struct replaces tuple return), GPU-domain resolution honestly executed at engine load time"
     }
   ]
 }

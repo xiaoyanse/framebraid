@@ -1,7 +1,10 @@
 //! OpenVINO C API 最小 FFI：显式加载 openvino_c 运行库，符号存在性校验后逐名解析。
-//! 签名依据 vcpkg openvino 头文件（openvino/c/*.h）；升级运行库大版本须复核。
-//! C API 符号集与元素类型枚举在 2025.x/2026.x 两线一致（2026-11-03 逐符号对比），
-//! 单一绑定覆盖两线，无需按版本分路径。
+//! 签名依据 openvino/c/*.h 头文件（2025.0.0/2025.1.0/2025.3.0/2026.1.0 逐项核对）；
+//! 升级运行库大版本须复核。
+//! 符号集与结构布局在 2025.x/2026.x 两线一致（2026-11-03 逐符号对比；2025.0.x 线
+//! 缺 6 个本绑定未用符号）；元素类型枚举自 2025.1.0 起一致，2025.0.x（ORT OpenVINO
+//! EP 包线）为旧序数（UNDEFINED=0/DYNAMIC=1/BOOLEAN=2，全表 +1），经 ElementLine
+//! 按装载版本适配，仍单一绑定不分路径。
 #![allow(non_camel_case_types)]
 use std::ffi::{c_char, c_void, CStr};
 use std::path::{Path, PathBuf};
@@ -11,15 +14,41 @@ pub type ov_status_e = i32;
 pub type ov_element_type_e = u32;
 pub const OV_OK: ov_status_e = 0;
 
-/// ov_common.h 元素类型序数：仅收录可映射到 TensorData 合同的五类。
+/// ov_common.h 元素类型序数（2025.1.0 起布局：DYNAMIC=UNDEFINED=0、BOOLEAN=1）：
+/// 仅收录可映射到 TensorData 合同的五类。
 pub const OV_TYPE_F16: ov_element_type_e = 3;
 pub const OV_TYPE_F32: ov_element_type_e = 4;
 pub const OV_TYPE_I32: ov_element_type_e = 9;
 pub const OV_TYPE_I64: ov_element_type_e = 10;
 pub const OV_TYPE_U8: ov_element_type_e = 16;
+/// 2025.0.x 旧序数（UNDEFINED=0/DYNAMIC=1/BOOLEAN=2，五类逐项 +1；ORT OpenVINO EP
+/// 包线实测即此布局）：绑定侧经 ElementLine 适配，不与当前布局混用。
+pub const OV_TYPE_F16_2025_0: ov_element_type_e = 4;
+pub const OV_TYPE_F32_2025_0: ov_element_type_e = 5;
+pub const OV_TYPE_I32_2025_0: ov_element_type_e = 10;
+pub const OV_TYPE_I64_2025_0: ov_element_type_e = 11;
+pub const OV_TYPE_U8_2025_0: ov_element_type_e = 17;
 /// 仅测试引用：STRING 张量不在 TensorData 合同内，map_element_type 按 `_` 拒收。
 #[cfg(test)]
 pub const OV_TYPE_STRING: ov_element_type_e = 23;
+#[cfg(test)]
+pub const OV_TYPE_STRING_2025_0: ov_element_type_e = 24;
+
+/// 运行库元素类型序数线：装载时按 buildNumber 判定（2026-11-15 头文件对照定位：
+/// 2025.0.0 旧序数 → 2025.1.0 起并入当前布局；未知版本按当前线，五类外序数一律拒收）。
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ElementLine {
+    Current,
+    Legacy2025_0,
+}
+
+pub fn element_line_of_version(build_number: &str) -> ElementLine {
+    if build_number.starts_with("2025.0.") {
+        ElementLine::Legacy2025_0
+    } else {
+        ElementLine::Current
+    }
+}
 
 pub enum ov_core_t {}
 pub enum ov_model_t {}
@@ -41,6 +70,14 @@ pub struct ov_shape_t {
 pub struct ov_version_t {
     pub build_number: *const c_char,
     pub description: *const c_char,
+}
+
+/// ov_core.h ov_available_devices_t：devices 指向 size 个 char*，经
+/// ov_available_devices_free 释放。
+#[repr(C)]
+pub struct ov_available_devices_t {
+    pub devices: *mut *mut c_char,
+    pub size: usize,
 }
 
 /// 已解析符号表；裸函数指针天然线程安全（cuda_sys 同惯例）。
@@ -110,17 +147,34 @@ pub struct OvApi {
         unsafe extern "C" fn(*const ov_output_const_port_t, *mut *mut c_char) -> ov_status_e,
     pub output_const_port_free: unsafe extern "C" fn(*mut ov_output_const_port_t),
     pub free: unsafe extern "C" fn(*const c_char),
+    /// 设备枚举（GPU 定向）：available_devices/free 配对；GPU 可用性检查用。
+    pub core_get_available_devices:
+        unsafe extern "C" fn(*const ov_core_t, *mut ov_available_devices_t) -> ov_status_e,
+    pub available_devices_free: unsafe extern "C" fn(*mut ov_available_devices_t),
+    /// 设备属性读取（GPU 定向）：FULL_DEVICE_NAME 定向身份核对用；值经 ov_free 释放。
+    pub core_get_property: unsafe extern "C" fn(
+        *const ov_core_t,
+        *const c_char,
+        *const c_char,
+        *mut *mut c_char,
+    ) -> ov_status_e,
     /// 诊断用：错误消息只进冒烟/联调日志，不进 selection 报告（同 ORT 键纪律）。
     #[allow(dead_code)]
     pub get_last_err_msg: unsafe extern "C" fn() -> *const c_char,
     /// 装载即取的运行库版本（诊断用：失败详情/E1.6 对拍读，正常推理不读）。
     version: String,
+    /// 元素类型序数线（按 version 判定）：map/逆映射按此选表。
+    element_line: ElementLine,
 }
 
 impl OvApi {
     /// 检测到的运行库版本（buildNumber，如 "2026.2.1-…"；读取失败为空串）。
     pub fn version(&self) -> &str {
         &self.version
+    }
+    /// 元素类型序数线（2025.0.x 为 Legacy，其余含未知按 Current）。
+    pub fn element_line(&self) -> ElementLine {
+        self.element_line
     }
 }
 
@@ -291,10 +345,15 @@ impl OvApi {
             port_get_any_name: cast!(b"ov_port_get_any_name"),
             output_const_port_free: cast!(b"ov_output_const_port_free"),
             free: cast!(b"ov_free"),
+            core_get_available_devices: cast!(b"ov_core_get_available_devices"),
+            available_devices_free: cast!(b"ov_available_devices_free"),
+            core_get_property: cast!(b"ov_core_get_property"),
             get_last_err_msg: cast!(b"ov_get_last_err_msg"),
             version: String::new(),
+            element_line: ElementLine::Current,
         };
         api.version = api.read_version();
+        api.element_line = element_line_of_version(&api.version);
         std::mem::forget(library);
         Ok(Arc::new(api))
     }

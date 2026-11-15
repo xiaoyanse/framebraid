@@ -41,36 +41,67 @@ pub fn select_by_substring<'a>(
 }
 
 /// DXGI 适配器条目（DML/OV 候选匹配域）：index 为原始枚举序（DML device_id 语义），
+/// vendor 为适配器 VendorId（OV 原生定向的厂商核对词来源），
 /// software 条目（WARP/软件渲染器）排除出匹配域。
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DxgiAdapter {
     pub index: u32,
     pub description: String,
+    pub vendor: u32,
     pub software: bool,
+}
+
+/// DXGI VendorId → OV 设备全名厂商核对词（小写子串）：OV C API 无 DXGI↔OV 设备级
+/// 映射（无 LUID/PnP 关联属性），以厂商词核对防跨厂商静默换卡；未知厂商无核对词
+/// （不做厂商筛，边界见引擎 resolve_gpu_device）。
+pub(crate) fn vendor_token(vendor: u32) -> Option<&'static str> {
+    match vendor {
+        0x8086 => Some("intel"),
+        0x10de => Some("nvidia"),
+        0x1002 | 0x1022 => Some("amd"),
+        _ => None,
+    }
+}
+
+/// selection 消费点的定向解析结果：targets 为重写后候选；ov_ep_gpu 标记 OV EP
+/// （backend=1）候选定向 GPU 设备串；ov_native_vendor 为 OV 原生（backend=4）候选
+/// 定向 GPU 时 DXGI 命中适配器的厂商核对词（无定向/未知厂商为 None）。
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct ResolvedSelection {
+    pub targets: Vec<BackendTarget>,
+    pub ov_ep_gpu: bool,
+    pub ov_native_vendor: Option<&'static str>,
 }
 
 /// selection 消费点的定向解析：selector 按各候选匹配域重写候选——CUDA 命中转为
 /// 设备 ordinal（selector 优先于候选 device_id）；DML 命中转为 DXGI 序号写入
 /// device_id（该值仅可由 selector 解析产生，外部候选 device_id≠0 已被校验拒绝）；
-/// OV EP 候选做 DXGI 存在性校验并切换 GPU 设备串；OV 原生（E1）运行库仅含 CPU
-/// 插件，定向按 notSupported 拒绝（含 GPU 插件的运行库接入后开放）。
-/// 返回（重写后候选，OV 是否定向 GPU）；零命中/实例越界=sdk.invalidArgument。
+/// OV EP 候选做 DXGI 存在性校验并切换 GPU 设备串；OV 原生（backend=4）候选做
+/// DXGI 存在性校验并携带命中适配器厂商核对词（GPU 域可用性/身份核对在引擎装载
+/// 期按 OV 设备枚举如实执行，粒度边界见 dual-dll-abi.md §3.5b）。
+/// 零命中/实例越界=sdk.invalidArgument。
 pub(crate) fn resolve_targets(
     targets: &[BackendTarget],
     device: Option<&DeviceSelector>,
     cuda_names: &[(u32, String)],
     dxgi: &[DxgiAdapter],
-) -> Result<(Vec<BackendTarget>, bool)> {
+) -> Result<ResolvedSelection> {
     let Some(selector) = device else {
-        return Ok((targets.to_vec(), false));
+        return Ok(ResolvedSelection {
+            targets: targets.to_vec(),
+            ..Default::default()
+        });
     };
     let hardware: Vec<(u32, &str)> = dxgi
         .iter()
         .filter(|adapter| !adapter.software)
         .map(|adapter| (adapter.index, adapter.description.as_str()))
         .collect();
-    let mut ov_gpu = false;
-    let mut resolved = Vec::with_capacity(targets.len());
+    let mut resolved = ResolvedSelection {
+        targets: Vec::with_capacity(targets.len()),
+        ov_ep_gpu: false,
+        ov_native_vendor: None,
+    };
     for &target in targets {
         let mut target = target;
         match target.backend {
@@ -83,7 +114,7 @@ pub(crate) fn resolve_targets(
                 )
                 .ok_or_else(|| Error("sdk.invalidArgument".into()))?;
                 // OV 设备粒度为单 "GPU"（本机枚举无 GPU.0/1 细分）；DXGI 匹配作存在性校验。
-                ov_gpu = true;
+                resolved.ov_ep_gpu = true;
             }
             2 => {
                 let ordinal = select_by_substring(
@@ -105,11 +136,23 @@ pub(crate) fn resolve_targets(
                 .ok_or_else(|| Error("sdk.invalidArgument".into()))?;
                 target.device_id = index;
             }
+            4 => {
+                let index = select_by_substring(
+                    hardware.iter().copied(),
+                    selector.needle(),
+                    selector.instance,
+                )
+                .ok_or_else(|| Error("sdk.invalidArgument".into()))?;
+                resolved.ov_native_vendor = dxgi
+                    .iter()
+                    .find(|adapter| adapter.index == index)
+                    .and_then(|adapter| vendor_token(adapter.vendor));
+            }
             _ => return Err(Error("sdk.notSupported".into())),
         }
-        resolved.push(target);
+        resolved.targets.push(target);
     }
-    Ok((resolved, ov_gpu))
+    Ok(resolved)
 }
 
 /// 枚举 CUDA 设备名（CUDA 候选匹配域）：加载 nvcuda 并 cuInit 后逐 ordinal 取名；
@@ -283,6 +326,7 @@ fn enumerate_dxgi() -> Option<Vec<DxgiAdapter>> {
         adapters.push(DxgiAdapter {
             index,
             description: String::from_utf16_lossy(&desc.name[..length]),
+            vendor: desc.vendor,
             software: desc.flags & 2 != 0,
         });
     }
@@ -310,16 +354,19 @@ mod tests {
             DxgiAdapter {
                 index: 0,
                 description: "Intel(R) Arc(TM) 140T GPU (16GB)".to_owned(),
+                vendor: 0x8086,
                 software: false,
             },
             DxgiAdapter {
                 index: 1,
                 description: "NVIDIA GeForce RTX 5060 Laptop GPU".to_owned(),
+                vendor: 0x10de,
                 software: false,
             },
             DxgiAdapter {
                 index: 2,
                 description: "Microsoft Basic Render Driver".to_owned(),
+                vendor: 0x1414,
                 software: true,
             },
         ]
@@ -352,10 +399,10 @@ mod tests {
     #[test]
     fn absent_selector_passes_targets_through_unchanged() {
         let original = targets(&[2, 0]);
-        let (resolved, ov_gpu) =
-            resolve_targets(&original, None, &cuda_stub(), &dxgi_stub()).unwrap();
-        assert_eq!(resolved, original);
-        assert!(!ov_gpu);
+        let resolved = resolve_targets(&original, None, &cuda_stub(), &dxgi_stub()).unwrap();
+        assert_eq!(resolved.targets, original);
+        assert!(!resolved.ov_ep_gpu);
+        assert_eq!(resolved.ov_native_vendor, None);
     }
 
     #[test]
@@ -363,14 +410,14 @@ mod tests {
         let mut original = targets(&[2]);
         original[0].device_id = 1;
         let selector = DeviceSelector::new("4090", 0);
-        let (resolved, _) =
+        let resolved =
             resolve_targets(&original, Some(&selector), &cuda_stub(), &dxgi_stub()).unwrap();
-        assert_eq!(resolved[0].device_id, 1);
+        assert_eq!(resolved.targets[0].device_id, 1);
         let selector = DeviceSelector::new("5060", 0);
-        let (resolved, _) =
+        let resolved =
             resolve_targets(&original, Some(&selector), &cuda_stub(), &dxgi_stub()).unwrap();
         assert_eq!(
-            resolved[0].device_id, 0,
+            resolved.targets[0].device_id, 0,
             "selector 命中优先于候选 device_id"
         );
     }
@@ -386,9 +433,9 @@ mod tests {
     #[test]
     fn dml_selector_resolves_dxgi_ordinal_and_skips_software_adapters() {
         let selector = DeviceSelector::new("140t", 0);
-        let (resolved, _) =
+        let resolved =
             resolve_targets(&targets(&[3]), Some(&selector), &cuda_stub(), &dxgi_stub()).unwrap();
-        assert_eq!(resolved[0].device_id, 0);
+        assert_eq!(resolved.targets[0].device_id, 0);
         // 软件适配器不在匹配域：Basic Render Driver 命中子串也不可选中。
         let selector = DeviceSelector::new("basic render", 0);
         let error = resolve_targets(&targets(&[3]), Some(&selector), &cuda_stub(), &dxgi_stub())
@@ -399,10 +446,10 @@ mod tests {
     #[test]
     fn openvino_candidate_validates_presence_and_flags_gpu() {
         let selector = DeviceSelector::new("rtx", 0);
-        let (resolved, ov_gpu) =
+        let resolved =
             resolve_targets(&targets(&[1]), Some(&selector), &cuda_stub(), &dxgi_stub()).unwrap();
-        assert_eq!(resolved[0].device_id, 0);
-        assert!(ov_gpu);
+        assert_eq!(resolved.targets[0].device_id, 0);
+        assert!(resolved.ov_ep_gpu);
         let selector = DeviceSelector::new("nothing", 0);
         let error = resolve_targets(&targets(&[1]), Some(&selector), &cuda_stub(), &dxgi_stub())
             .unwrap_err();
@@ -412,24 +459,52 @@ mod tests {
     #[test]
     fn cpu_candidates_ignore_selector_and_mixed_chains_keep_fallback_order() {
         let selector = DeviceSelector::new("arc", 0);
-        let (resolved, ov_gpu) = resolve_targets(
+        let resolved = resolve_targets(
             &targets(&[3, 0]),
             Some(&selector),
             &cuda_stub(),
             &dxgi_stub(),
         )
         .unwrap();
-        assert_eq!(resolved.len(), 2);
-        assert_eq!(resolved[1].backend, 0);
-        assert!(!ov_gpu);
+        assert_eq!(resolved.targets.len(), 2);
+        assert_eq!(resolved.targets[1].backend, 0);
+        assert!(!resolved.ov_ep_gpu);
     }
 
     #[test]
-    fn openvino_native_with_selector_is_not_supported() {
+    fn openvino_native_with_selector_validates_dxgi_and_carries_vendor() {
+        // §3.5b：OV 原生候选定向=DXGI 存在性校验+厂商核对词（GPU 域解析在引擎侧）。
         let selector = DeviceSelector::new("arc", 0);
+        let resolved =
+            resolve_targets(&targets(&[4]), Some(&selector), &cuda_stub(), &dxgi_stub()).unwrap();
+        assert_eq!(resolved.targets[0].device_id, 0);
+        assert_eq!(resolved.ov_native_vendor, Some("intel"));
+        let selector = DeviceSelector::new("rtx", 0);
+        let resolved =
+            resolve_targets(&targets(&[4]), Some(&selector), &cuda_stub(), &dxgi_stub()).unwrap();
+        assert_eq!(resolved.ov_native_vendor, Some("nvidia"));
+        // 零命中同步拒绝（配置错误，不静默回退其他适配器）。
+        let selector = DeviceSelector::new("nothing", 0);
         let error = resolve_targets(&targets(&[4]), Some(&selector), &cuda_stub(), &dxgi_stub())
             .unwrap_err();
-        assert_eq!(error.0, "sdk.notSupported");
+        assert_eq!(error.0, "sdk.invalidArgument");
+        // 软件适配器不在匹配域。
+        let selector = DeviceSelector::new("basic render", 0);
+        let error = resolve_targets(&targets(&[4]), Some(&selector), &cuda_stub(), &dxgi_stub())
+            .unwrap_err();
+        assert_eq!(error.0, "sdk.invalidArgument");
+        // 无 selector 的 OV 原生候选不定向（CPU 现状零变化）。
+        let resolved = resolve_targets(&targets(&[4]), None, &cuda_stub(), &dxgi_stub()).unwrap();
+        assert_eq!(resolved.ov_native_vendor, None);
+    }
+
+    #[test]
+    fn vendor_token_covers_known_gpu_vendors_only() {
+        assert_eq!(vendor_token(0x8086), Some("intel"));
+        assert_eq!(vendor_token(0x10de), Some("nvidia"));
+        assert_eq!(vendor_token(0x1002), Some("amd"));
+        assert_eq!(vendor_token(0x1022), Some("amd"));
+        assert_eq!(vendor_token(0x1414), None);
     }
 
     #[test]

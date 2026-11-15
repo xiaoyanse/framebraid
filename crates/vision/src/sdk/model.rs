@@ -303,7 +303,7 @@ impl Model {
                     let need_dxgi = policy
                         .priority
                         .iter()
-                        .any(|t| t.backend == 1 || t.backend == 3);
+                        .any(|t| t.backend == 1 || t.backend == 3 || t.backend == 4);
                     (
                         need_cuda
                             .then(super::device::cuda_device_names)
@@ -316,15 +316,17 @@ impl Model {
                     )
                 }
             };
-            let (priority, ov_gpu) = super::device::resolve_targets(
+            let resolved = super::device::resolve_targets(
                 &policy.priority,
                 policy.device.as_ref(),
                 &cuda_names,
                 &dxgi,
             )?;
-            selection.candidates = priority.clone();
+            selection.candidates = resolved.targets.clone();
+            let ov_gpu = resolved.ov_ep_gpu;
+            let ov_native_vendor = resolved.ov_native_vendor;
             let effective = BackendSelectionPolicy {
-                priority,
+                priority: resolved.targets,
                 ..policy.clone()
             };
             let p = profile.map(profiles::find).transpose()?;
@@ -343,13 +345,24 @@ impl Model {
                     native_code: None,
                 })?;
                 Ok(match target.backend {
-                    4 => ModelEngine::Ov(crate::engine::openvino::create(&bytes).map_err(
-                        |failure| selection::AttemptError {
+                    // OV 原生：selector 在场即 GPU 定向（§3.5b：DXGI 已校验，厂商
+                    // 核对词随行）；不在场保持 E1 首版 CPU 现状（零变化）。
+                    4 => ModelEngine::Ov(
+                        crate::engine::openvino::create(
+                            &bytes,
+                            match (ov_native_vendor, policy.device.as_ref()) {
+                                (vendor, Some(selector)) => {
+                                    crate::engine::openvino::CompileDevice::Gpu { selector, vendor }
+                                }
+                                (_, None) => crate::engine::openvino::CompileDevice::Cpu,
+                            },
+                        )
+                        .map_err(|failure| selection::AttemptError {
                             error: failure.error,
                             stage: failure.stage,
                             native_code: failure.native_code,
-                        },
-                    )?),
+                        })?,
+                    ),
                     _ => ModelEngine::Ort(super::session::create(
                         source, &bytes, target, threads, cuda_fp32, ov_gpu,
                     )?),
@@ -371,7 +384,10 @@ impl Model {
                     2 => format!("CUDA:{}", target.device_id),
                     3 if target.device_id != 0 => format!("DML:{}", target.device_id),
                     3 => "DML".to_owned(),
-                    // E1 引擎设备硬编码 CPU（GPU 定向按 notSupported 拒绝，§3.5b）。
+                    // E1 引擎实际编译设备（GPU 定向命中=OpenVINO:GPU，否则 CPU 现状）。
+                    4 if matches!(&engine, ModelEngine::Ov(ov) if ov.is_gpu()) => {
+                        "OpenVINO:GPU".to_owned()
+                    }
                     4 => "OpenVINO:CPU".to_owned(),
                     _ => "CPU".to_owned(),
                 },
