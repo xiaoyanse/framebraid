@@ -30,6 +30,8 @@ GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/change
 
 2026-11-16 进度（Route A 量化批，sdk-bench-gpu 实验批）：**GPU 帧直传臂端到端量化**落地（清偿上条 bench"直传不在本批"边界；纯实验零 tracked 改动）——经 FFI 生产入口实测（同环 A/B 双臂剥离环开销）：CPU 预处理段收回 96%；IOBinding 免输入拷贝 infer 窗再降三分之一；端到端同环 3.31×/对 CPU 臂 1.56×→6.09×，**「固定开销约半主导」推翻为推理主导**；剩余瓶颈完全转移到推理执行（后续单帧杠杆=run 内部或批摊薄）。随批发现 FFI 面行为分叉（观察项）：全符号维输出声明的动态批模型在 FFI 生产路径物理批恒 resourceExhausted（批计费保守拒绝，机制行级定位）vs facade run_batch 可达——接入方批形态规划以探针为准，修复等联测反馈。§8"GPU 全程显存管线"登记项同日收窄（NVIDIA 主线已交付，剩余=Intel 侧直传+多路定批）。数据 `.local/evidence/sdk-bench-gpu-20261116/`。
 
+2026-11-16 进度（Intel 侧直传调研+原型，sdk-ovproto）：**Intel 线 GPU 前处理立项材料齐**——调研定通路（OV remote context 一条首选实锤：D3D11 VA_SHARED/VA_SURFACE 与现采集合同无缝、DML 因 D3D12 错配弃主线）+原型实跑验证（Arc 140T：通路全链走通+身份对拍过+**前处理 13.4ms→~1.4ms 边际、端到端 ≈3.1×**；resize 尚走标量参考内核=实现批明确优化抓手；两实证坑定位在案：OV scale 除法语义+D3D11→CL 同步点）。意外对照：OV 自身 CPU preprocess 仅 1.1ms——SDK CPU prepare 路径存在独立优化空间（候选方向登记）。**实现批维持挂池等 AM-RT 联测反馈排期**（立项依据已齐）。数据 `.local/evidence/sdk-ovproto-20261116/`。
+
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
 ---
