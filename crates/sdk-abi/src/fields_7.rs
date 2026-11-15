@@ -1,5 +1,33 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_batching_stats_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_batching_stats_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, abi_minor),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, formed_batches),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, batched_items),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, timeout_batches),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_batching_stats_t, rejected_items),
+            core::mem::size_of::<u64>(),
+        ),
+    ];
+}
 impl AbiLayout for am_pool_desc_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -233,18 +261,6 @@ impl AbiLayout for am_tracked_box_t {
         (
             core::mem::offset_of!(am_tracked_box_t, hits),
             core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_detect_result_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_detect_result_t, count),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_detect_result_t, boxes),
-            core::mem::size_of::<*const am_detect_box_t>(),
         ),
     ];
 }

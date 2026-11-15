@@ -1,6 +1,41 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_batching_stats_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_batching_stats_t>(), 40);
+    assert_eq!(core::mem::align_of::<am_batching_stats_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, struct_size),
+        0,
+        "am_batching_stats_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, abi_minor),
+        4,
+        "am_batching_stats_t.abi_minor"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, formed_batches),
+        8,
+        "am_batching_stats_t.formed_batches"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, batched_items),
+        16,
+        "am_batching_stats_t.batched_items"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, timeout_batches),
+        24,
+        "am_batching_stats_t.timeout_batches"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_batching_stats_t, rejected_items),
+        32,
+        "am_batching_stats_t.rejected_items"
+    );
+}
+#[test]
 fn am_pool_desc_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_pool_desc_t>(), 48);
     assert_eq!(core::mem::align_of::<am_pool_desc_t>(), 8);
@@ -293,20 +328,5 @@ fn am_tracked_box_t_matches_c() {
         core::mem::offset_of!(am_tracked_box_t, hits),
         36,
         "am_tracked_box_t.hits"
-    );
-}
-#[test]
-fn am_detect_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_detect_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_detect_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_detect_result_t, count),
-        0,
-        "am_detect_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_detect_result_t, boxes),
-        8,
-        "am_detect_result_t.boxes"
     );
 }

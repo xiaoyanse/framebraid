@@ -306,6 +306,41 @@ fn am_event_detail_t_matches_c() {
     );
 }
 #[test]
+fn am_stream_status_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_stream_status_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_stream_status_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_stream_status_t, struct_size),
+        0,
+        "am_stream_status_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stream_status_t, connection_state),
+        4,
+        "am_stream_status_t.connection_state"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stream_status_t, reconnect_attempts),
+        8,
+        "am_stream_status_t.reconnect_attempts"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stream_status_t, bytes_written),
+        16,
+        "am_stream_status_t.bytes_written"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stream_status_t, backoff_ms),
+        24,
+        "am_stream_status_t.backoff_ms"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stream_status_t, last_error_status),
+        28,
+        "am_stream_status_t.last_error_status"
+    );
+}
+#[test]
 fn amv_capability_t_matches_c() {
     assert_eq!(core::mem::size_of::<amv_capability_t>(), 48);
     assert_eq!(core::mem::align_of::<amv_capability_t>(), 8);
@@ -353,40 +388,5 @@ fn amv_capability_t_matches_c() {
         core::mem::offset_of!(amv_capability_t, shared_pool_state),
         40,
         "amv_capability_t.shared_pool_state"
-    );
-}
-#[test]
-fn am_backend_row_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_backend_row_t>(), 32);
-    assert_eq!(core::mem::align_of::<am_backend_row_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_backend_row_t, backend),
-        0,
-        "am_backend_row_t.backend"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_row_t, hw_detected),
-        4,
-        "am_backend_row_t.hw_detected"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_row_t, deps_present),
-        8,
-        "am_backend_row_t.deps_present"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_row_t, provider_loadable),
-        12,
-        "am_backend_row_t.provider_loadable"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_row_t, verified),
-        16,
-        "am_backend_row_t.verified"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_backend_row_t, note_utf8),
-        24,
-        "am_backend_row_t.note_utf8"
     );
 }

@@ -524,7 +524,7 @@ namespace AmrtSdk {
     }
 
     public static class AbiConstants {
-        public const uint AbiVersion = 65542U;
+        public const uint AbiVersion = 65543U;
         public const uint PixelViewMagic = 1095585880U;
         public const uint SubscriptionPull = 1U;
     }

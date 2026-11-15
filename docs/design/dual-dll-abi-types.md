@@ -539,6 +539,32 @@ typedef struct am_event_detail_s {
 } am_event_detail_t;
 ```
 
+### 2.9 推流状态（主文件 §2.10；ABI 1.7 兼容新增）
+
+```c
+typedef enum am_stream_conn_state_e {
+  AM_STREAM_CONNECTED = 0,    /* 最近一次 open/write 成功路径（连接健康） */
+  AM_STREAM_DISCONNECTED     /* 最近一次 write 因连接失败返回错误；下次 write 内部先重连 */
+} am_stream_conn_state_e;
+typedef struct am_stream_status_s {   /* amc_stream_get_status 只读快照：无状态迁移、
+                                         不触发重连；write（含重连）进行中并发查询
+                                         返回 sdk.tryAgain；观察值以调用边界为准 */
+  uint32_t struct_size;           /* 显式初始化（sizeof），不可 0 */ /* explicit */
+  am_stream_conn_state_e connection_state;  /* 连接状态；0=CONNECTED 常态 */ /* zero=default */
+  uint32_t reconnect_attempts;    /* 累计重连尝试（含 open 阶段退避重试；成功首连不计；
+                                     5 次上限与 15s 总预算同 write 重连语义）；
+                                     0=从未重连 */ /* zero=default */
+  uint64_t bytes_written;         /* 累计推送编码包载荷字节（FLV tag 数据，不含容器
+                                     /RTMP 协议开销；重连不回退已计字节）；
+                                     0=尚未推送 */ /* zero=default */
+  uint32_t backoff_ms;            /* 最近一次实际等待的退避档（1s×2^n 封顶 30s）；
+                                     0=从未退避 */ /* zero=default */
+  int32_t last_error_status;      /* 最近一次失败的 am_status_t 稳定码（如
+                                     camera.unreachable/camera.timeout；成功不清除，
+                                     会话生命周期内保持最近一次）；0=无失败 */ /* zero=default */
+} am_stream_status_t;
+```
+
 ## 3. 推理侧结构（amv_/am_，am_vision.dll）
 
 ### 3.1 能力与后端（B14）

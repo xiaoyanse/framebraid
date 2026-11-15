@@ -108,6 +108,7 @@ AM_API am_status_t amc_stream_open(amc_context_t* ctx, const char* rtmp_url_utf8
 AM_API am_status_t amc_stream_write(amc_stream_t* stream, const am_pixel_view_t* frame);
 AM_API am_status_t amc_stream_close(amc_stream_t* stream, uint32_t timeout_ms,
     am_lifecycle_state_t* out_state);
+AM_API am_status_t amc_stream_get_status(amc_stream_t* stream, am_stream_status_t* out_status);
 AM_API am_status_t amc_object_query_state(const void* any_object_handle, am_lifecycle_state_t* out_state);
 AM_API am_status_t amc_object_request_close(const void* any_object_handle);
 AM_API am_status_t amc_object_destroy(void* any_object_handle);

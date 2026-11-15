@@ -1,5 +1,25 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_model_swap_desc_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, slot_key),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, flags),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_model_swap_desc_t, reserved),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_io_spec_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -385,26 +405,6 @@ impl AbiLayout for am_image_input_t {
         (
             core::mem::offset_of!(am_image_input_t, gpu),
             core::mem::size_of::<*const am_gpu_frame_ref_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_cascade_rule_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_cascade_rule_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_rule_t, source_class_id),
-            core::mem::size_of::<i32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_rule_t, expand),
-            core::mem::size_of::<f32>(),
-        ),
-        (
-            core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
-            core::mem::size_of::<f32>(),
         ),
     ];
 }

@@ -244,6 +244,34 @@ impl AbiLayout for am_event_detail_t {
         ),
     ];
 }
+impl AbiLayout for am_stream_status_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_stream_status_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_stream_status_t, connection_state),
+            core::mem::size_of::<am_stream_conn_state_e>(),
+        ),
+        (
+            core::mem::offset_of!(am_stream_status_t, reconnect_attempts),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_stream_status_t, bytes_written),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_stream_status_t, backoff_ms),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_stream_status_t, last_error_status),
+            core::mem::size_of::<i32>(),
+        ),
+    ];
+}
 impl AbiLayout for amv_capability_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -281,34 +309,6 @@ impl AbiLayout for amv_capability_t {
         (
             core::mem::offset_of!(amv_capability_t, shared_pool_state),
             core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_backend_row_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_backend_row_t, backend),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_row_t, hw_detected),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_row_t, deps_present),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_row_t, provider_loadable),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_row_t, verified),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_backend_row_t, note_utf8),
-            core::mem::size_of::<*const c_char>(),
         ),
     ];
 }

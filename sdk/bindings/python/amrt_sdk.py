@@ -115,6 +115,9 @@ class am_capture_stats_t(Structure):
 class am_event_detail_t(Structure):
     pass
 
+class am_stream_status_t(Structure):
+    pass
+
 class amv_capability_t(Structure):
     pass
 
@@ -432,6 +435,10 @@ AM_EVENT_SCOPE_SINGLE_SUB = 0
 AM_EVENT_SCOPE_SOURCE = 1
 AM_EVENT_SCOPE_ALL_CONSUMERS = 2
 
+am_stream_conn_state_e = c_int32
+AM_STREAM_CONNECTED = 0
+AM_STREAM_DISCONNECTED = 1
+
 am_backend_e = c_int32
 AM_BACKEND_CPU = 0
 AM_BACKEND_OPENVINO = 1
@@ -660,13 +667,16 @@ am_event_detail_t._fields_ = [
     ("reason_utf8", c_char_p),
 ]
 
-am_backend_row_t._fields_ = [
-    ("backend", c_uint32),
-    ("hw_detected", c_uint32),
-    ("deps_present", c_uint32),
-    ("provider_loadable", c_uint32),
-    ("verified", c_uint32),
-    ("note_utf8", c_char_p),
+amv_capability_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("abi_minor", c_uint32),
+    ("feature_bits", c_uint32),
+    ("dtype_bits", c_uint32),
+    ("max_batch_items", c_uint32),
+    ("max_models", c_uint32),
+    ("infer_parallelism", c_uint32),
+    ("result_retention_default_ms", c_uint64),
+    ("shared_pool_state", c_uint32),
 ]
 
 am_backend_candidate_t._fields_ = [
@@ -990,10 +1000,21 @@ am_capture_stats_t._fields_ = [
     ("shared_consumers", c_uint64),
 ]
 
-am_backend_matrix_t._fields_ = [
+am_backend_row_t._fields_ = [
+    ("backend", c_uint32),
+    ("hw_detected", c_uint32),
+    ("deps_present", c_uint32),
+    ("provider_loadable", c_uint32),
+    ("verified", c_uint32),
+    ("note_utf8", c_char_p),
+]
+
+am_device_selector_t._fields_ = [
     ("struct_size", c_uint32),
-    ("row_count", c_uint32),
-    ("rows", POINTER(am_backend_row_t)),
+    ("match_utf8", c_char_p),
+    ("match_bytes", c_uint32),
+    ("instance", c_uint32),
+    ("reserved", c_uint32),
 ]
 
 am_raw_preprocess_t._fields_ = [
@@ -1175,23 +1196,36 @@ am_frame_view_t._fields_ = [
     ("color_range", c_uint32),
 ]
 
-am_capture_request_t._fields_ = [
+am_decoder_config_t._fields_ = [
     ("struct_size", c_uint32),
-    ("output_kind", c_uint32),
-    ("deadline_ms", c_uint32),
-    ("reserved", c_uint32 * 4),
+    ("codec", c_uint32),
+    ("bitstream_format", c_uint32),
+    ("output_pixel_format", c_uint32),
+    ("hw_policy", c_uint32),
+    ("extradata", POINTER(c_uint8)),
+    ("extradata_size", c_uint64),
+    ("time_base_num", c_uint32),
+    ("time_base_den", c_uint32),
+    ("queue_max_items", c_uint32),
+    ("queue_max_bytes", c_uint64),
+    ("device", POINTER(am_device_selector_t)),
+    ("reserved", c_uint32 * 3),
 ]
 
-amv_capability_t._fields_ = [
+am_captured_image_t._fields_ = [
     ("struct_size", c_uint32),
-    ("abi_minor", c_uint32),
-    ("feature_bits", c_uint32),
-    ("dtype_bits", c_uint32),
-    ("max_batch_items", c_uint32),
-    ("max_models", c_uint32),
-    ("infer_parallelism", c_uint32),
-    ("result_retention_default_ms", c_uint64),
-    ("shared_pool_state", c_uint32),
+    ("request_id", c_uint64),
+    ("output_kind", c_uint32),
+    ("encoded", POINTER(c_uint8)),
+    ("encoded_size", c_uint64),
+    ("view", POINTER(am_frame_view_t)),
+    ("meta", POINTER(am_frame_meta_t)),
+]
+
+am_backend_matrix_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("row_count", c_uint32),
+    ("rows", POINTER(am_backend_row_t)),
 ]
 
 am_model_memory_desc_t._fields_ = [
@@ -1285,21 +1319,20 @@ am_probe_request_t._fields_ = [
     ("timeout_ms", c_uint32),
 ]
 
-am_captured_image_t._fields_ = [
+am_capture_request_t._fields_ = [
     ("struct_size", c_uint32),
-    ("request_id", c_uint64),
     ("output_kind", c_uint32),
-    ("encoded", POINTER(c_uint8)),
-    ("encoded_size", c_uint64),
-    ("view", POINTER(am_frame_view_t)),
-    ("meta", POINTER(am_frame_meta_t)),
+    ("deadline_ms", c_uint32),
+    ("reserved", c_uint32 * 4),
 ]
 
-am_backend_actual_t._fields_ = [
-    ("actual", c_uint32),
-    ("device_utf8", c_char_p),
-    ("subgraph_cpu_nodes", c_int32),
-    ("fallback_reason_utf8", c_char_p),
+am_backend_selection_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("candidate_count", c_uint32),
+    ("candidates", POINTER(am_backend_candidate_t)),
+    ("allow_fallback", c_uint32),
+    ("budget_ms", c_uint32),
+    ("device", POINTER(am_device_selector_t)),
 ]
 
 am_image_input_t._fields_ = [
@@ -1336,50 +1369,13 @@ am_shared_frame_view_t._fields_ = [
     ("borrow_id", c_uint64),
 ]
 
-am_device_selector_t._fields_ = [
+am_stream_status_t._fields_ = [
     ("struct_size", c_uint32),
-    ("match_utf8", c_char_p),
-    ("match_bytes", c_uint32),
-    ("instance", c_uint32),
-    ("reserved", c_uint32),
-]
-
-am_model_info_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("identity", am_model_identity_t),
-    ("load_mode", c_uint32),
-    ("input_count", c_uint32),
-    ("output_count", c_uint32),
-    ("inputs", POINTER(am_io_spec_t)),
-    ("outputs", POINTER(am_io_spec_t)),
-    ("native_batch", c_uint32),
-    ("execution", am_backend_actual_t),
-]
-
-am_pose_result_t._fields_ = [
-    ("count", c_uint32),
-    ("detections", POINTER(am_pose_detection_t)),
-]
-
-am_scale_preset_t._fields_ = [
-    ("width", c_uint32),
-    ("height", c_uint32),
-]
-
-am_decoder_config_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("codec", c_uint32),
-    ("bitstream_format", c_uint32),
-    ("output_pixel_format", c_uint32),
-    ("hw_policy", c_uint32),
-    ("extradata", POINTER(c_uint8)),
-    ("extradata_size", c_uint64),
-    ("time_base_num", c_uint32),
-    ("time_base_den", c_uint32),
-    ("queue_max_items", c_uint32),
-    ("queue_max_bytes", c_uint64),
-    ("device", POINTER(am_device_selector_t)),
-    ("reserved", c_uint32 * 3),
+    ("connection_state", am_stream_conn_state_e),
+    ("reconnect_attempts", c_uint32),
+    ("bytes_written", c_uint64),
+    ("backoff_ms", c_uint32),
+    ("last_error_status", c_int32),
 ]
 
 am_batch_item_t._fields_ = [
@@ -1389,6 +1385,28 @@ am_batch_item_t._fields_ = [
     ("tensors", POINTER(am_tensor_in_t)),
     ("slot_key", c_uint64),
     ("raw_preprocess", POINTER(am_raw_preprocess_t)),
+]
+
+am_segment_result_t._fields_ = [
+    ("count", c_uint32),
+    ("instances", POINTER(am_segment_instance_t)),
+]
+
+am_scale_preset_t._fields_ = [
+    ("width", c_uint32),
+    ("height", c_uint32),
+]
+
+am_backend_actual_t._fields_ = [
+    ("actual", c_uint32),
+    ("device_utf8", c_char_p),
+    ("subgraph_cpu_nodes", c_int32),
+    ("fallback_reason_utf8", c_char_p),
+]
+
+am_pose_result_t._fields_ = [
+    ("count", c_uint32),
+    ("detections", POINTER(am_pose_detection_t)),
 ]
 
 am_frame_sub_desc_t._fields_ = [
@@ -1401,20 +1419,6 @@ am_frame_sub_desc_t._fields_ = [
     ("queue_max_items", c_uint32),
     ("queue_max_bytes", c_uint64),
     ("frame_kind", c_uint32),
-]
-
-am_segment_result_t._fields_ = [
-    ("count", c_uint32),
-    ("instances", POINTER(am_segment_instance_t)),
-]
-
-am_backend_selection_t._fields_ = [
-    ("struct_size", c_uint32),
-    ("candidate_count", c_uint32),
-    ("candidates", POINTER(am_backend_candidate_t)),
-    ("allow_fallback", c_uint32),
-    ("budget_ms", c_uint32),
-    ("device", POINTER(am_device_selector_t)),
 ]
 
 amv_result_t._fields_ = [
@@ -1438,7 +1442,19 @@ amv_result_t._fields_ = [
     ("cascade", POINTER(am_cascade_result_t)),
 ]
 
-AM_ABI_VERSION = 65542
+am_model_info_t._fields_ = [
+    ("struct_size", c_uint32),
+    ("identity", am_model_identity_t),
+    ("load_mode", c_uint32),
+    ("input_count", c_uint32),
+    ("output_count", c_uint32),
+    ("inputs", POINTER(am_io_spec_t)),
+    ("outputs", POINTER(am_io_spec_t)),
+    ("native_batch", c_uint32),
+    ("execution", am_backend_actual_t),
+]
+
+AM_ABI_VERSION = 65543
 AM_BACKEND_STRICT_CUDA_FP32 = 2
 AM_OK = 0
 AM_CODEC_H264 = 1
@@ -1694,6 +1710,7 @@ FUNCTIONS = {
     "amc_stream_open": (am_status_t, [POINTER(amc_context_t), c_char_p, POINTER(am_encoder_config_t), POINTER(POINTER(amc_stream_t))]),
     "amc_stream_write": (am_status_t, [POINTER(amc_stream_t), POINTER(am_pixel_view_t)]),
     "amc_stream_close": (am_status_t, [POINTER(amc_stream_t), c_uint32, POINTER(am_lifecycle_state_t)]),
+    "amc_stream_get_status": (am_status_t, [POINTER(amc_stream_t), POINTER(am_stream_status_t)]),
     "amv_query_capability": (am_status_t, [POINTER(amv_context_t), POINTER(amv_capability_t)]),
     "amv_query_backends": (am_status_t, [POINTER(amv_context_t), POINTER(am_backend_matrix_t)]),
     "amv_backend_retry": (am_status_t, [POINTER(amv_init_params_t)]),

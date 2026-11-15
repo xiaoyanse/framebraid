@@ -52,6 +52,7 @@ typedef struct am_captured_image_s am_captured_image_t;
 typedef struct am_capture_continuous_desc_s am_capture_continuous_desc_t;
 typedef struct am_capture_stats_s am_capture_stats_t;
 typedef struct am_event_detail_s am_event_detail_t;
+typedef struct am_stream_status_s am_stream_status_t;
 typedef struct amv_capability_s amv_capability_t;
 typedef struct am_backend_row_s am_backend_row_t;
 typedef struct am_backend_matrix_s am_backend_matrix_t;
@@ -133,7 +134,7 @@ typedef enum am_lifecycle_state_e { AM_LIFECYCLE_RUNNING = 0, AM_LIFECYCLE_CANCE
   AM_LIFECYCLE_CLOSING, AM_LIFECYCLE_CLOSED } am_lifecycle_state_e;
 typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DONE, AM_REQ_FAILED,
   AM_REQ_CANCELED, AM_REQ_EXPIRED, AM_REQ_REPLACED, AM_REQ_UNKNOWN } am_request_state_e;
-#define AM_ABI_VERSION UINT32_C(65542)
+#define AM_ABI_VERSION UINT32_C(65543)
 #define AM_BACKEND_STRICT_CUDA_FP32 UINT32_C(2)
 #define AM_OK UINT32_C(0)
 #define AM_BSF_ANNEXB UINT32_C(0)
@@ -758,6 +759,28 @@ typedef struct am_event_detail_s {
   uint32_t fault_class;         /* am_fault_class_e（B13 分型） */
   const char* reason_utf8;      /* 脱敏后原因（不含凭据地址） */
 } am_event_detail_t;
+
+typedef enum am_stream_conn_state_e {
+  AM_STREAM_CONNECTED = 0,    /* 最近一次 open/write 成功路径（连接健康） */
+  AM_STREAM_DISCONNECTED     /* 最近一次 write 因连接失败返回错误；下次 write 内部先重连 */
+} am_stream_conn_state_e;
+typedef struct am_stream_status_s {   /* amc_stream_get_status 只读快照：无状态迁移、
+                                         不触发重连；write（含重连）进行中并发查询
+                                         返回 sdk.tryAgain；观察值以调用边界为准 */
+  uint32_t struct_size;           /* 显式初始化（sizeof），不可 0 */ /* explicit */
+  am_stream_conn_state_e connection_state;  /* 连接状态；0=CONNECTED 常态 */ /* zero=default */
+  uint32_t reconnect_attempts;    /* 累计重连尝试（含 open 阶段退避重试；成功首连不计；
+                                     5 次上限与 15s 总预算同 write 重连语义）；
+                                     0=从未重连 */ /* zero=default */
+  uint64_t bytes_written;         /* 累计推送编码包载荷字节（FLV tag 数据，不含容器
+                                     /RTMP 协议开销；重连不回退已计字节）；
+                                     0=尚未推送 */ /* zero=default */
+  uint32_t backoff_ms;            /* 最近一次实际等待的退避档（1s×2^n 封顶 30s）；
+                                     0=从未退避 */ /* zero=default */
+  int32_t last_error_status;      /* 最近一次失败的 am_status_t 稳定码（如
+                                     camera.unreachable/camera.timeout；成功不清除，
+                                     会话生命周期内保持最近一次）；0=无失败 */ /* zero=default */
+} am_stream_status_t;
 
 typedef struct amv_capability_s {
   uint32_t struct_size, abi_minor;

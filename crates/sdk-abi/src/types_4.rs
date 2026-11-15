@@ -1,6 +1,16 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_backend_row_t {
+    pub backend: u32,
+    pub hw_detected: u32,
+    pub deps_present: u32,
+    pub provider_loadable: u32,
+    pub verified: u32,
+    pub note_utf8: *const c_char,
+}
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct am_backend_matrix_t {
     pub struct_size: u32,
@@ -179,24 +189,6 @@ impl Default for am_encoder_config_t {
             fps_den: Default::default(),
             queue_max_items: Default::default(),
             queue_max_bytes: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_model_swap_desc_t {
-    pub struct_size: u32,
-    pub slot_key: u64,
-    pub flags: u32,
-    pub reserved: u32,
-}
-impl Default for am_model_swap_desc_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            slot_key: Default::default(),
-            flags: Default::default(),
-            reserved: Default::default(),
         }
     }
 }

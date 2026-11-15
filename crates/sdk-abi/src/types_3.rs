@@ -188,6 +188,28 @@ impl Default for am_event_detail_t {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_stream_status_t {
+    pub struct_size: u32,
+    pub connection_state: am_stream_conn_state_e,
+    pub reconnect_attempts: u32,
+    pub bytes_written: u64,
+    pub backoff_ms: u32,
+    pub last_error_status: i32,
+}
+impl Default for am_stream_status_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            connection_state: Default::default(),
+            reconnect_attempts: Default::default(),
+            bytes_written: Default::default(),
+            backoff_ms: Default::default(),
+            last_error_status: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct amv_capability_t {
     pub struct_size: u32,
     pub abi_minor: u32,
@@ -213,14 +235,4 @@ impl Default for amv_capability_t {
             shared_pool_state: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_backend_row_t {
-    pub backend: u32,
-    pub hw_detected: u32,
-    pub deps_present: u32,
-    pub provider_loadable: u32,
-    pub verified: u32,
-    pub note_utf8: *const c_char,
 }

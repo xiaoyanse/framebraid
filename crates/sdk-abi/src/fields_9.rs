@@ -1,5 +1,17 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_obb_result_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_obb_result_t, count),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_result_t, instances),
+            core::mem::size_of::<*const am_obb_instance_t>(),
+        ),
+    ];
+}
 impl AbiLayout for amv_result_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (

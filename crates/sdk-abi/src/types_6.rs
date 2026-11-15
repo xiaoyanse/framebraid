@@ -2,6 +2,24 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_cascade_rule_t {
+    pub struct_size: u32,
+    pub source_class_id: i32,
+    pub expand: f32,
+    pub min_roi_size: f32,
+}
+impl Default for am_cascade_rule_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            source_class_id: Default::default(),
+            expand: Default::default(),
+            min_roi_size: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_cascade_request_t {
     pub struct_size: u32,
     pub static_rois: *const f32,
@@ -159,28 +177,6 @@ impl Default for am_batching_options_t {
             max_batch_items: Default::default(),
             max_wait_ms: Default::default(),
             flags: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_batching_stats_t {
-    pub struct_size: u32,
-    pub abi_minor: u32,
-    pub formed_batches: u64,
-    pub batched_items: u64,
-    pub timeout_batches: u64,
-    pub rejected_items: u64,
-}
-impl Default for am_batching_stats_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            abi_minor: Default::default(),
-            formed_batches: Default::default(),
-            batched_items: Default::default(),
-            timeout_batches: Default::default(),
-            rejected_items: Default::default(),
         }
     }
 }

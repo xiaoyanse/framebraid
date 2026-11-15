@@ -520,6 +520,18 @@
         "reason_utf8": 32
       }
     },
+    "am_stream_status_t": {
+      "size": 32,
+      "align": 8,
+      "offsets": {
+        "struct_size": 0,
+        "connection_state": 4,
+        "reconnect_attempts": 8,
+        "bytes_written": 16,
+        "backoff_ms": 24,
+        "last_error_status": 28
+      }
+    },
     "amv_capability_t": {
       "size": 48,
       "align": 8,

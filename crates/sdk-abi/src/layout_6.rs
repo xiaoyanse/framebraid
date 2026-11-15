@@ -1,6 +1,31 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_cascade_rule_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_cascade_rule_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_cascade_rule_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_rule_t, struct_size),
+        0,
+        "am_cascade_rule_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_rule_t, source_class_id),
+        4,
+        "am_cascade_rule_t.source_class_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_rule_t, expand),
+        8,
+        "am_cascade_rule_t.expand"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
+        12,
+        "am_cascade_rule_t.min_roi_size"
+    );
+}
+#[test]
 fn am_cascade_request_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_cascade_request_t>(), 40);
     assert_eq!(core::mem::align_of::<am_cascade_request_t>(), 8);
@@ -278,40 +303,5 @@ fn am_batching_options_t_matches_c() {
         core::mem::offset_of!(am_batching_options_t, flags),
         16,
         "am_batching_options_t.flags"
-    );
-}
-#[test]
-fn am_batching_stats_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_batching_stats_t>(), 40);
-    assert_eq!(core::mem::align_of::<am_batching_stats_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_batching_stats_t, struct_size),
-        0,
-        "am_batching_stats_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_stats_t, abi_minor),
-        4,
-        "am_batching_stats_t.abi_minor"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_stats_t, formed_batches),
-        8,
-        "am_batching_stats_t.formed_batches"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_stats_t, batched_items),
-        16,
-        "am_batching_stats_t.batched_items"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_stats_t, timeout_batches),
-        24,
-        "am_batching_stats_t.timeout_batches"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_stats_t, rejected_items),
-        32,
-        "am_batching_stats_t.rejected_items"
     );
 }

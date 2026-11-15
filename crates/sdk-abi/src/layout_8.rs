@@ -1,6 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_detect_result_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_detect_result_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_detect_result_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_detect_result_t, count),
+        0,
+        "am_detect_result_t.count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_detect_result_t, boxes),
+        8,
+        "am_detect_result_t.boxes"
+    );
+}
+#[test]
 fn am_vocab_entry_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_vocab_entry_t>(), 32);
     assert_eq!(core::mem::align_of::<am_vocab_entry_t>(), 8);
@@ -248,20 +263,5 @@ fn am_obb_instance_t_matches_c() {
         core::mem::offset_of!(am_obb_instance_t, angle_normalized),
         60,
         "am_obb_instance_t.angle_normalized"
-    );
-}
-#[test]
-fn am_obb_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_obb_result_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_obb_result_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_obb_result_t, count),
-        0,
-        "am_obb_result_t.count"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_obb_result_t, instances),
-        8,
-        "am_obb_result_t.instances"
     );
 }

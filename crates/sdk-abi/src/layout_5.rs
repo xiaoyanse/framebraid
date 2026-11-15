@@ -1,6 +1,31 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_model_swap_desc_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_model_swap_desc_t>(), 24);
+    assert_eq!(core::mem::align_of::<am_model_swap_desc_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, struct_size),
+        0,
+        "am_model_swap_desc_t.struct_size"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, slot_key),
+        8,
+        "am_model_swap_desc_t.slot_key"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, flags),
+        16,
+        "am_model_swap_desc_t.flags"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_model_swap_desc_t, reserved),
+        20,
+        "am_model_swap_desc_t.reserved"
+    );
+}
+#[test]
 fn am_io_spec_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_io_spec_t>(), 56);
     assert_eq!(core::mem::align_of::<am_io_spec_t>(), 8);
@@ -373,30 +398,5 @@ fn am_image_input_t_matches_c() {
         core::mem::offset_of!(am_image_input_t, gpu),
         48,
         "am_image_input_t.gpu"
-    );
-}
-#[test]
-fn am_cascade_rule_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_cascade_rule_t>(), 16);
-    assert_eq!(core::mem::align_of::<am_cascade_rule_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_rule_t, struct_size),
-        0,
-        "am_cascade_rule_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_rule_t, source_class_id),
-        4,
-        "am_cascade_rule_t.source_class_id"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_rule_t, expand),
-        8,
-        "am_cascade_rule_t.expand"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
-        12,
-        "am_cascade_rule_t.min_roi_size"
     );
 }

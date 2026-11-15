@@ -2,6 +2,24 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_model_swap_desc_t {
+    pub struct_size: u32,
+    pub slot_key: u64,
+    pub flags: u32,
+    pub reserved: u32,
+}
+impl Default for am_model_swap_desc_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            slot_key: Default::default(),
+            flags: Default::default(),
+            reserved: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_io_spec_t {
     pub struct_size: u32,
     pub name: *const c_char,
@@ -200,24 +218,6 @@ impl Default for am_image_input_t {
             assoc: Default::default(),
             flags: Default::default(),
             gpu: Default::default(),
-        }
-    }
-}
-#[repr(C)]
-#[derive(Clone, Copy)]
-pub struct am_cascade_rule_t {
-    pub struct_size: u32,
-    pub source_class_id: i32,
-    pub expand: f32,
-    pub min_roi_size: f32,
-}
-impl Default for am_cascade_rule_t {
-    fn default() -> Self {
-        Self {
-            struct_size: core::mem::size_of::<Self>() as u32,
-            source_class_id: Default::default(),
-            expand: Default::default(),
-            min_roi_size: Default::default(),
         }
     }
 }

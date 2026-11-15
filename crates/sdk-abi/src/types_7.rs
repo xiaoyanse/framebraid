@@ -2,6 +2,28 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_batching_stats_t {
+    pub struct_size: u32,
+    pub abi_minor: u32,
+    pub formed_batches: u64,
+    pub batched_items: u64,
+    pub timeout_batches: u64,
+    pub rejected_items: u64,
+}
+impl Default for am_batching_stats_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            abi_minor: Default::default(),
+            formed_batches: Default::default(),
+            batched_items: Default::default(),
+            timeout_batches: Default::default(),
+            rejected_items: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_pool_desc_t {
     pub struct_size: u32,
     pub model: *const am_model_desc_t,
@@ -127,10 +149,4 @@ pub struct am_tracked_box_t {
     pub track_id: u64,
     pub age_frames: u32,
     pub hits: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_detect_result_t {
-    pub count: u32,
-    pub boxes: *const am_detect_box_t,
 }

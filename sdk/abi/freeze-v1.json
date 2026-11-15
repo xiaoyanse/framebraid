@@ -1,14 +1,14 @@
 {
-  "id": "am-sdk-cabi-1.6-device-selector-r13",
-  "previousFreezeSha256": "c16e5c9446179c165682e90b8173fdea7788e59421ee0094ad86190633383deb",
-  "abiVersion": 65542,
+  "id": "am-sdk-cabi-1.7-stream-status-r14",
+  "previousFreezeSha256": "3d6aab40bdde5606db5906e6e7c4d1bed1308fda9c595defb7b692e95abcb8bf",
+  "abiVersion": 65543,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
   "files": [
     {
       "path": "sdk/include/am_camera.h",
-      "sha256": "30cf23eac4beb3d0745a7333f84910fd4b3271f8a4efb05e28a5810c903a057c",
-      "bytes": 10738
+      "sha256": "2a121fc02cba783aa9cbb7da6714827cdd22d79e7624bbb1b48c73eb2a87ab58",
+      "bytes": 10834
     },
     {
       "path": "sdk/include/am_vision.h",
@@ -17,12 +17,12 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "b48eb02b63603a55f73733f7aee32a4ea52fa6566412b2897cbd8f7ea7c66e96",
-      "bytes": 85690
+      "sha256": "97241ae261686f509082f02b711f1074d08ebc2663e2843c7dca5a7cc47214bf",
+      "bytes": 87544
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "6011a00ecfbd2f0a4fbcfeeff169893fe3234db9f51ae49e698750ac8b94e9bf",
+      "sha256": "4847c478c4e8915a986b8beced5ee42a7eb84c83cd13cc7ae770f4f84ff3c0b6",
       "bytes": 2343
     },
     {
@@ -32,8 +32,8 @@
     },
     {
       "path": "sdk/abi/layout-win-x64.json",
-      "sha256": "46df6825dafa0f06fa878e102b0247ed01bba34e08dfa54e726e89896fe555bf",
-      "bytes": 26780
+      "sha256": "a2eda4c8d82ff17904909d2fd48131ec6bc828a4d41c48382563e77c0339a6be",
+      "bytes": 27055
     },
     {
       "path": "sdk/abi/decode-hardware-report-v1.schema.json",

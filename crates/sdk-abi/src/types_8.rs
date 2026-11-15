@@ -1,6 +1,12 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
 #[repr(C)]
+#[derive(Clone, Copy, Default)]
+pub struct am_detect_result_t {
+    pub count: u32,
+    pub boxes: *const am_detect_box_t,
+}
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct am_vocab_entry_t {
     pub struct_size: u32,
@@ -96,10 +102,4 @@ pub struct am_obb_instance_t {
     pub confidence: f32,
     pub class_id: i32,
     pub angle_normalized: u32,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_obb_result_t {
-    pub count: u32,
-    pub instances: *const am_obb_instance_t,
 }

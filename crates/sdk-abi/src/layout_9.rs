@@ -1,6 +1,21 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_obb_result_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_obb_result_t>(), 16);
+    assert_eq!(core::mem::align_of::<am_obb_result_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_obb_result_t, count),
+        0,
+        "am_obb_result_t.count"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_result_t, instances),
+        8,
+        "am_obb_result_t.instances"
+    );
+}
+#[test]
 fn amv_result_t_matches_c() {
     assert_eq!(core::mem::size_of::<amv_result_t>(), 224);
     assert_eq!(core::mem::align_of::<amv_result_t>(), 8);

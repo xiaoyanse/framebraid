@@ -608,6 +608,11 @@ AM_API am_status_t amc_stream_open(amc_context_t* ctx, const char* rtmp_url_utf8
 AM_API am_status_t amc_stream_write(amc_stream_t* stream, const am_pixel_view_t* frame);
 AM_API am_status_t amc_stream_close(amc_stream_t* stream, uint32_t timeout_ms,
     am_lifecycle_state_t* out_state);
+/* 推流状态只读快照（ABI 1.7 兼容新增）：连接状态/累计重连尝试/累计推送字节/最近退避档/
+   最近一次失败稳定码（am_stream_status_t 见附录 §2.9）；无状态迁移、不触发重连；
+   write（含重连）进行中并发查询返回 sdk.tryAgain（同 write 并发语义，可重试非错误）；
+   错误码复用既有集合，零新增 */
+AM_API am_status_t amc_stream_get_status(amc_stream_t* stream, am_stream_status_t* out_status);
 ```
 
 - 存档：avformat mp4 muxer；`segment_frames`>0 时按帧数分段（多文件，路径模板含
@@ -615,6 +620,12 @@ AM_API am_status_t amc_stream_close(amc_stream_t* stream, uint32_t timeout_ms,
 - 推流：avformat flv/rtmp muxer；断线按既有重连退避（1s×2^n 封顶 30s）重试，
   故障状态经源状态通道语义可观测（RECONNECT_WAIT + fault）
 - 两会话内部各持一个编码器；预算按编码器+会话元数据计费（§6 语义）
+- 推流状态导出（ABI 1.7）：`amc_stream_get_status` 为**只读快照**——连接状态
+  （最近一次 open/write 成功路径=CONNECTED；write 因连接失败返回错误后=DISCONNECTED，
+  下次 write 内部先重连）、累计重连尝试（含 open 阶段退避重试，成功首连不计）、
+  累计推送编码包载荷字节、最近一次实际等待的退避档（1s×2^n 封顶 30s；从未退避=0）、
+  最近一次失败的 `am_status_t` 稳定码（成功不清除，重启会话归零）；观察值以调用边界
+  为准（write 进行中的中间态不可见，并发返回 tryAgain），不承诺与网络对端状态强一致
 
 ## 3. am_vision.dll 函数清单
 

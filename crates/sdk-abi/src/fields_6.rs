@@ -1,5 +1,25 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_cascade_rule_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_cascade_rule_t, struct_size),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_rule_t, source_class_id),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_rule_t, expand),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_cascade_rule_t, min_roi_size),
+            core::mem::size_of::<f32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_cascade_request_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -221,34 +241,6 @@ impl AbiLayout for am_batching_options_t {
         (
             core::mem::offset_of!(am_batching_options_t, flags),
             core::mem::size_of::<u32>(),
-        ),
-    ];
-}
-impl AbiLayout for am_batching_stats_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_batching_stats_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, abi_minor),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, formed_batches),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, batched_items),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, timeout_batches),
-            core::mem::size_of::<u64>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_stats_t, rejected_items),
-            core::mem::size_of::<u64>(),
         ),
     ];
 }

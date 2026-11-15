@@ -1,6 +1,41 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_backend_row_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_backend_row_t>(), 32);
+    assert_eq!(core::mem::align_of::<am_backend_row_t>(), 8);
+    assert_eq!(
+        core::mem::offset_of!(am_backend_row_t, backend),
+        0,
+        "am_backend_row_t.backend"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_row_t, hw_detected),
+        4,
+        "am_backend_row_t.hw_detected"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_row_t, deps_present),
+        8,
+        "am_backend_row_t.deps_present"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_row_t, provider_loadable),
+        12,
+        "am_backend_row_t.provider_loadable"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_row_t, verified),
+        16,
+        "am_backend_row_t.verified"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_backend_row_t, note_utf8),
+        24,
+        "am_backend_row_t.note_utf8"
+    );
+}
+#[test]
 fn am_backend_matrix_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_backend_matrix_t>(), 16);
     assert_eq!(core::mem::align_of::<am_backend_matrix_t>(), 8);
@@ -293,30 +328,5 @@ fn am_encoder_config_t_matches_c() {
         core::mem::offset_of!(am_encoder_config_t, queue_max_bytes),
         32,
         "am_encoder_config_t.queue_max_bytes"
-    );
-}
-#[test]
-fn am_model_swap_desc_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_model_swap_desc_t>(), 24);
-    assert_eq!(core::mem::align_of::<am_model_swap_desc_t>(), 8);
-    assert_eq!(
-        core::mem::offset_of!(am_model_swap_desc_t, struct_size),
-        0,
-        "am_model_swap_desc_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_swap_desc_t, slot_key),
-        8,
-        "am_model_swap_desc_t.slot_key"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_swap_desc_t, flags),
-        16,
-        "am_model_swap_desc_t.flags"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_model_swap_desc_t, reserved),
-        20,
-        "am_model_swap_desc_t.reserved"
     );
 }
