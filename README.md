@@ -110,7 +110,7 @@ This is not every YOLO version/export. Match the [profile catalog](crates/vision
 
 ## Build from source
 
-If your downloaded Windows package contains `bin/win-x64`, use the [prebuilt guide](docs/USE_PREBUILT.md) without compiling.
+If you use the downloaded Windows package instead of building from source, follow the [prebuilt guide](docs/USE_PREBUILT.md) — no compiling needed.
 
 Windows x64: Rust 1.90+, x64 MSVC build tools and Windows SDK. Fetch locked Cargo dependencies on the first build. Node.js/Python are for maintenance tools or Python examples, not prebuilt DLL loading.
 
