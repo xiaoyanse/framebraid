@@ -124,7 +124,7 @@ AM_API am_status_t amc_source_set_decode_policy(amc_source_t* source, uint32_t p
 
 JSON必需字段schema、kind、state、selection、actual_backend、last_failure；context有探测完成的单调时钟completed_at_ms。selection沿用拥有的Rust选择报告，包含policy、selected（后端与设备）、attempts（初始化/目标配置/资源/预算/忙等原因）、fallback、elapsed_ms。selected只代表初始化选择，实际码流只能由decoder真实帧确定；probe报告actual_backend始终null，设备已释放。decoder的state区分initialized/verified/recovered_cpu/closed，实际值是最近观察结果，不表示关闭后仍持有设备；last_failure保留原生解码错误类别与可用的错误号。普通查询不会刷新设备列表，显式probe/reset才刷新。GPU标识无凭据、地址或运行库路径；LUID为无符号整数，调用方不得经浮点损失精度或与CUDA ordinal混同。
 
-未发布的R2兼容扩展：selection新增可选 `backend_support` 数组，依次报告 d3d11va 和 dxva2 的 `compiled` 与 `codec_configured`（布尔或 null）；null 表示未检查，false 表示明确不支持，设备未发现也不等同运行库未编译。SoftwareOnly、预算/准入未获时保持 null，检查并不创建设备，也不证明实际码流成功。现有客户端须忽略未知 JSON 字段；该 Rust 公开结构新增字段，使用结构字面量的调用方需补字段，不变更 C 结构布局或导出。
+随 v0.2.0 发布的R2兼容扩展：selection新增可选 `backend_support` 数组，依次报告 d3d11va 和 dxva2 的 `compiled` 与 `codec_configured`（布尔或 null）；null 表示未检查，false 表示明确不支持，设备未发现也不等同运行库未编译。SoftwareOnly、预算/准入未获时保持 null，检查并不创建设备，也不证明实际码流成功。现有客户端须忽略未知 JSON 字段；该 Rust 公开结构新增字段，使用结构字面量的调用方需补字段，不变更 C 结构布局或导出。
 
 探测按策略找到首个可初始化设备即停止，attempts仅表示已经尝试的候选，不是完整显卡清单或全部profile支持证明。该限制不取代后续完整设备/源策略任务；不得把一次成功泛化成所有GPU/码流兼容。
 
@@ -142,7 +142,7 @@ probe只接受活动context，回调内拒绝；预算1..5000ms，最多16个CUD
 
 get只复制缓存设备报告及进程累计后端观察，schema=framebraid.inference-hardware/1，最大64KiB含NUL；NULL+0查长度，小缓冲写required、首字节清0并返回limitOutOfRange，缓冲与required不重叠；并发状态变化时按新required重试或直接分配64KiB。回调中允许只读查询。state为not_probed/probe_complete/closing/closed；completed_at_ms为单调完成时间，未探测为null。device_probe含CPU可用逻辑并行度、CUDA驱动/初始化/版本、可见数/最多16设备、stopped、elapsed_ms和soft_budget_exceeded；CPU并行度不是物理核心数，CUDA ordinal/UUID不得当DXGI标识。缺驱动不是已确认无GPU。observations字段accelerator_domain/loaded_mask/executed_mask只表示当前SDK域的历史观察，不是当前模型健康、全节点GPU放置或运行库依赖清单。runtime_initialized区分是否初始化ORT，不据显卡存在设provider成功。
 
-未发布的 H5 迁移：C 旧矩阵 `amv_query_backends` 不再自行加载 CUDA 驱动；仅读取同 context 最近的显式 probe 快照。尚未探测、探测失败而设备数未知时 CUDA 的 hw_detected 为0且 note 明确 unknown；已验证设备数为0时 note 明确 no-device，非零时为1。旧调用方若依赖一次查询立即探测，应先调用显式 probe 后查询或读取详细报告；旧 C 结构布局及字段值域不变。探测刷新期间旧快照撤销，不将上次成功误认为当前。Rust 独立 runtime::query 现亦迁移为未知快照，详见 inference-selection.md；旧依赖隐式探测的 Rust 调用方需改用显式 probe。
+随 v0.2.0 发布的 H5 迁移：C 旧矩阵 `amv_query_backends` 不再自行加载 CUDA 驱动；仅读取同 context 最近的显式 probe 快照。尚未探测、探测失败而设备数未知时 CUDA 的 hw_detected 为0且 note 明确 unknown；已验证设备数为0时 note 明确 no-device，非零时为1。旧调用方若依赖一次查询立即探测，应先调用显式 probe 后查询或读取详细报告；旧 C 结构布局及字段值域不变。探测刷新期间旧快照撤销，不将上次成功误认为当前。Rust 独立 runtime::query 现亦迁移为未知快照，详见 inference-selection.md；旧依赖隐式探测的 Rust 调用方需改用显式 probe。
 
 关闭中/完成后可查询空快照，隐藏设备与观察，绝不重新分配服务或访问驱动；destroy后句柄不得再用。缓存每context一份，probe预留16KiB内部控制额度（设备名称原始最多256字节，UTF8容错最多768字节），报告缓存不作为外部租约阻塞shutdown；查询临时预留48KiB（含32KiB定容序列化缓冲，无JSON树副本），余额不足resourceExhausted。该阶段当时不改旧query_backends；后续缓存迁移见上方H5迁移说明，模型策略和恢复仍按H5后续，不以两导出宣称全量完成。英文/中文接入说明与Python/C#便捷封装配套同提交DLL，旧开发r7不能加载新入口。旧1.0/1.1结构/枚举/导出全保留；r7冻结原件保留，新r8指纹绑定JSON最小合同。
 
@@ -287,7 +287,7 @@ AM_API am_status_t amc_probe_result_release(am_probe_result_t* result);
 
 **地址类型与 DEVICE_REF 解析口径（B04）**：`am_source_kind_e` 三值——`AM_SRC_RTSP_URL`（RTSP 地址直连）、`AM_SRC_ISAPI_URL`（ISAPI 抓图地址，与 RTSP 分开声明，不含内嵌凭据）、`AM_SRC_DEVICE_REF`。**DEVICE_REF 本版只接受"已解析描述"**：`url_utf8` 必须是宿主解析设备引用后得到的具体流地址（RTSP 或 ISAPI URL），SDK 不内建设备引用解析器；`stream_kind_utf8`（"main"/"sub"/"isapi"）仅为宿主提示的类型标注，SDK 按地址协议与流内容实际行为执行。设备三流地址生成、DPAPI 持久化等政策留宿主（camera spec「凭据注入」Requirement）。ISAPI 地址误用于 RTSP 订阅（或反之）按协议探测结果返回 `camera.codecUnsupported`/`camera.urlInvalid`，不猜测。
 
-**MJPEG 流源（R7，未发布兼容扩展）**：`AM_SRC_MJPEG_URL = 3`——HTTP `multipart/x-mixed-replace` MJPEG 流地址（不含内嵌凭据，凭据注入与 ISAPI 同套）。**流语义（boundary 分帧为唯一真相源）**：响应 `Content-Type` 的 `boundary` 参数（≤70B，支持引号包裹）决定分帧；`Content-Length` 不参与分帧，谎报仅计数。分帧仅在行首 `\r\n--boundary` 上下文（流首 boundary 允许无 CRLF 前缀），且 part 头 `Content-Type=image/jpeg` + JPEG SOI/EOI 魔数双校验；载荷内出现 boundary 字节序列不误切，无法区分的极端歧义降级为丢帧。**有界硬约束（防恶意流）**：boundary ≤70B / part 头 ≤64KB / 单帧 ≤8MB——超限丢帧+计数，连续 3 次超限断连进重连退避。**双超时**：无数据（对端黑洞）与无 boundary 进展（有数据但恶意无界流）分别判定，超时断连重连（复用既有指数退避）。JPEG 帧进入既有解码管线（含 EXIF 方向）与像素订阅/预算/统计语义，与 ISAPI 快照一致。
+**MJPEG 流源（R7，随 v0.3.0 发布）**：`AM_SRC_MJPEG_URL = 3`——HTTP `multipart/x-mixed-replace` MJPEG 流地址（不含内嵌凭据，凭据注入与 ISAPI 同套）。**流语义（boundary 分帧为唯一真相源）**：响应 `Content-Type` 的 `boundary` 参数（≤70B，支持引号包裹）决定分帧；`Content-Length` 不参与分帧，谎报仅计数。分帧仅在行首 `\r\n--boundary` 上下文（流首 boundary 允许无 CRLF 前缀），且 part 头 `Content-Type=image/jpeg` + JPEG SOI/EOI 魔数双校验；载荷内出现 boundary 字节序列不误切，无法区分的极端歧义降级为丢帧。**有界硬约束（防恶意流）**：boundary ≤70B / part 头 ≤64KB / 单帧 ≤8MB——超限丢帧+计数，连续 3 次超限断连进重连退避。**双超时**：无数据（对端黑洞）与无 boundary 进展（有数据但恶意无界流）分别判定，超时断连重连（复用既有指数退避）。JPEG 帧进入既有解码管线（含 EXIF 方向）与像素订阅/预算/统计语义，与 ISAPI 快照一致。
 
 **单帧图像导出（§2.11，第五批）**：`amc_frame_encode` 把宿主持有的一帧（`am_pixel_view_t`：订阅回调/共享帧池/解码输出任意来源）编码为 JPEG/PNG 字节返回——取证图/报警快照/调试确认用；与流编码器共享编码底座但**无句柄生命周期**（无状态单次调用，不占 `amc_encoder` 额度）。**输入面**：pixel view 全格式（RGBA8/RGB8/BGR8 直接组装、NV12 内部转 RGB8 再编码）；尺寸 1..8192。**opts**：`format`（`AM_ENCODE_JPEG=1`/`AM_ENCODE_PNG=2`，其余值 `sdk.invalidArgument`）+ `quality`（JPEG 1..100，0=85；PNG 忽略）+ `reserved` 必须清零。**输出缓冲**：调用方分配；容量不足时 `*out_size` 填所需大小并返回 `sdk.limitOutOfRange`（不返回半份图像，同报告类惯例）；成功 `*out_size` 为实写字节数。**输出上限**：32MiB（超限 `sdk.limitOutOfRange`，详情带实际所需）。**线程**：任意线程可调（纯函数式，无共享状态）；不触帧预算（输入帧由调用方持有，输出缓冲归调用方）。**与推理的关联**：vision 结果的帧关联元数据（assoc）由宿主用于"何时导出/关联哪帧"的决策，导出 API 本身不涉 vision（两库职责不混）。
 
@@ -382,7 +382,7 @@ typedef void (*am_frame_cb_fn)(amc_frame_sub_t* sub, amc_frame_t* frame, void* u
 - 像素格式首版集合（§9-O4 候选）：RGBA8/RGB8/BGR8/NV12；plane 有效长度经 `am_frame_view_t.plane_size_bytes[4]` 与 `strides[4]` 显式表达（P5：不假设行紧密，也不按 stride×height 猜测平面长度，遍历/拷贝以 plane_size_bytes 为准）；**色彩矩阵（BT.601/709/2020NCL）与色彩范围（LIMITED/FULL）经视图 `color_matrix`/`color_range` 字段每帧显式声明**（P5：NV12 必填有效值，RGB 格式忽略；YUV→RGB 换算按声明执行，不内定系数）。
 - **时间原点与映射质量（P5）**：全部 `*_at_ms` 时间戳原点=进程单调钟（Windows QueryPerformanceCounter / Unix CLOCK_MONOTONIC，即 STEADY/MONO 语义，不受系统改时影响）；跨 DLL/跨库传值不改原点，未知=INT64_MIN。`captured_at_ms` 为设备时钟映射到本地单调钟的结果，映射质量经 `clock_quality`（am_clock_quality_e：UNKNOWN / LOCAL_RECEIPT 仅本地接收 / DEVICE_SYNCED 设备同步 / EXTRAPOLATED 外推）声明，不把外推冒充同步。
 
-### 2.6a GPU 帧订阅与显存帧池（M2a，未发布兼容扩展）
+### 2.6a GPU 帧订阅与显存帧池（M2a，随 v0.3.0 发布）
 
 像素订阅新增 `frame_kind`（尾部追加，struct_size 协商；默认 0=像素与既有行为完全一致）。
 
@@ -559,7 +559,7 @@ R3独立解码提交计数修复：有效解码句柄的每次`amc_decoder_submi
 
 Media订阅的对象、队列引用槽和缩放预设容量属于控制元数据，构造前占用`AM_Q_CONTROL`字节/项额度，直到对象最后引用释放才归还；队列的图片/包载荷继续按原数据额度计费，不重复把引用槽当载荷。低控制预算下可明确ResourceExhausted，即使该订阅的载荷预算尚有余量；关闭不能提前释放仍被对象持有的元数据额度。
 
-### 2.10 帧编码输出与存档/推流会话（⑤，未发布兼容扩展）
+### 2.10 帧编码输出与存档/推流会话（⑤，随 v0.3.0 发布）
 
 **编码器**（FFmpeg avcodec；运行库重建为含 libx264——2026-10-29 用户裁决接受 GPL，
 分发随附 x264 GPL 许可文本）：像素帧（RGBA8，来自帧订阅或解码会话）→ H.264 编码。
@@ -690,7 +690,7 @@ AM_API am_status_t amv_model_close(amv_model_t* model, uint32_t timeout_ms, am_l
 AM_API am_status_t amv_model_get_info(const amv_model_t* model, am_model_info_t* out_info);
 ```
 
-**H5 r9有序选择**：新能力位`AMV_CAP_ORDERED_SELECTION`，ABI1.1本地未发布演进，旧结构/导出不变。候选CPU=0/OpenVINO=1/CUDA=2；非CUDA device_id必须0，CUDA≤INT32_MAX，最多3项。allow_fallback=0只试首项；1也只访问允许列表，预算到期不再试下一项，不强杀已经进入ORT的调用。文件/档案/模型约定错误不靠更换设备重试。OpenVINO仍CPU；单ORT与单加速域约束保持。
+**H5 r9有序选择**：新能力位`AMV_CAP_ORDERED_SELECTION`，ABI1.1 随 v0.2.0 发布的演进，旧结构/导出不变。候选CPU=0/OpenVINO=1/CUDA=2；非CUDA device_id必须0，CUDA≤INT32_MAX，最多3项。allow_fallback=0只试首项；1也只访问允许列表，预算到期不再试下一项，不强杀已经进入ORT的调用。文件/档案/模型约定错误不靠更换设备重试。OpenVINO仍CPU；单ORT与单加速域约束保持。
 
 **2026-11-01审查修复合同增补（issue #2-#8 收口）**：①**尾部追加输入结构前缀协商**：`am_image_input_t`（gpu，前缀48）与`am_frame_sub_desc_t`（frame_kind，前缀40）的读取最低尺寸降为旧版前缀长度；旧版调用方按旧头编译的 struct_size 照常可用，追加字段不在 size 内时取默认（gpu=null、frame_kind=0），`args::read` 只拷贝调用方声明的大小。②**能力位 `AMV_CAP_GPU_FRAME_INPUT`（bit10）**：GPU 帧直传（`AM_IMG_GPU_FRAME`）按实际可载置位——运行库探测失败（无 CUDA）不置位，查询与实际支持一致。③**GPU 帧订阅**：`frame_kind=1` 显式返回 notSupported（与"SOFTWARE_ONLY 不静默降级"合同一致）；GPU 帧句柄族导出（`amc_gpu_frame_desc/texture/borrow/return/release/stats`）在生产链路接线前统一 notSupported，不再对任意指针裸解引用/释放。④**推流可取消**：RTMP 连接/重连受单段 IO 中断（5s，interrupt 回调）与总预算（15s）约束，退避等待可被停止信号唤醒；预算耗尽或取消返回`camera.timeout`。⑤**编码输出时间线**：`am_encoded_packet_t` 的 pts/dts 贯通编码器时基（1/fps）下的原始时间戳并填充 time_base_num/den；当前公开入口无输入时间参数（固定帧率合同），保留输入 PTS 属后续合同演进。⑥**编码尺寸校验**：encode/archive/stream 三个写入入口要求视图宽高与创建配置一致，不一致返回`sdk.invalidArgument`（底层按配置行数读取，不做隐式缩放）。
 
@@ -744,7 +744,7 @@ AM_API am_status_t amv_tracker_close(amv_tracker_t* tracker);
 - `am_image_input_t`（附录 §3.3）：kind（JPEG/PNG/PIXEL_VIEW）/encoded+size/view/flags，新增**可选关联元数据 `assoc`**（`am_frame_assoc_t*`，NULL=无；B12：外部图像可携带 source_id/frame_id/代次/PTS/时间基/采集时间，P5 补接收时间 received_at_ms 与 clock_quality；PIXEL_VIEW 模式下若未提供则取视图自带 frame_id/代次），结果原样回填（`amv_result_t.frame`，指针），供多模型/多源结果关联。
 - `am_infer_params_t`（附录 §3.3）：confidence_threshold（档案默认外覆盖）/sync_deadline_ms/slot_key（B11）/assoc 透传/raw_preprocess（RAW 模型）/flags。
 
-### 3.3a GPU 帧输入（M2b，未发布兼容扩展）
+### 3.3a GPU 帧输入（M2b，随 v0.3.0 发布）
 
 图像推理输入新增 GPU 帧直传模式：`am_image_input_t.kind=AM_IMG_GPU_FRAME` + 尾部字段
 `const am_gpu_frame_ref_t* gpu`（struct_size 协商；旧调用方零感知）。
@@ -828,7 +828,7 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
 - **批量回执状态与所有权**：`AM_OK`表示已生成完整逐项回执，可能`accepted_count=0`；接受项有非零ID且rejects[i]=AM_OK，其余ID=0并给具体原因，包括模式不兼容与固定尾项。顶层参数/回执资源失败才返回函数级错误并清空输出；已经接受的项不因后项失败回滚。ids/rejects为SDK拥有的只读数组（不能修改或自行free），可移动调用方回执头后调用`amv_receipt_release`；该函数清空回执头，重复释放报handleInvalid。释放回执不取消已接受请求，也不清除其结果。回执与快照共享控制类项/字节预算，持有期间ctx不进入CLOSED。
 - **物理批次与背压**：NATIVE按兼容的命名输入shape分组，固定N逐N项，动态组受公开64项包络。不得因临时队列/槽或字节不足，静默缩小原生组或改为SPLIT，否则可能改变跨batch运算结果；完整组只能接受、拒绝或限时等待。已接受离线项不被后来的实时请求替换；逐项取消不从正在运行的原生组移除输入，只改变该项终态，其余项保持同一原生运算。等待者域最多16且受ctx队列更小上限约束，wait=0不等，非零不超过配置/5s；截止后不得迟到接受，复制/保留引用后再次核对截止。调用方回调须及时返回，SDK不承诺抢占阻塞的外部回调；调用方还须使结果TTL覆盖其等待/取结果节奏。
 
-- **自适应攒批（未发布兼容扩展，R5-2.1）**：显式启用、可关闭、有界的跨请求自动聚合，仅两个新导出，不改既有结构与语义：
+- **自适应攒批（随 v0.2.0 发布，R5-2.1）**：显式启用、可关闭、有界的跨请求自动聚合，仅两个新导出，不改既有结构与语义：
   ```c
   typedef struct am_batching_options_s {
     uint32_t struct_size; uint32_t abi_minor;  /* 版本协商同全局规则 */
@@ -843,16 +843,16 @@ AM_API am_status_t amv_receipt_release(am_batch_receipt_t* receipt);
   - **默认关闭**：未 configure 或传 NULL 时，AUTO/NATIVE/SPLIT 全部维持现行逐次执行语义，零攒批；旧调用方零影响。
   - **适用范围**：仅动态批量轴模型（native_batch=1 且动态上限≥2）接受启用；固定批量轴模型 configure 返回 `vision.batchUnsupported`，不填伪样本、不放宽尾项拒绝规则。
   - **聚合条件**：同一模型实例、相同实际后端选择、逐项输入 shape 与前处理参数完全一致才同批；不一致项不等待、立即按现行规则执行/拒绝，不静默变形。
-  - **图像项攒批（未发布兼容扩展，批C）**：图像输入项（PROFILE 档案，含 GPU 帧直传入口）与张量项同等参与攒批，资格同适用范围（动态批量轴模型）。图像项附加同批条件：执行入口一致（CPU 图像与 GPU 帧不混批，预处理域不同；键不匹配项不等待、立即按现行规则执行）。组装语义：各帧预处理输出按 batch 维合并为单一物理批次（GPU 帧为设备侧组装，不落回 CPU），输出按 batch 维拆分后逐项走档案解码；双输入（开放词汇）档案的嵌入快照按 batch 维复制对齐注入，注入语义与单帧一致（无批量轴的第二输入按单帧同款张量注入）。逐项身份/取消/TTL/回执（B11）与同源核心组批预算计费不变。
+  - **图像项攒批（随 v0.6.1 发布，批C）**：图像输入项（PROFILE 档案，含 GPU 帧直传入口）与张量项同等参与攒批，资格同适用范围（动态批量轴模型）。图像项附加同批条件：执行入口一致（CPU 图像与 GPU 帧不混批，预处理域不同；键不匹配项不等待、立即按现行规则执行）。组装语义：各帧预处理输出按 batch 维合并为单一物理批次（GPU 帧为设备侧组装，不落回 CPU），输出按 batch 维拆分后逐项走档案解码；双输入（开放词汇）档案的嵌入快照按 batch 维复制对齐注入，注入语义与单帧一致（无批量轴的第二输入按单帧同款张量注入）。逐项身份/取消/TTL/回执（B11）与同源核心组批预算计费不变。
   - **触发执行**：凑满 `max_batch_items`、或 `max_wait_ms` 窗口截止、或模型关闭排空时，按单一物理批次执行；窗口截止不足 2 项时不组批、逐项执行。
   - **逐项语义不变**：每项独立 request_id/取消/TTL/回调与错误回执（B11）；已取消项不进入后续批次；批内部分项失败不回滚同批其余项。
   - **资源与公平**：等待项计入模型既有请求队列与等待者上限，不新增无界队列；等待期不占推理线程；执行占用模型既有线程与控制额度，合并批次按"同源核心组批预算"计费。
   - **运行期切换**：configure 可在任何时刻调用；切换只影响此后接受的新请求，已进入等待窗口的在途项按切换前配置走完（凑满/截止/排空三择一）后生效。查询在关闭状态返回全零计数与默认选项。
   - 能力查询与实际支持一致：无动态批量能力的模型 get 返回 flags=0；绑定/生成器同步新导出与结构；本扩展不改变 batch_mode 既有三值语义——攒批只作用于 AUTO。
 
-- **OpenVINO 原生引擎（未发布兼容扩展，E1）**：`AM_BACKEND_OPENVINO_NATIVE=4` 作为第五推理路径（OpenVINO C API 直连，绕开 ORT OpenVINO EP 的 provider 桥接缺陷——2026-10-28 符号级证据：Intel provider wheel 的 C++ ABI 符号在所有公开运行库缺失）。矩阵第五行语义：hw=openvino.dll 在 runtime_dirs 可加载；deps=CPU 设备始终可用（GPU 定向已交付：设备域可用性+身份核对见 §3.5b OV 原生定向粒度条，含 GPU 插件运行库下 selector 定向 GPU 编译）；loadable=ov_core 初始化+模型编译成功；verified=真实推理成功一次。运行库约定（2026-11-03 对齐实现，接入方反馈 P0-1）：**运行库目录随 vision runtime_dirs 提供**——目录内须含 C API 库 `openvino_c.dll` 及其依赖闭包（`openvino.dll`+插件 DLL；Python wheel `site-packages/openvino/libs/` 即满足），独立于 onnxruntime.dll 目录（可并存，onnxruntime 目录不含 openvino_c 时不误报）；进程环境变量 `AM_SDK_OPENVINO_DIR` 为显式操作员覆盖，优先于 runtime_dirs（不设即用 runtime_dirs，此前版本仅认环境变量属实现缺陷已修复）。**版本线兼容矩阵（单一绑定，无版本分路径）**：2026.2.1（wheel，实测装载+编译+推理+对拍）、2026.1.0（vcpkg 11-DLL 闭包，实测同左）、2025.3.0（wheel，实测同左）、2025.0.0（ORT OpenVINO EP 包线 `onnxruntime_openvino` wheel=ort-ov-124-final，2026-11-15 实测装载+CPU 编译+推理+对拍+GPU 定向编译推理；自带 openvino_intel_gpu_plugin）——C API 符号集 2026 线 211 导出/2025.3 线 209 导出/2025.0 线 205 导出（为 2026 线严格子集，缺失的 6 符号均不在绑定内），绑定所用 28 符号四线全存在；**元素类型枚举序数 2025.1.0 起一致**（F16=3/F32=4/I32=9/I64=10/U8=16），2025.0.x 为旧序数（UNDEFINED=0/DYNAMIC=1/BOOLEAN=2，全表 +1）——装载期按 buildNumber 判定线别选表（ov_sys ElementLine），绑定仍单一不分路径；ov_shape_t/ov_version_t 布局及 ov_core_compile_model 变参签名四线逐项核对一致；升级大版本线仍须复核（ov_sys 模块约定不变）。候选失败详情（P0-1/P1-6）：装载/构造失败经 `amv_get_last_error` 携带定位原因（渠道+路径）、检测到的运行库版本与期望线（"expected OpenVINO C API 2025.x/2026.x line"；GPU 定向失败附 OV GPU 设备域快照），接入方不看源码即可定位；selection 报告仍只携带稳定错误键。**与 AM_BACKEND_OPENVINO=1（ORT EP 路径）语义区分**：1 走 ORT 会话的 OpenVINO EP（provider 可加载性受上述缺陷限制），4 走原生引擎（无 ORT 参与）。不支持该值的旧绑定收到 invalidArgument。策略回退：原生引擎失败（库缺失/模型格式不支持/设备不可用）回退 ORT CPU，回退原因进 selection 报告（不静默）。GPU 帧输入（§3.3a）适配位对两引擎统一（OpenVINO 原生走 CPU 输入，GPU 帧直传为后续增强）。
+- **OpenVINO 原生引擎（随 v0.3.2 发布，E1）**：`AM_BACKEND_OPENVINO_NATIVE=4` 作为第五推理路径（OpenVINO C API 直连，绕开 ORT OpenVINO EP 的 provider 桥接缺陷——2026-10-28 符号级证据：Intel provider wheel 的 C++ ABI 符号在所有公开运行库缺失）。矩阵第五行语义：hw=openvino.dll 在 runtime_dirs 可加载；deps=CPU 设备始终可用（GPU 定向已交付：设备域可用性+身份核对见 §3.5b OV 原生定向粒度条，含 GPU 插件运行库下 selector 定向 GPU 编译）；loadable=ov_core 初始化+模型编译成功；verified=真实推理成功一次。运行库约定（2026-11-03 对齐实现，接入方反馈 P0-1）：**运行库目录随 vision runtime_dirs 提供**——目录内须含 C API 库 `openvino_c.dll` 及其依赖闭包（`openvino.dll`+插件 DLL；Python wheel `site-packages/openvino/libs/` 即满足），独立于 onnxruntime.dll 目录（可并存，onnxruntime 目录不含 openvino_c 时不误报）；进程环境变量 `AM_SDK_OPENVINO_DIR` 为显式操作员覆盖，优先于 runtime_dirs（不设即用 runtime_dirs，此前版本仅认环境变量属实现缺陷已修复）。**版本线兼容矩阵（单一绑定，无版本分路径）**：2026.2.1（wheel，实测装载+编译+推理+对拍）、2026.1.0（vcpkg 11-DLL 闭包，实测同左）、2025.3.0（wheel，实测同左）、2025.0.0（ORT OpenVINO EP 包线 `onnxruntime_openvino` wheel=ort-ov-124-final，2026-11-15 实测装载+CPU 编译+推理+对拍+GPU 定向编译推理；自带 openvino_intel_gpu_plugin）——C API 符号集 2026 线 211 导出/2025.3 线 209 导出/2025.0 线 205 导出（为 2026 线严格子集，缺失的 6 符号均不在绑定内），绑定所用 28 符号四线全存在；**元素类型枚举序数 2025.1.0 起一致**（F16=3/F32=4/I32=9/I64=10/U8=16），2025.0.x 为旧序数（UNDEFINED=0/DYNAMIC=1/BOOLEAN=2，全表 +1）——装载期按 buildNumber 判定线别选表（ov_sys ElementLine），绑定仍单一不分路径；ov_shape_t/ov_version_t 布局及 ov_core_compile_model 变参签名四线逐项核对一致；升级大版本线仍须复核（ov_sys 模块约定不变）。候选失败详情（P0-1/P1-6）：装载/构造失败经 `amv_get_last_error` 携带定位原因（渠道+路径）、检测到的运行库版本与期望线（"expected OpenVINO C API 2025.x/2026.x line"；GPU 定向失败附 OV GPU 设备域快照），接入方不看源码即可定位；selection 报告仍只携带稳定错误键。**与 AM_BACKEND_OPENVINO=1（ORT EP 路径）语义区分**：1 走 ORT 会话的 OpenVINO EP（provider 可加载性受上述缺陷限制），4 走原生引擎（无 ORT 参与）。不支持该值的旧绑定收到 invalidArgument。策略回退：原生引擎失败（库缺失/模型格式不支持/设备不可用）回退 ORT CPU，回退原因进 selection 报告（不静默）。GPU 帧输入（§3.3a）适配位对两引擎统一（OpenVINO 原生走 CPU 输入，GPU 帧直传为后续增强）。
 
-- **DirectML 后端（未发布兼容扩展，E2）**：`AM_BACKEND_DIRECTML=3` 作为第四推理路径（Windows 任意 GPU：Intel/AMD/NVIDIA）。矩阵第四行字段语义同其他后端（hw=运行库目录或系统含 DirectML.dll 且枚举到适配器；deps=d3d11+DirectML 运行库；loadable=ORT 会话以 DmlExecutionProvider 创建成功；verified=真实推理成功一次）。候选元组 device_id 忽略（EP 内部选卡，合同固定）；策略回退语义与其他后端一致。显式探测报告新增 directml 段（available；不承诺具体适配器型号）。不支持该值的旧绑定将收到 invalidArgument 而非未知崩溃。
+- **DirectML 后端（随 v0.2.1 发布，E2）**：`AM_BACKEND_DIRECTML=3` 作为第四推理路径（Windows 任意 GPU：Intel/AMD/NVIDIA）。矩阵第四行字段语义同其他后端（hw=运行库目录或系统含 DirectML.dll 且枚举到适配器；deps=d3d11+DirectML 运行库；loadable=ORT 会话以 DmlExecutionProvider 创建成功；verified=真实推理成功一次）。候选元组 device_id 忽略（EP 内部选卡，合同固定）；策略回退语义与其他后端一致。显式探测报告新增 directml 段（available；不承诺具体适配器型号）。不支持该值的旧绑定将收到 invalidArgument 而非未知崩溃。
 
 ### 3.5a 推理池（多 Model 编排容器；P1，ABI 1.4 兼容新增）
 
@@ -1001,7 +1001,7 @@ AM_API am_status_t amv_set_realtime_policy(amv_model_t* model, const am_realtime
 
 模型换代（首版语义）：热切换 = `amv_model_load` 新句柄 + 旧句柄 `amv_model_close` 排干在途；新旧结果各自携带 `am_model_identity_t` 不串版；旧句柄结果保留预算独立清退。原子无缝热切换属 6.5 后续候选，首版不承诺。
 
-**原子热切换（M5，未发布兼容扩展）**：`amv_model_swap(ctx, slot_key, desc, out_model, out_old_model_id)` 将槽位（B11 slot_key；0=全局单槽）当前模型原子替换为新模型——单调用内完成"新模型就绪 + 槽位切换"，无两步窗口。**在途请求语义**：swap 时已提交的请求由旧模型完成且结果不丢（executor 持模型引用自然续命），swap 后新请求即时路由新模型；被换出模型进入排空态（in-flight 归零后可释放）。**释放路径**：调用方持 out_old_model_id 可后续 `amv_model_close`（常规排空语义），或 desc 置 `AM_SWAP_DETACH` 标志由 swap 调用内触发立即排空。**身份与槽位**：槽位身份延续（消费方句柄/订阅不换），新模型身份独立（B14）；旧模型入口 selection 置 legacy_model（既有语义复用）。**兼容**：既有 load+close 两步路径语义不变（并存）；swap 失败（新模型加载失败/槽位不存在）槽位保持原模型不变，错误码与 load 一致。五引擎统一（E1 ModelEngine 抽象），无 per-engine 分支。
+**原子热切换（M5，随 v0.3.0 发布）**：`amv_model_swap(ctx, slot_key, desc, out_model, out_old_model_id)` 将槽位（B11 slot_key；0=全局单槽）当前模型原子替换为新模型——单调用内完成"新模型就绪 + 槽位切换"，无两步窗口。**在途请求语义**：swap 时已提交的请求由旧模型完成且结果不丢（executor 持模型引用自然续命），swap 后新请求即时路由新模型；被换出模型进入排空态（in-flight 归零后可释放）。**释放路径**：调用方持 out_old_model_id 可后续 `amv_model_close`（常规排空语义），或 desc 置 `AM_SWAP_DETACH` 标志由 swap 调用内触发立即排空。**身份与槽位**：槽位身份延续（消费方句柄/订阅不换），新模型身份独立（B14）；旧模型入口 selection 置 legacy_model（既有语义复用）。**兼容**：既有 load+close 两步路径语义不变（并存）；swap 失败（新模型加载失败/槽位不存在）槽位保持原模型不变，错误码与 load 一致。五引擎统一（E1 ModelEngine 抽象），无 per-engine 分支。
 
 ### 3.8 诊断统计与资源限额（推理侧；B10）
 
@@ -1503,7 +1503,7 @@ Python `Frame/BorrowedFrame/RgbBuffer.pixels()` 和 C# `CameraFrame/SharedBorrow
 - [dual-dll-abi-types.md](dual-dll-abi-types.md)（附录 A）：全部公开结构的完整 C 定义（§1 公共/init/错误快照/限额/统计；§2 相机侧；§3 推理侧含五类结果与掩膜/旋转框；§4 am_limits_t/am_stats_t 权威定义；§5 调用约定细则；§6 常量与错误码数值候选表）。**正文与附录冲突时以附录为准**（B09 权威蓝本）。
 - 冻结评审通过后本文升级为「已冻结 v1.0」，后续修改走 ABI 版本演进规则（§1.4），不原地改语义。
 
-### R3 独立解码配置/参数集预算补充（兼容行为，本地未发布）
+### R3 独立解码配置/参数集预算补充（兼容行为，随 v0.1.0 发布）
 
 ### 本地ABI 1.1媒体工作线程预算扩展
 
@@ -1532,7 +1532,7 @@ R3连续ISAPI抓图补充：引用槽按queue_max_items、FPS时间表按既有1
 
 R3共享执行器存储：现有64 MiB共享总额含执行器本体、固定Job槽、预留线程句柄与Context索引保留容量，在途输入按原分类/Context账独立核算。索引增长先核新旧重叠，失败在请求替换及ID发布前返回ResourceExhausted；空闲索引仍计费至执行器销毁。少量常驻存储使极限载荷可用量小于总额，不增加上限。get_stats(context)仍保留逻辑在途/结果字节口径，不将其说成执行器全部存储或进程RSS；对象scope差异继续按R4核齐。清理用固定栈块、记录锁忙时跳过，API查询仍按TTL核过期；C ABI不变。
 
-### R3模型预检查与文件稳定性（本地未发布）
+### R3模型预检查与文件稳定性（随 v0.2.0 发布）
 
 路径/内存模型的SDK预检查上限仍为256 MiB。路径按已打开文件句柄尺寸先准入并有界读取；读取期间尺寸变化失败，不返回不完整模型。内存输入同步借用至加载返回。ORT路径入口仍会重新打开文件及外部权重，不能保证与预检查文件身份一致或限制其内部读取；调用方应保持输入稳定可信，后续再设计跨平台不可变快照。详见[实测](../verification/sdk-r3-model-read-20261027.md)。C ABI签名与布局不变。
 
@@ -1542,6 +1542,6 @@ R4 本地语言封装增量：Python `Result.copy_pose()` 在结果锁内复制 
 
 R4 本地 Python 结构化结果扩展：`copy_detect`、`copy_classify`、`copy_segment`、`copy_obb` 在结果锁内深拷贝原生字段，按任务类型校验，返回 tuple；类别名称可为 None。分类保留 logit、probability 与 has_probability 三项，不能将未知概率当0。分割位掩膜以原样 bytes 复制并保留宽、高、stride 和映射；LSB-first、图像坐标及旋转框语义沿用原ABI。检测/分割/旋转框最多300项、分类最多1000项，分割复制总量最多64 MiB；非法尺寸、步长、空指针拒绝。所有操作不改变 C ABI，旧借用视图仍需调用方保护。
 
-# C# 结构化结果复制（未发布）
+# C# 结构化结果复制（随 v0.2.0 发布）
 
 C# `CopyDetect`、`CopyClassify`、`CopySegment`、`CopyObb` 在结果存活且持锁期间复制原生结果；返回数据独立，原借用接口语义不变。类型不匹配、数量超限或必需指针为空时拒绝；分割掩膜宽高 1–8192、步长不少于 ceil(width/8)，单次累计复制不超过 64 MiB。此为 C# 包装层新增，不改变 C ABI。类别名称由原生合同提供以 NUL 结尾的 UTF-8 字符串。

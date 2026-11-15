@@ -72,3 +72,7 @@
 ## 第五批部分清偿（2026-11-16，演化模式等待期小项，PM 直做）
 
 #9（GETTING_STARTED×2 入口固定指 v0.1.0）已清偿：双语入口段改指 releases 页+RELEASE_STATUS（当前版本与验证记录入口），不再钉死 v0.1.0。#10（USE_PREBUILT 限定 v0.1.0 preview）按**核实后升格处置**：原候选建议"加一句后续包同布局"经实证**与事实相反**——v0.3.2/v0.6.1 留档包（.local/build/v032-bundle、v061-bundle）实际为 `windows-x64/sdk/` 单树布局（DLL+include+bindings+INTEGRATION+RELEASE-NOTES+SHA256SUMS，运行库不随包），v0.1.0 四目录布局（bin/win-x64 等）自 v0.2.0 起不再适用。最小诚实修复落地：指南头部双语警示段（布局变更事实+新包以包内 RELEASE-NOTES/INTEGRATION 为准），不把"不同布局"写成"同布局"。**新增候选（第五批遗留）**：①USE_PREBUILT 正文完整重写面向现行包布局（路径/环境变量/运行库配置段随新布局重写，结合 INTEGRATION 运行库配置段）；②#11 合同文档"未发布"标签批量刷新（§3.5/§2.6a/§3.3a/§2.10 已随 v0.2.0/v0.3.0 发布，R2/H5/MJPEG 逐节核对后处置）——两项均涉工作量非小改，留专门文档批。
+
+## 第五批 B 线清偿：合同"未发布"标签全量刷新（2026-11-16，PM 直做，待与 C 线一同提交）
+
+#11 实际比登记多：dual-dll-abi.md "未发布"标签共 **15 处**（#11 只列 4+E2 维持）。**逐处核实法升级**：CHANGELOG 关键词搜不到 ≠ 未发布——E2 DirectML 无 CHANGELOG 可搜条目但 `git log -S AM_BACKEND_DIRECTML`（42a638c）+`git tag --contains` 实证随 v0.2.1 发布；同法翻案 R2 backend_support（8393ddd→v0.2.0）、H5 快照迁移（ddc677d→v0.2.0）、R3 解码配置（3597a96→v0.1.0）、R3 模型预检查（c78bf27→v0.2.0）。**15 处全部实为已发布，零处维持**：MJPEG R7（v0.3.0）/§2.6a M2a（v0.3.0）/§2.10（v0.3.0）/§3.3a M2b（v0.3.0）/M5 热切换（v0.3.0）/有序选择（3741178→v0.2.0）/R5-2.1 攒批（v0.2.0）/批C 图像攒批（v0.6.1，CHANGELOG :54）/E1 OV 原生（v0.3.2，CHANGELOG :89）/E2（v0.2.1）/C# 结构化复制（95165aa→v0.2.0）/R2（v0.2.0）/H5 快照（v0.2.0）/R3 两节（v0.1.0/v0.2.0）。标签统一改"随 vX.Y.Z 发布"句式；改后"未发布"在本文档清零；freeze --check 绿（dual-dll-abi.md 不在 11 项冻结工件清单，纯设计文档改动不触发 ABI 面）。**方法论沉淀**：版本归属判定三源接力——CHANGELOG 定版节（快）→ git log -S 特性标识（中，覆盖措辞漂移）→ git tag --contains（终审）；#11 时代"E2 未查到维持"与"E1 未列"皆为第一源盲区所致。
