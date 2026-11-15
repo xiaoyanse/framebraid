@@ -28,6 +28,8 @@ GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/change
 
 2026-11-16 进度（v0.8.0 边界清偿，sdk-bench 实验批）：**真实模型三后端算力分列实测**落地（清偿 v0.8.0 边界"真实模型核显/独显算力分列未测"；纯实验+harness，POC 零 tracked 改动）——真实 YOLO11n 在 CUDA@5060/DML@Arc 140T/CPU 三后端×批 1/攒批 4 双形态（独立进程互斥隔离，3×60s 中位）：run 段 GPU 对 CPU 加速 2~3×（合成口径"无分列"被真实模型打破）；端到端被 CPU 预处理拉平一半（prepare 三后端同值、占 GPU 臂约半——GPU 帧直传为下一步明确杠杆）；小模型单帧 DML@核显快于 CUDA@独显；**攒批方向后端分裂（选型要点）：CUDA 攒批正收益、DML/CPU 攒批负收益——攒批只推 CUDA 线**。绝对数值按口径纪律不进公开文档（完整矩阵见 `.local/evidence/sdk-bench-20261116/realmodel-split.md`）。
 
+2026-11-16 进度（Route A 量化批，sdk-bench-gpu 实验批）：**GPU 帧直传臂端到端量化**落地（清偿上条 bench"直传不在本批"边界；纯实验零 tracked 改动）——经 FFI 生产入口实测（同环 A/B 双臂剥离环开销）：CPU 预处理段收回 96%；IOBinding 免输入拷贝 infer 窗再降三分之一；端到端同环 3.31×/对 CPU 臂 1.56×→6.09×，**「固定开销约半主导」推翻为推理主导**；剩余瓶颈完全转移到推理执行（后续单帧杠杆=run 内部或批摊薄）。随批发现 FFI 面行为分叉（观察项）：全符号维输出声明的动态批模型在 FFI 生产路径物理批恒 resourceExhausted（批计费保守拒绝，机制行级定位）vs facade run_batch 可达——接入方批形态规划以探针为准，修复等联测反馈。§8"GPU 全程显存管线"登记项同日收窄（NVIDIA 主线已交付，剩余=Intel 侧直传+多路定批）。数据 `.local/evidence/sdk-bench-gpu-20261116/`。
+
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
 ---
