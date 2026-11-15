@@ -88,3 +88,21 @@ Capability-check and require ABI ≥1.6; the reboot-stable key is a vendor+model
 **不迁会怎样 / If you don't migrate**：与 1.5 行为一致，跟随默认枚举序；在枚举序漂移的机器上可能落到非预期适配器，需自行以诊断报告核对实际后端设备。
 
 Identical to 1.5 — you follow enumeration order, which may land on an unexpected adapter after drift; verify the actual backend device via diagnostics.
+
+## ABI 1.6 → 1.7（v0.8.x RTMP 环节在途，`AM_ABI_VERSION` 65543；合同主文件 §2.10+附录 §2.9）
+
+**变了什么 / What changed**：推流状态导出 `amc_stream_get_status(stream, am_stream_status_t*)`（`AM_ABI_VERSION` 65542→65543）：只读快照结构 `am_stream_status_t`——连接状态（`AM_STREAM_CONNECTED`=0 常态 / `AM_STREAM_DISCONNECTED`）、累计重连尝试、累计推送编码包载荷字节、最近一次实际等待的退避档、最近一次失败稳定码。纯新增导出+新结构，既有签名/布局/错误码零变化；write（含重连）持锁期间并发查询返回 `sdk.tryAgain`（可重试）。
+
+Stream status export `amc_stream_get_status` (`AM_ABI_VERSION` 65542→65543): a new read-only snapshot struct `am_stream_status_t` — connection state (`AM_STREAM_CONNECTED`=0 / `AM_STREAM_DISCONNECTED`), cumulative reconnect attempts, cumulative pushed payload bytes, the last backoff tier waited, and the last failure's stable code. Purely additive (new export + new struct); existing signatures, layouts and error codes are untouched. A query concurrent with an in-flight write/reconnect returns `sdk.tryAgain` (retryable).
+
+**谁受影响 / Who is affected**：需要推流可观测（重连/字节/故障）的 RTMP 宿主；既有 amc_stream 调用方不受影响。
+
+RTMP hosts wanting stream observability (reconnects/bytes/faults); existing amc_stream callers are unaffected.
+
+**怎么迁 / How to migrate**：按需调用 `amc_stream_get_status`（struct_size=sizeof 初始化）；观察值以调用边界为准，`sdk.tryAgain` 时重试；错误码沿用 `amc_status_name` 既有映射。顺带行为修复（非 ABI）：重连预算耗尽路径此前不累计重连计数、单段中断线上暴露的连接失败被归一 Timeout 使重试环单发终止——修复后拒连类失败在 15s 总预算内走完整退避梯，预算越过仍归一 `camera.timeout`。
+
+Call `amc_stream_get_status` as needed (init struct_size=sizeof); retry on `sdk.tryAgain`; error codes use the existing `amc_status_name` mapping. Companion behavior fix (not ABI): budget-exhausted reconnect paths previously skipped attempt accounting, and connection failures surfacing on the 5s single-segment deadline were normalized to Timeout (ending the retry loop after one attempt) — refusals now run the full backoff ladder inside the 15s budget, and budget overrun still normalizes to `camera.timeout`.
+
+**不迁会怎样 / If you don't migrate**：与 1.6 行为完全一致（不调新导出零影响）。
+
+Exactly 1.6 behavior (zero impact without the new export).

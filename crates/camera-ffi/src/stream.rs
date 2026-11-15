@@ -156,3 +156,44 @@ pub unsafe extern "C" fn amc_stream_close(
         Ok(())
     })
 }
+
+/// 推流状态只读快照（ABI 1.7）：无状态迁移；write（含重连）进行中并发查询
+/// 返回 sdk.tryAgain（同 write 并发语义，可重试非错误）。
+#[no_mangle]
+pub unsafe extern "C" fn amc_stream_get_status(
+    stream: *mut amc_stream_t,
+    out_status: *mut am_stream_status_t,
+) -> i32 {
+    status(domain(), stream as usize, || {
+        // 输出指针先校验（NULL/对齐/struct_size 版本协商），再取会话快照。
+        am_sdk_support::args::validate_output(
+            out_status,
+            std::mem::size_of::<am_stream_status_t>(),
+        )?;
+        let entry = domain().get(stream as usize)?;
+        let object = entry.data::<StreamObject>()?;
+        // 与 decoder get_status 同款 try_lock：write/重连持锁期间不阻塞状态查询调用方。
+        let guard = object
+            .session
+            .try_lock()
+            .map_err(|_| AM_ERR_SDK_TRY_AGAIN)?;
+        let session = guard.as_ref().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+        let snapshot = session.status();
+        let value = am_stream_status_t {
+            connection_state: if snapshot.connected {
+                AM_STREAM_CONNECTED
+            } else {
+                AM_STREAM_DISCONNECTED
+            },
+            reconnect_attempts: snapshot.reconnect_attempts,
+            bytes_written: snapshot.bytes_written,
+            backoff_ms: snapshot.last_backoff_ms as u32,
+            last_error_status: snapshot
+                .last_error
+                .map(stream_error_status)
+                .unwrap_or(AM_OK as am_status_t),
+            ..Default::default()
+        };
+        unsafe { am_sdk_support::args::write(out_status, value) }
+    })
+}

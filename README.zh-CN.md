@@ -15,7 +15,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 | **FrameBraid Media SDK** | ISAPI 图像、RTSP 编码流、解码帧、独立解码及像素转换 |
 | **FrameBraid Vision SDK** | ONNX 执行、有界异步处理、原始张量、模型档案后处理、推理池多 Model 编排及设备定向（适配器子串选择器） |
 
-**当前状态：v0.8.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 至 **1.6**（兼容新增：1.4 推理池编排 API——一次调用加载 k 个分片 Model 并预建 lane→shard 映射，8 路 GPU 直传双分片实测 194.8 items/s≈8×25fps 需求的 97%；1.5 显式选择的 GPU NV12 级联输入——源帧一次搬运、ROI 批 4 可选、会话级 CUDA FP32 对拍选项，默认逐 ROI；**1.6 设备定向选择器**——按适配器描述子串定向推理与硬解到指定 GPU（Intel 核显 DirectML 端到端已验：4 路 D3D11VA 硬解+4 路 DML 推理并发 10 分钟窗口稳定），不传该字段行为与之前完全一致）。v0.7.2 质量批：池退出挂死根治（严格对拍失败模式 0xC0000409 一并消除）、多会话冷启动已验证、相机门 harness 重建（20 门全绿）。另含攒批注册表 TOCTOU 竞态修复与 Python/C# 推理池封装。已验证范围为 **Windows x64 CPU 与硬解探测**——GPU 数字为发布机研究测量（RTX 5060、CUDA ORT），见[接入指南](sdk/INTEGRATION.md)；Linux/macOS/移动端二进制及正式 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
+**当前状态：v0.8.0。**[发布页](https://github.com/xiaoyanse/framebraid/releases)。C ABI 至 **1.6**（兼容新增：1.4 推理池编排 API——一次调用加载 k 个分片 Model 并预建 lane→shard 映射，8 路 GPU 直传双分片实测 194.8 items/s≈8×25fps 需求的 97%；1.5 显式选择的 GPU NV12 级联输入——源帧一次搬运、ROI 批 4 可选、会话级 CUDA FP32 对拍选项，默认逐 ROI；**1.6 设备定向选择器**——按适配器描述子串定向推理与硬解到指定 GPU（Intel 核显 DirectML 端到端已验：4 路 D3D11VA 硬解+4 路 DML 推理并发 10 分钟窗口稳定），不传该字段行为与之前完全一致）。未发布 1.7（v0.8.x RTMP 环节）：推流状态导出 `amc_stream_get_status`——RTMP 会话只读快照（连接/重连计数/推送字节/退避档/最近失败），首个回环真机服务端门（MediaMTX）验证通过。v0.7.2 质量批：池退出挂死根治（严格对拍失败模式 0xC0000409 一并消除）、多会话冷启动已验证、相机门 harness 重建（20 门全绿）。另含攒批注册表 TOCTOU 竞态修复与 Python/C# 推理池封装。已验证范围为 **Windows x64 CPU 与硬解探测**——GPU 数字为发布机研究测量（RTX 5060、CUDA ORT），见[接入指南](sdk/INTEGRATION.md)；Linux/macOS/移动端二进制及正式 GPU 推理验收另行推进，见[验证范围](docs/RELEASE_STATUS.md)。
 
 
 ## 分发包形态

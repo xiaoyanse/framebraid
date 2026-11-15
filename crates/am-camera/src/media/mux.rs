@@ -72,6 +72,8 @@ pub struct Muxer {
     stream_tb: AVRational,
     connected: bool,
     finished: bool,
+    /// 本封装器实例累计写入的编码包载荷字节（不含容器/协议开销；观测值）。
+    bytes_written: u64,
     /// 推流连接的中断状态盒（opaque 指向其内容；随 Muxer 存活到 fmt 释放）。
     _interrupt: Option<Box<InterruptState>>,
 }
@@ -128,6 +130,7 @@ impl Muxer {
             stream_tb: AVRational { num: 0, den: 0 },
             connected: false,
             finished: false,
+            bytes_written: 0,
             _interrupt: None,
         })
     }
@@ -138,8 +141,8 @@ impl Muxer {
     }
 
     /// 阶段二：连接网络端点并写头（RTMP 握手发生在此步）。
-    /// 单段 IO 受 deadline 中断、stop 置位立即取消；两者命中归一为 Timeout，
-    /// 避免不可中断的 avio_open 长时间占住调用线程。
+    /// 单段 IO 受 deadline 中断（拒连/黑洞等失败在 5s 内暴露，不无限占住调用线程）；
+    /// 连接错误保持 Io 类交由上层在总预算内退避重连；仅停止信号归一 Timeout。
     pub fn connect_stream(
         &mut self,
         url: &CStr,
@@ -160,10 +163,9 @@ impl Muxer {
             };
         }
         self._interrupt = Some(interrupt);
-        let deadline = Instant::now() + STREAM_IO_DEADLINE;
         let result = self.connect(url);
         let stopped = stop.is_some_and(|flag| flag.load(Ordering::Relaxed));
-        if result.is_err() && (Instant::now() >= deadline || stopped) {
+        if result.is_err() && stopped {
             return Err(MuxError::Timeout);
         }
         result
@@ -238,9 +240,15 @@ impl Muxer {
                         MuxError::Ffmpeg(rc)
                     });
                 }
+                self.bytes_written = self.bytes_written.wrapping_add(packet.data.len() as u64);
             }
         }
         Ok(())
+    }
+
+    /// 本实例累计写入的编码包载荷字节（重连换新实例后从零起算，跨代累计由上层折叠）。
+    pub fn bytes_written(&self) -> u64 {
+        self.bytes_written
     }
 
     /// 写 trailer 并关闭目标（存档文件此后可播放）。
