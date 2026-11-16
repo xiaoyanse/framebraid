@@ -20,6 +20,8 @@ pub struct StreamSession {
     settings: EncoderSettings,
     url: CString,
     mux: Muxer,
+    /// 累计重连尝试：open 阶段只计退避重试（成功首连不计）；rebuild 自首轮
+    /// 连接尝试起计（首轮即成功也计 1）。0=从未重连（合同 am_stream_status_t）。
     attempts: u32,
     /// 最近一次 open/write 成功路径=true；write 因连接失败返回错误后=false。
     connected: bool,
@@ -109,9 +111,19 @@ impl StreamSession {
 
     fn rebuild(&mut self) -> Result<(), MuxError> {
         let budget = Instant::now() + Duration::from_millis(STREAM_CONNECT_BUDGET_MS);
+        // 重连不同于 open 首连：每次真实连接尝试开始即登记（首轮即成功也计 1），
+        // 对齐合同"累计重连尝试"；open 阶段仍只计退避重试（见 new）。
         let mut attempts = 0u32;
         loop {
-            let mut mux = Muxer::create(self.api.clone(), self.settings, MuxFormat::Flv)?;
+            let mut mux = match Muxer::create(self.api.clone(), self.settings, MuxFormat::Flv) {
+                Ok(mux) => mux,
+                // 封装器创建失败不产生连接尝试，但不丢本循环已登记的尝试计数。
+                Err(error) => {
+                    self.attempts = self.attempts.saturating_add(attempts);
+                    return Err(error);
+                }
+            };
+            attempts += 1;
             match mux.connect_stream(&self.url, Some(&self.stop), Some(budget)) {
                 Ok(()) => {
                     self.attempts = self.attempts.saturating_add(attempts);
@@ -120,9 +132,8 @@ impl StreamSession {
                     return Ok(());
                 }
                 Err(MuxError::Io(_))
-                    if attempts < STREAM_MAX_RETRIES && Instant::now() < budget =>
+                    if attempts <= STREAM_MAX_RETRIES && Instant::now() < budget =>
                 {
-                    attempts += 1;
                     let backoff = backoff_delay_ms(attempts - 1);
                     self.last_backoff_ms = backoff;
                     if !wait_interruptible(backoff, &self.stop) || Instant::now() >= budget {
