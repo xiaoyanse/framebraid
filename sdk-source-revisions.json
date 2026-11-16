@@ -60,8 +60,8 @@
     {
       "path": "crates/am-camera/src/media/ffmpeg_lib.rs",
       "previousSha256": "7e15b984c11b22d53ce994508289f7fdd30ea1d436e81b18a56c85ffb9fa6592",
-      "sha256": "2150b3ccba803802c3697bf97faf182db3c28d2be889c6040b87bda80c88c25b",
-      "reason": "FILE stage 2 (P1-9): seek/duration/rate/loop control plane, EOF revival, EXACT dual semantics; workspace 429 green + real-machine seek integration green"
+      "sha256": "5fbcf7ef6bb36a82c46e54117ccf9498d62b91f8648c7a7ad5a23013270f1947",
+      "reason": "Audit 2026-11-16 F05 fix (sdk-fixc): bind avio_open2 replacing avio_open so the network URLContext receives the interrupt callback (deadline+stop) — handshake/write/close-flush interruptible; loopback gates + three directed black-hole arms green; C ABI unchanged; prior approved 2150b3cc = FILE stage 2 control plane (P1-9)"
     },
     {
       "path": "crates/am-camera/src/media/ffmpeg_sys.rs",
@@ -132,8 +132,8 @@
     {
       "path": "crates/am-camera/src/media/mod.rs",
       "previousSha256": "5a90d087c65a05ae5f3e3da9bf93b1a1fa77c77ffbad41c02e01cc06287a10d8",
-      "sha256": "4aaf3593252d67ff8cc1636b5ada079c477d6e479a4bc2e281b37af8cd528cfe",
-      "reason": "S5 reviewed encoder/archive/stream implementation (libx264 zerolatency, segmented MP4 verified playable, RTMP reconnect; receive export + fractional fps bound); workspace 404 green"
+      "sha256": "ddcb384a282e89a5c3384b2eb47cfbe0a17d797d05af8aa258a503b2f13c1303",
+      "reason": "Audit 2026-11-16 F05 (sdk-fixc): register mux_blackhole directed-gate module (three local black-hole arms: handshake 15s bounded Timeout / tcp backpressure 5s Io / open-stop <2s); workspace green; C ABI unchanged; prior approved 4aaf3593 = S5 encoder/archive/stream (RTMP reconnect)"
     },
     {
       "path": "crates/am-camera/src/media/multipart.rs",
@@ -1152,8 +1152,8 @@
     {
       "path": "crates/vision/src/gpu/iobinding.rs",
       "previousSha256": null,
-      "sha256": "2c6812769e0d9922218632ef6bfcf0027751c9d27deb8b9008aed91bbd972051",
-      "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）；批C：new_batch批形构造（[batch,3,h,w]，new委托batch=1保POC签名兼容）+batch_len/tensor_bytes查询（输出首轴对照与设备侧组装偏移/长度计算用）；sdk-fixb audit F03: new/new_batch take the CUDA device ordinal for MemoryInfo allocation (was hardcoded 0, mismatching sessions targeted at non-zero ordinals); C ABI unchanged (prior SHA-256: 39577de4b173017e3521266753906aa17e6b4f8ef83c46383ab94325203c5fb8)"
+      "sha256": "6b3cff93a2b8d1b970072d2acdcd885575d5d56c5be159d40c45ec2268b3ffae",
+      "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）；批C：new_batch批形构造（[batch,3,h,w]，new委托batch=1保POC签名兼容）+batch_len/tensor_bytes查询（输出首轴对照与设备侧组装偏移/长度计算用）；sdk-fixb audit F03: new/new_batch take the CUDA device ordinal for MemoryInfo allocation (was hardcoded 0, mismatching sessions targeted at non-zero ordinals); C ABI unchanged (prior SHA-256: 39577de4b173017e3521266753906aa17e6b4f8ef83c46383ab94325203c5fb8)；sdk-fixa audit F04: vocab_copy_len re-validation before allocation/copy in bind_vocab (public safe-Rust heap-overflow fix, byte_count==bytes.len criterion)（prior 2c681276 = fixb 分支态）"
     },
     {
       "path": "crates/vision/src/gpu/mod.rs",
@@ -1284,8 +1284,8 @@
     {
       "path": "crates/vision/src/sdk/selection_tests.rs",
       "previousSha256": null,
-      "sha256": "4683d900ff3d888878b14553854ed259d83b7b12184442ee8f95174e97568a96",
-      "reason": "sdk-v08 V8.3: policy construction gains device:None (no behavioral change to existing assertions)"
+      "sha256": "91c214d2fcc6ec033724c992e108859df985113d061b8006423f9bc40187e54d",
+      "reason": "sdk-fixa audit F01: negative-control ignored gate (DML-line runtime + out-of-range DXGI ordinal + CPU-buildable model) proving registration failure surfaces as vision.backendStrictUnavailable instead of a silent CPU session recorded as DML — RED→GREEN; C ABI unchanged（prior 4683d900 = sdk-v08 V8.3 device:None policy construction）"
     },
     {
       "path": "crates/vision/src/sdk/selection.rs",
@@ -1296,8 +1296,8 @@
     {
       "path": "crates/vision/src/sdk/session.rs",
       "previousSha256": null,
-      "sha256": "22ac81ba282f6f7f748c2edb99bcf8c017df7930eac95e5b5ec2af8af34afca7",
-      "reason": "sdk-v08 V8.3: DirectML::with_device_id from selector-resolved DXGI ordinal (0 keeps EP default); OpenVINO EP device type GPU when targeted, CPU otherwise (existing behavior unchanged without selector)"
+      "sha256": "d27d442ac3d84de4e69f5d9b9424d327d90f6c10e300d6e7e29cbc20982944ca",
+      "reason": "sdk-fixa audit F01: DirectML branch builds with .error_on_failure() (ort rc.13 default fail_silently let a registration failure fall through to a CPU session still recorded as DML — strict/actual_backend misreported); isomorphic with CPU/OV/CUDA branches, fallback decided by selection policy; C ABI unchanged（prior 22ac81ba = sdk-v08 V8.3 selector-resolved device ids）"
     },
     {
       "path": "crates/vision/src/sdk/tests.rs",
