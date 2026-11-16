@@ -58,7 +58,8 @@ pub fn backoff_delay_ms(attempt: u32) -> u64 {
 /// 推流最大重连次数（超过后会话报错，合同语义）。
 pub const STREAM_MAX_RETRIES: u32 = 5;
 
-/// 推流单段 IO（连接/写头）中断等待，与解码侧 IO_DEADLINE 对齐。
+/// 推流单段 IO（连接/写头/写帧/关闭 flush）中断等待，与解码侧 IO_DEADLINE 对齐。
+/// 经 avio_open2 安装到网络 URLContext（avio_open 不传 callback，网络 IO 不可中断）。
 pub const STREAM_IO_DEADLINE: Duration = Duration::from_secs(5);
 
 /// 推流连接/重连总预算（含退避等待）：超过返回 Timeout，宿主不再被长时间阻塞。
@@ -137,16 +138,19 @@ impl Muxer {
 
     /// 阶段二：打开文件并写头。
     pub fn connect_file(&mut self, path: &CStr) -> Result<(), MuxError> {
-        self.connect(path)
+        self.connect(path, None)
     }
 
     /// 阶段二：连接网络端点并写头（RTMP 握手发生在此步）。
-    /// 单段 IO 受 deadline 中断（拒连/黑洞等失败在 5s 内暴露，不无限占住调用线程）；
+    /// 单段 IO 受 deadline 中断（拒连/黑洞等失败在 5s 内暴露，不无限占住调用线程），
+    /// 且经 avio_open2 把同一回调装进网络 URLContext——握手/写入/关闭 flush 均可中断；
+    /// `budget_end` 为连接总预算终点：单段截止取 min(起算+5s, 预算终点)，不超预算占线程。
     /// 连接错误保持 Io 类交由上层在总预算内退避重连；仅停止信号归一 Timeout。
     pub fn connect_stream(
         &mut self,
         url: &CStr,
         stop: Option<&AtomicBool>,
+        budget_end: Option<Instant>,
     ) -> Result<(), MuxError> {
         let stop_ptr = stop.map_or(std::ptr::null(), std::ptr::from_ref);
         let interrupt = Box::new(InterruptState {
@@ -163,7 +167,8 @@ impl Muxer {
             };
         }
         self._interrupt = Some(interrupt);
-        let result = self.connect(url);
+        self.refresh_io_deadline(budget_end);
+        let result = self.connect(url, budget_end);
         let stopped = stop.is_some_and(|flag| flag.load(Ordering::Relaxed));
         if result.is_err() && stopped {
             return Err(MuxError::Timeout);
@@ -171,16 +176,42 @@ impl Muxer {
         result
     }
 
-    fn connect(&mut self, target: &CStr) -> Result<(), MuxError> {
+    /// 单段 IO 截止刷新：连接段受总预算终点约束，其余段独立起算 5s。
+    /// 无中断状态（存档文件路径）为空操作。
+    fn refresh_io_deadline(&self, budget_end: Option<Instant>) {
+        if let Some(state) = self._interrupt.as_ref() {
+            let mut deadline = Instant::now() + STREAM_IO_DEADLINE;
+            if let Some(end) = budget_end {
+                deadline = deadline.min(end);
+            }
+            state.deadline.set(deadline);
+        }
+    }
+
+    fn connect(&mut self, target: &CStr, budget_end: Option<Instant>) -> Result<(), MuxError> {
         if self.connected {
             return Err(MuxError::Config("camera.muxAlreadyConnected"));
         }
+        let streaming = self._interrupt.is_some();
         unsafe {
-            let rc =
-                (self.api.avio_open)(&raw mut (*self.fmt).pb, target.as_ptr(), AVIO_FLAG_WRITE);
+            // 推流时与 fmt 的 interrupt_callback 同源（connect_stream 已安装）；
+            // 存档文件无中断状态，传 NULL 保持 avio_open 既有语义。
+            let int_cb = if streaming {
+                &raw const (*self.fmt).interrupt_callback
+            } else {
+                std::ptr::null()
+            };
+            let rc = (self.api.avio_open2)(
+                &raw mut (*self.fmt).pb,
+                target.as_ptr(),
+                AVIO_FLAG_WRITE,
+                int_cb,
+                std::ptr::null_mut(),
+            );
             if rc < 0 {
                 return Err(MuxError::Io(rc));
             }
+            self.refresh_io_deadline(budget_end);
             let rc = (self.api.avformat_write_header)(self.fmt, std::ptr::null_mut());
             if rc < 0 {
                 (self.api.avio_closep)(&raw mut (*self.fmt).pb);
@@ -211,6 +242,8 @@ impl Muxer {
         }
         let packets = unsafe { self.enc.encode_rgba(rgba, stride) }?;
         let enc_tb = self.enc.time_base();
+        // 写帧段独立起算截止：对端停读（背压/黑洞）时 send 在预算内暴露，不无限阻塞。
+        self.refresh_io_deadline(None);
         for packet in packets {
             if packet.data.is_empty() {
                 continue;
@@ -258,7 +291,9 @@ impl Muxer {
         }
         self.finished = true;
         unsafe {
+            self.refresh_io_deadline(None);
             let rc = (self.api.av_write_trailer)(self.fmt);
+            self.refresh_io_deadline(None);
             let closed = (self.api.avio_closep)(&raw mut (*self.fmt).pb);
             if rc < 0 {
                 return Err(MuxError::Ffmpeg(rc));
@@ -271,6 +306,8 @@ impl Muxer {
     }
 
     /// 关闭但不写 trailer（断线丢弃/推流会话终止）。
+    /// 不刷新截止：已到期的截止或停止信号让 close flush 立即中断退出——
+    /// 终止路径要快，不再给死连接新的阻塞窗口。
     pub fn abort(&mut self) {
         if self.finished {
             return;

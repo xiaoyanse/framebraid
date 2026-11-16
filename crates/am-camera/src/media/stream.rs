@@ -1,6 +1,7 @@
 //! 推流会话：FLV/RTMP 连接与断线重连（退避 1s×2^n 封顶 30s，上限 5 次）。
-//! 连接/重连受总预算约束，退避等待可被停止信号唤醒；单段 IO 由 muxer 的
-//! interrupt 回调中断——宿主不再被无界的连接重试长时间阻塞。
+//! 连接/重连受总预算约束（单段截止不越预算终点）；网络 IO（握手/写入/关闭
+//! flush）经 avio_open2 安装同一 interrupt 回调，截止/停止信号可中断阻塞段；
+//! 退避等待同样可被停止信号唤醒——宿主不再被无界阻塞长时间占住调用线程。
 use super::encode::EncoderSettings;
 use super::ffmpeg_lib::FfmpegApi;
 use super::mux::{
@@ -67,7 +68,7 @@ impl StreamSession {
         let mut last_backoff_ms = 0u64;
         loop {
             let mut mux = Muxer::create(api.clone(), settings, MuxFormat::Flv)?;
-            match mux.connect_stream(url, Some(&stop)) {
+            match mux.connect_stream(url, Some(&stop), Some(budget)) {
                 Ok(()) => {
                     return Ok(Self {
                         api,
@@ -111,7 +112,7 @@ impl StreamSession {
         let mut attempts = 0u32;
         loop {
             let mut mux = Muxer::create(self.api.clone(), self.settings, MuxFormat::Flv)?;
-            match mux.connect_stream(&self.url, Some(&self.stop)) {
+            match mux.connect_stream(&self.url, Some(&self.stop), Some(budget)) {
                 Ok(()) => {
                     self.attempts = self.attempts.saturating_add(attempts);
                     self.folded_bytes = self.folded_bytes.saturating_add(self.mux.bytes_written());

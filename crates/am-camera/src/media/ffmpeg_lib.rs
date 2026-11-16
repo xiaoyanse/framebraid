@@ -79,8 +79,15 @@ type AvformatWriteHeaderFn =
     unsafe extern "C" fn(*mut AVFormatContext, *mut *mut AVDictionary) -> c_int;
 type AvInterleavedWriteFrameFn = unsafe extern "C" fn(*mut AVFormatContext, *mut AVPacket) -> c_int;
 type AvWriteTrailerFn = unsafe extern "C" fn(*mut AVFormatContext) -> c_int;
-type AvioOpenFn =
-    unsafe extern "C" fn(*mut *mut core::ffi::c_void, *const core::ffi::c_char, c_int) -> c_int;
+// avio_open2 显式传 AVIOInterruptCB（avio_open 内部以 NULL 调 avio_open2，网络
+// URLContext 拿不到截止/停止回调——推流段 IO 将不可中断）
+type AvioOpen2Fn = unsafe extern "C" fn(
+    *mut *mut core::ffi::c_void,
+    *const core::ffi::c_char,
+    c_int,
+    *const AVIOInterruptCB,
+    *mut AVDictionary,
+) -> c_int;
 type AvioClosepFn = unsafe extern "C" fn(*mut *mut core::ffi::c_void) -> c_int;
 type AvformatFreeContextFn = unsafe extern "C" fn(*mut AVFormatContext);
 type AvcodecParametersToContextFn =
@@ -226,7 +233,7 @@ pub struct FfmpegApi {
     pub avformat_write_header: AvformatWriteHeaderFn,
     pub av_interleaved_write_frame: AvInterleavedWriteFrameFn,
     pub av_write_trailer: AvWriteTrailerFn,
-    pub avio_open: AvioOpenFn,
+    pub avio_open2: AvioOpen2Fn,
     pub avio_closep: AvioClosepFn,
     pub avformat_free_context: AvformatFreeContextFn,
     // avformat
@@ -520,7 +527,7 @@ impl FfmpegApi {
                 avformat_write_header: get_fn(avformat, b"avformat_write_header\0")?,
                 av_interleaved_write_frame: get_fn(avformat, b"av_interleaved_write_frame\0")?,
                 av_write_trailer: get_fn(avformat, b"av_write_trailer\0")?,
-                avio_open: get_fn(avformat, b"avio_open\0")?,
+                avio_open2: get_fn(avformat, b"avio_open2\0")?,
                 avio_closep: get_fn(avformat, b"avio_closep\0")?,
                 avformat_free_context: get_fn(avformat, b"avformat_free_context\0")?,
                 avformat_network_init: get_fn(avformat, b"avformat_network_init\0")?,

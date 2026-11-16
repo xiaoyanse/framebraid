@@ -14,6 +14,8 @@ pub mod sdk_io;
 pub mod stream;
 
 #[cfg(test)]
+mod mux_blackhole_tests;
+#[cfg(test)]
 mod rtsp_tests;
 
 #[cfg(any(test, feature = "testkit"))]
