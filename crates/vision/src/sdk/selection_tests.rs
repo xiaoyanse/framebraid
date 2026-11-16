@@ -283,3 +283,40 @@ fn io_count_preflight_precedes_metadata_copy_and_accepts_the_boundary() {
         "io_preflight rejected inputs33/outputs33 before unsupported dtype; boundary32 Run passed"
     );
 }
+
+#[test]
+#[ignore = "需 DML 线 ORT（AM_SDK_ORT_LIBRARY 指向 ort-dml-124 的 onnxruntime.dll）+ 真实 ONNX（AM_SDK_RAW_MODEL）+ DML EP 可枚举；DML 进程专跑（运行库互斥）"]
+fn directml_registration_failure_surfaces_instead_of_silent_cpu_session() {
+    // F01 负控制：DML 可枚举、注册失败（越界 DXGI 序号）、CPU 会话可建——
+    // session::create 必须在 EP 注册段报错。修复前 ort rc.13 默认
+    // fail_silently 放行注册失败、回落 CPU 仍建出会话并返回 Ok（选中记录
+    // 与实际执行后端失真），本用例在该形态下失败。
+    initialize(&PathBuf::from(std::env::var("AM_SDK_ORT_LIBRARY").unwrap())).unwrap();
+    // device_id 非 0 仅可由设备定向 selector 解析产生（policy 校验拒绝外部
+    // 候选），故绕过 policy 直测 session::create 的注册行为。
+    let ghost = device::dxgi_adapters()
+        .expect("DXGI 枚举")
+        .iter()
+        .map(|adapter| adapter.index)
+        .max()
+        .unwrap()
+        + 1000;
+    let bytes = std::fs::read(std::env::var("AM_SDK_RAW_MODEL").unwrap()).unwrap();
+    let failure = session::create(
+        ModelSource::Memory(&bytes),
+        &bytes,
+        BackendTarget {
+            backend: 3,
+            device_id: ghost,
+        },
+        2,
+        false,
+        false,
+    )
+    .expect_err("DML 注册失败必须报错，不得静默建 CPU 会话记作 DML");
+    assert_eq!(failure.error.0, "vision.backendStrictUnavailable");
+    assert_eq!(
+        failure.stage, "provider_registration",
+        "失败必须发生在 EP 注册段；stage 偏离说明运行库/环境不符合本门前提"
+    );
+}

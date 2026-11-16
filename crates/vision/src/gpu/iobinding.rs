@@ -24,6 +24,19 @@ pub struct InferenceInput {
     _allocator: Allocator,
 }
 
+/// 词表张量复制前的一致性复核（F04）：`TensorData.info` 是公开可变字段，
+/// 构造时核对过的 shape/dtype 之后仍可被安全 Rust 改写；若按改写后的声明
+/// 分配、按原字节长度复制即堆越界写。口径与 model.rs
+/// `validate_input_data_refs` 相同（byte_count == bytes.len，两侧不等一律
+/// 拒绝），返回可安全复制的字节数。
+pub(super) fn vocab_copy_len(tensor: &crate::sdk::TensorData) -> Result<usize, Error> {
+    let expected = crate::sdk::byte_count(tensor.info.dtype, &tensor.info.shape)?;
+    if expected != tensor.bytes().len() {
+        return Err(Error("vision.inputBytesMismatch".into()));
+    }
+    Ok(expected)
+}
+
 impl InferenceInput {
     /// 在 session 的 CUDA device 上分配 [1, 3, h, w] f32 输入张量并绑定。
     pub fn new(session: &Session, input_name: &str, h: usize, w: usize) -> Result<Self, Error> {
@@ -81,21 +94,23 @@ impl InferenceInput {
     /// H2D 搬运由 ORT 异步执行，调用方须在 run_binding 前
     /// synchronize_inputs()（见 execution.rs 批 B 注释）。数据复制进
     /// OrtValue 拥有的内存（TensorData 借用期不延伸到 run_binding，构造与
-    /// run_ref 的 CPU 输入同构）；dtype/shape 取注入张量声明，失配由 ORT
-    /// 执行期拒绝。
+    /// run_ref 的 CPU 输入同构）；dtype/shape 取注入张量声明，但 info 为
+    /// 公开可变字段，构造时的核对不可依赖——分配/复制前重验一致性（F04，
+    /// 见 vocab_copy_len），失配明确拒绝而非按新 shape 分配+旧长度复制。
     pub fn bind_vocab(&mut self, tensor: &crate::sdk::TensorData) -> Result<(), Error> {
+        let copy_len = vocab_copy_len(tensor)?;
         let mut value = DynTensor::new(
             &Allocator::default(),
             crate::sdk::element(tensor.info.dtype)?,
             tensor.info.shape.clone(),
         )
         .map_err(|e| Error(format!("vision.inferenceFailed|vocab CPU 张量构造失败|{e}")))?;
-        // 拥有者按 u64 对齐；字节长度已由 TensorData 按声明核对。
+        // 拥有者按 u64 对齐；目标容量已按当前声明复核等于源长度。
         unsafe {
             std::ptr::copy_nonoverlapping(
                 tensor.bytes().as_ptr(),
                 value.data_ptr_mut().cast(),
-                tensor.bytes().len(),
+                copy_len,
             );
         }
         self.binding

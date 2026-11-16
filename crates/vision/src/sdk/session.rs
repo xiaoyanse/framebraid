@@ -52,7 +52,11 @@ pub(super) fn create(
             } else {
                 ort::ep::DirectML::default()
             };
-            directml.build()
+            // 与 CPU/OV/CUDA 分支同构（F01）：注册失败必须报错。ort rc.13 默认
+            // fail_silently 会放行 EP 注册失败、回落 CPU 仍建出会话，导致选中
+            // 记录与实际执行后端失真（strict/actual/设备定向全部失真）；是否
+            // 回退由 selection::choose 按候选策略统一裁决（回退可达/严格即停）。
+            directml.build().error_on_failure()
         }
         _ => {
             let cuda = ort::ep::CUDA::default().with_device_id(target.device_id as i32);
