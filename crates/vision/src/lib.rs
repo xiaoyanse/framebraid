@@ -292,9 +292,12 @@ fn openvino_execution() -> ExecutionInfo {
         fallback_reason: None,
     }
 }
-/// DirectML EP（E2）：运行库目录自含 DirectML.dll；注册失败按策略回退。
+/// DirectML EP（E2）：运行库目录自含 DirectML.dll。error_on_failure（批 D，与
+/// openvino_ep/cuda_ep/trt_ep 同构）：注册失败须让 load_with 报错，经
+/// load_or_fallback 带标注回退 CPU——fail_silently 会静默落 CPU 会话并误标
+/// DirectML（fallback_reason=None），绕过回退链「注册失败自动回退并标注」的设计承诺。
 fn directml_ep() -> ort::ep::ExecutionProviderDispatch {
-    ort::ep::DirectML::default().build()
+    ort::ep::DirectML::default().build().error_on_failure()
 }
 
 fn directml_execution() -> ExecutionInfo {

@@ -162,9 +162,10 @@ pub struct OvApi {
     #[allow(dead_code)]
     pub get_last_err_msg: unsafe extern "C" fn() -> *const c_char,
     /// 装载即取的运行库版本（诊断用：失败详情/E1.6 对拍读，正常推理不读）。
-    version: String,
+    pub(crate) version: String,
     /// 元素类型序数线（按 version 判定）：map/逆映射按此选表。
-    element_line: ElementLine,
+    /// pub(crate)：失败注入测试（port_info RAII 守卫）需在 crate 内构造假符号表。
+    pub(crate) element_line: ElementLine,
 }
 
 impl OvApi {

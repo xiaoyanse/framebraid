@@ -434,12 +434,28 @@ unsafe fn port_by_index(
     Ok(port)
 }
 
+/// 端口句柄 RAII 守卫（F07）：获取即建立，任意查询失败提前返回经 Drop 释放，
+/// 成功路径同样统一走 Drop——不再依赖末尾显式 free。
+struct PortGuard<'a> {
+    api: &'a OvApi,
+    port: *mut ov_output_const_port_t,
+}
+
+impl Drop for PortGuard<'_> {
+    fn drop(&mut self) {
+        if !self.port.is_null() {
+            unsafe { (self.api.output_const_port_free)(self.port) };
+        }
+    }
+}
+
 /// 读端口规格并释放句柄；名称/shape/元素类型读序固定，free 前全部取值。
 unsafe fn port_info(
     api: &OvApi,
     port: *mut ov_output_const_port_t,
     stage: &'static str,
 ) -> std::result::Result<TensorInfo, CreateFailure> {
+    let _port = PortGuard { api, port };
     let mut shape = ov_sys::ov_shape_t {
         rank: 0,
         dims: null_mut(),
@@ -461,9 +477,7 @@ unsafe fn port_info(
         CStr::from_ptr(name_ptr).to_string_lossy().into_owned()
     };
     (api.free)(name_ptr);
-    let built = tensor_spec(&name, &dims, element, api.element_line());
-    (api.output_const_port_free)(port);
-    built.map_err(|_| fail(stage))
+    tensor_spec(&name, &dims, element, api.element_line()).map_err(|_| fail(stage))
 }
 
 /// 输入张量按端口静态 shape 预建；shape 局部 Vec 撑住，tensor_create 内部复制。
@@ -523,7 +537,9 @@ impl OpenvinoEngine {
             let mut remaining = output_budget;
             let mut outputs = Vec::with_capacity(self.outputs.len());
             for (index, spec) in self.outputs.iter().enumerate() {
-                let built = self.read_output(index, spec)?;
+                // 剩余预算传入读取：复制前检查（F06，对齐 ORT 先扣后复制语义），
+                // 外层扣减维护多输出累加。
+                let built = self.read_output(index, spec, remaining)?;
                 let allocated = built
                     .bytes()
                     .len()
@@ -537,10 +553,12 @@ impl OpenvinoEngine {
     }
 
     /// 读单个输出张量并释放句柄；shape/类型/尺寸/数据在 free 前全部取值。
+    /// remaining：本输出复制前的剩余预算（F06：TensorData 分配前检查）。
     unsafe fn read_output(
         &self,
         index: usize,
         name_spec: &TensorInfo,
+        remaining: usize,
     ) -> std::result::Result<TensorData, OvInferError> {
         let api = &self.api;
         let mut tensor: *mut ov_tensor_t = null_mut();
@@ -553,7 +571,7 @@ impl OpenvinoEngine {
                 error: Error("vision.inferenceFailed".into()),
             });
         }
-        let built = self.read_output_data(tensor, name_spec);
+        let built = self.read_output_data(tensor, name_spec, remaining);
         (api.tensor_free)(tensor);
         built
     }
@@ -562,6 +580,7 @@ impl OpenvinoEngine {
         &self,
         tensor: *mut ov_tensor_t,
         name_spec: &TensorInfo,
+        remaining: usize,
     ) -> std::result::Result<TensorData, OvInferError> {
         let api = &self.api;
         let mut shape = ov_sys::ov_shape_t {
@@ -616,6 +635,10 @@ impl OpenvinoEngine {
             });
         }
         let mut data: *mut c_void = null_mut();
+        // 预算检查在复制之前（F06）：按原生 byte size 对齐 8 扣减，不足即耗尽，
+        // 不再先 TensorData::new 分配复制后才报（零预算/差一字节均不得先复制）。
+        let allocated = size.checked_next_multiple_of(8).ok_or_else(exhaustion)?;
+        remaining.checked_sub(allocated).ok_or_else(exhaustion)?;
         if (api.tensor_data)(tensor, &mut data) != OV_OK || data.is_null() {
             return Err(OvInferError {
                 native_ok: true,
@@ -1329,5 +1352,355 @@ mod tests {
             "ovgpu unreachable: fallback=ort-cpu strict-error=vision.backendStrictUnavailable report={}",
             serde_json::to_string(model.selection_report()).unwrap()
         );
+    }
+
+    /// F07 失败注入：port_info 三个端口查询任意失败必须释放 port（RAII 守卫）。
+    /// 假符号表按字段注入（OvApi 裸函数指针表）；port_info 不消费的符号一律
+    /// panic stub——被调即说明路径走偏。释放计数用 thread_local（测试线程天然隔离）。
+    mod port_release_injection {
+        use super::ov_sys::{
+            ov_available_devices_t, ov_compiled_model_t, ov_core_t, ov_infer_request_t, ov_model_t,
+            ov_shape_t, ov_tensor_t, ov_version_t, OvApi, OV_OK, OV_TYPE_F32,
+        };
+        use super::*;
+
+        thread_local! {
+            static PORT_FREES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+        }
+
+        fn port_frees() -> usize {
+            PORT_FREES.with(|cell| cell.get())
+        }
+
+        static STUB_DIMS: [i64; 4] = [1, 3, 640, 640];
+        static STUB_NAME: &[u8; 7] = b"images\0";
+        /// 注入失败码（任意非 OV_OK；断言经 native_code 回显）。
+        const FAIL_CODE: i32 = 9;
+
+        unsafe extern "C" fn shape_ok(
+            _port: *const ov_output_const_port_t,
+            shape: *mut ov_shape_t,
+        ) -> i32 {
+            *shape = ov_shape_t {
+                rank: 4,
+                dims: STUB_DIMS.as_ptr() as *mut i64,
+            };
+            OV_OK
+        }
+        unsafe extern "C" fn shape_fail(
+            _port: *const ov_output_const_port_t,
+            _shape: *mut ov_shape_t,
+        ) -> i32 {
+            FAIL_CODE
+        }
+        unsafe extern "C" fn element_ok(
+            _port: *const ov_output_const_port_t,
+            element: *mut ov_element_type_e,
+        ) -> i32 {
+            *element = OV_TYPE_F32;
+            OV_OK
+        }
+        unsafe extern "C" fn element_fail(
+            _port: *const ov_output_const_port_t,
+            _element: *mut ov_element_type_e,
+        ) -> i32 {
+            FAIL_CODE
+        }
+        unsafe extern "C" fn name_ok(
+            _port: *const ov_output_const_port_t,
+            name: *mut *mut c_char,
+        ) -> i32 {
+            *name = STUB_NAME.as_ptr() as *mut c_char;
+            OV_OK
+        }
+        unsafe extern "C" fn name_fail(
+            _port: *const ov_output_const_port_t,
+            _name: *mut *mut c_char,
+        ) -> i32 {
+            FAIL_CODE
+        }
+        unsafe extern "C" fn shape_free_noop(_shape: *mut ov_shape_t) -> i32 {
+            OV_OK
+        }
+        unsafe extern "C" fn char_free_noop(_text: *const c_char) {}
+        unsafe extern "C" fn port_free_count(_port: *mut ov_output_const_port_t) {
+            PORT_FREES.with(|cell| cell.set(cell.get() + 1));
+        }
+
+        macro_rules! panic_stub_v {
+            ($name:ident($($arg:ident: $ty:ty),* $(,)?)) => {
+                unsafe extern "C" fn $name($($arg: $ty),*) {
+                    panic!("port_info 注入测试不应调用 {}", stringify!($name));
+                }
+            };
+        }
+        macro_rules! panic_stub_r {
+            ($name:ident($($arg:ident: $ty:ty),* $(,)?) -> $ret:ty) => {
+                unsafe extern "C" fn $name($($arg: $ty),*) -> $ret {
+                    panic!("port_info 注入测试不应调用 {}", stringify!($name));
+                }
+            };
+        }
+
+        panic_stub_r!(stub_get_openvino_version(_v: *mut ov_version_t) -> i32);
+        panic_stub_v!(stub_version_free(_v: *mut ov_version_t));
+        panic_stub_r!(stub_core_create(_c: *mut *mut ov_core_t) -> i32);
+        panic_stub_v!(stub_core_free(_c: *mut ov_core_t));
+        panic_stub_r!(stub_read_model(
+            _core: *const ov_core_t,
+            _bytes: *const c_char,
+            _len: usize,
+            _weights: *const ov_tensor_t,
+            _model: *mut *mut ov_model_t,
+        ) -> i32);
+        panic_stub_r!(stub_compile_model(
+            _core: *const ov_core_t,
+            _model: *const ov_model_t,
+            _device: *const c_char,
+            _props: usize,
+            _compiled: *mut *mut ov_compiled_model_t,
+        ) -> i32);
+        panic_stub_v!(stub_compiled_model_free(_c: *mut ov_compiled_model_t));
+        panic_stub_r!(stub_create_infer_request(
+            _c: *const ov_compiled_model_t,
+            _r: *mut *mut ov_infer_request_t,
+        ) -> i32);
+        panic_stub_r!(stub_inputs_size(_c: *const ov_compiled_model_t, _n: *mut usize) -> i32);
+        panic_stub_r!(stub_input_by_index(
+            _c: *const ov_compiled_model_t,
+            _i: usize,
+            _p: *mut *mut ov_output_const_port_t,
+        ) -> i32);
+        panic_stub_r!(stub_outputs_size(_c: *const ov_compiled_model_t, _n: *mut usize) -> i32);
+        panic_stub_r!(stub_output_by_index(
+            _c: *const ov_compiled_model_t,
+            _i: usize,
+            _p: *mut *mut ov_output_const_port_t,
+        ) -> i32);
+        panic_stub_v!(stub_infer_request_free(_r: *mut ov_infer_request_t));
+        panic_stub_r!(stub_set_input_tensor(
+            _r: *mut ov_infer_request_t,
+            _t: *const ov_tensor_t,
+        ) -> i32);
+        panic_stub_r!(stub_infer(_r: *mut ov_infer_request_t) -> i32);
+        panic_stub_r!(stub_get_output_tensor(
+            _r: *const ov_infer_request_t,
+            _i: usize,
+            _t: *mut *mut ov_tensor_t,
+        ) -> i32);
+        panic_stub_v!(stub_tensor_free(_t: *mut ov_tensor_t));
+        panic_stub_r!(stub_tensor_create(
+            _e: ov_element_type_e,
+            _s: ov_shape_t,
+            _t: *mut *mut ov_tensor_t,
+        ) -> i32);
+        panic_stub_r!(stub_tensor_data(_t: *const ov_tensor_t, _d: *mut *mut c_void) -> i32);
+        panic_stub_r!(stub_tensor_get_shape(
+            _t: *const ov_tensor_t,
+            _s: *mut ov_shape_t,
+        ) -> i32);
+        panic_stub_r!(stub_tensor_get_byte_size(
+            _t: *const ov_tensor_t,
+            _n: *mut usize,
+        ) -> i32);
+        panic_stub_r!(stub_tensor_get_element_type(
+            _t: *const ov_tensor_t,
+            _e: *mut ov_element_type_e,
+        ) -> i32);
+        panic_stub_v!(stub_model_free(_m: *mut ov_model_t));
+        panic_stub_r!(stub_available_devices(
+            _c: *const ov_core_t,
+            _d: *mut ov_available_devices_t,
+        ) -> i32);
+        panic_stub_v!(stub_available_devices_free(_d: *mut ov_available_devices_t));
+        panic_stub_r!(stub_core_get_property(
+            _c: *const ov_core_t,
+            _k: *const c_char,
+            _n: *const c_char,
+            _v: *mut *mut c_char,
+        ) -> i32);
+        panic_stub_r!(stub_get_last_err_msg() -> *const c_char);
+
+        fn stub_api(shape_ok_path: bool, element_ok_path: bool, name_ok_path: bool) -> OvApi {
+            OvApi {
+                get_openvino_version: stub_get_openvino_version,
+                version_free: stub_version_free,
+                core_create: stub_core_create,
+                core_free: stub_core_free,
+                read_model_from_memory_buffer: stub_read_model,
+                // compile_model 为 C variadic 签名，Rust 稳定版无法声明 variadic
+                // stub：经 transmute 桥接（panic stub 永不被调，仅满足指针类型）。
+                compile_model: {
+                    #[allow(clippy::missing_transmute_annotations)]
+                    let bridged = unsafe {
+                        std::mem::transmute::<
+                            unsafe extern "C" fn(
+                                *const ov_core_t,
+                                *const ov_model_t,
+                                *const c_char,
+                                usize,
+                                *mut *mut ov_compiled_model_t,
+                            ) -> i32,
+                            _,
+                        >(stub_compile_model)
+                    };
+                    bridged
+                },
+                compiled_model_free: stub_compiled_model_free,
+                compiled_model_create_infer_request: stub_create_infer_request,
+                compiled_model_inputs_size: stub_inputs_size,
+                compiled_model_input_by_index: stub_input_by_index,
+                compiled_model_outputs_size: stub_outputs_size,
+                compiled_model_output_by_index: stub_output_by_index,
+                infer_request_free: stub_infer_request_free,
+                infer_request_set_input_tensor: stub_set_input_tensor,
+                infer_request_infer: stub_infer,
+                infer_request_get_output_tensor_by_index: stub_get_output_tensor,
+                tensor_free: stub_tensor_free,
+                tensor_create: stub_tensor_create,
+                tensor_data: stub_tensor_data,
+                tensor_get_shape: stub_tensor_get_shape,
+                tensor_get_byte_size: stub_tensor_get_byte_size,
+                tensor_get_element_type: stub_tensor_get_element_type,
+                shape_free: shape_free_noop,
+                model_free: stub_model_free,
+                const_port_get_shape: if shape_ok_path { shape_ok } else { shape_fail },
+                port_get_element_type: if element_ok_path {
+                    element_ok
+                } else {
+                    element_fail
+                },
+                port_get_any_name: if name_ok_path { name_ok } else { name_fail },
+                output_const_port_free: port_free_count,
+                free: char_free_noop,
+                core_get_available_devices: stub_available_devices,
+                available_devices_free: stub_available_devices_free,
+                core_get_property: stub_core_get_property,
+                get_last_err_msg: stub_get_last_err_msg,
+                version: String::new(),
+                element_line: ElementLine::Current,
+            }
+        }
+
+        fn sentinel_port() -> *mut ov_output_const_port_t {
+            // 非空哨兵：注入 stub 不解引用，仅计数释放。
+            0x1234 as *mut ov_output_const_port_t
+        }
+
+        #[test]
+        fn port_info_frees_port_when_shape_query_fails() {
+            let api = stub_api(false, true, true);
+            let failure = unsafe { port_info(&api, sentinel_port(), "model_session") }
+                .expect_err("shape 查询注入失败应返回候选失败");
+            assert_eq!(failure.error.0, "vision.backendStrictUnavailable");
+            assert_eq!(failure.stage, "model_session");
+            assert_eq!(failure.native_code, Some(FAIL_CODE));
+            assert_eq!(port_frees(), 1, "查询失败提前返回也必须释放 port");
+        }
+
+        #[test]
+        fn port_info_frees_port_when_element_query_fails() {
+            let api = stub_api(true, false, true);
+            let failure = unsafe { port_info(&api, sentinel_port(), "model_session") }
+                .expect_err("element 查询注入失败应返回候选失败");
+            assert_eq!(failure.error.0, "vision.backendStrictUnavailable");
+            assert_eq!(failure.native_code, Some(FAIL_CODE));
+            assert_eq!(port_frees(), 1, "查询失败提前返回也必须释放 port");
+        }
+
+        #[test]
+        fn port_info_frees_port_when_name_query_fails() {
+            let api = stub_api(true, true, false);
+            let failure = unsafe { port_info(&api, sentinel_port(), "model_session") }
+                .expect_err("name 查询注入失败应返回候选失败");
+            assert_eq!(failure.error.0, "vision.backendStrictUnavailable");
+            assert_eq!(failure.native_code, Some(FAIL_CODE));
+            assert_eq!(port_frees(), 1, "查询失败提前返回也必须释放 port");
+        }
+
+        #[test]
+        fn port_info_frees_port_exactly_once_on_success() {
+            let api = stub_api(true, true, true);
+            let info = unsafe { port_info(&api, sentinel_port(), "model_session") }
+                .expect("全成功路径应产出端口规格");
+            assert_eq!(info.name, "images");
+            assert_eq!(info.shape, vec![1, 3, 640, 640]);
+            assert_eq!(info.dtype, 0);
+            assert_eq!(port_frees(), 1, "成功路径统一走守卫释放，恰一次");
+        }
+    }
+
+    /// F06 真机门：输出预算在 SDK 复制之前检查。三形态：零预算 / 仅差一个对齐
+    /// 字节 / 多输出累加边界。「复制前 vs 复制后」的时序差异由实现结构保证
+    /// （检查位于 TensorData::new 之前），本门锚定的是预算边界语义与错误键。
+    #[test]
+    #[ignore = "真实 OpenVINO 运行库与模型（AM_SDK_OPENVINO_DIR）；F06 输出预算时序门"]
+    fn output_budget_boundaries_reject_before_copy() {
+        let _env = env_lock();
+        restore_ov_dir();
+        let bytes = std::fs::read(PARITY_MODEL).expect("模型文件缺失");
+        let api = match OvApi::load() {
+            Ok(api) => api,
+            Err(failure) => panic!("OpenVINO 运行库装载失败: {}", failure.reason),
+        };
+        let engine = unsafe { build(api.clone(), &bytes, CompileDevice::Cpu) }
+            .unwrap_or_else(|failure| panic!("引擎构造失败 stage={}", failure.stage));
+        let len = crate::sdk::byte_count(engine.inputs[0].dtype, &engine.inputs[0].shape).unwrap();
+        let input = TensorData::new(engine.inputs[0].clone(), &vec![0u8; len]).unwrap();
+        let outputs = engine
+            .infer(std::slice::from_ref(&input), usize::MAX)
+            .expect("充足预算基线推理");
+        assert!(!outputs.is_empty());
+        let allocs: Vec<usize> = outputs
+            .iter()
+            .map(|output| output.bytes().len().next_multiple_of(8))
+            .collect();
+        assert!(allocs.iter().all(|a| *a > 0), "输出分配额非正：{allocs:?}");
+        println!("budget-gate outputs={} allocs={allocs:?}", outputs.len());
+
+        // 形态1：零预算——第一个输出前即耗尽。
+        let error = match engine.infer(std::slice::from_ref(&input), 0) {
+            Err(error) => error,
+            Ok(_) => panic!("零预算必须耗尽"),
+        };
+        assert_eq!(error.error.0, "sdk.resourceExhausted");
+        assert!(error.native_ok);
+
+        // 形态2：仅差一个对齐字节（alloc-1 拒；单输出模型恰好 alloc 应通过）。
+        let error = match engine.infer(std::slice::from_ref(&input), allocs[0] - 1) {
+            Err(error) => error,
+            Ok(_) => panic!("差一个对齐字节必须耗尽"),
+        };
+        assert_eq!(error.error.0, "sdk.resourceExhausted");
+        if outputs.len() == 1 {
+            engine
+                .infer(std::slice::from_ref(&input), allocs[0])
+                .expect("单输出模型恰好预算应通过");
+        }
+
+        // 形态3：多输出累加——总量差一字节拒；恰好总量过；仅够前一输出时
+        // 在下一输出拒绝（修复点：不再越额复制完整输出后才报）。
+        if outputs.len() >= 2 {
+            let total: usize = allocs.iter().sum();
+            let error = match engine.infer(std::slice::from_ref(&input), total - 1) {
+                Err(error) => error,
+                Ok(_) => panic!("总量差一字节必须耗尽"),
+            };
+            assert_eq!(error.error.0, "sdk.resourceExhausted");
+            let delivered = engine
+                .infer(std::slice::from_ref(&input), total)
+                .expect("恰好全部输出预算应通过");
+            assert_eq!(delivered.len(), outputs.len());
+            let error = match engine.infer(std::slice::from_ref(&input), allocs[0]) {
+                Err(error) => error,
+                Ok(_) => panic!("仅够前一输出时后续输出必须耗尽"),
+            };
+            assert_eq!(error.error.0, "sdk.resourceExhausted");
+        } else {
+            println!(
+                "单输出模型：多输出累加形态不适用（outputs={}）",
+                outputs.len()
+            );
+        }
     }
 }
