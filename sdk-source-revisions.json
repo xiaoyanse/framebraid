@@ -1206,14 +1206,14 @@
     {
       "path": "crates/vision/src/sdk/batching_tests.rs",
       "previousSha256": null,
-      "sha256": "e59fb02120c10c2b0ef18bf9b642d5e0d87e55713f50a1757e4164df3891592f",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "6418a8e002a3cf2a0b6d1a5b5aac002ca4cc68d19f48aaa8c70ac2017c715b15",
+      "reason": "Audit 2026-11-16 F13 (sdk-fixf): unit test distinguishing two 2-item batches from one 4-item batch via Stats.max_batch_size"
     },
     {
       "path": "crates/vision/src/sdk/batching.rs",
       "previousSha256": null,
-      "sha256": "9a45fa9c21a071939ad2d4bed1696dae0b993c27060859881d58ddac38635da0",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "fa7077d2749daf2f392a6fe154a00cdb9b5c73fe41814287604c302a244965ca",
+      "reason": "Audit 2026-11-16 F13 fix (sdk-fixf): Stats adds max_batch_size so one physical batch of N is distinguishable from accumulated 2+2 splits; Rust-only, C ABI unchanged"
     },
     {
       "path": "crates/vision/src/sdk/mod.rs",
@@ -1254,8 +1254,8 @@
     {
       "path": "crates/vision/src/sdk/prepare/reference.rs",
       "previousSha256": null,
-      "sha256": "8c1ab84b5d8d25dc07ba90459297d47a2593e61a680c8b59610a9c4ab2d44837",
-      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+      "sha256": "6a0582591e216ca40db2e86adcb64836a4ddcbd46302081b37e79c5544c3415d",
+      "reason": "Audit 2026-11-16 F11 fix (sdk-fixf): oracle embeds frozen verbatim rgb copy (anchor pixels.rs sha256 9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e) instead of consuming production Pixels::rgb; u8-domain rewrites no longer pass both arms identically"
     },
     {
       "path": "crates/vision/src/sdk/prepare/tests.rs",
@@ -1722,8 +1722,8 @@
     {
       "path": "crates/vision-ffi/src/inference/batch_e2e_tests.rs",
       "previousSha256": null,
-      "sha256": "353673b6a69c8fc78f425a9e7265cbb9c46fe904444563bd178b202db2fc3022",
-      "reason": "test-debt cleanup cb72418 (ctx-guard RAII in e2e gates / poison-recovery lock acquire) and hotfix 314d2f8 exec_stage ordering fix — chain entries stale after those commits"
+      "sha256": "d423329dc1dc2294c9bff00bb0b8a9766226dc52a662e8c60e80948653abe9af",
+      "reason": "Audit 2026-11-16 F13 (sdk-fixf): batching gates assert max_batch_size==4 (single physical batch) via internal registry snapshot; ABI unchanged"
     },
     {
       "path": "crates/vision-ffi/src/inference/pool.rs",

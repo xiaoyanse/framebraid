@@ -442,6 +442,24 @@ fn world_e2e_cpu_real_vocab_pipeline() {
     unsafe { amv_model_close(tower as _, 0, std::ptr::null_mut()) };
 }
 
+/// F13：FFI am_batching_stats_t 只有累计计数，formed≥1&&batched≥4 可被两个
+/// 2 项批满足；经与 amv_model_get_batching 同源的内部攒批注册表补读单批最大
+/// 项数，让"四帧进同一物理批"可判定。公开 ABI 面不变（如需对外暴露批尺寸
+/// 观测属次版本演进，交发布线裁决）。
+fn batching_max_observed(model: usize) -> (u64, u64, u64) {
+    let entry = domain().active(model).expect("model entry");
+    let handle = entry
+        .data::<super::models::ModelHandle>()
+        .expect("ModelHandle");
+    let key = handle.info.key.load(std::sync::atomic::Ordering::Acquire);
+    let (_, counters) = super::scheduler::batching_snapshot(key);
+    (
+        counters.formed_batches,
+        counters.batched_items,
+        counters.max_batch_size,
+    )
+}
+
 /// 真实权重 GPU 全链：同帧 NV12 GPU 帧直传 vs CPU PNG 对拍（BT.601 往返容差）；
 /// 攒批窗口四帧真攒批 vs 逐帧单跑对拍（同后端，容差收紧）+窗口统计。
 #[test]
@@ -615,7 +633,7 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
     // 的负载敏感形态）——失败时整段重跑（reconfigure 重置统计，目的不降标：
     // 每轮仍须真实凑满 4 项同一物理批），三次未凑满才判失败（持续重载或回归，
     // 如实暴露）。对拍/背压断言失败不重试（数值回归必须立即失败）。
-    let mut last_note = String::new();
+    let mut last_note;
     for attempt in 1..=3 {
         if attempt > 1 {
             assert_eq!(
@@ -647,20 +665,24 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
             0
         );
         eprintln!(
-            "[world-gpu] 攒批统计 attempt={attempt} formed={} batched={} rejected={}",
-            stats.formed_batches, stats.batched_items, stats.rejected_items
+            "[world-gpu] 攒批统计 attempt={attempt} formed={} batched={} max_batch={} rejected={}",
+            stats.formed_batches,
+            stats.batched_items,
+            batching_max_observed(detector).2,
+            stats.rejected_items
         );
         assert_eq!(stats.rejected_items, 0, "不应触发准入背压");
-        if stats.formed_batches >= 1 && stats.batched_items >= 4 {
+        // F13：断言存在单个物理批含 4 项（max_batch==4），不再接受 2+2 拆批。
+        let (formed, batched, max_batch) = batching_max_observed(detector);
+        if formed >= 1 && max_batch == 4 {
+            assert!(batched >= 4, "累计成批项须覆盖四帧");
             break;
         }
-        last_note = format!(
-            "attempt {attempt}: formed={} batched={}",
-            stats.formed_batches, stats.batched_items
-        );
+        last_note =
+            format!("attempt {attempt}: formed={formed} batched={batched} max_batch={max_batch}");
         assert!(
             attempt < 3,
-            "四帧计入成批项三轮未凑满（{last_note}；持续重载或回归）"
+            "四帧同物理批三轮未凑满（{last_note}；持续重载或回归）"
         );
     }
     unsafe { amv_model_close(detector as _, 0, std::ptr::null_mut()) };

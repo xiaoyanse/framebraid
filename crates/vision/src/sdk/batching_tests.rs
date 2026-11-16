@@ -106,6 +106,46 @@ fn fill_trigger_takes_exactly_capacity_and_keeps_remainder_parked() {
 }
 
 #[test]
+fn max_batch_size_distinguishes_two_pairs_from_one_batch_of_four() {
+    // F13：累计口径 formed=2/batched=4 既可来自两个 2 项批，也可来自一个 4 项批；
+    // max_batch_size 必须把两者区分开，供"存在单批 4 项"的门断言。
+    let mut c: Coordinator<u32, u32> = Coordinator::default();
+    let mut stats = zero_stats();
+    let cfg = config(2, 50);
+    let Submitted::Flush(first) = c.submit(1, vec![1, 2], Some(cfg), 1, Instant::now(), &mut stats)
+    else {
+        panic!("容量 2 应凑满即发");
+    };
+    assert!(first.batched);
+    let Submitted::Flush(second) =
+        c.submit(1, vec![3, 4], Some(cfg), 1, Instant::now(), &mut stats)
+    else {
+        panic!("第二个容量 2 批应凑满即发");
+    };
+    assert!(second.batched);
+    assert_eq!(stats.formed_batches, 2);
+    assert_eq!(stats.batched_items, 4);
+    assert_eq!(stats.max_batch_size, 2, "两个 2 项批不构成单批 4");
+    let mut single = Coordinator::<u32, u32>::default();
+    let mut single_stats = zero_stats();
+    let Submitted::Flush(flush) = single.submit(
+        1,
+        vec![1, 2, 3, 4],
+        Some(config(4, 50)),
+        1,
+        Instant::now(),
+        &mut single_stats,
+    ) else {
+        panic!("容量 4 应凑满即发");
+    };
+    assert!(flush.batched);
+    assert_eq!(flush.items.len(), 4);
+    assert_eq!(single_stats.formed_batches, 1);
+    assert_eq!(single_stats.batched_items, 4);
+    assert_eq!(single_stats.max_batch_size, 4);
+}
+
+#[test]
 fn deadline_with_fewer_than_two_items_executes_per_item() {
     let mut c: Coordinator<u32, u32> = Coordinator::default();
     let mut stats = zero_stats();
