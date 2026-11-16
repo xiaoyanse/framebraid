@@ -32,6 +32,8 @@ GPU ROI 生产接入及本机对拍已完成，见 [OpenSpec](../openspec/change
 
 2026-11-16 进度（Intel 侧直传调研+原型，sdk-ovproto）：**Intel 线 GPU 前处理立项材料齐**——调研定通路（OV remote context 一条首选实锤：D3D11 VA_SHARED/VA_SURFACE 与现采集合同无缝、DML 因 D3D12 错配弃主线）+原型实跑验证（Arc 140T：通路全链走通+身份对拍过+**前处理 13.4ms→~1.4ms 边际、端到端 ≈3.1×**；resize 尚走标量参考内核=实现批明确优化抓手；两实证坑定位在案：OV scale 除法语义+D3D11→CL 同步点）。意外对照：同语义手写朴素标量复刻仅 1.1ms（vs SDK 生产 prepare 13.4ms，差距=纯实现形态）——SDK CPU prepare 路径存在独立优化空间（候选方向登记，位级等价路径预期 640² 口径 5-9×）。**实现批维持挂池等 AM-RT 联测反馈排期**（立项依据已齐）。数据 `.local/evidence/sdk-ovproto-20261116/`。
 
+2026-11-16 进度（演化模式第四波实施批，sdk-prepopt-wip 分支在途）：**CPU prepare 位级等价实现形态优化落地**（上条登记的候选方向实施；MVO=a+b 路径，u8 域/多线程按裁决不做）——行/列采样常数预计算+零权重单像素直采快速路（f32 按位退化证明在注释）+tap 边界去重+填充带常值直写+两段式行缓冲消除 NCHW 跨步写；位级等价三证保持（972 组合冻结 oracle 字节对拍、perf_prepare FNV 不变、真机 Pose 原始输出 SHA 不变）。实测 prepare 段 p50：NV12 640² 13.286→3.883ms（**3.42×**）、NV12 1080p 8.080→2.657ms（**3.04×**）、RGBA 1080p 4.859→1.801ms（2.70×）；分配 4→7（+25.6KB scratch）。分段探针修正归因：旧循环坐标链仅 ~4.5%（侦察高估）、归一化+跨步写 ~41%（侦察低估）；新结构剩余地板=单次 NV12 rgb 标量转换（640² 残余 ~72%）——**640² 3.42× 低于上条 5-9× 探索预期即此地板**（位级等价约束下 rgb 无法再降，如实登记不改口径）。sdk-source-revisions.json 按仓规登记修订。数据 `.local/evidence/sdk-prepopt-20261116/` + `docs/verification/sdk-prepopt-20261116.md`。
+
 开放词汇检测方向的扩展能力提案（词表绑定、嵌入配对校验、通用检测头解码、ROI 级联、提示词组、量化工具链等，源自下游探针实证）见 [EXTENSION_CAPABILITIES.md](EXTENSION_CAPABILITIES.md)；其中 ROI 级联与多模型流水线条目与本清单对应项细化衔接。
 
 ---

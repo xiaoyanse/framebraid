@@ -1248,8 +1248,8 @@
     {
       "path": "crates/vision/src/sdk/prepare.rs",
       "previousSha256": "bf97f1899375ee41dd7bbea511d067d50aa67c239f92d3b139094b3c856ba4a0",
-      "sha256": "cc1133fcbdf08405ec22300b67cdd218ddf45ef60cbfd2f1b875aae96879bd89",
-      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步"
+      "sha256": "592184fbf329b7b9e946b83e0e9f88a16e4a968170885e289db4009005675a85",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release；自适应攒批R5-2.1：双导出/窗口状态机/逐项准入接线与生成物同步；sdk-prepopt-20261116：CPU prepare 位级等价实现形态优化（行/列采样常数预计算+零权重单像素直采快速路+tap 边界去重+行缓冲两段归一化连续写出），972 组合冻结 oracle 字节对拍、FNV 与 Pose 原始输出 SHA 全链不变；公开接口/ABI 零变化"
     },
     {
       "path": "crates/vision/src/sdk/prepare/reference.rs",
@@ -1260,8 +1260,8 @@
     {
       "path": "crates/vision/src/sdk/prepare/tests.rs",
       "previousSha256": null,
-      "sha256": "5fb6243dee273586fbcdb107788710c689cde6d528b423f2ae9c650b370411e4",
-      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release"
+      "sha256": "49ebda05c2358c494b7a2c793553b938f6ac6f17360560ca3258dd90ba54d604",
+      "reason": "R2 reviewed direct preparation into owned aligned TensorData; eliminate one full temporary buffer/copy; frozen algorithm matrix, ownership/budget tests, real Pose/NV12/retained-camera CPU regressions; no public API/ABI change or release；sdk-prepopt-20261116：追加 #[ignore] 分段计时探针（手动取证用，不进常规门）"
     },
     {
       "path": "crates/vision/src/sdk/runtime.rs",
