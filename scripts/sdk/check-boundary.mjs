@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { verifySourceFiles } from './source-fingerprint.mjs';
+import { COVERAGE_EXEMPTIONS, verifySourceFiles } from './source-fingerprint.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
 const names = new Set([
@@ -48,5 +48,6 @@ console.log(
     businessDependencies: 0,
     externalLocalPaths: 0,
     checkedSourceFiles: checkedFiles,
+    coverageExemptions: COVERAGE_EXEMPTIONS.size,
   }),
 );

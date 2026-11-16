@@ -28,10 +28,45 @@ unsafe impl GlobalAlloc for CountingAllocator {
     }
 }
 
+/// 冻结期望值：R2 1.3 定档记录（docs/verification/sdk-r2-prepare-direct-20261026.md）。
+/// 绑定冻结条件——本源码固化的合成 RGBA 1920×1080 输入 + profile(640,false)
+/// letterbox/NCHW/f32 工作负载、CPU（纯 Rust prepare，无推理后端）。稳定漂移到
+/// 其他摘要不再是绿：门按此常量硬判，跨后端/新工作负载用 --expect-fnv 显式给值。
+const EXPECT_FNV_R2_13: u64 = 0xddf89c9aea3b3f3b;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().collect();
-    let samples: usize = args.get(1).map_or(Ok(100), |s| s.parse())?;
-    let warmup: usize = args.get(2).map_or(Ok(20), |s| s.parse())?;
+    // --expect-fnv <16hex>：显式期望摘要（覆盖内建冻结值）；位置参数不变。
+    let expect_flag = args.iter().position(|a| a == "--expect-fnv");
+    let expected_fnv = match expect_flag {
+        Some(index) => u64::from_str_radix(
+            args.get(index + 1)
+                .ok_or("--expect-fnv requires a 16-hex-digit value")?
+                .trim_start_matches("0x"),
+            16,
+        )
+        .map_err(|_| "--expect-fnv requires a 16-hex-digit value")?,
+        None => EXPECT_FNV_R2_13,
+    };
+    // 未知 --flag 显式报错：静默吞掉拼错的门参数会把硬判降级回默认值。
+    let mut positional: Vec<&str> = Vec::new();
+    let mut index = 1;
+    while index < args.len() {
+        if Some(index) == expect_flag {
+            index += 2;
+            continue;
+        }
+        if args[index].starts_with("--") {
+            return Err(format!("unknown argument: {}", args[index]).into());
+        }
+        positional.push(args[index].as_str());
+        index += 1;
+    }
+    let samples: usize = positional.first().map_or(Ok(100), |s| s.parse())?;
+    let warmup: usize = positional.get(1).map_or(Ok(20), |s| s.parse())?;
+    if positional.len() > 2 {
+        return Err("unexpected positional arguments".into());
+    }
     if !(1..=100_000).contains(&samples) || warmup > 10_000 {
         return Err("sample/warmup budget exceeded".into());
     }
@@ -85,9 +120,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         black_box(&tensor);
     }
+    let checksum = expected.ok_or("no output")?;
+    // F10 冻结摘要硬判：稳定漂移到其他摘要必须红，不再只靠轮内重复性。
+    if checksum != expected_fnv {
+        return Err(format!(
+            "output FNV {checksum:016x} != expected {expected_fnv:016x}; frozen workload drifted"
+        )
+        .into());
+    }
     println!(
-        "{{\"workload\":\"rgba1920x1080-letterbox640-nchw-f32\",\"warmup\":{warmup},\"samples_ns\":{durations:?},\"checksum_fnv1a64\":\"{:016x}\",\"rust_allocations_per_prepare\":{},\"rust_allocated_bytes_per_prepare\":{},\"clock_average_ns\":{clock_average_ns},\"checksum_total_ns_outside_timing\":{checksum_ns},\"boundary\":\"prepare only; excludes input generation, output hash and output drop\"}}",
-        expected.ok_or("no output")?, ALLOCS.load(Ordering::Relaxed), BYTES.load(Ordering::Relaxed)
+        "{{\"workload\":\"rgba1920x1080-letterbox640-nchw-f32\",\"warmup\":{warmup},\"samples_ns\":{durations:?},\"checksum_fnv1a64\":\"{checksum:016x}\",\"expect_fnv1a64\":\"{expected_fnv:016x}\",\"rust_allocations_per_prepare\":{},\"rust_allocated_bytes_per_prepare\":{},\"clock_average_ns\":{clock_average_ns},\"checksum_total_ns_outside_timing\":{checksum_ns},\"boundary\":\"prepare only; excludes input generation, output hash and output drop\"}}",
+        ALLOCS.load(Ordering::Relaxed), BYTES.load(Ordering::Relaxed)
     );
     Ok(())
 }

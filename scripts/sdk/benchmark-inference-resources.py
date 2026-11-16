@@ -19,6 +19,12 @@ sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / "sdk/bindings/python"))
 import amrt_sdk as a
 
+# F10 冻结期望：CPU 后端 + 冻结模型/输入的 Pose 原始输出 SHA-256（R2 1.3 定档
+# docs/verification/sdk-r2-prepare-direct-20261026.md；sdk-prepopt-20261116 旧新双
+# DLL 复核一致）。仅绑 CPU 执行与本脚本 main() 已核对的冻结模型/输入条件；跨后端
+# 数值差异走各自独立口径，不以本值判定。--expect-output-sha256 显式覆盖。
+EXPECTED_CPU_POSE_SHA256 = "1463641ea7696dfaa5eaa41087b1d804831fb1fe8ffa16225a0797f957c8e909"
+
 
 def sized(kind):
     value = kind()
@@ -189,6 +195,13 @@ def child(args):
         all_rows += record.get("observation_off",{}).get("rows",[])
         if len({row["output_sha256"] for row in all_rows})!=1:
             raise RuntimeError("output changed between warmup/rounds/control")
+        # F10 冻结摘要硬判：仅 CPU 臂绑定冻结期望；稳定漂移到其他摘要必须红。
+        if args.backend == a.AM_BACKEND_CPU:
+            expected = args.expect_output_sha256 or EXPECTED_CPU_POSE_SHA256
+            actual = all_rows[0]["output_sha256"]
+            record["expected_output_sha256"]=expected
+            if actual != expected:
+                raise RuntimeError(f"CPU frozen-output SHA mismatch: {actual} != expected {expected}")
         if len({row["request_id"] for row in all_rows})!=len(all_rows):
             raise RuntimeError("duplicate terminal request across windows")
         record["hardware_after"] = cached_report(lib, ctx)
@@ -233,6 +246,7 @@ def main(args):
         runtime_files={p.name:file_sha256(p) for p in sorted(args.runtime_dir.glob("*.dll"))},
         observer_commit=subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
         observer_files=files, samples=args.samples, request_rate=5,
+        expect_cpu_output_sha256=args.expect_output_sha256 or EXPECTED_CPU_POSE_SHA256,
         scope="CPU runtime real Pose; unavailable accelerator negative controls, no accelerated Run proof")
     (output / "identity.json").write_text(json.dumps(identity,indent=2)+"\n",encoding="utf-8")
     sources = output / "observer-sources"
@@ -247,6 +261,8 @@ def main(args):
             "--model",str(args.model.resolve()),"--input",str(args.input.resolve()),"--samples",str(args.samples)]
         if strict:
             command.append("--strict")
+        if args.expect_output_sha256:
+            command += ["--expect-output-sha256", args.expect_output_sha256]
         try:
             run=subprocess.run(command,capture_output=True,text=True,timeout=min(90,max(1,deadline-time.monotonic())))
         except subprocess.TimeoutExpired as error:
@@ -274,6 +290,8 @@ if __name__ == "__main__":
     parser.add_argument("--output",type=Path)
     parser.add_argument("--target-card",type=Path)
     parser.add_argument("--samples",type=int,default=20)
+    parser.add_argument("--expect-output-sha256",
+        help="override built-in frozen CPU output SHA expectation (F10)")
     parser.add_argument("--backend",type=int,choices=(0,1,2),default=0)
     parser.add_argument("--strict",action="store_true")
     parser.add_argument("--child",action="store_true")

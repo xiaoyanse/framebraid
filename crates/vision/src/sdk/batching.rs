@@ -24,6 +24,9 @@ pub struct Stats {
     pub batched_items: u64,
     pub timeout_batches: u64,
     pub rejected_items: u64,
+    /// 成批窗口的最大单批项数（F13）：formed/batched 为累计值，两个 2 项批与
+    /// 一个 4 项批在累计口径下不可区分；本计数让"存在单批 N 项"可判定。
+    pub max_batch_size: u64,
 }
 
 /// 校验 configure 入参。返回 None 表示关闭（flags 未置 ENABLE，此时不校验范围）。
@@ -82,6 +85,7 @@ fn flush_items<T>(items: Vec<T>, trigger: Trigger, stats: &mut Stats) -> WindowF
     if batched {
         stats.formed_batches += 1;
         stats.batched_items += items.len() as u64;
+        stats.max_batch_size = stats.max_batch_size.max(items.len() as u64);
         if trigger == Trigger::Deadline {
             stats.timeout_batches += 1;
         }

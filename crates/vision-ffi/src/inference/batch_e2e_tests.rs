@@ -87,6 +87,17 @@ fn stats(model: usize) -> am_batching_stats_t {
     out
 }
 
+/// F13：FFI 累计计数区分不了 2+2 拆批与单批 4；经与 amv_model_get_batching
+/// 同源的内部攒批注册表补读单批最大项数（公开 ABI 面不变，理由见 world 门）。
+fn max_batch_observed(model: usize) -> u64 {
+    let entry = domain().active(model).expect("model entry");
+    let handle = entry
+        .data::<super::models::ModelHandle>()
+        .expect("ModelHandle");
+    let key = handle.info.key.load(std::sync::atomic::Ordering::Acquire);
+    super::scheduler::batching_snapshot(key).1.max_batch_size
+}
+
 fn png_input(
     name: &str,
 ) -> (
@@ -228,6 +239,11 @@ fn batch_e2e_window_assembles_splits_and_keeps_identity() {
     let after = stats(model);
     assert!(after.formed_batches >= 1, "窗口应成物理批");
     assert!(after.batched_items >= 4, "逐项计入成批项");
+    assert_eq!(
+        max_batch_observed(model),
+        4,
+        "四路应进同一物理批而非 2+2 拆批"
+    );
 }
 
 /// 批 E 分期计费门：同一收紧预算（6MiB）下，旧口径（全周期估算峰值逐项
@@ -287,6 +303,7 @@ fn batch_e2e_staged_accrual_fills_window_under_tightened_budget() {
     let after = stats(model);
     assert!(after.formed_batches >= 1, "收紧预算下窗口仍应凑满成批");
     assert!(after.batched_items >= 4, "逐项计入成批项");
+    assert_eq!(max_batch_observed(model), 4, "收紧预算下四项仍应同物理批");
     assert_eq!(after.rejected_items, 0, "收紧预算下不应触发准入背压");
     // 全周期账目守恒：补账若未随执行释放，6MiB 预算已被占满、后续提交必拒。
     let extra = submit(ctx, model, "blue");
@@ -380,6 +397,7 @@ fn batch_e2e_dual_model_staggered_execution() {
         let after = stats(model);
         assert!(after.formed_batches >= 1, "双 Model 两窗都应成批");
         assert!(after.batched_items >= 4, "逐项计入成批项");
+        assert_eq!(max_batch_observed(model), 4, "双 Model 各窗四项应同物理批");
         assert_eq!(after.rejected_items, 0, "错峰执行不应触发准入背压");
     }
     // A 在 B 在途期间关闭排空：A 在途按关闭语义取消收口，B 不受干扰继续

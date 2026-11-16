@@ -3,6 +3,45 @@
 use super::{ImageTransform, Pixels, Preprocess, TensorData, TensorInfo};
 use crate::{Error, Result};
 
+// F11 冻结锚点：下方 frozen_rgb 逐字复刻自 crates/vision/src/sdk/pixels.rs 的
+// rgb()（提取时整文件 SHA-256: 9eac81bc4f430a8401049e79c25eecb8bcb03b451dd81fa50e83c80e9e99a75e，
+// 与 sdk-source-manifest.json 登记一致）。oracle 因此不再消费生产 Pixels::rgb：
+// 生产 rgb 语义漂移（如 u8 域改写）时两侧不再同错通过，972 字节对拍必红。
+// 有意变更像素变换时须评审后同步更新本冻结副本并改锚点指纹，禁止顺手同步。
+fn frozen_rgb(pixels: &Pixels<'_>, x: usize, y: usize) -> [f32; 3] {
+    let row = y * pixels.strides[0];
+    match pixels.format {
+        0 | 1 => {
+            let i = row + x * if pixels.format == 0 { 4 } else { 3 };
+            std::array::from_fn(|c| pixels.planes[0][i + c] as f32)
+        }
+        2 => {
+            let i = row + x * 3;
+            std::array::from_fn(|c| pixels.planes[0][i + 2 - c] as f32)
+        }
+        _ => {
+            let yy = pixels.planes[0][row + x] as f32;
+            let uv = (y / 2) * pixels.strides[1] + (x / 2) * 2;
+            let mut u = pixels.planes[1][uv] as f32 - 128.0;
+            let mut v = pixels.planes[1][uv + 1] as f32 - 128.0;
+            let luma = if pixels.color_range == 0 {
+                u *= 255.0 / 224.0;
+                v *= 255.0 / 224.0;
+                (yy - 16.0) * 255.0 / 219.0
+            } else {
+                yy
+            };
+            // 公开枚举是601=0/709=1/2020=2，不能沿用其他库的枚举偏移。
+            let (r, gu, gv, b) = match pixels.color_matrix {
+                1 => (1.5748, 0.187324, 0.468124, 1.8556),
+                2 => (1.4746, 0.164553, 0.571353, 1.8814),
+                _ => (1.402, 0.344136, 0.714136, 1.772),
+            };
+            [luma + r * v, luma - gu * u - gv * v, luma + b * u].map(|v| v.clamp(0.0, 255.0))
+        }
+    }
+}
+
 pub(super) fn prepare(
     pixels: &Pixels<'_>,
     name: &str,
@@ -78,10 +117,14 @@ pub(super) fn prepare(
                     .clamp(0.0, h as f32 - 1.0);
                 let (ix, iy) = (xx as usize, yy as usize);
                 let (fx, fy) = (xx - ix as f32, yy - iy as f32);
-                let a = pixels.rgb(ix, iy);
-                let b = pixels.rgb((ix + 1).min(w as usize - 1), iy);
-                let c = pixels.rgb(ix, (iy + 1).min(h as usize - 1));
-                let d = pixels.rgb((ix + 1).min(w as usize - 1), (iy + 1).min(h as usize - 1));
+                let a = frozen_rgb(pixels, ix, iy);
+                let b = frozen_rgb(pixels, (ix + 1).min(w as usize - 1), iy);
+                let c = frozen_rgb(pixels, ix, (iy + 1).min(h as usize - 1));
+                let d = frozen_rgb(
+                    pixels,
+                    (ix + 1).min(w as usize - 1),
+                    (iy + 1).min(h as usize - 1),
+                );
                 std::array::from_fn(|k| {
                     (a[k] * (1.0 - fx) + b[k] * fx) * (1.0 - fy)
                         + (c[k] * (1.0 - fx) + d[k] * fx) * fy
