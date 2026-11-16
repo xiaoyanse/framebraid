@@ -132,6 +132,24 @@ fn stream_get_status_validates_arguments_and_closed_session() {
 
 const RTMP_GATE_W: u32 = 320;
 const RTMP_GATE_H: u32 = 240;
+/// RTMP 门固定端口（rtmp-gate.yml 批脚本口径；run-camera-gates.ps1 按门串行避免争抢）。
+const RTMP_GATE_PORT: u16 = 11935;
+
+/// 端口占用预检（审计 F14）：11935 被其它进程持有（另一 RTMP 门并行/残留 mediamtx）
+/// 时门以 skip 收场并输出说明，而非 panic 或串台到他人服务端。预检后到本门
+/// mediamtx 起停之间存在窄 TOCTOU 窗口，靠批脚本串行口径兜底。
+fn rtmp_gate_port_free() -> bool {
+    std::net::TcpListener::bind(("127.0.0.1", RTMP_GATE_PORT)).is_ok()
+}
+
+/// 端口被占用的 skip 出口：带说明返回（libtest 记 ok）；说明走 stderr 且测试名
+/// 保持绿灯可辨——批脚本串行口径下正常不触发。
+fn rtmp_gate_skip_when_port_busy() {
+    eprintln!(
+        "SKIP: 127.0.0.1:{RTMP_GATE_PORT} 已被占用（另一 RTMP 门并行或残留 mediamtx？）；\
+         本门按 run-camera-gates.ps1 串行口径设计，占用即跳过"
+    );
+}
 
 fn repo_root() -> std::path::PathBuf {
     std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
@@ -257,14 +275,18 @@ fn rtmp_gate_status(stream: *mut amc_stream_t) -> am_stream_status_t {
 #[ignore = "回环 RTMP 真机门：需本机 MediaMTX+rtmp-gate.yml、系统 ffprobe/ffmpeg 与 AM_RT_FFMPEG_DIR 运行库；由 run-camera-gates.ps1 批 RTMP 调度"]
 fn rtmp_loopback_gate_pushes_valid_stream_and_exports_status() {
     let url = std::env::var("AM_SDK_RTMP_GATE_URL")
-        .unwrap_or_else(|_| "rtmp://127.0.0.1:11935/live/cam".to_string());
+        .unwrap_or_else(|_| format!("rtmp://127.0.0.1:{RTMP_GATE_PORT}/live/cam"));
     let url_c = std::ffi::CString::new(url.clone()).unwrap();
     let ffprobe = std::env::var("AM_SDK_FFPROBE").unwrap_or_else(|_| "ffprobe".to_string());
 
+    if !rtmp_gate_port_free() {
+        rtmp_gate_skip_when_port_busy();
+        return;
+    }
     let mut server = ServerGuard::start();
     assert!(
-        wait_tcp_open(11935, 60),
-        "mediamtx 未在 127.0.0.1:11935 监听（rtmp-gate.yml）"
+        wait_tcp_open(RTMP_GATE_PORT, 60),
+        "mediamtx 未在 127.0.0.1:{RTMP_GATE_PORT} 监听（rtmp-gate.yml）"
     );
 
     unsafe {
@@ -431,7 +453,10 @@ fn rtmp_loopback_gate_pushes_valid_stream_and_exports_status() {
         // 阶段四：断线重连臂——杀服务端，write 触发退避重连直至预算耗尽。
         let bytes_before_kill = status.bytes_written;
         server.kill();
-        assert!(wait_tcp_closed(11935, 40), "服务端端口未随进程退出释放");
+        assert!(
+            wait_tcp_closed(RTMP_GATE_PORT, 40),
+            "服务端端口未随进程退出释放"
+        );
 
         // write 将阻塞在重连退避（约 15s 预算）；并发 get_status 应观察到 tryAgain。
         let observer_key: StreamKey = stream as usize;
@@ -473,10 +498,12 @@ fn rtmp_loopback_gate_pushes_valid_stream_and_exports_status() {
             status.bytes_written >= bytes_before_kill,
             "断线不回退已计字节"
         );
+        // F08 回归锚点：捕获预算耗尽后的计数，阶段五首轮重连成功必须在此之上增量。
+        let attempts_after_exhaustion = status.reconnect_attempts;
 
         // 阶段五：重启服务端，write 内部重连成功续推。
         server = ServerGuard::start();
-        assert!(wait_tcp_open(11935, 60), "mediamtx 重启后未监听");
+        assert!(wait_tcp_open(RTMP_GATE_PORT, 60), "mediamtx 重启后未监听");
         assert_eq!(
             amc_stream_write(stream, &pixel),
             0,
@@ -495,6 +522,14 @@ fn rtmp_loopback_gate_pushes_valid_stream_and_exports_status() {
         assert!(
             status.reconnect_attempts > 0 && status.backoff_ms > 0,
             "历史重连/退避观测保留"
+        );
+        // F08：服务端恢复后的重连通常首轮即成功——该次真实重连尝试也必须登记，
+        // 只验历史 >0 抓不住快速恢复漏计（修复前此处增量为 0）。
+        assert!(
+            status.reconnect_attempts > attempts_after_exhaustion,
+            "首轮重连成功也必须累计重连尝试（F08）：{} → {}",
+            attempts_after_exhaustion,
+            status.reconnect_attempts
         );
         assert_eq!(
             status.last_error_status, AM_ERR_CAMERA_TIMEOUT,
@@ -529,6 +564,71 @@ const RTMP_MULTI_LANE_SPECS: [(u32, u32); 8] = [
 
 /// 泵线程结果：累计成功帧数，或首次 write 失败的描述。
 type PumpOutcome = Result<u64, String>;
+
+/// 泵线程 RAII 守卫（审计 F14）：Drop 置停止位并 join 全部泵——断言 panic 的
+/// 展开路径也回收泵线程，不 detach 残留到进程退出；正常路径经 finish() 取回结果。
+struct PumpGuard {
+    stop: Arc<AtomicBool>,
+    pumps: Vec<std::thread::JoinHandle<PumpOutcome>>,
+}
+
+impl PumpGuard {
+    fn new(stop: Arc<AtomicBool>, pumps: Vec<std::thread::JoinHandle<PumpOutcome>>) -> Self {
+        Self { stop, pumps }
+    }
+
+    /// 正常收尾：置停止位、逐路 join，返回各路结果（顺序=泵序）。
+    fn finish(&mut self) -> Vec<PumpOutcome> {
+        self.stop.store(true, Ordering::Release);
+        self.pumps
+            .drain(..)
+            .map(|pump| pump.join().expect("泵线程 panic"))
+            .collect()
+    }
+}
+
+impl Drop for PumpGuard {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Release);
+        for pump in self.pumps.drain(..) {
+            let _ = pump.join();
+        }
+    }
+}
+
+/// F14 常驻单测（RED 检查法固化）：守卫持有期间 panic 展开，Drop 必须停泵并
+/// join 全部泵线程——live 归零即"无 detach 残留"的可判定证据。
+#[test]
+fn pump_guard_stops_and_joins_pumps_on_panic_unwind() {
+    let stop = Arc::new(AtomicBool::new(false));
+    let live = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+    let pumps: Vec<std::thread::JoinHandle<PumpOutcome>> = (0..3)
+        .map(|_| {
+            let stop = stop.clone();
+            let live = live.clone();
+            std::thread::spawn(move || -> PumpOutcome {
+                live.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                while !stop.load(Ordering::Acquire) {
+                    std::thread::sleep(std::time::Duration::from_millis(5));
+                }
+                live.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
+                Ok(0)
+            })
+        })
+        .collect();
+    let guard = PumpGuard::new(stop, pumps);
+    let live_after = live.clone();
+    let unwind = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        let _guard = guard;
+        panic!("注入断言：验证 panic 展开路径停泵并 join（F14）");
+    }));
+    assert!(unwind.is_err(), "注入的断言必须触发展开");
+    assert_eq!(
+        live_after.load(std::sync::atomic::Ordering::SeqCst),
+        0,
+        "panic 展开路径 Drop 必须停泵并 join 全部泵线程，不得 detach 残留"
+    );
+}
 
 fn spawn_lane_probe(ffprobe: &str, url: &str) -> std::process::Child {
     std::process::Command::new(ffprobe)
@@ -588,13 +688,17 @@ fn rtmp_multi_lane_gate_pushes_concurrent_streams() {
         RTMP_MULTI_LANE_SPECS.len()
     );
     let base = std::env::var("AM_SDK_RTMP_GATE_MULTI_BASE")
-        .unwrap_or_else(|_| "rtmp://127.0.0.1:11935/live".to_string());
+        .unwrap_or_else(|_| format!("rtmp://127.0.0.1:{RTMP_GATE_PORT}/live"));
     let ffprobe = std::env::var("AM_SDK_FFPROBE").unwrap_or_else(|_| "ffprobe".to_string());
 
+    if !rtmp_gate_port_free() {
+        rtmp_gate_skip_when_port_busy();
+        return;
+    }
     let mut server = ServerGuard::start();
     assert!(
-        wait_tcp_open(11935, 60),
-        "mediamtx 未在 127.0.0.1:11935 监听（rtmp-gate.yml）"
+        wait_tcp_open(RTMP_GATE_PORT, 60),
+        "mediamtx 未在 127.0.0.1:{RTMP_GATE_PORT} 监听（rtmp-gate.yml）"
     );
 
     unsafe {
@@ -636,6 +740,7 @@ fn rtmp_multi_lane_gate_pushes_concurrent_streams() {
         }
 
         // 阶段二：每路独立泵线程（独立合成帧，尺寸匹配本路配置）30fps 并发写帧。
+        // 泵句柄随即收入 RAII 守卫：此后任一断言 panic 的展开路径也停泵并 join。
         let pump_stop = Arc::new(AtomicBool::new(false));
         let pumps: Vec<_> = streams
             .iter()
@@ -683,6 +788,7 @@ fn rtmp_multi_lane_gate_pushes_concurrent_streams() {
                 })
             })
             .collect();
+        let mut pump_guard = PumpGuard::new(pump_stop, pumps);
 
         // 建立发布路径：MediaMTX 在数据流动 ~1-2s 后才把路径置为 available，
         // 先并发泵 ~2.5s 再开始收流验证（期间各路持续泵送）。
@@ -738,10 +844,11 @@ fn rtmp_multi_lane_gate_pushes_concurrent_streams() {
             assert_eq!(rc, Some(0), "lane {lane} ffmpeg 2 秒接收窗口失败：{err}");
         }
 
-        // 阶段五：停泵回收——各路必须全程健康（零 write 失败）且帧数合理。
-        pump_stop.store(true, Ordering::Release);
-        for (lane, pump) in pumps.into_iter().enumerate() {
-            match pump.join().expect("泵线程 panic") {
+        // 阶段五：停泵回收（守卫正常路径）——各路必须全程健康（零 write 失败）且
+        // 帧数合理；此前任一断言 panic 时由 PumpGuard::drop 停泵并 join（F14）。
+        let outcomes = pump_guard.finish();
+        for (lane, outcome) in outcomes.into_iter().enumerate() {
+            match outcome {
                 Ok(frames) => assert!(frames >= 30, "lane {lane} 泵送帧数不足（{frames} < 30）"),
                 Err(failure) => panic!("lane {lane} 泵送失败：{failure}"),
             }
