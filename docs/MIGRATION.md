@@ -89,7 +89,7 @@ Capability-check and require ABI ≥1.6; the reboot-stable key is a vendor+model
 
 Identical to 1.5 — you follow enumeration order, which may land on an unexpected adapter after drift; verify the actual backend device via diagnostics.
 
-## ABI 1.6 → 1.7（v0.8.x RTMP 环节在途，`AM_ABI_VERSION` 65543；合同主文件 §2.10+附录 §2.9）
+## ABI 1.6 → 1.7（随 v0.8.1 发布，`AM_ABI_VERSION` 65543；合同主文件 §2.10+附录 §2.9）
 
 **变了什么 / What changed**：推流状态导出 `amc_stream_get_status(stream, am_stream_status_t*)`（`AM_ABI_VERSION` 65542→65543）：只读快照结构 `am_stream_status_t`——连接状态（`AM_STREAM_CONNECTED`=0 常态 / `AM_STREAM_DISCONNECTED`）、累计重连尝试、累计推送编码包载荷字节、最近一次实际等待的退避档、最近一次失败稳定码。纯新增导出+新结构，既有签名/布局/错误码零变化；write（含重连）持锁期间并发查询返回 `sdk.tryAgain`（可重试）。
 

@@ -1,5 +1,9 @@
 # FrameBraid Windows candidate / Windows 候选说明
 
+## v0.8.1 (2026-11-16) — RTMP stream status export (C ABI 1.7) + OV-native GPU targeting + CPU prepare 3×
+
+Quality/verification release, **C ABI 1.6 → 1.7 (65543, compatible addition)** — `amc_stream_get_status` read-only snapshot (connection state / cumulative reconnect attempts / cumulative pushed bytes / last backoff tier / last failure code); callers not using the new export behave exactly as on 1.6. First real RTMP-server loopback verification (MediaMTX: single-lane disconnect/reconnect arm + multi-lane 4–8 concurrent), two pre-existing reconnect-path defects fixed as surfaced by the gate. OpenVINO native engine (backend=4) now honors the device selector (GPU compile on Intel Arc 140T verified, C ABI unchanged). CPU `prepare` bit-exact restructure: NV12 1080p→640 8.08→2.66 ms (3.04×), 640² 3.42× — proven bitwise-equal by the 972-combination frozen oracle and the Pose full-chain SHA; internal optimization, no public-interface change. Integration docs: GPU direct-feed deployment guide (INTEGRATION), package layout guides rewritten to the current single-tree form. Honest boundaries: RTMP loopback-only (cross-machine/public, rtmps/rtmpt, hour-scale soak untested); DML/CUDA same-process mutual exclusion stands; verify `.local/evidence/sdk-rtmp-wip-20261115/` + `sdk-rtmp-multi-20261116/` + `sdk-ovgpu-20261115/` + `sdk-prepopt-20261116/`.
+
 ## v0.8.0 (2026-11-15) — device-targeting selector (Intel iGPU path opened)
 
 Feature release, **C ABI at 1.6 (65542, compatible addition)** — all existing paths unchanged; the selector is opt-in (omit the field and behavior is identical to v0.7.x).
