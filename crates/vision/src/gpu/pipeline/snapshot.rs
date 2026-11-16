@@ -59,7 +59,7 @@ impl GpuPipeline {
             pipeline: self,
         };
         let cached = unsafe {
-            registry::global()
+            self.registry
                 .lock()
                 .unwrap_or_else(|e| e.into_inner())
                 .acquire(&self.runtime, frame.texture)?
@@ -116,8 +116,14 @@ impl Nv12Snapshot {
             unsafe { (gpu.driver.ctx_set_current)(gpu.context) },
             "ROI tensor context",
         )?;
-        let input =
-            InferenceInput::new_batch(session, name, regions.len(), dst as usize, dst as usize)?;
+        let input = InferenceInput::new_batch(
+            session,
+            name,
+            regions.len(),
+            dst as usize,
+            dst as usize,
+            gpu.ordinal,
+        )?;
         let stride = input.tensor_bytes() / regions.len();
         let event = EventLease::acquire(&gpu.events, &gpu.driver)?;
         let mut transforms = Vec::with_capacity(regions.len());
@@ -141,6 +147,10 @@ impl Nv12Snapshot {
                     y,
                     if quantize_crop { 3 } else { 2 },
                     scale,
+                    0,
+                    0.0,
+                    0.0,
+                    1.0,
                 )?;
                 transforms.push(crate::sdk::ImageTransform {
                     width: w,

@@ -6,7 +6,7 @@ use std::{
     ffi::CString,
     path::Path,
     sync::{
-        atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, AtomicUsize, Ordering},
         Arc, Mutex, RwLock,
     },
 };
@@ -29,6 +29,10 @@ pub struct ModelHandle {
     /// 池借出标记（§3.5a）：0=调用方所有；非 0=所属池句柄键——amv_model_close
     /// 据此拒绝直关借出分片，排空关闭仅经 amv_pool_close。
     pub pool: AtomicUsize,
+    /// 会话 CUDA ordinal 的无锁镜像（F03）：级联快照路径不得取 session 锁
+    ///（GPU 级联测试形态在持有 session 锁下提交——内存记账冻结会话），GPU
+    /// 管线定向经此读取；加载时从 Model::cuda_ordinal 定值，运行期不变。
+    pub cuda_ordinal: AtomicU32,
 }
 impl Managed for ModelHandle {
     fn as_any(&self) -> &dyn Any {
@@ -426,6 +430,8 @@ unsafe fn load_inner(
             return Err(e);
         }
     };
+    // F03：ordinal 无锁镜像先取（model 即将 move 进 session 锁）。
+    let cuda_ordinal = model.cuda_ordinal;
     let handle = Arc::new(ModelHandle {
         session: Mutex::new(Some(model)),
         selection: Mutex::new(selection),
@@ -445,6 +451,7 @@ unsafe fn load_inner(
         notify: Arc::default(),
         vocab: RwLock::new(Arc::new(None)),
         pool: AtomicUsize::new(0),
+        cuda_ordinal: AtomicU32::new(cuda_ordinal),
     });
     let key = crate::domain().insert(parent, handle.clone())?;
     handle.info.key.store(key, Ordering::Release);

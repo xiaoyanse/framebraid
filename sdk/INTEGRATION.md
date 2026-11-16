@@ -99,7 +99,7 @@ if (rc != AM_OK) { /* rc=3 sdk.invalidArgument：零命中/越界=配置错误�
 
 ## GPU 帧直传部署侧启用（CUDA 输入路径）
 
-图像推理支持 GPU 帧直传输入（合同 [§3.3a](../docs/design/dual-dll-abi.md)）：`am_image_input_t.kind=AM_IMG_GPU_FRAME` + 尾部 `am_gpu_frame_ref_t`，帧保持 D3D11 纹理形态直达推理会话——NV12 采样→resize/letterbox/normalize 的预处理在 GPU 完成（CUDA kernel），经 IOBinding 直达 CUDA EP 输入张量，全程零 CPU 回读。
+图像推理支持 GPU 帧直传输入（合同 [§3.3a](../docs/design/dual-dll-abi.md)）：`am_image_input_t.kind=AM_IMG_GPU_FRAME` + 尾部 `am_gpu_frame_ref_t`，帧保持 D3D11 纹理形态直达推理会话——NV12 采样→resize/letterbox/normalize 的预处理在 GPU 完成（CUDA kernel），经 IOBinding 直达 CUDA EP 输入张量，全程零 CPU 回读。前处理语义与像素路径同档案同规则（detect 系 letterbox；classify 档案短边缩放+center crop，非方形输入与像素路径采同一中心窗口）；直传管线（上下文/纹理注册/输入张量分配）随会话定向的 CUDA 设备 ordinal 建立（多 GPU 并发路径已接线、未经双卡实测，单卡 ordinal 0 全链验证）。
 
 **何时选直传**：模型会话为 CUDA 后端，且源帧已是同进程 D3D11 纹理——典型是相机 D3D11VA 硬解订阅（合同 §2.6a `frame_kind=1`，经 `amc_gpu_frame_desc`/`amc_gpu_frame_texture` 组装帧引用）或宿主自产纹理。源帧在 CPU 内存时直传不适用：为直传先把像素上传成纹理反而多一次复制，走像素路径（`AM_IMG_PIXEL_VIEW`/encoded）即可。收益定性：CPU 像素路径的预处理段（三后端实测同值）约占帧延迟一半，直传后该段几乎全额收回，端到端同环对照达数倍级；剩余瓶颈转移到推理执行本身。不支持直传的会话（非 CUDA EP、互操作不可用）显式返回 `notSupported` 不静默降级，是否回退像素路径由宿主决策——像素路径永远可用，构成自然回退。
 

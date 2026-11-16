@@ -478,7 +478,7 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
     let _ = &labels;
     const FRAMES: [&str; 4] = ["seek_f030", "seek_f031", "s1_f013", "s1_f014"];
     let runtime = CudaApi::load().expect("cudart");
-    GpuPipeline::global().expect("GPU 管线");
+    GpuPipeline::for_device(0).expect("GPU 管线");
     unsafe { (runtime.set_device)(0) };
 
     let gpu_sync = |frame: &str, threshold: f32| -> (Vec<BoxHit>, Vec<f32>) {

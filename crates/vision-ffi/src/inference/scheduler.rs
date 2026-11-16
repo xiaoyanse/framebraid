@@ -191,8 +191,9 @@ fn release_model(engine: &Arc<Engine>, extra: usize) {
         // 进程最后一个推理会话释放（执行线程已 join）：显式关闭上下文清空
         // GPU 纹理注册缓存。此清理不得延后到 DLL detach/onexit——持 loader
         // lock 的 COM Release 触发 D3D11 纹理销毁会在驱动内永久等待（sdk-p2
-        // T1 挂死根因，详见 registry::release_for_shutdown）。
-        am_vision_core::gpu::registry::release_for_shutdown();
+        // T1 挂死根因，详见 pipeline::release_for_shutdown；F03 起注册缓存为
+        // 逐设备管线成员，清理亦逐设备执行）。
+        am_vision_core::gpu::pipeline::release_for_shutdown();
     }
 }
 pub fn wake() {

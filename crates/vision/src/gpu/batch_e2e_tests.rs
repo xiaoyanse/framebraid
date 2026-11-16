@@ -91,7 +91,7 @@ fn frame_binding(
         texture: texture.0,
     };
     pipeline
-        .preprocess_to_binding(&frame, session, input_name, SIZE, SIZE)
+        .preprocess_to_binding(&frame, session, input_name, SIZE, SIZE, false)
         .expect("GPU 预处理")
         .0
 }
@@ -122,7 +122,7 @@ fn gpu_batch_assembly_matches_single_runs() {
     let session = model.ort_session();
     let runtime = CudaApi::load().expect("cudart");
     unsafe { (runtime.set_device)(0) };
-    let pipeline = GpuPipeline::global().expect("GPU 管线");
+    let pipeline = GpuPipeline::for_device(0).expect("GPU 管线");
 
     let txt = build_txt_feats();
     // 四帧：各异亮度 → 各自 [1,3,640,640] 设备张量。

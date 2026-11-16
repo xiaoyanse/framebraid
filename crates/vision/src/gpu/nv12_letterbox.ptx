@@ -7,6 +7,11 @@
 // Bilinear is hand-rolled (no tex object path: ptxas rejects register texref form;
 // revisit with texture objects as a later zero-copy optimization).
 //
+// Classify center-crop mode (2026-11-16, F02): crop flag nonzero overrides the
+// letterbox mapping with the CPU classify rule (prepare.rs resize==2):
+// s = (d+0.5)/crop_scale - 0.5 + crop_src, source-window offsets in source pixels.
+// Letterbox pad is bypassed (rw/rh == dst dims from the caller).
+//
 .version 8.7
 .target sm_120
 .address_size 64
@@ -25,14 +30,18 @@
     .param .u32 origin_x,
     .param .u32 origin_y,
     .param .u32 sampling,
-    .param .f32 roi_scale
+    .param .f32 roi_scale,
+    .param .u32 crop,
+    .param .f32 crop_x,
+    .param .f32 crop_y,
+    .param .f32 crop_scale
 )
 {
-	.reg .pred p, q, parity, truncate;
+	.reg .pred p, q, parity, truncate, cropen;
 	// %r1=x %r2=y %r3=dst_w %r4=dst_h %r5=rw %r6=rh %r7=left %r8=top
 	// %r9=dx %r10=dy %r11=tmp %r12=hw %r13=sx0 %r14=sy0 %r15=sx1 %r16=sy1
 	// %r17=wgridx %r18=wgridy %r19=uvsx0 %r20=uvsy0 %r21=uvsx1 %r22=uvsy1
-	.reg .b32 %r<26>;
+	.reg .b32 %r<27>;
 	// %f1..=coords/weights, %f10=Y %f11=U %f12=V
 	.reg .f32 %f<48>;
 	.reg .b64 %rd<12>;
@@ -105,6 +114,26 @@
 	sub.f32 %f9, %f9, 0f3F000000;  // sx
 	mul.f32 %f1, %f2, %f8;
 	sub.f32 %f1, %f1, 0f3F000000;  // sy
+
+	// Classify center-crop override (F02): same op order as CPU prepare.rs
+	// ((d+0.5)/scale - 0.5 + crop_src). Border handling stays on the clamped
+	// integer neighbors below: both taps collapse to the clamped pixel, which
+	// equals CPU's float clamp of the coordinate.
+	ld.param.u32 %r26, [crop];
+	setp.ne.u32 cropen, %r26, 0;
+	@cropen ld.param.f32 %f44, [crop_scale];
+	@cropen cvt.rn.f32.s32 %f46, %r9;
+	@cropen add.f32 %f46, %f46, 0f3F000000;
+	@cropen div.rn.f32 %f9, %f46, %f44;
+	@cropen sub.f32 %f9, %f9, 0f3F000000;
+	@cropen ld.param.f32 %f45, [crop_x];
+	@cropen add.f32 %f9, %f9, %f45;
+	@cropen cvt.rn.f32.s32 %f46, %r10;
+	@cropen add.f32 %f46, %f46, 0f3F000000;
+	@cropen div.rn.f32 %f1, %f46, %f44;
+	@cropen sub.f32 %f1, %f1, 0f3F000000;
+	@cropen ld.param.f32 %f45, [crop_y];
+	@cropen add.f32 %f1, %f1, %f45;
 
     // ROI mode clamps interpolation to the cropped image before translating to the full planes.
     ld.param.u32 %r23, [sampling];

@@ -10,7 +10,7 @@ use am_sdk_support::{abi::*, context};
 use std::{
     ffi::{c_char, CString},
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
         Arc, Mutex,
     },
 };
@@ -50,6 +50,7 @@ fn stub_model(ctx: usize) -> usize {
         notify: Arc::default(),
         vocab: std::sync::RwLock::new(Arc::new(None)),
         pool: AtomicUsize::new(0),
+        cuda_ordinal: AtomicU32::new(0),
     });
     let key = domain().insert(ctx, handle).unwrap();
     state.models.fetch_add(1, Ordering::AcqRel);

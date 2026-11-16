@@ -17,7 +17,7 @@ use std::{
 };
 
 #[cfg(test)]
-use std::sync::atomic::AtomicUsize;
+use std::sync::atomic::{AtomicU32, AtomicUsize};
 
 pub(super) struct PoolHandle {
     pub(super) lanes: u32,
@@ -301,6 +301,7 @@ pub(super) fn stub_shard(ctx: usize, pool: usize, native_batch: u32) -> Result<u
         notify: Arc::default(),
         vocab: RwLock::new(Arc::new(None)),
         pool: AtomicUsize::new(0),
+        cuda_ordinal: AtomicU32::new(0),
     });
     let key = crate::domain().insert(pool, handle.clone())?;
     handle.info.key.store(key, Ordering::Release);

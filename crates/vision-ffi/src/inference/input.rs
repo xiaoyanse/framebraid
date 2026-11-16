@@ -24,6 +24,9 @@ pub struct Plan {
     pub gpu: Option<am_gpu_frame_ref_t>,
     pub assoc: Option<am_frame_assoc_t>,
     pub preprocess: Preprocess,
+    /// 会话 CUDA ordinal 快照（F03）：级联快照路径无锁取管线用——该路径
+    /// 不得锁 session（GPU 级联测试形态持 session 锁提交）。
+    cuda_ordinal: u32,
     /// 批 E 分期计费：挂起期实驻留（capture 产物——CPU 帧=planes/encoded
     /// 拷贝字节；GPU 帧=接受段设备输入张量 [1,3,H,W] F32=12B/像素）。
     pub pending: usize,
@@ -193,6 +196,9 @@ pub unsafe fn plan_item(
         gpu: None,
         assoc: None,
         preprocess,
+        cuda_ordinal: model
+            .cuda_ordinal
+            .load(std::sync::atomic::Ordering::Acquire),
         pending: 0,
         exec_charge: 0,
         cost: 0,
@@ -346,10 +352,15 @@ impl Plan {
 
     pub unsafe fn capture_image(&self, model: &ModelHandle, cascade: bool) -> Result<Input> {
         let cascade_gpu = if cascade {
+            // F03：快照管线随会话定向 ordinal（级联 GPU 路径合同仍限 CUDA:0，
+            // 网关在 cascade::plan）。ordinal 取 plan 快照——本路径不得锁
+            // session：GPU 级联测试形态在持有 session 锁下提交（内存记账
+            // 冻结会话），锁 session 即自死锁。
             self.gpu
                 .map(|gpu| unsafe {
                     use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
-                    let pipeline = GpuPipeline::global().map_err(|_| AM_ERR_SDK_NOT_SUPPORTED)?;
+                    let pipeline = GpuPipeline::for_device(self.cuda_ordinal)
+                        .map_err(|_| AM_ERR_SDK_NOT_SUPPORTED)?;
                     pipeline
                         .snapshot_nv12(&GpuFrameData {
                             width: gpu.width,
@@ -371,7 +382,12 @@ impl Plan {
             None
         };
         let gpu = match self.gpu {
-            Some(reference) if !cascade => Some(unsafe { capture_gpu(model, reference)? }),
+            Some(reference) if !cascade => Some(unsafe {
+                // F02：classify 档案（profile 前处理 resize==2）走 center crop，
+                // 与 CPU prepare.rs 语义对齐；detect 档案保持 letterbox。
+                let center_crop = self.preprocess.resize == 2;
+                capture_gpu(model, reference, center_crop)?
+            }),
             _ => None,
         };
         let mut input = Input {
@@ -416,7 +432,13 @@ impl Plan {
 /// GPU 帧接受段预处理（§3.3a）：会话须为 CUDA 且管线可用（显式输入不静默
 /// 降级，notSupported 与单帧执行路径同码）；接受线程同步完成互操作搬运与
 /// 预处理 kernel，产物为设备输入张量绑定——异步生命周期内不再触纹理。
-unsafe fn capture_gpu(model: &ModelHandle, gpu_ref: am_gpu_frame_ref_t) -> Result<GpuFrame> {
+/// center_crop 为 classify 档案语义（F02）；管线按会话定向的 CUDA ordinal
+/// 建立（F03，此前恒设备 0 与定向脱节）。
+unsafe fn capture_gpu(
+    model: &ModelHandle,
+    gpu_ref: am_gpu_frame_ref_t,
+    center_crop: bool,
+) -> Result<GpuFrame> {
     use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
     let guard = lock(&model.session)?;
     let session = guard.as_ref().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
@@ -428,7 +450,7 @@ unsafe fn capture_gpu(model: &ModelHandle, gpu_ref: am_gpu_frame_ref_t) -> Resul
     let Some((input_w, input_h)) = session.input_hw() else {
         return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
     };
-    let pipeline = GpuPipeline::global().map_err(error)?;
+    let pipeline = GpuPipeline::for_device(session.cuda_ordinal).map_err(error)?;
     let frame = GpuFrameData {
         width: gpu_ref.width,
         height: gpu_ref.height,
@@ -443,6 +465,7 @@ unsafe fn capture_gpu(model: &ModelHandle, gpu_ref: am_gpu_frame_ref_t) -> Resul
             &session.inputs[0].name,
             input_w,
             input_h,
+            center_crop,
         )
         .map_err(error)?;
     Ok(GpuFrame { binding, transform })
