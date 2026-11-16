@@ -81,17 +81,11 @@ const CONTROLLED_EXTENSIONS = new Set(['.rs', '.toml']);
 // 由 F12 盘点如实列示——登记与否交维护者裁决，不倒追登记）。豁免不是安全
 // 状态；表项失效（文件已删除或已登记）同样失败，防表腐烂。
 export const COVERAGE_EXEMPTIONS = new Map([
-  ['crates/am-camera/src/media/encode.rs', '历史新增核心源码未登记（待登记裁决，不倒追）'],
-  ['crates/am-camera/src/media/mux.rs', '历史新增核心源码未登记（待登记裁决，不倒追）'],
-  ['crates/am-camera/src/media/mux_blackhole_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
-  ['crates/am-camera/src/media/stream.rs', '历史新增核心源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/archive.rs', '历史新增核心源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/captures/requests_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/decoder/device_selector_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/frames/scale_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/stream.rs', '历史新增核心源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/stream/tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
-  ['crates/camera-ffi/src/subscriptions/hub/file.rs', '历史新增核心源码未登记（待登记裁决，不倒追）'],
+  ['crates/am-camera/src/media/mux_blackhole_tests.rs', '测试源码（受控提取语义外，维持豁免）'],
+  ['crates/camera-ffi/src/captures/requests_tests.rs', '测试源码（受控提取语义外，维持豁免）'],
+  ['crates/camera-ffi/src/decoder/device_selector_tests.rs', '测试源码（受控提取语义外，维持豁免）'],
+  ['crates/camera-ffi/src/frames/scale_tests.rs', '测试源码（受控提取语义外，维持豁免）'],
+  ['crates/camera-ffi/src/stream/tests.rs', '测试源码（受控提取语义外，维持豁免）'],
   ['crates/vision-ffi/src/inference/backends/backends_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
   ['crates/vision-ffi/src/inference/device_selector_e2e_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
   ['crates/vision-ffi/src/inference/receipt_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],

@@ -136,6 +136,42 @@
       "reason": "Audit 2026-11-16 F05 (sdk-fixc): register mux_blackhole directed-gate module (three local black-hole arms: handshake 15s bounded Timeout / tcp backpressure 5s Io / open-stop <2s); workspace green; C ABI unchanged; prior approved 4aaf3593 = S5 encoder/archive/stream (RTMP reconnect)"
     },
     {
+      "path": "crates/am-camera/src/media/encode.rs",
+      "previousSha256": null,
+      "sha256": "a3754c3b528e7f572497cf885783efde741218adadbb21e14c70742def808292",
+      "reason": "Backfill coverage registration (audit F12 old-account ruling 2026-11-16): S5 encoder (libx264 zerolatency, RGBA8 fixed-rate contract, queue no-drop semantics) shipped with v0.3.0, multi-release review chain in CHANGELOG [0.3.0]+; late-registered because file predates the fingerprint coverage check"
+    },
+    {
+      "path": "crates/am-camera/src/media/mux.rs",
+      "previousSha256": null,
+      "sha256": "ba149e725af7476d8dd53f43afc10180247d64cee1c68773574f33480632b043",
+      "reason": "Backfill coverage registration (audit F12 old-account ruling): S5 FLV/MP4 muxer + RTMP push with backoff ladder (v0.3.0), ABI 1.7 status counters (bf797e9), audit F05 avio_open2 interrupt callback + per-segment deadline refresh (2026-11-16); not in the historical extraction manifest (post-extraction new file)"
+    },
+    {
+      "path": "crates/am-camera/src/media/stream.rs",
+      "previousSha256": null,
+      "sha256": "96bcf62f3179e15fbadb2cbb146fe991b4d71c24464845d92e55d3bac9746d6d",
+      "reason": "Backfill coverage registration (audit F12 old-account ruling): S5 stream session (open/write/rebuild/close, try_lock status snapshot ABI 1.7) + audit F08 first-successful-rebuild reconnect accounting fix (2026-11-16); post-extraction new file"
+    },
+    {
+      "path": "crates/camera-ffi/src/archive.rs",
+      "previousSha256": null,
+      "sha256": "2caa7a132f71fa574ba836e1478eb910ec7b577f2a6d9bfc86be896bc86cda02",
+      "reason": "Backfill coverage registration (audit F12 old-account ruling): S5 frame-archive FFI surface (segmented MP4, finish error surfaced honestly); post-extraction new file"
+    },
+    {
+      "path": "crates/camera-ffi/src/stream.rs",
+      "previousSha256": null,
+      "sha256": "16c4c4722442c2dac71499b7faffbc92814d02678518f761080b2099c0db4506",
+      "reason": "Backfill coverage registration (audit F12 old-account ruling): amc_stream FFI surface (256B control-metadata budget, three-stage close, amc_stream_get_status export ABI 1.7); post-extraction new file"
+    },
+    {
+      "path": "crates/camera-ffi/src/subscriptions/hub/file.rs",
+      "previousSha256": null,
+      "sha256": "8c3005db45d653616bf35bd2b896b419c45387a6ca3c8663bd799d7fe80e592b",
+      "reason": "Backfill coverage registration (audit F12 old-account ruling): FILE-source subscription hub (v0.4.0 FILE source line); post-extraction new file"
+    },
+    {
       "path": "crates/am-camera/src/media/multipart.rs",
       "previousSha256": null,
       "sha256": "c984705791511b17b0add12f59e2caf01c37dc812465cefba69ac6fa4a242eb2",
