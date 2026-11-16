@@ -894,8 +894,8 @@
     {
       "path": "crates/vision-ffi/src/inference/input.rs",
       "previousSha256": "1ba60905b2c3b3df67406c77255ef45dcb42d8150796190c519f1097e25434cb",
-      "sha256": "38792c3f4062892eb32920bb1afbae2699a8c9c66c9ae231d8fbb805d98345aa",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 81d7d593e00b246fb2ae9509bfae835adf1d1af934286e00c0e7ab2b4365adf9"
+      "sha256": "89282879581940a90042ae24c8a45c0bc1c44f810861bf31cf9bd3f48b74b219",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 81d7d593e00b246fb2ae9509bfae835adf1d1af934286e00c0e7ab2b4365adf9；sdk-fixb audit F02/F03: capture_gpu carries classify center-crop semantics (preprocess.resize==2) and resolves GpuPipeline by session cuda_ordinal (was global device-0 singleton); cascade snapshot path resolves its pipeline from a Plan-snapshot of the handle's lock-free ordinal mirror (session lock forbidden on this path — the GPU cascade gate holds the session lock across submit); C ABI unchanged (prior SHA-256: 38792c3f4062892eb32920bb1afbae2699a8c9c66c9ae231d8fbb805d98345aa)"
     },
     {
       "path": "crates/vision-ffi/src/inference/mod.rs",
@@ -906,8 +906,8 @@
     {
       "path": "crates/vision-ffi/src/inference/models.rs",
       "previousSha256": "48358c280f984362be412bfbdf0835ab9dee963fe2011f14b5aa55190cb94356",
-      "sha256": "6a1f43b1d2b4d2a72a07a3ca5aaa6db7d407eda16a202b584f61f6c2a661be65",
-      "reason": "sdk-v08 V8.3: device_utf8 from core device_label - fixes DML rows reporting CPU and adds OpenVINO native label (debt from recon 2.1)"
+      "sha256": "1453178fe361c64e591296a834f001ce134f59789fcfa0c46f3deace97a2cd91",
+      "reason": "sdk-v08 V8.3: device_utf8 from core device_label - fixes DML rows reporting CPU and adds OpenVINO native label (debt from recon 2.1)；sdk-fixb audit F03: ModelHandle gains lock-free cuda_ordinal mirror (set at load from Model::cuda_ordinal) — the cascade snapshot path must not lock the session (GPU cascade gate submits while holding the session lock for memory accounting; first iteration locked and deadlocked, caught by the real-machine gate and redesigned to the lock-free snapshot; hot-swap installs a fresh handle so the mirror never goes stale); C ABI unchanged (prior SHA-256: 6a1f43b1d2b4d2a72a07a3ca5aaa6db7d407eda16a202b584f61f6c2a661be65)"
     },
     {
       "path": "crates/vision-ffi/src/inference/models/metadata.rs",
@@ -960,8 +960,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler.rs",
       "previousSha256": "337129dc7eaff01d7b59ba4e5288e0025c8fc03cc327f8c6da8a6d55c642ce70",
-      "sha256": "1493dad037d63eef55759b44027dd4198c789ad98d1e054106f272088cf7f111",
-      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged); sdk-p2 T1: drain GPU texture registry at last session release after engine join (exit-safety fix, see crates/vision/src/gpu/registry.rs entry)"
+      "sha256": "655d7189350ec13564274363351859ab882d9d4e844eca5b571348b667eb46fd",
+      "reason": "B1 multi-model budget: ctx executor exec slot (staggered execution-phase share accounting; batch I evaluation sdk-b1; single-model path unchanged); sdk-p2 T1: drain GPU texture registry at last session release after engine join (exit-safety fix, see crates/vision/src/gpu/registry.rs entry)；sdk-fixb audit F03: shutdown drain now calls pipeline::release_for_shutdown (per-device registries; registry global cache removed); C ABI unchanged (prior SHA-256: 1493dad037d63eef55759b44027dd4198c789ad98d1e054106f272088cf7f111)"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/admission.rs",
@@ -996,8 +996,8 @@
     {
       "path": "crates/vision-ffi/src/inference/scheduler/native_execution.rs",
       "previousSha256": "1818f69385b6b7d4eeadc5b9614bc3240fbb1748fd5028297647432bf6aef83f",
-      "sha256": "feef80bf2188adce4796f30517ba18f131fe11b2fbaeae5a946df3aa3a43cdb3",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 33b0e656d2b5e454ff6e11a6b5d8b3b920f4e87d666086f982949182b54a9207"
+      "sha256": "f01d1504a1e51c44b34b595352c0db80a1f2cd4054bd5f65b814ba97feb1b584",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 33b0e656d2b5e454ff6e11a6b5d8b3b920f4e87d666086f982949182b54a9207；sdk-fixb audit F03: GPU batch assembly resolves GpuPipeline by session cuda_ordinal (was global device-0 singleton); C ABI unchanged (prior SHA-256: feef80bf2188adce4796f30517ba18f131fe11b2fbaeae5a946df3aa3a43cdb3)"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/retired.rs",
@@ -1056,8 +1056,8 @@
     {
       "path": "crates/vision-ffi/src/inference/swap_tests.rs",
       "previousSha256": null,
-      "sha256": "9ea00b594cdcd42b3dff00c73fdb41bc9bbead0f80bf15f49007936f5ce87911",
-      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+      "sha256": "ebe540eca228bb0a1e1cb32725e793ace07e424a6cad0479e6daae4074af9ab9",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers；sdk-fixb audit F03: stub handle initializer gains the cuda_ordinal mirror field (prior SHA-256: 9ea00b594cdcd42b3dff00c73fdb41bc9bbead0f80bf15f49007936f5ce87911)"
     },
     {
       "path": "crates/vision-ffi/src/inference/telemetry_tests.rs",
@@ -1128,14 +1128,14 @@
     {
       "path": "crates/vision/src/gpu/driver_sys.rs",
       "previousSha256": null,
-      "sha256": "969d237282c18146b9a54418b0bac6ebe8c9b6e37954a38cf8f48b4b93af1787",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 4925f00082f4fb9512e6743561c1ddf1b0bb0656d0b2cd255adcbd9d5e9688c9"
+      "sha256": "a9d9f2ddba646f2e2565fff3a9523e6f4e585f37a2fd818eaca5092a0cd29f8e",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 4925f00082f4fb9512e6743561c1ddf1b0bb0656d0b2cd255adcbd9d5e9688c9；sdk-fixb audit F02/F03: establish_context takes the CUDA device ordinal (was hardcoded 0); KernelParams::push_f32 + launch_region extended with four classify center-crop parameters (crop flag/x/y/scale); C ABI unchanged (prior SHA-256: 969d237282c18146b9a54418b0bac6ebe8c9b6e37954a38cf8f48b4b93af1787)"
     },
     {
       "path": "crates/vision/src/gpu/e2e_tests.rs",
       "previousSha256": null,
-      "sha256": "07c8417264aead102f042e8db17d9950b9b4e613f5951bd8e5e3baeb42b28f5b",
-      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged"
+      "sha256": "91f10a954acf7840d2960ed2da1409581e419ccfaf16dba894faf5816a80f28b",
+      "reason": "R7 module visibility for mjpeg stream reader (pub(crate) http helpers); C ABI unchanged；sdk-fixb audit F02: new ignored real-GPU gate gpu_classify_center_crop_matches_cpu_mapping (640x480 NV12 -> 224 classify crop: CPU prepare transform parity + device-tensor readback vs independent kernel-semantics CPU mirror, max delta 1.79e-7); gates moved to for_device(0) (prior SHA-256: 07c8417264aead102f042e8db17d9950b9b4e613f5951bd8e5e3baeb42b28f5b)"
     },
     {
       "path": "crates/vision/src/gpu/interop_tests.rs",
@@ -1152,8 +1152,8 @@
     {
       "path": "crates/vision/src/gpu/iobinding.rs",
       "previousSha256": null,
-      "sha256": "39577de4b173017e3521266753906aa17e6b4f8ef83c46383ab94325203c5fb8",
-      "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）；批C：new_batch批形构造（[batch,3,h,w]，new委托batch=1保POC签名兼容）+batch_len/tensor_bytes查询（输出首轴对照与设备侧组装偏移/长度计算用）"
+      "sha256": "2c6812769e0d9922218632ef6bfcf0027751c9d27deb8b9008aed91bbd972051",
+      "reason": "M2b GPU direct path P0 segfault fix: ORT IoBinding retains the raw OrtMemoryInfo* passed to bind_output_to_device (pointer, not copy); InferenceInput::new previously dropped the CPU MemoryInfo on return, leaving the binding a dangling pointer - later run_binding/drop read freed heap, corrupting ORT C++ objects into delayed random AV. Fix: InferenceInput owns _output_info and _allocator through binding lifetime (drop order binding->tensor->info->allocator). Evidence: m2b-repro 8-11/12 pre-fix vs 0/12 control; post-fix 0/30+0/30, workspace green; C ABI unchanged；批B：InferenceInput 增 vocab 字段与 bind_vocab（嵌入按 CPU 内存绑定第二输入，数据拷入 OrtValue 拥有内存，与 run_ref CPU 输入构造同构）；批C：new_batch批形构造（[batch,3,h,w]，new委托batch=1保POC签名兼容）+batch_len/tensor_bytes查询（输出首轴对照与设备侧组装偏移/长度计算用）；sdk-fixb audit F03: new/new_batch take the CUDA device ordinal for MemoryInfo allocation (was hardcoded 0, mismatching sessions targeted at non-zero ordinals); C ABI unchanged (prior SHA-256: 39577de4b173017e3521266753906aa17e6b4f8ef83c46383ab94325203c5fb8)"
     },
     {
       "path": "crates/vision/src/gpu/mod.rs",
@@ -1164,8 +1164,8 @@
     {
       "path": "crates/vision/src/gpu/pipeline.rs",
       "previousSha256": null,
-      "sha256": "48cbe47a870b6b97042f85c454c2757c60b2b044f54d1238bafdc2f8866fca8c",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 20d3c4a0e6e231d6d6a5221438c76272de2248dea09888a571b1228606a02e5d"
+      "sha256": "6c6fc26bcde523020b4424afe54b949d8cb5bfd86e83d94ddc647ed464a9572b",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: 20d3c4a0e6e231d6d6a5221438c76272de2248dea09888a571b1228606a02e5d；sdk-fixb audit F02/F03: GpuPipeline cached per CUDA ordinal (per-device texture registry/context/pools; for_device replaces global singleton; successful pipelines process-lifetime as before); preprocess_to_binding carries classify center-crop semantics (crop_geometry mirrors CPU prepare.rs formula, transform metadata field-parity verified); release_for_shutdown drains per-device registries; C ABI unchanged (prior SHA-256: 48cbe47a870b6b97042f85c454c2757c60b2b044f54d1238bafdc2f8866fca8c)"
     },
     {
       "path": "crates/vision/src/gpu/preprocess_tests.rs",
@@ -1224,8 +1224,8 @@
     {
       "path": "crates/vision/src/sdk/model.rs",
       "previousSha256": "02ad69628441c476132ca3521e8a232c2bda92fda54d698aac05eac1a4775abd",
-      "sha256": "014472dc9abfbc95baae2806b47cfdbef8f23899945ea58e88c5dfff31d64190",
-      "reason": "sdk-v08 V8.3 device targeting: resolve selector to rewritten candidates at selection consumption point (zero-match/instance-overflow rejected synchronously as sdk.invalidArgument; selector overrides CUDA device_id), pass ov_gpu flag into session creation, register E1 native engine observation bit, expose device_label for am_backend_actual_t.device_utf8；sdk-ovgpu: OV-native candidates join the selector DXGI match domain (need_dxgi covers backend 4), GPU targeting passes selector+vendor guard word into the engine, device_label reflects the actually compiled engine device (OpenVINO:GPU when the OV GPU domain is used); selector-absent backend 4 stays CPU (zero behavior change)"
+      "sha256": "580276e848ff0823744ac92bd3f1bb8e042dd5db87eb7040e1b2c1a9844e3be4",
+      "reason": "sdk-v08 V8.3 device targeting: resolve selector to rewritten candidates at selection consumption point (zero-match/instance-overflow rejected synchronously as sdk.invalidArgument; selector overrides CUDA device_id), pass ov_gpu flag into session creation, register E1 native engine observation bit, expose device_label for am_backend_actual_t.device_utf8；sdk-ovgpu: OV-native candidates join the selector DXGI match domain (need_dxgi covers backend 4), GPU targeting passes selector+vendor guard word into the engine, device_label reflects the actually compiled engine device (OpenVINO:GPU when the OV GPU domain is used); selector-absent backend 4 stays CPU (zero behavior change)；sdk-fixb audit F03: Model gains cuda_ordinal (selection.selected backend 2, same source as device_label CUDA:{n}; 0 otherwise) so GPU direct-transfer resolves its pipeline by the session's actual device; C ABI unchanged (prior SHA-256: 014472dc9abfbc95baae2806b47cfdbef8f23899945ea58e88c5dfff31d64190)"
     },
     {
       "path": "crates/vision/src/sdk/vocab.rs",
@@ -1710,8 +1710,8 @@
     {
       "path": "crates/vision/src/gpu/registry.rs",
       "previousSha256": null,
-      "sha256": "e6ca2ffbbfc2dd5f5588df1b807be12701c1e1095a59f6a97d65f8194f8d7682",
-      "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）；sdk-p2 T1：atexit 退出清理移除（DLL onexit/DllMain 上下文持 loader lock 执行 COM Release/驱动调用，实测退出挂死与 0xC0000005），改为显式关闭路径 drain（FFI scheduler 末位会话释放调用 release_for_shutdown），未显式 close 的宿主不在 detach 上下文补做阻塞清理"
+      "sha256": "c2f7e9187ec8cb575da06ff83a916df5a3ed7f08bc73727cd9bda3a42787a331",
+      "reason": "A线GPU直传三靶点优化（会话内复用）：设备缓冲池化复用替代每帧cudaMalloc/cudaFree、纹理注册缓存（COM AddRef保活+LRU16）替代每帧register/unregister、kernel完成事件同步替代cuCtxSynchronize全上下文同步；纯内部优化零合同面（判决实验与验证见.local/tests/gpu-pipeline-opt）；sdk-p2 T1：atexit 退出清理移除（DLL onexit/DllMain 上下文持 loader lock 执行 COM Release/驱动调用，实测退出挂死与 0xC0000005），改为显式关闭路径 drain（FFI scheduler 末位会话释放调用 release_for_shutdown），未显式 close 的宿主不在 detach 上下文补做阻塞清理；sdk-fixb audit F03: registry becomes a per-GpuPipeline device member (registrations are context-bound; per-device LRU), process-global REGISTRY static removed, shutdown drain moved to pipeline::release_for_shutdown; single-GPU behavior unchanged; C ABI unchanged (prior SHA-256: e6ca2ffbbfc2dd5f5588df1b807be12701c1e1095a59f6a97d65f8194f8d7682)"
     },
     {
       "path": "crates/vision-ffi/src/inference/scheduler/exec_stage.rs",
@@ -1728,8 +1728,8 @@
     {
       "path": "crates/vision-ffi/src/inference/pool.rs",
       "previousSha256": null,
-      "sha256": "a398347b4264d770bf7b39b3992089d75fe6a02010b8f25e4564a855d45fe3ab",
-      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+      "sha256": "89c4de71e89964dd829ef65fc8d0b8cb96144f5bd0c0436989daf3239f831e86",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers；sdk-fixb audit F03: shard handle initializer gains the cuda_ordinal mirror field (prior SHA-256: a398347b4264d770bf7b39b3992089d75fe6a02010b8f25e4564a855d45fe3ab)"
     },
     {
       "path": "crates/vision-ffi/src/inference/pool_tests.rs",
@@ -1740,26 +1740,26 @@
     {
       "path": "crates/vision-ffi/src/inference/exports_tests.rs",
       "previousSha256": null,
-      "sha256": "6ecfae7fdf5c85f0578f7c0f37e86eda8ca89b4e40254719002173a5f4ab3084",
-      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers"
+      "sha256": "18d0f291cfc1cba69f6ecb49882d45db4a315faf48161b738299d76e5d90caf2",
+      "reason": "P1.3 inference pool implementation: three exports (create/lane_model/close), borrowed-handle close guard via ModelHandle.pool marker, atomic rollback, registry-cascade lifecycle; includes batching.rs two-phase-lock TOCTOU fix (single-lock upsert) — pre-existing production race the pool contract provably triggers；sdk-fixb audit F03: stub handle initializer gains the cuda_ordinal mirror field (prior SHA-256: 6ecfae7fdf5c85f0578f7c0f37e86eda8ca89b4e40254719002173a5f4ab3084)"
     },
     {
       "path": "crates/vision-ffi/src/inference/pool_e2e_tests.rs",
       "previousSha256": null,
-      "sha256": "d996ae479aadc2527351fc78c7f222e7b2009c602f902a8e7182e47b01b3080e",
-      "reason": "P1.5 pool e2e gates: GPU-direct sharded full flow + CPU-pixel batch-2 arm"
+      "sha256": "8c3b94075ac9b4e8e4cc6219c69ba582192f9f0916e60b23bf1aa9fe477569ec",
+      "reason": "P1.5 pool e2e gates: GPU-direct sharded full flow + CPU-pixel batch-2 arm；sdk-fixb audit F03: gate moved to GpuPipeline::for_device(0) (renamed entry point, behavior unchanged; prior SHA-256: d996ae479aadc2527351fc78c7f222e7b2009c602f902a8e7182e47b01b3080e)"
     },
     {
       "path": "crates/vision/src/gpu/nv12_letterbox.ptx",
       "previousSha256": null,
-      "sha256": "51579530ba101eb9f469f12daa37f38b873fe9fa5dd7f16cdca4f297ba2cc863",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: e289c8e6b66fd0c6799454af69db8723e91452d3bf44ed49cefe6a5b2d4a1247"
+      "sha256": "b34e44acfc60890709525d6fd8be24b5ec0ca32ad13869f9b0940f8bba26f904",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: e289c8e6b66fd0c6799454af69db8723e91452d3bf44ed49cefe6a5b2d4a1247；sdk-fixb audit F02: predicated classify center-crop mapping mode (s=(d+0.5)/crop_scale-0.5+crop_src, same op order as CPU prepare.rs resize==2); crop flag 0 keeps letterbox/ROI modes instruction-identical; JIT-verified on sm_120, kernel-output readback parity 1.79e-7 vs independent CPU mirror (prior SHA-256: 51579530ba101eb9f469f12daa37f38b873fe9fa5dd7f16cdca4f297ba2cc863)"
     },
     {
       "path": "crates/vision/src/gpu/pipeline/roi_prototype.rs",
       "previousSha256": null,
-      "sha256": "30a9b47bcc687f6bb00ce2af62a6b7bdae736e199f6452c6b6e8613bf2209423",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: f57aa922b2c8cfc8ba208534e4fc8ef8c4aabda99dad24082f02897efdeee2a7"
+      "sha256": "f3454816a068c8ecd47ab3b94011659498a79263576f1047ff51429ef0c46e0c",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: f57aa922b2c8cfc8ba208534e4fc8ef8c4aabda99dad24082f02897efdeee2a7；sdk-fixb audit F03: uses per-pipeline device registry and for_device(0); launch_region call gains zero-crop arguments (behavior unchanged; prior SHA-256: 30a9b47bcc687f6bb00ce2af62a6b7bdae736e199f6452c6b6e8613bf2209423)"
     },
     {
       "path": "crates/vision-ffi/src/inference/gpu_cascade_e2e_tests.rs",
@@ -1776,8 +1776,8 @@
     {
       "path": "crates/vision/src/gpu/pipeline/snapshot.rs",
       "previousSha256": null,
-      "sha256": "6955d2f082b197132e2606b493593b6035dc848d145d508c58a964171e87eb60",
-      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry"
+      "sha256": "9b13aeb4cca0bfda02b51a6f5e2d837a1f944dfccf575320689fe3933e6943ce",
+      "reason": "GPU NV12 cascade integration candidate based on b230ecd. Adds bounded request-owned snapshot, optional intra-frame batch 4, lifecycle checks and replay validation. Prior approved SHA-256: new fingerprint entry；sdk-fixb audit F03: snapshot path uses the per-pipeline device registry and ordinal-bound tensor allocation; launch_region call gains zero-crop arguments (behavior unchanged; prior SHA-256: 6955d2f082b197132e2606b493593b6035dc848d145d508c58a964171e87eb60)"
     },
     {
       "path": "crates/vision/src/sdk/device.rs",

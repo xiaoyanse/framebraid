@@ -240,7 +240,7 @@ fn vocab_e2e_gpu_direct_injection_matches_cpu() {
     let (w, h) = (640usize, 640usize);
     let nv12 = vec![128u8; w * h * 3 / 2];
     let runtime = CudaApi::load().expect("cudart");
-    GpuPipeline::global().expect("GPU 管线");
+    GpuPipeline::for_device(0).expect("GPU 管线");
     let texture = unsafe { nvidia_nv12_texture(640, 640).expect("NV12 纹理") };
     unsafe {
         (runtime.set_device)(0);

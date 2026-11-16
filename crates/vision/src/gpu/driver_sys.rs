@@ -24,6 +24,9 @@ impl KernelParams {
     pub fn push_u32(&mut self, value: u32) {
         self.slots.push(value as usize);
     }
+    pub fn push_f32(&mut self, value: f32) {
+        self.slots.push(value.to_bits() as usize);
+    }
     pub fn push_u64(&mut self, value: u64) {
         self.slots.push(value as usize);
     }
@@ -78,12 +81,16 @@ impl DriverApi {
     /// primary → cuCtxGetCurrent 取句柄（本机 cuDevicePrimaryCtxRetain 直调
     /// 报 INVALID_DEVICE 的驱动行为，2026-10-29 实测；runtime 激活等价）。
     /// 上下文生命周期由 primary 引用计数管理，不显式销毁。
-    pub fn establish_context(self: &Arc<Self>) -> Result<*mut c_void, crate::Error> {
+    /// ordinal 为目标 CUDA 设备（F03：随会话定向接线；此前恒 0 与非 0 定向脱节）。
+    pub fn establish_context(self: &Arc<Self>, ordinal: u32) -> Result<*mut c_void, crate::Error> {
         // primary 版：与 runtime API / ORT CUDA EP 同一 primary（管线用）
         self.check(unsafe { (self.cu_init)(0) }, "cuInit")?;
         let runtime =
             super::cuda_sys::CudaApi::load().map_err(|_| crate::Error("cudart 不可用".into()))?;
-        self.check(unsafe { (runtime.set_device)(0) }, "runtime设备激活")?;
+        self.check(
+            unsafe { (runtime.set_device)(ordinal.min(i32::MAX as u32) as i32) },
+            "runtime设备激活",
+        )?;
         let mut context: *mut c_void = std::ptr::null_mut();
         let code = unsafe { (self.ctx_get_current)(&mut context) };
         if code != 0 || context.is_null() {
@@ -212,10 +219,14 @@ impl KernelModule {
         out_ptr: u64,
     ) -> Result<(), crate::Error> {
         self.launch_region(
-            y_ptr, uv_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, 0, 1.0,
+            y_ptr, uv_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, 0, 1.0, 0,
+            0.0, 0.0, 1.0,
         )
     }
 
+    /// 完整参数面（含 classify center-crop 四参数，F02）：crop 非 0 时 kernel
+    /// 以 (d+0.5)/crop_scale - 0.5 + crop_{x,y} 重写采样映射（源域窗口偏移），
+    /// letterbox/ROI 调用方传 crop=0 保持原行为。
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn launch_region(
         &self,
@@ -233,6 +244,10 @@ impl KernelModule {
         y: u32,
         sampling: u32,
         roi_scale: f32,
+        crop: u32,
+        crop_x: f32,
+        crop_y: f32,
+        crop_scale: f32,
     ) -> Result<(), crate::Error> {
         let mut params = KernelParams::new();
         params.push_u64(y_ptr);
@@ -248,7 +263,11 @@ impl KernelModule {
         params.push_u32(x);
         params.push_u32(y);
         params.push_u32(sampling);
-        params.push_u32(roi_scale.to_bits());
+        params.push_f32(roi_scale);
+        params.push_u32(crop);
+        params.push_f32(crop_x);
+        params.push_f32(crop_y);
+        params.push_f32(crop_scale);
         let mut pointers: Vec<*mut c_void> = params
             .pointers()
             .into_iter()

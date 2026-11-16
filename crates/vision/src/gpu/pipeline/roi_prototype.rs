@@ -65,6 +65,7 @@ impl GpuPipeline {
                 chunk.len(),
                 dst as usize,
                 dst as usize,
+                self.ordinal,
             )?);
         }
         let mut map_count = 0;
@@ -72,7 +73,7 @@ impl GpuPipeline {
         let mut source_bytes = 0;
         {
             let cached = unsafe {
-                registry::global()
+                self.registry
                     .lock()
                     .unwrap_or_else(|e| e.into_inner())
                     .acquire(&self.runtime, frame.texture)?
@@ -123,6 +124,10 @@ impl GpuPipeline {
                         roi.y,
                         1,
                         scale,
+                        0,
+                        0.0,
+                        0.0,
+                        1.0,
                     )?;
                     transforms.push(crate::sdk::ImageTransform {
                         width: roi.w,
@@ -500,7 +505,7 @@ fn real_detector_roi_prototype() {
     let detector = PathBuf::from(std::env::var_os("FB_ROI_MODEL").unwrap());
     let mut model = Model::load(ModelSource::Path(&detector), None, 2, true, 4).unwrap();
     assert!(model.is_cuda());
-    let pipeline = GpuPipeline::global().unwrap();
+    let pipeline = GpuPipeline::for_device(0).unwrap();
     let runtime = unsafe { libloading::Library::new(ort_dir.join("cudart64_13.dll")) }.unwrap();
     let mem_info = unsafe { *runtime.get::<MemInfo>(b"cudaMemGetInfo\0").unwrap() };
     let texture = unsafe { super::super::interop::nvidia_nv12_texture(1920, 1080) }.unwrap();

@@ -370,7 +370,8 @@ fn run_profile_gpu(
     overhead: usize,
 ) -> Result<Vec<(usize, Arc<ResultBuffer>)>> {
     use am_vision_core::gpu::pipeline::GpuPipeline;
-    let pipeline = GpuPipeline::global().map_err(error)?;
+    // F03：组装管线随会话定向 ordinal（与逐帧 capture 的管线同设备）。
+    let pipeline = GpuPipeline::for_device(session.cuda_ordinal).map_err(error)?;
     let frames: Vec<&am_vision_core::gpu::iobinding::InferenceInput> = indices
         .iter()
         .map(|i| match &inputs[*i] {

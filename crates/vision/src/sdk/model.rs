@@ -202,6 +202,10 @@ pub struct Model {
     /// 实际执行设备标签（am_backend_actual_t.device_utf8 语义）：CUDA:{ordinal}/
     /// DML[{:dxgi}]/OpenVINO:{CPU|GPU}/CPU——定向命中后反映解析结果（§3.5b）。
     pub device_label: String,
+    /// CUDA 会话的设备 ordinal（F03：GPU 直传管线/输入张量按此接线；非 CUDA
+    /// 后端恒 0 不参与任何判定）。与 device_label 的 "CUDA:{ordinal}" 同源
+    /// （selection.selected），数值供程序化消费免解析字符串。
+    pub cuda_ordinal: u32,
     pub fallback: bool,
     pub(super) batch: u32,
     selection: super::selection::BackendSelectionReport,
@@ -393,6 +397,11 @@ impl Model {
                 },
                 None => "CPU".to_owned(),
             };
+            // CUDA 定向 ordinal（F03）：GPU 直传按会话实际设备接线（非 CUDA 恒 0）。
+            let cuda_ordinal = match selection.selected {
+                Some(target) if target.backend == 2 => target.device_id,
+                _ => 0,
+            };
             let (inputs, outputs, batch) = match &engine {
                 ModelEngine::Ort(session) => ort_io_and_batch(session)?,
                 ModelEngine::Ov(engine) => (engine.inputs.clone(), engine.outputs.clone(), 0),
@@ -441,6 +450,7 @@ impl Model {
                 profile: p,
                 actual_backend,
                 device_label,
+                cuda_ordinal,
                 fallback: selection.attempts.len() > 1,
                 batch,
                 selection: selection.clone(),

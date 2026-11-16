@@ -3,12 +3,14 @@
 //! 提前 Release 不销毁纹理对象，unregister 时对象必然有效；指针键唯一性
 //! 同样由引用计数保证（保活期间同地址不会复用为新纹理）。容量超限按 LRU
 //! 逐出，逐出即 unregister+Release（发生在已设置 CUDA current context 的
-//! 管线线程，与注册同线程惯例）。
+//! 管线线程，与注册同线程惯例）。F03 起缓存为 GpuPipeline 设备级成员
+//!（注册资源绑定创建时上下文，多卡各持独立缓存；进程清理由
+//! pipeline::release_for_shutdown 逐设备执行）。
 use super::cuda_sys::CudaApi;
 use super::interop::RegisteredTexture;
 use std::collections::{HashMap, VecDeque};
 use std::ffi::c_void;
-use std::sync::{Arc, Mutex, OnceLock};
+use std::sync::{Arc, Mutex};
 
 /// LRU 键序（纯逻辑独立可测）：touch 移尾、push 追加、超限从最旧逐出。
 struct LruOrder {
@@ -119,7 +121,7 @@ impl TextureRegistry {
     }
 
     /// 退出清理：逐条 drop（unregister → Release，字段序保证先后）。
-    fn drain(&mut self) {
+    pub(crate) fn drain(&mut self) {
         let entries = std::mem::take(&mut self.entries);
         self.order.clear();
         for (_, entry) in entries {
@@ -131,33 +133,6 @@ impl TextureRegistry {
 impl Default for TextureRegistry {
     fn default() -> Self {
         Self::new()
-    }
-}
-
-/// 进程级注册缓存（GpuPipeline 与显式关闭清理共享）。
-static REGISTRY: OnceLock<Mutex<TextureRegistry>> = OnceLock::new();
-
-pub fn global() -> &'static Mutex<TextureRegistry> {
-    REGISTRY.get_or_init(|| Mutex::new(TextureRegistry::new()))
-}
-
-/// 显式关闭路径的注册清理（sdk-p2 T1）：在最后一个推理会话释放时由 FFI
-/// 层调用，unregister/COM Release 均发生在调用方线程（无 loader lock、
-/// 驱动工作线程存活），D3D11 对象销毁可正常完成。
-///
-/// 不得在 DLL 的 onexit/DLL_PROCESS_DETACH 上下文做本清理（旧 atexit 方案）：
-/// 该表在 DllMain 内执行——持 loader lock，COM Release 触发的纹理销毁在
-/// nvwgf2umx 内部同步等待永不完成（实测挂死）；ExitProcess 直退路径下更
-/// 早于本清理的 cudart detach 已带着残留注册拆 primary 上下文（实测
-/// 0xC0000005 回调已释放地址）。未显式 close 的宿主由 OS 回收，SDK 不在
-/// detach 上下文补做阻塞清理。
-pub fn release_for_shutdown() {
-    if let Some(registry) = REGISTRY.get() {
-        // 与管线取用同款毒化恢复；末位会话已释放，无并发取用者。
-        let mut registry = registry
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        registry.drain();
     }
 }
 

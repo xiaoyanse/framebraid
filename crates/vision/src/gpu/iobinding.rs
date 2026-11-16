@@ -26,25 +26,34 @@ pub struct InferenceInput {
 
 impl InferenceInput {
     /// 在 session 的 CUDA device 上分配 [1, 3, h, w] f32 输入张量并绑定。
-    pub fn new(session: &Session, input_name: &str, h: usize, w: usize) -> Result<Self, Error> {
-        Self::new_batch(session, input_name, 1, h, w)
+    /// device 为目标 CUDA 设备 ordinal（F03：随会话定向；此前恒 0）。
+    pub fn new(
+        session: &Session,
+        input_name: &str,
+        h: usize,
+        w: usize,
+        device: u32,
+    ) -> Result<Self, Error> {
+        Self::new_batch(session, input_name, 1, h, w, device)
     }
 
     /// 批 C 图像攒批：分配 [batch, 3, h, w] f32 设备张量并绑定（batch=1 与
     /// `new` 等价；批量轴为首位，逐帧预处理输出按 batch 维组装进此张量）。
+    /// device 为目标 CUDA 设备 ordinal（与管线/会话 EP 同设备，F03）。
     pub fn new_batch(
         session: &Session,
         input_name: &str,
         batch: usize,
         h: usize,
         w: usize,
+        device: u32,
     ) -> Result<Self, Error> {
         if batch == 0 || batch > 64 {
             return Err(Error("vision.dynamicRangeExceeded".into()));
         }
         let memory = MemoryInfo::new(
             AllocationDevice::CUDA,
-            0,
+            device.min(i32::MAX as u32) as i32,
             AllocatorType::Device,
             MemoryType::Default,
         )

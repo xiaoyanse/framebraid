@@ -10,7 +10,7 @@ use am_sdk_support::{abi::*, context};
 use std::{
     mem::size_of,
     sync::{
-        atomic::{AtomicBool, AtomicUsize, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicUsize, Ordering},
         Arc, Mutex,
     },
 };
@@ -119,6 +119,7 @@ fn realtime_policy_validates_bounds_and_takes_effect_on_model() {
         notify: Arc::default(),
         vocab: std::sync::RwLock::new(Arc::new(None)),
         pool: AtomicUsize::new(0),
+        cuda_ordinal: AtomicU32::new(0),
     });
     let key = domain().insert(ctx, handle.clone()).unwrap();
     state.models.fetch_add(1, Ordering::AcqRel);

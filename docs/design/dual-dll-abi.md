@@ -759,7 +759,14 @@ runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力�
   归还/释放帧）；同步调用借用至返回，异步借用至请求**接受**（GPU 预处理在接受段同步
   完成，纹理不跨异步生命周期——与 encoded 输入同借用语义）
 - 预处理在 GPU 完成（CUDA kernel：NV12 采样→模型输入格式 resize/letterbox/normalize，
-  按档案输入形状），经 IOBinding 直达 CUDA EP 输入张量；全程零 CPU 回读
+  按档案输入形状），经 IOBinding 直达 CUDA EP 输入张量；全程零 CPU 回读；前处理语义与
+  像素路径同档案同规则——detect/pose/segment/obb 档案 letterbox（min 比例+114 填边），
+  classify 档案短边等比缩放+center crop（与 §4.2 classify 前处理一致；非方形输入两路径
+  采同一中心窗口，2026-11-16 F02 起生效——此前 GPU 实现恒 letterbox 与像素路径分叉）
+- 设备域（2026-11-16 F03 起）：GPU 直传管线（CUDA 上下文/纹理注册缓存/输入张量分配）按
+  会话定向解析的 CUDA ordinal 建立，与 CUDA EP 会话同设备；多 GPU 并发（同进程多 ordinal
+  管线并存）代码路径已接线但未经双卡实测（单卡 ordinal 0 全链验证）。级联 GPU 帧路径
+  维持 §级联合同既有的 CUDA:0 两级约束不变
 - **显式输入不静默降级**：kind=GPU_FRAME 而模型会话不支持（非 CUDA EP/互操作不可用/
   输入格式不支持）返回 `notSupported`；回退是宿主决策（能力查询后改用 PIXEL_VIEW——
   像素路径永远可用，构成自然回退），SDK 内部不做隐式转换（隐式转换需回读，正是本

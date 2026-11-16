@@ -444,7 +444,7 @@ fn pool_e2e_sharded_batching_gpu_direct_full_flow() {
     }
 
     let runtime = CudaApi::load().expect("cudart");
-    GpuPipeline::global().expect("GPU 管线");
+    GpuPipeline::for_device(0).expect("GPU 管线");
     unsafe { (runtime.set_device)(0) };
     let frames = ["seek_f030", "seek_f031", "s1_f013", "s1_f014"];
     let textures: Vec<am_vision_core::gpu::interop::Com> = frames
