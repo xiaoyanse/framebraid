@@ -244,15 +244,14 @@ Python `CameraContext.probe_decode_hardware()`返回dict，`get_decode_hardware_
 
 **当前源码仓库保留 `sdk/`，不要照搬旧平铺源码包的相对路径。** 下文 `SDK_ROOT` 指向包含 `include/bindings/examples` 的那一层，当前仓库为 `仓库根/sdk`。源码不附运行库和模型权重，独立构建后仍须提供相应依赖。若自行构建 DLL，将 `DLL_DIR` 和 `LIB_DIR` 指向 Cargo 的实际输出目录即可，不需要先制作运行包。
 
-先按实际解压位置设置变量。以下目录是部署示例，请替换为自己的路径：
+先按实际解压位置设置变量。以下目录是部署示例，请替换为自己的路径（v0.2.0 起 Windows 包为单树布局：`sdk/` 内含 DLL 与 include/bindings，**不带导入库与运行库**——运行库目录自备；v0.1.0 预览包的四目录布局见[预编译包指南](../docs/USE_PREBUILT.md)附录）：
 
 ```powershell
 $PKG_ROOT = 'C:\AMRT-SDK\windows-x64'
 $SDK_ROOT = Join-Path $PKG_ROOT 'sdk'
-$DLL_DIR = Join-Path $PKG_ROOT 'bin/win-x64'
-$LIB_DIR = Join-Path $PKG_ROOT 'lib/win-x64'
-$FFMPEG_DIR = Join-Path $PKG_ROOT 'runtime/ffmpeg'
-$ORT_DIR = Join-Path $PKG_ROOT 'runtime/onnxruntime-cpu'
+$DLL_DIR  = $SDK_ROOT   # 双 DLL 直接位于 sdk/ 下
+$FFMPEG_DIR = 'D:\runtimes\ffmpeg'      # 自备，不放包内
+$ORT_DIR    = 'D:\runtimes\onnxruntime' # 自备，不放包内
 $WORK = 'C:\AMRT-SDK\my-app'
 New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 ```
@@ -269,7 +268,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 
 - Windows x64、x64 调用进程。C# 编译指定 `x64`，Python 使用 64 位版本。
 - 需要兼容的 Microsoft Visual C++ 2015–2022 Redistributable x64。已有兼容版本无需重装；缺失时使用 [Microsoft 官方安装入口](https://aka.ms/vs/17/release/vc_redist.x64.exe)，核实安装程序签名。不要复制其他电脑的 System32 DLL。
-- 本运行包提供 CPU 推理依赖；CUDA、OpenVINO 的 provider、插件、驱动并不随 CPU 包交付。查询到硬件不代表相应推理后端已可用，不把编译通过视为 GPU 执行验收。
+- 运行库与模型权重不随包交付（CPU 推理依赖同样自备，见上表）；CUDA、OpenVINO 的 provider、插件、驱动不随包。查询到硬件不代表相应推理后端已可用，不把编译通过视为 GPU 执行验收。
 - 相机支持 RTSP H.264/H.265/MJPEG 和 ISAPI 抓图；独立解码器接收完整 H.264/H.265 Annex B AU。任意网络分片、长度前缀包需调用方先装配/转换，不能直接当完整 AU 提交。
 - Java、Linux、macOS、Android/iOS 及硬件解码不是本 Windows x64 CPU 包的运行承诺。源码可移植设计与各平台实际交付分别核验。
 
@@ -278,7 +277,7 @@ New-Item -ItemType Directory -Path $WORK -Force | Out-Null
 | SDK | 初始化参数 | 运行库 |
 | --- | --- | --- |
 | camera | `runtime_dirs_utf8 = [FFMPEG_DIR]` | `avcodec-63`、`avformat-63`、`avutil-61`、`swresample-7`、`swscale-10` 对应 DLL |
-| vision | `runtime_dirs_utf8 = [ORT_DIR]` | 包内固定版本 `onnxruntime.dll` |
+| vision | `runtime_dirs_utf8 = [ORT_DIR]` | 自备 `onnxruntime.dll`（CPU 线；版本矩阵见 [SUPPORT](../docs/SUPPORT.md)） |
 
 SDK DLL 搜索与上述运行库目录是两件事。Python 用 SDK DLL 绝对路径；C# 的 P/Invoke 将 SDK DLL 放到程序目录或仅为当前进程设置 DLL 搜索 PATH；C/C++ 可将两 DLL 放在 EXE 旁。FFmpeg 与 ORT 目录仍由初始化参数传入，不要将它们混成一个目录或随意换成其他版本。运行库档案的许可边界（纯解码/推理用 LGPL minimal 档案即可、编码推流需要 GPL 构建、各自分发义务）见[运行库许可选择指引](../docs/RUNTIME-LICENSING.md)。
 
@@ -398,11 +397,11 @@ $env:PATH = "$DLL_DIR;" + $env:PATH
 
 PATH 改动只作用于当前 PowerShell 和子进程；也可将 SDK DLL 部署在自己的 EXE 目录。不要安装进 System32。`using` 按子资源在前、父资源在后退出，`BorrowView/BorrowPixel` 返回的指针只在拥有者存活期间有效；长期保存用复制接口。
 
-## 6. C / C++17：公开头、导入库和真实调用顺序
+## 6. C / C++17：公开头、链接方式和真实调用顺序
 
-C 入口为 `include/am_camera.h`、`include/am_vision.h`，公共结构为 `am_sdk_types.h`。Windows C/C++ 链接 `lib/win-x64/*.dll.lib`，运行时仍需相应 DLL。C++ 可直接调用同一 C ABI，也可参考 `examples/inference.cpp` 的 RAII 封装；没有另一个 C++ 编译器专属 ABI。
+C 入口为 `include/am_camera.h`、`include/am_vision.h`，公共结构为 `am_sdk_types.h`。Windows C/C++ 接入现行包**无附带导入库**：动态装载（`LoadLibraryEx`/`GetProcAddress`）或从 DLL 自生成导入库（`lib /def: /machine:x64`），运行时仍需相应 DLL。C++ 可直接调用同一 C ABI，也可参考 `examples/inference.cpp` 的 RAII 封装；没有另一个 C++ 编译器专属 ABI。
 
-在 x64 Native Tools 命令环境中，以实际路径设置 `SDK_ROOT`、`LIB_DIR`、`WORK`。编译已有示例的命令为：
+在 x64 Native Tools 命令环境中，以实际路径设置 `SDK_ROOT`、`LIB_DIR`（你自生成导入库的目录，如 `%WORK%\lib`——现行包不附带，先用 `lib /def:am_vision.def /machine:x64` 从 DLL 生成）、`WORK`。编译已有示例的命令为：
 
 ```bat
 cl /nologo /utf-8 /W4 /WX /I "%SDK_ROOT%\include" "%SDK_ROOT%\examples\inference.c" /Fe:"%WORK%\inference_c.exe" /Fo:"%WORK%\inference_c.obj" /link /LIBPATH:"%LIB_DIR%" am_vision.dll.lib
@@ -433,7 +432,7 @@ Python SDK 异常有 `code/message/source/retryable/fault_class`；C# 有 `Statu
 
 ## 7A. v0.3 扩展能力接入（E1 / M5 / S5）
 
-v0.3.0 起公开的三组扩展入口。合同语义以 [ABI 设计](../docs/design/dual-dll-abi.md)为准，本节只给接入要点。三组入口均为 C ABI 导出：Python 高层 `safe_sdk` 暂未封装（可经 `amrt_sdk.py` 函数表调用），C# 经 P/Invoke，C/C++ 直接链接 `lib/win-x64`。
+v0.3.0 起公开的三组扩展入口。合同语义以 [ABI 设计](../docs/design/dual-dll-abi.md)为准，本节只给接入要点。三组入口均为 C ABI 导出：Python 高层 `safe_sdk` 暂未封装（可经 `amrt_sdk.py` 函数表调用），C# 经 P/Invoke，C/C++ 走上文动态装载/自生成导入库路径。
 
 ### E1：OpenVINO 原生引擎（`AM_BACKEND_OPENVINO_NATIVE=4`）
 
