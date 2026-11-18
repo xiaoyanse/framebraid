@@ -1,0 +1,40 @@
+{
+ "schemaVersion": 1,
+ "profileId": "classify-yolo11n-prob-v1",
+ "image": {
+  "path": "reference/images/bus.jpg",
+  "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63"
+ },
+ "generated": {
+  "sdkVersion": "0.8.2",
+  "abiVersion": "1.7",
+  "backend": "cpu",
+  "date": "2026-11-19",
+  "harness": "ffi-ctypes",
+  "params": "profile-defaults(am_infer_params_t=NULL,conf0.25/iou0.7/maxDet300未覆盖)",
+  "weights": {
+   "file": "yolo11n-cls.onnx",
+   "sha256": "f09e6d9a5aa89888b3a5689fbcfb919480c0d8853d66432b7b61d2ff6ee571da"
+  }
+ },
+ "crossCheck": {
+  "impl": "onnxruntime+manual-decode",
+  "onnxruntime": "1.24.1",
+  "imageDecode": "image-crate-0.25.10(zune-jpeg,与SDK同源,消除解码器噪声)",
+  "verdicts": [
+   {"item": "instance count", "pass": true, "sdk": 5, "independent": 5},
+   {"item": "classify top-1", "pass": true, "sdkClass": 654, "indClass": 654, "probDiff": 0.0, "passProb": true},
+   {"item": "classify top-5 prob diff", "pass": true, "maxDiff": 0.0}
+  ]
+ },
+ "instances": [
+  {"classId": 654, "probability": 0.4632564},
+  {"classId": 734, "probability": 0.3311919},
+  {"classId": 466, "probability": 0.0577825},
+  {"classId": 408, "probability": 0.0303935},
+  {"classId": 874, "probability": 0.0147376}
+ ],
+ "rawOutputSha256": {
+  "output0": "799a408bb970db4dd25292f635cb2caf7a7c8a095622e8b913e6770593fd362e"
+ }
+}

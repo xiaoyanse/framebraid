@@ -45,7 +45,19 @@
       "keypoints": 17,
       "endToEnd": true,
       "confidence": 0.25,
-      "maxDet": 300
+      "maxDet": 300,
+      "referenceOutputs": {
+        "status": "generated",
+        "image": "reference/images/zidane.jpg",
+        "imageSha256": "16d73869e3267a7d4ed00de8e860833bd1657c1b252e94c0c348277adc7b6edb",
+        "resultFile": "reference/pose-yolo26-e2e-coco17-v1.json",
+        "generated": {
+          "sdkVersion": "0.8.2",
+          "backend": "cpu",
+          "date": "2026-11-19"
+        },
+        "crossCheck": "onnxruntime+manual-decode"
+      }
     },
     {
       "id": "detect-yolo11n-nms-v1",
@@ -80,7 +92,19 @@
       "confidence": 0.25,
       "nmsIou": 0.7,
       "nmsMetric": "axis-aligned-iou",
-      "maxDet": 300
+      "maxDet": 300,
+      "referenceOutputs": {
+        "status": "generated",
+        "image": "reference/images/bus.jpg",
+        "imageSha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+        "resultFile": "reference/detect-yolo11n-nms-v1.json",
+        "generated": {
+          "sdkVersion": "0.8.2",
+          "backend": "cpu",
+          "date": "2026-11-19"
+        },
+        "crossCheck": "onnxruntime+manual-decode"
+      }
     },
     {
       "id": "detect-yolo-world-head-v1",
@@ -242,7 +266,19 @@
       "preprocess": "resize-short-edge-center-crop-rgb-div255-nchw",
       "classes": 1000,
       "hasProbability": true,
-      "applySoftmax": false
+      "applySoftmax": false,
+      "referenceOutputs": {
+        "status": "generated",
+        "image": "reference/images/bus.jpg",
+        "imageSha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+        "resultFile": "reference/classify-yolo11n-prob-v1.json",
+        "generated": {
+          "sdkVersion": "0.8.2",
+          "backend": "cpu",
+          "date": "2026-11-19"
+        },
+        "crossCheck": "onnxruntime+manual-decode"
+      }
     },
     {
       "id": "segment-yolo11n-nms-v1",
@@ -291,7 +327,19 @@
       ],
       "confidence": 0.25,
       "nmsIou": 0.7,
-      "maxDet": 300
+      "maxDet": 300,
+      "referenceOutputs": {
+        "status": "generated",
+        "image": "reference/images/bus.jpg",
+        "imageSha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63",
+        "resultFile": "reference/segment-yolo11n-nms-v1.json",
+        "generated": {
+          "sdkVersion": "0.8.2",
+          "backend": "cpu",
+          "date": "2026-11-19"
+        },
+        "crossCheck": "onnxruntime+manual-decode"
+      }
     },
     {
       "id": "obb-yolo11n-nms-v1",
@@ -324,7 +372,19 @@
       "nmsMetric": "probabilistic-iou",
       "nmsMode": "class-aware-fast",
       "angle": "radians-clockwise-image-coordinates",
-      "maxDet": 300
+      "maxDet": 300,
+      "referenceOutputs": {
+        "status": "generated",
+        "image": "reference/images/boats.jpg",
+        "imageSha256": "8c5ada657cf8110a9f8aaac954c1dd96cde0187315b581276c32b0d1863e756f",
+        "resultFile": "reference/obb-yolo11n-nms-v1.json",
+        "generated": {
+          "sdkVersion": "0.8.2",
+          "backend": "cpu",
+          "date": "2026-11-19"
+        },
+        "crossCheck": "onnxruntime+manual-decode"
+      }
     }
   ],
   "letterbox": {
@@ -345,6 +405,5 @@
       1,
       1
     ]
-  },
-  "referenceOutputs": "pending-runtime-validation"
+  }
 }
