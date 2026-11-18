@@ -1128,8 +1128,8 @@
     {
       "path": "crates/vision/resources/profiles.json",
       "previousSha256": "106a05d07cb59d8d3253aceaa00d3185fe0c8dcf723579c6e25966574ef859dc",
-      "sha256": "dd3ebfaa949179c3bdb8e21ce363a2ee12bdf9f9b1bf9a81acc3d10bd3c4a79d",
-      "reason": "vocab e2e closeout: load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green; batch D compatible additions: detect-yolo-world-batch-v1 (3-D txt_feats [batch,num_prompts,512] batch-aligned, images batch-dynamic pinned 640, output anchors pinned 8400) + text-encoder-clip-dynseq-v1 (dynamic seq); existing entries untouched"
+      "sha256": "f874dde8997170f522984b576a4bd1b1ba8487e937a01caeb3b1225fa55dca2d",
+      "reason": "sdk-refout batch (2026-11-19): five asset profiles register generated referenceOutputs (status/image/imageSha256/resultFile/generated{sdkVersion 0.8.2,backend cpu,date}/crossCheck onnxruntime+manual-decode); global pending-runtime-validation marker removed as its state is superseded by per-profile entries; ABI L1083-L1094 reference-output obligation fulfilled, no signature/layout/enum/semantic change. Prior change (kept for audit trail): vocab e2e closeout load profile matching (dynamic-dim fixed-1 + text-encoder I64), image-entry dual-affinity gate, vocab_hits ownership split; synthetic dual-model e2e green; batch D compatible additions: detect-yolo-world-batch-v1 (3-D txt_feats [batch,num_prompts,512] batch-aligned, images batch-dynamic pinned 640, output anchors pinned 8400) + text-encoder-clip-dynseq-v1 (dynamic seq); existing entries untouched"
     },
     {
       "path": "crates/vision/src/backend.rs",

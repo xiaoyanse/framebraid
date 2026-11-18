@@ -1047,7 +1047,7 @@ AM_API const char* amv_status_name(am_status_t status);
 ```
 
 - `ranges`：动态维度公布范围（min/max 成对）；固定维不出现。
-- `modelMeta`：模型元数据必须匹配的键值（加载校验，防档案与导出版本漂移）；`semantics`：输出张量行语义（供原始张量复核），行内布局说明随档案附录。
+- `modelMeta`：模型元数据键值示例通道。**登记链现状（2026-11-19 如实化）**：机器可读档案表（profiles.json）未携带 modelMeta 字段，注册表加载校验亦不读取该键；防档案与导出版本漂移实际经档案 I/O 形态匹配与 `sampleSha256` 冻结样本登记实现（§4.2）。`semantics`：输出张量行语义（供原始张量复核），行内布局说明随档案附录。
 - Segment/OBB 档案在 `postprocess`/`coords` 中分别补：掩膜系数×原型合成/裁切/阈值化顺序与输出口径（`maskBits` 1bit/px+roi_map）；角度单位/周期/方向/顶点顺序与旋转 NMS 声明。
 
 **通用检测头布局声明（B1，开放词汇首批）**：detect 类档案 `postprocess` 可声明 `"layout": "transposed" | "row-major"`（输出盒布局；默认 transposed=`[1, 4+classes, anchors]`，row-major=`[1, anchors, 4+classes]`）与 `"coordForm": "cxcywh" | "xyxy"`（盒坐标形式；默认 cxcywh）。加载时输出 shape 末两维与 `4+classes`/anchors 声明一致性校验，失配拒绝（`vision.profileMismatch`，错误详情带检测 shape 与声明——§7 参数类约定）。开放词汇模型（YOLO-World 类，输出无类别维的亲和度矩阵）不在此布局范围，走 RAW 通道。
@@ -1080,9 +1080,9 @@ AM_API const char* amv_status_name(am_status_t status);
 
 **冻结样本导出参数全量定死（P8 三轮，按备料实测 profile-samples-20261025 入表）**：四类样本导出参数统一为 **ultralytics 8.4.163 / opset 17 / batch=1 / dynamic=False / simplify=False / dtype f32**；imgsz：detect/segment/obb=**640**、classify=**224**；输入名=**images**；输出名：detect=**output0**、classify=**output0**、segment=**output0+output1**（检测头+原型）、obb=**output0**（pose e2e 既有档案 output0 不变）。**classify 输出实证注记（P8 三轮）**：classify-yolo11n-prob-v1 的样本文件 SHA-256=**30a66094446e32a8bb40fd45022c6061ba4a4f464581cf4a6180dd20b4034432**；其 output0 生产节点经实读 ONNX 计算图为 **Softmax**——**输出为概率（has_probability=1）以模型图 Softmax 节点实证，非 shape 推断**；原 classify-yolo11n-logits-v1 条目（has_probability=0）系误判作废。五类实际文件SHA、输入输出和导出参数已核入 `crates/vision/resources/profiles.json`；这是机器可读样本登记，不把尚未生成的参考结果标成通过。Pose样本为8.4.23/opset20/simplify=True，四类YOLO11为上面的8.4.163/opset17/simplify=False，不能统一覆盖成同一导出设置。
 
-**参考结果与容差表（P8 四轮补齐：设计先定格式与容差结构，参考数据实现期生成入库）**：档案冻结不能只有导出参数+SHA——每档案必须配**一张参考图 + 参考输出**：首版参考图用各任务官方示例图或合成图（登记来源与 SHA-256），参考输出=SDK 对参考图的实际推理结果经**独立参考实现**交叉确认后**实现期生成并冻结入库**（档案文件标注「实现期生成入库」）。调用方/验收以 SDK 输出对照参考输出、按下表容差逐项判定：
+**参考结果与容差表（P8 四轮补齐：设计先定格式与容差结构，参考数据实现期生成入库）**：档案冻结不能只有导出参数+SHA——每档案必须配**一张参考图 + 参考输出**：首版参考图用各任务官方示例图或合成图（登记来源与 SHA-256），参考输出=SDK 对参考图的实际推理结果经**独立参考实现**交叉确认后**实现期生成并冻结入库**（档案文件标注「实现期生成入库」）。**入库事实（2026-11-19，sdk-refout 批）**：五资产档案参考输出已生成、经独立参考实现（onnxruntime CPU+手工解码）按本表逐项交叉确认后定稿入库——`crates/vision/resources/reference/<档案ID>.json`（schemaVersion 1，含逐容差项 verdict 与原始输出张量 SHA），参考图三件官方示例原件入库于 `reference/images/`（来源/SHA-256/许可事实登记见 `reference/images/NOTICE.md`），profiles.json 五档案 `referenceOutputs` 字段同步登记。调用方/验收以 SDK 输出对照参考输出、按下表容差逐项判定：
 
-| 任务 | 校验项 | 容差（候选，冻结评审定稿） |
+| 任务 | 校验项 | 容差（定稿） |
 |---|---|---|
 | detect/segment | 框中心与宽高（原图系） | 误差 ≤2 px |
 | detect/segment | 类别与置信度 | 实例一对一匹配（类别一致且 IoU≥0.5 配对）后 top-1 一致；conf 差 ≤1e-3 |
@@ -1091,7 +1091,7 @@ AM_API const char* amv_status_name(am_status_t status);
 | segment | 掩膜与参考掩膜 IoU | ≥0.95 |
 | obb | 四顶点（原图系）/角度 | 顶点误差 ≤2 px；角度误差 ≤0.5° |
 
-参考输出版式（随档案定稿）：逐实例记录 bounds/顶点/关键点/掩膜哈希、class_id、confidence、angle 与模型档案 ID、参考图 SHA、生成环境（SDK 版本+后端）；实例数=0（空结果）同为合法参考输出。NMS 等可覆盖参数使用档案默认值时容差适用；调用方覆盖阈值/参数后偏离默认参考输出不判不合格（容差不适用，另行自备参考）。
+参考输出版式（已定稿：schemaVersion 1，实存于 `crates/vision/resources/reference/`，对照器 `scripts/sdk/reference-check.py`）：逐实例记录 bounds/顶点/关键点/掩膜哈希、class_id、confidence、angle 与模型档案 ID、参考图 SHA、生成环境（SDK 版本+后端）；实例数=0（空结果）同为合法参考输出。NMS 等可覆盖参数使用档案默认值时容差适用；调用方覆盖阈值/参数后偏离默认参考输出不判不合格（容差不适用，另行自备参考）。
 
 ## 5. 公共约定（两库同章）
 

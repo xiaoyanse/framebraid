@@ -1,0 +1,85 @@
+{
+ "schemaVersion": 1,
+ "profileId": "segment-yolo11n-nms-v1",
+ "image": {
+  "path": "reference/images/bus.jpg",
+  "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63"
+ },
+ "generated": {
+  "sdkVersion": "0.8.2",
+  "abiVersion": "1.7",
+  "backend": "cpu",
+  "date": "2026-11-19",
+  "harness": "ffi-ctypes",
+  "params": "profile-defaults(am_infer_params_t=NULL,conf0.25/iou0.7/maxDet300未覆盖)",
+  "weights": {
+   "file": "yolo11n-seg.onnx",
+   "sha256": "af5d7a2071055ec4d18ed6dce233b5bbd6e98772b7308eeeec85b84b9143a557"
+  }
+ },
+ "crossCheck": {
+  "impl": "onnxruntime+manual-decode",
+  "onnxruntime": "1.24.1",
+  "imageDecode": "image-crate-0.25.10(zune-jpeg,与SDK同源,消除解码器噪声)",
+  "verdicts": [
+   {"item": "instance count", "pass": true, "sdk": 5, "independent": 5},
+   {"item": "detect/segment box center&wh <=2px + class + IoU>=0.5 pair",
+    "pass": true,
+    "pairs": [
+     {"idx": 0, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0001, "confDiff": 0.0},
+     {"idx": 1, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0001, "confDiff": 0.0},
+     {"idx": 2, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0, "confDiff": 0.0},
+     {"idx": 3, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0001, "confDiff": 0.0},
+     {"idx": 4, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0001, "whDiffPx": 0.0001, "confDiff": 1e-06}
+    ]},
+   {"item": "conf diff <=1e-3", "pass": true, "maxConfDiff": 1e-06},
+   {"item": "segment mask IoU >=0.95", "pass": true, "maskIous": [1.0, 1.0, 1.0, 1.0, 1.0]}
+  ]
+ },
+ "instances": [
+  {
+   "bounds": [0.0636966, 0.365874, 0.3001381, 0.837055],
+   "classId": 0,
+   "confidence": 0.8739887,
+   "maskSha256": "b201b446bad28f903eef21e9ae0994b164918461ff2090a9248ce161afb525e1",
+   "maskWidth": 810,
+   "maskHeight": 1080
+  },
+  {
+   "bounds": [0.012296, 0.2107148, 0.9876763, 0.6846916],
+   "classId": 5,
+   "confidence": 0.8640883,
+   "maskSha256": "aa1a596ee22fd509a4ce1e015f39e1124d6962f5b0112c7f47c12bb27b474a32",
+   "maskWidth": 810,
+   "maskHeight": 1080
+  },
+  {
+   "bounds": [0.8242564, 0.3569962, 1.0, 0.812391],
+   "classId": 0,
+   "confidence": 0.842677,
+   "maskSha256": "42906c90eb9c1d7131e65616df0c89026f655db0507d2bf3d59e086659a12a42",
+   "maskWidth": 810,
+   "maskHeight": 1080
+  },
+  {
+   "bounds": [0.272517, 0.3744877, 0.4261668, 0.7957836],
+   "classId": 0,
+   "confidence": 0.8285187,
+   "maskSha256": "278837c25ce64ff3842bff4937eb677d5a6c25983275ddd017d5a13b8b7d7a48",
+   "maskWidth": 810,
+   "maskHeight": 1080
+  },
+  {
+   "bounds": [0.0021206, 0.5126702, 0.1007244, 0.8096768],
+   "classId": 0,
+   "confidence": 0.3931559,
+   "maskSha256": "e6a995a7792ded75b08229a1fb05c54a66646765cf11a2509f814c27c08d498d",
+   "maskWidth": 810,
+   "maskHeight": 1080
+  }
+ ],
+ "rawOutputSha256": {
+  "output0": "e125ad2d649baa610491b06c5758a39a0ca043d660f210ca03f986bc5f407111",
+  "output1": "73d025fd0e80e977004fe1893c3af6591e7a2a97751c12c9dc945453678edc4f"
+ }
+}

@@ -323,6 +323,8 @@ strings remain SDK-owned until module unload. A target triple does not imply pla
 
 这不是“任何版本 YOLO 自动兼容”的承诺。档案加载执行相应前后处理；自定义网络通过 RAW 命名张量入口接入，图像 RAW 模式须显式指定前处理。分类概率、分割掩膜、OBB 角度等不能按普通矩形框解释，结构和几何约定以公开头文件及设计说明为准。
 
+**参考输出对照验收**：五档案的冻结参考输出与参考图随源入库于 `crates/vision/resources/reference/`（参考 JSON schemaVersion 1+来源/许可登记 `reference/images/NOTICE.md`，合同容差表见 `docs/design/dual-dll-abi.md` §4.2）。接入方验收自备权重时，用 `scripts/sdk/reference-check.py` 把自己的 SDK 输出 JSON 对照同档案参考 JSON，按容差逐项判定 PASS/FAIL；覆盖 conf/iou/max_det 后容差不适用（须自备参考）。
+
 `examples/inference.py`、`Inference.cs`、`inference.c`、`inference.cpp` 是固定 `1×3×2×2 FLOAT Identity` 合成输入示例，**不能把任意 YOLO 权重作为其模型参数直接运行**。若运行这些示例，须自备符合此精确形状的 Identity ONNX；接真实 YOLO 使用下面的档案加载流程。
 
 ## 4. Python：直接用自己的图片和 Pose 模型

@@ -1,0 +1,48 @@
+{
+ "schemaVersion": 1,
+ "profileId": "detect-yolo11n-nms-v1",
+ "image": {
+  "path": "reference/images/bus.jpg",
+  "sha256": "c02019c4979c191eb739ddd944445ef408dad5679acab6fd520ef9d434bfbc63"
+ },
+ "generated": {
+  "sdkVersion": "0.8.2",
+  "abiVersion": "1.7",
+  "backend": "cpu",
+  "date": "2026-11-19",
+  "harness": "ffi-ctypes",
+  "params": "profile-defaults(am_infer_params_t=NULL,conf0.25/iou0.7/maxDet300未覆盖)",
+  "weights": {
+   "file": "yolo11n.onnx",
+   "sha256": "72df2d565d3b87e5b2a70d0db38cb2ba337ab09bfc8745d53b7b75a45eb82c3e"
+  }
+ },
+ "crossCheck": {
+  "impl": "onnxruntime+manual-decode",
+  "onnxruntime": "1.24.1",
+  "imageDecode": "image-crate-0.25.10(zune-jpeg,与SDK同源,消除解码器噪声)",
+  "verdicts": [
+   {"item": "instance count", "pass": true, "sdk": 5, "independent": 5},
+   {"item": "detect/segment box center&wh <=2px + class + IoU>=0.5 pair",
+    "pass": true,
+    "pairs": [
+     {"idx": 0, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0, "confDiff": 0.0},
+     {"idx": 1, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0, "confDiff": 0.0},
+     {"idx": 2, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0, "confDiff": 0.0},
+     {"idx": 3, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0, "confDiff": 0.0},
+     {"idx": 4, "classOk": true, "iou": 1.0, "centerDiffPx": 0.0, "whDiffPx": 0.0, "confDiff": 0.0}
+    ]},
+   {"item": "conf diff <=1e-3", "pass": true, "maxConfDiff": 0.0}
+  ]
+ },
+ "instances": [
+  {"bounds": [0.0151132, 0.2114736, 0.9867699, 0.6806785], "classId": 5, "confidence": 0.9393916},
+  {"bounds": [0.0600072, 0.3685717, 0.3004335, 0.8375468], "classId": 0, "confidence": 0.9020923},
+  {"bounds": [0.8278106, 0.3633747, 0.999992, 0.8144175], "classId": 0, "confidence": 0.8487215},
+  {"bounds": [0.2754287, 0.3755192, 0.4261788, 0.7960662], "classId": 0, "confidence": 0.8332167},
+  {"bounds": [0.0, 0.5092702, 0.0814079, 0.8072566], "classId": 0, "confidence": 0.4004176}
+ ],
+ "rawOutputSha256": {
+  "output0": "56b66087cce3b6e777add822d2d08053b56494e3b52edec5813458b34b04182f"
+ }
+}
