@@ -1,3 +1,4 @@
+use crate::engine::ov_remote::OvRemoteFrame;
 use crate::engine::ModelEngine;
 use crate::{profiles, Error, Result};
 use ort::{
@@ -351,7 +352,7 @@ impl Model {
                 Ok(match target.backend {
                     // OV 原生：selector 在场即 GPU 定向（§3.5b：DXGI 已校验，厂商
                     // 核对词随行）；不在场保持 E1 首版 CPU 现状（零变化）。
-                    4 => ModelEngine::Ov(
+                    4 => ModelEngine::Ov(std::sync::Arc::new(
                         crate::engine::openvino::create(
                             &bytes,
                             match (ov_native_vendor, policy.device.as_ref()) {
@@ -366,7 +367,7 @@ impl Model {
                             stage: failure.stage,
                             native_code: failure.native_code,
                         })?,
-                    ),
+                    )),
                     _ => ModelEngine::Ort(super::session::create(
                         source, &bytes, target, threads, cuda_fp32, ov_gpu,
                     )?),
@@ -473,6 +474,76 @@ impl Model {
     /// 实际后端是否 CUDA（GPU 帧直传的前提；非 CUDA 显式报不支持）。
     pub fn is_cuda(&self) -> bool {
         self.actual_backend == 2
+    }
+
+    /// 实际后端是否 OV 原生 GPU 会话（GPU 帧直传 OV remote 臂的前提）。
+    pub fn is_openvino_gpu(&self) -> bool {
+        matches!(&self.engine, ModelEngine::Ov(engine) if engine.is_gpu())
+    }
+
+    /// OV remote 直传面可用性（能力位同源探测，进程级缓存；不触发推理编译）。
+    pub fn ov_remote_available() -> bool {
+        crate::engine::openvino::remote_available()
+    }
+
+    /// 同上的实例面便捷形态（FFI 分派点随会话读取）。
+    pub fn ov_remote_available_static(&self) -> bool {
+        Self::ov_remote_available()
+    }
+
+    /// OV GPU 域枚举快照（拒绝路径诊断详情用；非 OV 会话 None）。
+    pub fn ov_gpu_domain_snapshot(&self) -> Option<String> {
+        match &self.engine {
+            ModelEngine::Ov(engine) => engine.gpu_domain_snapshot(),
+            ModelEngine::Ort(_) => None,
+        }
+    }
+
+    /// GPU 帧 OV remote 接受段处理（§3.3a：纹理借用窗口随返回闭合）。
+    /// 调用方持会话锁；center_crop 为 classify 几何（remote 臂显式拒绝）。
+    pub fn capture_ov_remote(
+        &self,
+        width: u32,
+        height: u32,
+        subresource: u32,
+        texture: *mut std::ffi::c_void,
+        input_hw: (u32, u32),
+        center_crop: bool,
+    ) -> Result<(OvRemoteFrame, super::ImageTransform)> {
+        let engine = match &self.engine {
+            ModelEngine::Ov(engine) => engine,
+            ModelEngine::Ort(_) => {
+                return Err(Error("sdk.notSupported|ov remote 仅 OV 会话可用".into()))
+            }
+        };
+        crate::engine::ov_remote::capture(
+            engine,
+            width,
+            height,
+            subresource,
+            texture,
+            input_hw,
+            center_crop,
+        )
+    }
+
+    /// OV remote 帧执行（调度线程串行消费；输出规格=会话输出，F06 预算口径）。
+    pub fn run_ov_remote(
+        &mut self,
+        frame: &OvRemoteFrame,
+        output_budget: usize,
+    ) -> Result<Vec<TensorData>> {
+        let engine = match &self.engine {
+            ModelEngine::Ov(engine) => engine,
+            ModelEngine::Ort(_) => {
+                return Err(Error(
+                    "vision.inferenceFailed|ov remote 仅 OV 会话可用".into(),
+                ))
+            }
+        };
+        let outputs = crate::engine::ov_remote::infer(engine, frame, output_budget)?;
+        Self::observe_ok(&mut self.selection);
+        Ok(outputs)
     }
 
     /// 图像输入的 (高, 宽) 目标尺寸（GPU 预处理/组装路径用）：模型实际维具体时

@@ -1454,7 +1454,7 @@ am_model_info_t._fields_ = [
     ("execution", am_backend_actual_t),
 ]
 
-AM_ABI_VERSION = 65543
+AM_ABI_VERSION = 65544
 AM_BACKEND_STRICT_CUDA_FP32 = 2
 AM_OK = 0
 AM_CODEC_H264 = 1

@@ -763,10 +763,27 @@ runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力�
   像素路径同档案同规则——detect/pose/segment/obb 档案 letterbox（min 比例+114 填边），
   classify 档案短边等比缩放+center crop（与 §4.2 classify 前处理一致；非方形输入两路径
   采同一中心窗口，2026-11-16 F02 起生效——此前 GPU 实现恒 letterbox 与像素路径分叉）
+- 预处理增补（ABI 1.8）：前处理语义与像素路径同档案同规则的约束对任一互操作入口不变；
+  色彩转换 GPU 域注记——CUDA 与 OV 直传的 NV12→RGB 均按引擎互操作实现的 BT.601 系
+  完成（与像素路径 BT.709 limited 存在已知色域差，CUDA 线既有现象，非本扩展引入）；
+  OV remote 前处理在 OV preprocess 图内完成（NV12 双平面 remote 张量→resize→convert
+  →pad→scale），实现注记：OV scale 为除法语义（归一化传 255.0），pad 值用归一化前
+  114.0（两处均系原型实证陷阱）；（ABI 1.8，实现注记）classify 档案的 center crop
+  前处理在 OV remote 路径不支持（OV preprocess C API 无裁剪算子）——OV 会话的
+  GPU 帧输入遇 classify 档案显式返回 `notSupported`（宿主回退像素路径或改用 CUDA
+  会话）；"与像素路径同式"的 center crop 语义在 CUDA 路径有效不变
 - 设备域（2026-11-16 F03 起）：GPU 直传管线（CUDA 上下文/纹理注册缓存/输入张量分配）按
   会话定向解析的 CUDA ordinal 建立，与 CUDA EP 会话同设备；多 GPU 并发（同进程多 ordinal
   管线并存）代码路径已接线但未经双卡实测（单卡 ordinal 0 全链验证）。级联 GPU 帧路径
   维持 §级联合同既有的 CUDA:0 两级约束不变
+- 设备域 OV 侧（ABI 1.8）：OV 会话定向的 GPU 直传按会话定向解析的 OV GPU 设备建立
+  remote context；D3D11 纹理所属适配器与推理设备须厂商一致（复用 §3.5b 厂商核对词
+  机制把关），不一致返回 `notSupported` 显式拒绝（错误详情含设备域快照），不静默换卡
+- OV remote 会话边界（ABI 1.8，实现注记）：①帧尺寸——同一 OV 会话首版限单帧尺寸流
+  （同一模型二次 preprocess 构建在 OV 2025.0.0 运行库实测失败；remote 会话按
+  设备×帧尺寸缓存），尺寸变化需求用多会话（与既有"每会话固定输入尺寸"指导一致）；
+  ②档案形态——双输入亲和（词汇类）档案在 OV remote 路径显式拒绝（单图像输入通道），
+  像素路径不受影响
 - **显式输入不静默降级**：kind=GPU_FRAME 而模型会话不支持（非 CUDA EP/互操作不可用/
   输入格式不支持）返回 `notSupported`；回退是宿主决策（能力查询后改用 PIXEL_VIEW——
   像素路径永远可用，构成自然回退），SDK 内部不做隐式转换（隐式转换需回读，正是本
@@ -778,9 +795,15 @@ runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力�
 - 搬运审计（模型级可查，M2c 验收主指标）：`gpu_inputs`（GPU 直传帧数）、
   `input_copies_per_frame`（GPU 路径每帧 GPU 内拷贝次数）、`input_cpu_fallbacks`
   （宿主显式改用像素路径不计入——此计数器只记 SDK 内部实际发生的回退性搬运）
+- 搬运审计 OV 条款（ABI 1.8）：三项计数对 OV remote 路径同样适用——`gpu_inputs` 计数
+  同式；OV remote 直传零 host 上传，`input_copies_per_frame` 按零计；`input_cpu_fallbacks`
+  不适用（OV 会话不支持 GPU 帧时按显式拒绝条款处理，SDK 内部不发生回退性搬运）
 
-**能力位**：`AMV_CAP_GPU_FRAME_INPUT`（编译编入 + 当前运行库 CUDA 互操作入口可用的
-双条件；查询不触发 CUDA 初始化）。
+**能力位**：`AMV_CAP_GPU_FRAME_INPUT`（编译编入 + 任一互操作入口可用的双条件；查询
+不触发 CUDA 初始化与推理编译）。ABI 1.8 起置位条件从"当前运行库 CUDA 互操作入口可用"
+扩展为任一互操作入口可用——CUDA 运行库（cudart/nvcuda 可载）或 OV remote context
+（openvino_c 可载且设备枚举域含 GPU 设备；OV 侧 core 枚举经进程级缓存）；实际可用性
+在接受时按会话后端校验，显式不静默降级条款（上文）不变。
 
 ### 3.4 张量推理（命名多输入多输出；不隐式前处理；B06/B12）
 

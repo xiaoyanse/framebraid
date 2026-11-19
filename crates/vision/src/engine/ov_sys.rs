@@ -56,6 +56,40 @@ pub enum ov_compiled_model_t {}
 pub enum ov_infer_request_t {}
 pub enum ov_tensor_t {}
 pub enum ov_output_const_port_t {}
+pub enum ov_remote_context_t {}
+pub enum ov_layout_t {}
+/// preprocess 图族不透明句柄（ov_preprocess*.h；create/free 配对，指针语义同上）。
+pub enum ov_prepostprocessor_t {}
+pub enum ov_preprocess_input_info_t {}
+pub enum ov_preprocess_input_tensor_info_t {}
+pub enum ov_preprocess_preprocess_steps_t {}
+pub enum ov_preprocess_input_model_info_t {}
+
+/// ov_color_format_e（ov_preprocess_input_info.h；2025.0.0 头文件核对，枚举跨线稳定）。
+pub const OV_COLOR_NV12_TWO_PLANES: u32 = 2;
+pub const OV_COLOR_RGB: u32 = 5;
+/// ov_resize_algorithm_e：RESIZE_BILINEAR=0（原型实证线）；ov_pad_mode：CONSTANT=0。
+pub const OV_RESIZE_BILINEAR: u32 = 0;
+pub const OV_PAD_CONSTANT: u32 = 0;
+/// preprocess 张量内存类型串（GPU remote 张量输入侧声明，intel_gpu 插件消费）。
+pub const OV_MEM_TYPE_GPU_SURFACE: &str = "GPU_SURFACE";
+
+/// GPU 插件 VA 互操作属性键（ov_core_create_context / ov_remote_context_create_tensor
+/// 的 C 变参对）：键串与值串经 2025.0.0/2025.1.0/2025.3.0/2026.1.0 四线
+/// intel_gpu/remote_properties.hpp 逐线核对一致；运行库级实证仅 2025.0.0 线（本机唯一
+/// 含 GPU 插件运行库）。VA_DEVICE/DEV_OBJECT_HANDLE 值为 void* 线（gpu_handle_param）；
+/// VA_PLANE 经 C 变参传字符串，插件侧按 uint32 解析。remote 张量元素类型序数沿用
+/// 既有 ElementLine 表（无新序数）。allow：键串先于调用链锚定（直传接线批次消费）。
+#[allow(dead_code)]
+pub mod va_keys {
+    pub const CONTEXT_TYPE: &str = "CONTEXT_TYPE";
+    pub const VA_SHARED: &str = "VA_SHARED";
+    pub const VA_DEVICE: &str = "VA_DEVICE";
+    pub const SHARED_MEM_TYPE: &str = "SHARED_MEM_TYPE";
+    pub const VA_SURFACE: &str = "VA_SURFACE";
+    pub const DEV_OBJECT_HANDLE: &str = "DEV_OBJECT_HANDLE";
+    pub const VA_PLANE: &str = "VA_PLANE";
+}
 
 /// ov_shape.h：按值传参；API 返回的 shape 须 ov_shape_free，自建 shape 由局部 Vec 撑住。
 #[derive(Clone, Copy)]
@@ -161,6 +195,160 @@ pub struct OvApi {
     /// 诊断用：错误消息只进冒烟/联调日志，不进 selection 报告（同 ORT 键纪律）。
     #[allow(dead_code)]
     pub get_last_err_msg: unsafe extern "C" fn() -> *const c_char,
+    /// remote 互操作族（ABI 1.8 直传面）：Option 解析——缺符号的旧运行库照常
+    /// CPU/GPU 推理，仅 remote 直传能力探测判不可用；签名四线核对一致。
+    pub core_create_context: Option<
+        unsafe extern "C" fn(
+            *const ov_core_t,
+            *const c_char,
+            usize,
+            *mut *mut ov_remote_context_t,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub compile_model_with_context: Option<
+        unsafe extern "C" fn(
+            *const ov_core_t,
+            *const ov_model_t,
+            *const ov_remote_context_t,
+            usize,
+            *mut *mut ov_compiled_model_t,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub remote_context_create_tensor: Option<
+        unsafe extern "C" fn(
+            *const ov_remote_context_t,
+            ov_element_type_e,
+            ov_shape_t,
+            usize,
+            *mut *mut ov_tensor_t,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub remote_context_get_params: Option<
+        unsafe extern "C" fn(
+            *const ov_remote_context_t,
+            *mut usize,
+            *mut *mut c_char,
+        ) -> ov_status_e,
+    >,
+    pub remote_tensor_get_params:
+        Option<unsafe extern "C" fn(*mut ov_tensor_t, *mut usize, *mut *mut c_char) -> ov_status_e>,
+    pub remote_context_free: Option<unsafe extern "C" fn(*mut ov_remote_context_t)>,
+    /// 按名绑定输入张量（remote 双平面 y/uv 绑定用；与 set_input_tensor 并存）。
+    pub infer_request_set_tensor: Option<
+        unsafe extern "C" fn(
+            *mut ov_infer_request_t,
+            *const c_char,
+            *const ov_tensor_t,
+        ) -> ov_status_e,
+    >,
+    /// 模型级（未编译）端口枚举：preprocess 构建产物 y/uv 输入名与 shape 读取。
+    pub model_inputs_size:
+        Option<unsafe extern "C" fn(*const ov_model_t, *mut usize) -> ov_status_e>,
+    pub model_const_input_by_index: Option<
+        unsafe extern "C" fn(
+            *const ov_model_t,
+            usize,
+            *mut *mut ov_output_const_port_t,
+        ) -> ov_status_e,
+    >,
+    /// preprocess 图族（ov_preprocess*.h；NV12 双平面 letterbox 图构造）。
+    pub layout_create:
+        Option<unsafe extern "C" fn(*const c_char, *mut *mut ov_layout_t) -> ov_status_e>,
+    pub layout_free: Option<unsafe extern "C" fn(*mut ov_layout_t)>,
+    pub prepostprocessor_create: Option<
+        unsafe extern "C" fn(*const ov_model_t, *mut *mut ov_prepostprocessor_t) -> ov_status_e,
+    >,
+    pub prepostprocessor_free: Option<unsafe extern "C" fn(*mut ov_prepostprocessor_t)>,
+    pub prepostprocessor_build: Option<
+        unsafe extern "C" fn(*mut ov_prepostprocessor_t, *mut *mut ov_model_t) -> ov_status_e,
+    >,
+    pub prepostprocessor_get_input_info: Option<
+        unsafe extern "C" fn(
+            *mut ov_prepostprocessor_t,
+            *mut *mut ov_preprocess_input_info_t,
+        ) -> ov_status_e,
+    >,
+    pub input_info_free: Option<unsafe extern "C" fn(*mut ov_preprocess_input_info_t)>,
+    pub input_info_get_tensor_info: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_info_t,
+            *mut *mut ov_preprocess_input_tensor_info_t,
+        ) -> ov_status_e,
+    >,
+    pub tensor_info_free: Option<unsafe extern "C" fn(*mut ov_preprocess_input_tensor_info_t)>,
+    pub tensor_info_set_element_type: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_tensor_info_t,
+            ov_element_type_e,
+        ) -> ov_status_e,
+    >,
+    /// C 变参：子名列表（NV12 双平面 "y"/"uv"）；传参约定同 create_context。
+    pub tensor_info_set_color_format_with_subname: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_tensor_info_t,
+            u32,
+            usize,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub tensor_info_set_memory_type: Option<
+        unsafe extern "C" fn(*mut ov_preprocess_input_tensor_info_t, *const c_char) -> ov_status_e,
+    >,
+    pub tensor_info_set_spatial_static_shape: Option<
+        unsafe extern "C" fn(*mut ov_preprocess_input_tensor_info_t, usize, usize) -> ov_status_e,
+    >,
+    pub tensor_info_set_layout: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_tensor_info_t,
+            *const ov_layout_t,
+        ) -> ov_status_e,
+    >,
+    pub input_info_get_preprocess_steps: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_info_t,
+            *mut *mut ov_preprocess_preprocess_steps_t,
+        ) -> ov_status_e,
+    >,
+    pub steps_free: Option<unsafe extern "C" fn(*mut ov_preprocess_preprocess_steps_t)>,
+    pub steps_convert_color:
+        Option<unsafe extern "C" fn(*mut ov_preprocess_preprocess_steps_t, u32) -> ov_status_e>,
+    pub steps_resize:
+        Option<unsafe extern "C" fn(*mut ov_preprocess_preprocess_steps_t, u32) -> ov_status_e>,
+    pub steps_convert_element_type: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_preprocess_steps_t,
+            ov_element_type_e,
+        ) -> ov_status_e,
+    >,
+    pub steps_pad: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_preprocess_steps_t,
+            *const i32,
+            usize,
+            *const i32,
+            usize,
+            f32,
+            u32,
+        ) -> ov_status_e,
+    >,
+    pub steps_scale:
+        Option<unsafe extern "C" fn(*mut ov_preprocess_preprocess_steps_t, f32) -> ov_status_e>,
+    pub input_info_get_model_info: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_info_t,
+            *mut *mut ov_preprocess_input_model_info_t,
+        ) -> ov_status_e,
+    >,
+    pub model_info_free: Option<unsafe extern "C" fn(*mut ov_preprocess_input_model_info_t)>,
+    pub model_info_set_layout: Option<
+        unsafe extern "C" fn(
+            *mut ov_preprocess_input_model_info_t,
+            *const ov_layout_t,
+        ) -> ov_status_e,
+    >,
     /// 装载即取的运行库版本（诊断用：失败详情/E1.6 对拍读，正常推理不读）。
     pub(crate) version: String,
     /// 元素类型序数线（按 version 判定）：map/逆映射按此选表。
@@ -176,6 +364,49 @@ impl OvApi {
     /// 元素类型序数线（2025.0.x 为 Legacy，其余含未知按 Current）。
     pub fn element_line(&self) -> ElementLine {
         self.element_line
+    }
+    /// remote 互操作族六符号是否齐备（直传能力探测的门一：缺任一即不可用）。
+    pub fn remote_symbols_present(&self) -> bool {
+        self.core_create_context.is_some()
+            && self.compile_model_with_context.is_some()
+            && self.remote_context_create_tensor.is_some()
+            && self.remote_context_get_params.is_some()
+            && self.remote_tensor_get_params.is_some()
+            && self.remote_context_free.is_some()
+    }
+
+    /// remote 直传面全量就绪（探测门二）：除 remote 六符号外，还需 preprocess
+    /// 图族+按名绑定+模型端口符号齐备（NV12 letterbox 图构造与 y/uv 绑定的
+    /// 最小闭包）；缺任一即该运行库无 OV remote 直传面，能力位不置。
+    pub fn remote_surface_ready(&self) -> bool {
+        self.remote_symbols_present()
+            && self.infer_request_set_tensor.is_some()
+            && self.model_inputs_size.is_some()
+            && self.model_const_input_by_index.is_some()
+            && self.layout_create.is_some()
+            && self.layout_free.is_some()
+            && self.prepostprocessor_create.is_some()
+            && self.prepostprocessor_free.is_some()
+            && self.prepostprocessor_build.is_some()
+            && self.prepostprocessor_get_input_info.is_some()
+            && self.input_info_free.is_some()
+            && self.input_info_get_tensor_info.is_some()
+            && self.tensor_info_free.is_some()
+            && self.tensor_info_set_element_type.is_some()
+            && self.tensor_info_set_color_format_with_subname.is_some()
+            && self.tensor_info_set_memory_type.is_some()
+            && self.tensor_info_set_spatial_static_shape.is_some()
+            && self.tensor_info_set_layout.is_some()
+            && self.input_info_get_preprocess_steps.is_some()
+            && self.steps_free.is_some()
+            && self.steps_convert_color.is_some()
+            && self.steps_resize.is_some()
+            && self.steps_convert_element_type.is_some()
+            && self.steps_pad.is_some()
+            && self.steps_scale.is_some()
+            && self.input_info_get_model_info.is_some()
+            && self.model_info_free.is_some()
+            && self.model_info_set_layout.is_some()
     }
 }
 
@@ -314,6 +545,14 @@ impl OvApi {
                 unsafe { std::mem::transmute::<*mut c_void, _>(sym($name)?) }
             };
         }
+        // remote 族缺符号不阻断装载：None 即该运行库无 remote 直传面。
+        macro_rules! cast_opt {
+            ($name:expr) => {
+                sym($name)
+                    .ok()
+                    .map(|ptr| unsafe { std::mem::transmute::<*mut c_void, _>(ptr) })
+            };
+        }
         let mut api = Self {
             get_openvino_version: cast!(b"ov_get_openvino_version"),
             version_free: cast!(b"ov_version_free"),
@@ -350,6 +589,53 @@ impl OvApi {
             available_devices_free: cast!(b"ov_available_devices_free"),
             core_get_property: cast!(b"ov_core_get_property"),
             get_last_err_msg: cast!(b"ov_get_last_err_msg"),
+            core_create_context: cast_opt!(b"ov_core_create_context"),
+            compile_model_with_context: cast_opt!(b"ov_core_compile_model_with_context"),
+            remote_context_create_tensor: cast_opt!(b"ov_remote_context_create_tensor"),
+            remote_context_get_params: cast_opt!(b"ov_remote_context_get_params"),
+            remote_tensor_get_params: cast_opt!(b"ov_remote_tensor_get_params"),
+            remote_context_free: cast_opt!(b"ov_remote_context_free"),
+            infer_request_set_tensor: cast_opt!(b"ov_infer_request_set_tensor"),
+            model_inputs_size: cast_opt!(b"ov_model_inputs_size"),
+            model_const_input_by_index: cast_opt!(b"ov_model_const_input_by_index"),
+            layout_create: cast_opt!(b"ov_layout_create"),
+            layout_free: cast_opt!(b"ov_layout_free"),
+            prepostprocessor_create: cast_opt!(b"ov_preprocess_prepostprocessor_create"),
+            prepostprocessor_free: cast_opt!(b"ov_preprocess_prepostprocessor_free"),
+            prepostprocessor_build: cast_opt!(b"ov_preprocess_prepostprocessor_build"),
+            prepostprocessor_get_input_info: cast_opt!(
+                b"ov_preprocess_prepostprocessor_get_input_info"
+            ),
+            input_info_free: cast_opt!(b"ov_preprocess_input_info_free"),
+            input_info_get_tensor_info: cast_opt!(b"ov_preprocess_input_info_get_tensor_info"),
+            tensor_info_free: cast_opt!(b"ov_preprocess_input_tensor_info_free"),
+            tensor_info_set_element_type: cast_opt!(
+                b"ov_preprocess_input_tensor_info_set_element_type"
+            ),
+            tensor_info_set_color_format_with_subname: cast_opt!(
+                b"ov_preprocess_input_tensor_info_set_color_format_with_subname"
+            ),
+            tensor_info_set_memory_type: cast_opt!(
+                b"ov_preprocess_input_tensor_info_set_memory_type"
+            ),
+            tensor_info_set_spatial_static_shape: cast_opt!(
+                b"ov_preprocess_input_tensor_info_set_spatial_static_shape"
+            ),
+            tensor_info_set_layout: cast_opt!(b"ov_preprocess_input_tensor_info_set_layout"),
+            input_info_get_preprocess_steps: cast_opt!(
+                b"ov_preprocess_input_info_get_preprocess_steps"
+            ),
+            steps_free: cast_opt!(b"ov_preprocess_preprocess_steps_free"),
+            steps_convert_color: cast_opt!(b"ov_preprocess_preprocess_steps_convert_color"),
+            steps_resize: cast_opt!(b"ov_preprocess_preprocess_steps_resize"),
+            steps_convert_element_type: cast_opt!(
+                b"ov_preprocess_preprocess_steps_convert_element_type"
+            ),
+            steps_pad: cast_opt!(b"ov_preprocess_preprocess_steps_pad"),
+            steps_scale: cast_opt!(b"ov_preprocess_preprocess_steps_scale"),
+            input_info_get_model_info: cast_opt!(b"ov_preprocess_input_info_get_model_info"),
+            model_info_free: cast_opt!(b"ov_preprocess_input_model_info_free"),
+            model_info_set_layout: cast_opt!(b"ov_preprocess_input_model_info_set_layout"),
             version: String::new(),
             element_line: ElementLine::Current,
         };

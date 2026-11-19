@@ -3,16 +3,27 @@ use am_sdk_support::{abi::*, args, Result};
 use am_vision_core::{
     gpu::iobinding::InferenceInput,
     profiles,
-    sdk::{self, pixels::Pixels, ImageTransform, Preprocess},
+    sdk::{self, pixels::Pixels, ImageTransform, OvRemoteFrame, Preprocess},
 };
 use std::{ffi::c_void, mem::size_of};
 
 /// GPU 帧接受段预处理产物（批 C 落实合同 §3.3a"GPU 预处理在接受段同步完成，
-/// 纹理不跨异步生命周期"）：纹理内容在接受时已消费进设备张量，此后请求
-/// （含攒批窗口挂起期）只持有设备缓冲，纹理借用窗口在 capture 返回即闭合。
-pub struct GpuFrame {
-    pub binding: InferenceInput,
-    pub transform: ImageTransform,
+/// 纹理不跨异步生命周期"）：纹理内容在接受时已消费进设备侧缓冲，此后请求
+/// （含攒批窗口挂起期）只持有设备产物，纹理借用窗口在 capture 返回即闭合。
+/// ABI 1.8 起按会话引擎两臂：CUDA=ORT 设备张量绑定；OV GPU=remote 双平面
+/// 张量+SDK 自有纹理快照（ov_remote 接受段拷贝+GPU 完成同步）。
+/// 尺寸差 allow：CUDA 臂结构保持原样（批 I-B 纪律：CUDA 链零行为变化），
+/// OV 臂已 Box 收纳。
+#[allow(clippy::large_enum_variant)]
+pub enum GpuFrame {
+    Cuda {
+        binding: InferenceInput,
+        transform: ImageTransform,
+    },
+    Ov {
+        /// Box 收纳两臂尺寸差（OvRemoteFrame 为指针+保活句柄组）。
+        frame: Box<OvRemoteFrame>,
+    },
 }
 
 pub struct Plan {
@@ -429,11 +440,12 @@ impl Plan {
     }
 }
 
-/// GPU 帧接受段预处理（§3.3a）：会话须为 CUDA 且管线可用（显式输入不静默
-/// 降级，notSupported 与单帧执行路径同码）；接受线程同步完成互操作搬运与
-/// 预处理 kernel，产物为设备输入张量绑定——异步生命周期内不再触纹理。
-/// center_crop 为 classify 档案语义（F02）；管线按会话定向的 CUDA ordinal
-/// 建立（F03，此前恒设备 0 与定向脱节）。
+/// GPU 帧接受段预处理（§3.3a）：按会话引擎分派——CUDA 会话走现行互操作+
+/// 预处理 kernel 链（行为零变化）；OV GPU 会话走 remote 直传链（ABI 1.8：
+/// 帧拷贝进自有纹理+GPU 完成同步，preprocess 图在推理期融合执行）；其余
+/// 会话（OV CPU/其他引擎）显式 notSupported，不静默降级（错误详情经
+/// 诊断通道附带会话后端与设备域快照，合同 L776-782）。
+/// center_crop 为 classify 档案语义（F02；OV remote 臂对裁剪几何显式拒绝）。
 unsafe fn capture_gpu(
     model: &ModelHandle,
     gpu_ref: am_gpu_frame_ref_t,
@@ -442,33 +454,124 @@ unsafe fn capture_gpu(
     use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
     let guard = lock(&model.session)?;
     let session = guard.as_ref().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
-    if !session.is_cuda() || !GpuPipeline::available() {
-        return Err(AM_ERR_SDK_NOT_SUPPORTED);
+    if session.is_cuda() {
+        if !GpuPipeline::available() {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        // 批 D：模型 H/W 为符号维（world 形态）时回落档案钉死的目标尺寸；全动态
+        // 无档案返回 None 维持既有 profileUnsupported 拒绝链。
+        let Some((input_w, input_h)) = session.input_hw() else {
+            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
+        };
+        let pipeline = GpuPipeline::for_device(session.cuda_ordinal).map_err(error)?;
+        let frame = GpuFrameData {
+            width: gpu_ref.width,
+            height: gpu_ref.height,
+            d3d_format: gpu_ref.d3d_format,
+            subresource: gpu_ref.subresource,
+            texture: gpu_ref.texture,
+        };
+        let (binding, transform) = pipeline
+            .preprocess_to_binding(
+                &frame,
+                session.ort_session(),
+                &session.inputs[0].name,
+                input_w,
+                input_h,
+                center_crop,
+            )
+            .map_err(error)?;
+        return Ok(GpuFrame::Cuda { binding, transform });
     }
-    // 批 D：模型 H/W 为符号维（world 形态）时回落档案钉死的目标尺寸；全动态
-    // 无档案返回 None 维持既有 profileUnsupported 拒绝链。
-    let Some((input_w, input_h)) = session.input_hw() else {
-        return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
-    };
-    let pipeline = GpuPipeline::for_device(session.cuda_ordinal).map_err(error)?;
-    let frame = GpuFrameData {
-        width: gpu_ref.width,
-        height: gpu_ref.height,
-        d3d_format: gpu_ref.d3d_format,
-        subresource: gpu_ref.subresource,
-        texture: gpu_ref.texture,
-    };
-    let (binding, transform) = pipeline
-        .preprocess_to_binding(
-            &frame,
-            session.ort_session(),
-            &session.inputs[0].name,
-            input_w,
-            input_h,
+    if session.is_openvino_gpu() {
+        if !session.ov_remote_available_static() {
+            return Err(not_supported_with_detail(
+                model,
+                session,
+                "OV remote 直传面不可用（openvino_c remote/preprocess 符号缺失或设备域无 GPU）",
+            ));
+        }
+        // 双输入亲和档案（词汇注入）remote 臂暂不支持：图像面 remote 张量与
+        // CPU 词汇张量混合绑定未接线——显式拒绝不降级（像素路径仍可用）。
+        if session.inputs.len() != 1 {
+            return Err(not_supported_with_detail(
+                model,
+                session,
+                "OV remote 直传暂不支持双输入亲和档案（词汇注入面）",
+            ));
+        }
+        let Some((input_w, input_h)) = session.input_hw() else {
+            return Err(AM_ERR_VISION_PROFILE_UNSUPPORTED);
+        };
+        let captured = session.capture_ov_remote(
+            gpu_ref.width,
+            gpu_ref.height,
+            gpu_ref.subresource,
+            gpu_ref.texture,
+            (input_w, input_h),
             center_crop,
-        )
-        .map_err(error)?;
-    Ok(GpuFrame { binding, transform })
+        );
+        let frame = match captured {
+            Ok((frame, _transform)) => frame,
+            Err(e) => {
+                record_remote_detail(model, &e.0);
+                return Err(error(e));
+            }
+        };
+        return Ok(GpuFrame::Ov {
+            frame: Box::new(frame),
+        });
+    }
+    Err(not_supported_with_detail(
+        model,
+        session,
+        "GPU 帧直传需 CUDA 或 OV GPU 会话（当前会话为非互操作引擎）",
+    ))
+}
+
+/// notSupported 拒绝 + 诊断详情（会话后端与设备域快照，合同错误详情条款）。
+fn not_supported_detail(session: &sdk::Model, reason: &str) -> String {
+    let domain = session
+        .ov_gpu_domain_snapshot()
+        .map(|snapshot| format!("；{snapshot}"))
+        .unwrap_or_default();
+    format!(
+        "GPU 帧直传 notSupported：{reason}；会话后端={} 设备=\"{}\"{domain}",
+        session.actual_backend, session.device_label
+    )
+}
+
+fn not_supported_with_detail(model: &ModelHandle, session: &sdk::Model, reason: &str) -> i32 {
+    let detail = not_supported_detail(session, reason);
+    am_sdk_support::diagnostics::record(
+        crate::domain(),
+        model.info.key.load(std::sync::atomic::Ordering::Acquire),
+        AM_ERR_SDK_NOT_SUPPORTED,
+        am_sdk_support::diagnostics::Detail {
+            message: super::intern_detail(&detail),
+            source: c"vision.infer.gpu-frame",
+            fault_class: AM_FAULT_NONE as u32,
+        },
+    );
+    AM_ERR_SDK_NOT_SUPPORTED
+}
+
+/// remote 链失败的诊断详情（厂商不一致/几何拒绝等带 |detail 的错误）。
+fn record_remote_detail(model: &ModelHandle, detail: &str) {
+    let detail = detail.split('|').nth(1).unwrap_or(detail);
+    if detail.is_empty() {
+        return;
+    }
+    am_sdk_support::diagnostics::record(
+        crate::domain(),
+        model.info.key.load(std::sync::atomic::Ordering::Acquire),
+        AM_ERR_SDK_NOT_SUPPORTED,
+        am_sdk_support::diagnostics::Detail {
+            message: super::intern_detail(&format!("OV remote 接受段失败：{detail}")),
+            source: c"vision.infer.gpu-frame",
+            fault_class: AM_FAULT_NONE as u32,
+        },
+    );
 }
 impl Input {
     pub fn prepare(

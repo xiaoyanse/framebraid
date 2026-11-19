@@ -16,7 +16,8 @@ pub use am_vision_types::{
     ExecutionInfo, InferenceBackend, Keypoint, PoseDetection, PoseFrame, PoseModelInfo,
 };
 pub use backend::{
-    backend_key, cuda_available, openvino_available, parse_backend, probe_gpu, trt_available,
+    backend_key, cuda_available, openvino_available, openvino_remote_available, parse_backend,
+    probe_gpu, trt_available,
 };
 use ort::{
     session::Session,

@@ -229,17 +229,24 @@ fn run_gpu(
     params: am_infer_params_t,
     assoc: Option<am_frame_assoc_t>,
 ) -> Result<Arc<ResultBuffer>> {
-    // 接受段（capture）已同步完成互操作搬运与预处理 kernel（批 C 落实
-    // §3.3a"GPU 预处理在接受段同步完成"）；此处消费设备张量绑定。
-    let binding = &mut frame.binding;
-    let transform = frame.transform;
+    // 接受段（capture）已同步完成互操作搬运与预处理（批 C 落实 §3.3a"GPU
+    // 预处理在接受段同步完成"）；此处消费设备侧产物。CUDA 臂=ORT 设备张量
+    // 绑定（词汇注入经 CPU 内存第二输入）；OV 臂=remote 双平面张量（接受段
+    // 已拒绝双输入亲和档案，无注入面）。
+    let (binding, transform): (
+        Option<&mut am_vision_core::gpu::iobinding::InferenceInput>,
+        am_vision_core::sdk::ImageTransform,
+    ) = match frame {
+        super::super::input::GpuFrame::Cuda { binding, transform } => (Some(binding), *transform),
+        super::super::input::GpuFrame::Ov { frame } => (None, frame.transform),
+    };
     // 批 B 词汇注入（GPU 直传）：快照/组装复用 vocab_injection 共享段，嵌入
     // 张量按 CPU 内存绑定第二输入（H2D 每次注入由 ORT 异步搬运、run 前
     // synchronize_inputs 收口，首版无设备侧缓存）；未绑定双输入档案报
     // vocabNotBound 与 CPU 路径同码，单输入模型零影响。
     let injected = vocab_injection(model, session)?;
     let vocab_layout = injected.as_ref().map(|(_, l)| l);
-    if let Some((vocab, _)) = injected.as_ref() {
+    if let (Some(binding), Some((vocab, _))) = (binding, injected.as_ref()) {
         binding.bind_vocab(vocab).map_err(error)?;
         // ORT 绑定输入到 CUDA EP 的搬运是异步排队的（OrtSynchronizeBoundInputs
         // 的存在即为此）：images 为 device 张量无搬运，vocab 是 CPU 内存绑定
@@ -300,9 +307,16 @@ fn run_gpu(
     }
     let charge = model.state.charge(reserve)?;
     let start = am_sdk_support::clock::monotonic_ms();
-    let output = session.run_gpu(binding, reserve);
+    // 执行臂分派：CUDA=run_gpu（ORT IoBinding）；OV remote=按帧绑定双平面
+    // 张量推理（预处理图融合在编译产物内）。输出两臂同构（Vec<TensorData>）。
+    let executed = match frame {
+        super::super::input::GpuFrame::Cuda { binding, .. } => session.run_gpu(binding, reserve),
+        super::super::input::GpuFrame::Ov { frame } => session
+            .run_ov_remote(frame, reserve)
+            .inspect_err(|e| record_remote_exec_detail(model, &e.0)),
+    };
     model.refresh_selection(session);
-    let raw = output.map_err(error)?;
+    let raw = executed.map_err(error)?;
     let prediction = decode_prediction(
         session,
         &raw,
@@ -326,6 +340,24 @@ fn run_gpu(
         end,
         charge,
     )
+}
+
+/// OV remote 执行段失败的诊断详情（绑定/推理/回读错误的 |detail 尾巴）。
+fn record_remote_exec_detail(model: &ModelHandle, detail: &str) {
+    let detail = detail.split('|').nth(1).unwrap_or(detail);
+    if detail.is_empty() {
+        return;
+    }
+    am_sdk_support::diagnostics::record(
+        crate::domain(),
+        model.info.key.load(Ordering::Acquire),
+        AM_ERR_VISION_INFERENCE_FAILED,
+        am_sdk_support::diagnostics::Detail {
+            message: super::super::intern_detail(&format!("OV remote 执行段失败：{detail}")),
+            source: c"vision.infer.gpu-frame",
+            fault_class: AM_FAULT_NONE as u32,
+        },
+    );
 }
 
 /// GPU/批量共用的独立解码入口（批 C 起亦为原生批逐项解码所复用）。

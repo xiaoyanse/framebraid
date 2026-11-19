@@ -106,3 +106,23 @@ Call `amc_stream_get_status` as needed (init struct_size=sizeof); retry on `sdk.
 **不迁会怎样 / If you don't migrate**：与 1.6 行为完全一致（不调新导出零影响）。
 
 Exactly 1.6 behavior (zero impact without the new export).
+
+## ABI 1.7 → 1.8（sdk-intel-direct 批，未发布——`AM_ABI_VERSION` 65543→65544；合同 §3.3a）
+
+**变了什么 / What changed**：无新导出、无结构变化、无错误码变化的兼容新增——①GPU 帧输入能力位 `AMV_CAP_GPU_FRAME_INPUT`（bit10）置位条件从"当前运行库 CUDA 互操作入口可用"扩展为"任一互操作入口可用"（CUDA 运行库可载，或 OV remote 面：`openvino_c` 可载且设备枚举域含 GPU；查询不触发 CUDA 初始化与推理编译，OV core 枚举进程级缓存）；②GPU 帧输入在 OpenVINO 原生 GPU 会话上开放（remote context 直传链，接受段完成纹理快照+厂商核对+帧尺寸会话缓存）；③搬运审计 OV 条款（`gpu_inputs` 计数同式、remote 臂 `input_copies_per_frame=0`、`input_cpu_fallbacks` 不适用）；④三条路径限定入合同（classify 档案 center crop / 单帧尺寸流 / 双输入亲和档案，OV remote 路径显式 `notSupported`，标注（ABI 1.8，实现注记））。types 附录 feature_bits 注释同步；生成链四件（C 头/Rust/Python/C#）随次版本重生成。
+
+**No new exports, structs or error codes** — a compatible addition: (1) the GPU-frame-input capability bit (bit10) now sets when *any* interop entry is available (CUDA runtime loadable, or the OV remote face: `openvino_c` loadable with a GPU device in the enumeration domain); actual usability is still validated per session backend at accept time. (2) GPU-frame input is now accepted on OpenVINO-native GPU sessions (remote-context direct chain). (3) An OV audit clause (`gpu_inputs` counted the same way, zero `input_copies_per_frame` on the remote arm). (4) Three path limits documented in the contract (classify center crop / single-frame-size streams / dual-input affinity archives — explicit `notSupported` on the OV remote path).
+
+**谁受影响 / Who is affected**：只查 bit10 做能力判断的调用方——在无 CUDA 但有 Intel GPU+OV GPU 插件的机器上，bit10 可能新置位（此前为 0）；按位提交 GPU 帧到 OV GPU 会话的行为从恒 `notSupported` 变为可用。既有调用方（CUDA 会话提交、像素路径、张量路径）行为零变化；1.7 init 请求被 1.8 DLL 正常接受。
+
+Callers gating on bit10 may see it newly set on machines with Intel GPU + OV GPU plugin and no CUDA; submitting GPU frames to an OV GPU session changes from always-`notSupported` to usable. Existing callers (CUDA-session submissions, pixel path, tensor path) see zero behavior change; 1.7 init requests are accepted by 1.8 DLLs.
+
+**怎么迁 / How to migrate**：不需要迁移即保持现状。采用 OV 直传：确认 OV 运行库含 GPU 插件（缺插件时 OV GPU 定向加载失败、bit10 回落 CUDA 条件）→ `amv_model_load_selected` 定向 OV GPU（selector 如 `arc`）→ 与 CUDA 路径同构组装 `am_gpu_frame_ref_t` 提交。三条限定（classify center crop/单帧尺寸/双输入亲和）遇 `notSupported` 时按错误详情回退像素路径（部署细节见 [INTEGRATION](../sdk/INTEGRATION.md#intel-gpu-帧直传部署侧启用openvino-remote-输入路径abi-18)）。
+
+No migration is required to stay put. To adopt OV direct-pass: ensure the OV runtime ships the GPU plugin (without it, OV GPU targeting fails and bit10 falls back to the CUDA condition), target an OV GPU session via `amv_model_load_selected`, and assemble `am_gpu_frame_ref_t` exactly as on the CUDA path. On the three documented `notSupported` limits, fall back to the pixel path per the error detail.
+
+**不迁会怎样 / If you don't migrate**：1.7 语义完全保留——旧调用方零感知；仅放弃 Intel GPU 会话的零拷贝直传能力（像素路径与 CUDA 直传不受影响）。
+
+Full 1.7 semantics are preserved — existing callers are unaffected; you only forgo zero-copy direct input on Intel GPU sessions (pixel path and CUDA direct input are unaffected).
+
+**容差分级 / Tolerance tiering**：GPU 域直传（CUDA 与 OV）对 CPU 参考按合同容差分级的 GPU 域统计档对拍（top conf Δ≤5e-2、配对 IoU≥0.5；OV 实测远优于档：Δ≤0.0015、IoU≥0.99）；位级口径（1e-3）仅在像素路径与 CPU 参考间适用。色彩域差异（直传 BT.601 系 vs 像素路径 BT.709 limited）见 INTEGRATION 知悉项。

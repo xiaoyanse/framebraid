@@ -31,7 +31,7 @@ For the current Windows x64 release, see the [release validation record](RELEASE
 | Local FILE / 本地文件 | MP4 H.264/H.265 initial scope, shipped since v0.4.0 / 首版口径 MP4 H.264/H.265，v0.4.0 起随包 | Seek (three modes), duration, rate and loop shipped in v0.5.0 (real-FFmpeg integration green) / seek 三档、时长、倍速与循环已随 v0.5.0 交付（真机 FFmpeg 集成全绿） |
 | Direct decoder / 独立解码 | Complete Annex B AU / 完整 Annex B AU | Caller assembles fragments/converts packetization / 调用方装配分片与转换封装 |
 | Vision / 推理 | Five fixed profile families and supported RAW tensor paths / 五类限定档案及支持的 RAW 张量 | Exact dtype/shape/export contracts; not all YOLO / 非全版本 YOLO |
-| Acceleration / 加速 | CPU/OpenVINO/CUDA selection APIs | Backend, runtime and hardware coverage follows the release validation record / 后端、运行库与设备覆盖以当版验证记录为准 |
+| Acceleration / 加速 | CPU/OpenVINO/CUDA selection APIs; GPU-frame direct input on CUDA sessions and OpenVINO GPU sessions (ABI 1.8 remote chain, Intel Arc verified) / CPU/OpenVINO/CUDA 选择 API；CUDA 会话与 OpenVINO GPU 会话（ABI 1.8 remote 链，Intel Arc 已验）的 GPU 帧直传 | OV remote 路径限定：classify center crop / 单帧尺寸流 / 双输入亲和档案显式拒绝；已验范围与回退矩阵以当版验证记录为准 / OV remote limits: classify center-crop, single-frame-size streams and dual-input affinity archives explicitly rejected; verified scope and fallback matrix follow the release validation record |
 | Shared frames / 共享帧 | Optional, trusted local processes / 可信本机进程可选能力 | No cross-machine bus, hostile-tenant isolation or universal zero-copy guarantee / 非跨机总线、租户隔离或全链路零拷贝保证 |
 | Browser playback / 浏览器 | Host supplies transport/player / 宿主提供传输与播放器 | Native packets do not make a complete browser player / 原生包不等于播放器 |
 | Business / 业务 | Host owns rules, alarms, PLC, persistence and UI | Not SDK capabilities / 不属于 SDK |

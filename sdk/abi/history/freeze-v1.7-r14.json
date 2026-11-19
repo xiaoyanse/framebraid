@@ -1,0 +1,64 @@
+{
+  "id": "am-sdk-cabi-1.7-stream-status-r14",
+  "previousFreezeSha256": "3d6aab40bdde5606db5906e6e7c4d1bed1308fda9c595defb7b692e95abcb8bf",
+  "abiVersion": 65543,
+  "designFrozen": true,
+  "runtimeAcceptance": "pending",
+  "files": [
+    {
+      "path": "sdk/include/am_camera.h",
+      "sha256": "2a121fc02cba783aa9cbb7da6714827cdd22d79e7624bbb1b48c73eb2a87ab58",
+      "bytes": 10834
+    },
+    {
+      "path": "sdk/include/am_vision.h",
+      "sha256": "e3137ae1ba24889b06aa54d028d8b253191b91f3e180ad66c5ffb40fc46f78ea",
+      "bytes": 8440
+    },
+    {
+      "path": "sdk/include/am_sdk_types.h",
+      "sha256": "97241ae261686f509082f02b711f1074d08ebc2663e2843c7dca5a7cc47214bf",
+      "bytes": 87544
+    },
+    {
+      "path": "sdk/abi/constants.json",
+      "sha256": "4847c478c4e8915a986b8beced5ee42a7eb84c83cd13cc7ae770f4f84ff3c0b6",
+      "bytes": 2343
+    },
+    {
+      "path": "sdk/abi/defaults.json",
+      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010",
+      "bytes": 1923
+    },
+    {
+      "path": "sdk/abi/layout-win-x64.json",
+      "sha256": "a2eda4c8d82ff17904909d2fd48131ec6bc828a4d41c48382563e77c0339a6be",
+      "bytes": 27055
+    },
+    {
+      "path": "sdk/abi/decode-hardware-report-v1.schema.json",
+      "sha256": "dfd333ccb6af19e04ea68ad950f3b507172e4fb9c8ea677bf9aaef42249142f0",
+      "bytes": 3849
+    },
+    {
+      "path": "sdk/abi/inference-hardware-report-v1.schema.json",
+      "sha256": "2d6dd24d8400f100f3cdcb6ec8bcd0801b20c92aab8e9023d6f06f81a20e17a9",
+      "bytes": 2171
+    },
+    {
+      "path": "sdk/abi/inference-selection-v1.schema.json",
+      "sha256": "3c56be61e0c28e34a2fd012f1826d378ad5aa4d70ba313d8d5e8af8495cc3465",
+      "bytes": 2887
+    },
+    {
+      "path": "crates/vision/resources/profiles.json",
+      "sha256": "dd3ebfaa949179c3bdb8e21ce363a2ee12bdf9f9b1bf9a81acc3d10bd3c4a79d",
+      "bytes": 6994
+    },
+    {
+      "path": "docs/design/dual-sdk-abi-freeze-v1.1.md",
+      "sha256": "77b2823b7ea9275d9b347c5d7f82b08f58941db8f0b7a3d19aea89836aa5eaed",
+      "bytes": 3490
+    }
+  ]
+}

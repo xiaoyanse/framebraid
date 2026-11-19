@@ -91,6 +91,7 @@ export const COVERAGE_EXEMPTIONS = new Map([
   ['crates/vision-ffi/src/inference/receipt_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
   ['crates/vision-ffi/src/inference/vocab_e2e_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
   ['crates/vision-ffi/src/inference/world_e2e_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
+  ['crates/vision-ffi/src/inference/ov_remote_e2e_tests.rs', '测试源码（sdk-intel-direct I-B 真机门；受控提取语义外）'],
   ['crates/vision/src/gpu/batch_e2e_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
   ['crates/vision/src/gpu/iobinding_tests.rs', '历史新增测试源码未登记（待登记裁决，不倒追）'],
 ]);

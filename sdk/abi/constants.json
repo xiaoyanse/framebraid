@@ -1,8 +1,8 @@
 {
  "abiMajor": 1,
- "abiMinor": 7,
+ "abiMinor": 8,
  "constants": {
-  "AM_ABI_VERSION": 65543,
+  "AM_ABI_VERSION": 65544,
   "AM_BACKEND_STRICT_CUDA_FP32": 2,
   "AM_OK": 0,
   "AM_CODEC_H264": 1,
