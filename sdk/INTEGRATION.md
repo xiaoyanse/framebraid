@@ -139,6 +139,29 @@ int rc = amv_infer_image_sync(model, &input, &params, &result, &id);
 - **动态批模型规划批形态前先跑符号维探针**：输出声明为全符号维（如 `[-1,-1,-1]`）的模型，在 FFI 面物理批形态（离线批/攒批窗口）恒 `resourceExhausted`——模型侧输出声明约束，非直传合同约束。探针用法（`--probe-offline` 三面探针）见 `.local/evidence/sdk-bench-gpu-20261116/gpu-direct-arm.md`。
 - 直传臂实测证据与诚实边界（单会话串行形态、纹理驻留形态、多路走多会话/池形态）见上报告；多路部署的攒批窗口批形状指导值（GPU 直传批 4/CPU 像素批 2）见下文自适应攒批与推理池段。
 
+## Intel GPU 帧直传部署侧启用（OpenVINO remote 输入路径，ABI 1.8）
+
+CUDA 路径之外，图像推理的 GPU 帧输入另支持 OpenVINO 原生 GPU 会话的 remote 直传（合同 [§3.3a](../docs/design/dual-dll-abi.md) ABI 1.8）：`AM_IMG_GPU_FRAME` 帧提交到 OV GPU 会话时，SDK 经 OV remote context（VA_SHARED/VA_SURFACE）把 D3D11 NV12 纹理零拷贝接入 OV preprocess 图（NV12 双平面→RGB→letterbox（pad 方形画布统一缩放）→/255），推理在 Intel GPU 完成，全程零 host 上传（搬运审计 `gpu_inputs` 计数同式、`input_copies_per_frame=0`）。
+
+**何时选此路径**：模型会话为 `AM_BACKEND_OPENVINO_NATIVE`（backend=4）且定向到 Intel GPU（selector 如 `arc`），源帧已是同进程 D3D11 NV12 纹理。NVIDIA 独显环境走上文 CUDA 路径；源帧在 CPU 内存时走像素路径。
+
+**启用步骤**：
+
+1. **运行库**：OV 运行库须含 GPU 插件（`openvino_intel_gpu_plugin.dll`）——随 `amv_init` 的 `runtime_dirs` 提供或经 `AM_SDK_OPENVINO_DIR` 显式指定；仅 CPU 插件的运行库下 OV GPU 定向加载失败（`gpu_device` 候选失败）、remote 探测为否。已验运行库：OpenVINO 2025.0.0（ort-ov-124-final 同源）；remote 属性键与其余 2025.x/2026.x 线为头文件级核对。
+2. **能力协商**：`amv_query_capability` 检查 bit10。ABI 1.8 起置位条件为"任一互操作入口可用"（CUDA 运行库或 OV remote）；实际可用性在接受时按会话后端校验。
+3. **会话定向**：`amv_model_load_selected` 用 `AM_BACKEND_OPENVINO_NATIVE` 候选 + 设备 selector（如 `match_utf8="arc"` strict）定向 Intel GPU——`amv_model_get_info` 的 `execution.device_utf8` 应为 `OpenVINO:GPU`。
+4. **帧引用与提交**：与 CUDA 路径同构（`am_gpu_frame_ref_t` + `AM_IMG_GPU_FRAME`）；纹理适配器厂商须与会话推理设备一致（§3.5b 厂商核对词把关，不一致显式 `notSupported` 且错误详情含设备域快照，不静默换卡）。
+
+**三条路径限定（ABI 1.8，实现注记）**：
+
+- **classify 档案**：OV remote 路径不支持 center crop 前处理（OV preprocess C API 无裁剪算子）——classify 档案的 GPU 帧输入在 OV 会话显式 `notSupported`；宿主改用像素路径或 CUDA 会话。"与像素路径同式"的 center crop 语义在 CUDA 路径有效。
+- **单帧尺寸流**：同一 OV 会话首版限单帧尺寸流（同模型二次 preprocess 构建在 OV 2025.0.0 运行库实测失败）；帧尺寸变化的素材用多会话（与"每会话固定输入尺寸"既有指导一致）。
+- **档案形态**：双输入亲和（词汇类）档案在 OV remote 路径显式拒绝（单图像输入通道）；像素路径不受影响。
+
+**数值口径**：GPU 域色彩转换（OV 直传 NV12→RGB）按引擎互操作的 BT.601 系，与像素路径 BT.709 limited 存在已知色域差（CUDA 线既有现象同类）；跨域对拍容差按合同容差分级用 GPU 域统计档（top conf Δ≤5e-2、配对 IoU≥0.5）。同模型多帧尺寸、classify center crop、双输入亲和三处显式拒绝错误详情均经 `amv_get_last_error` 携带会话后端与设备域快照，可编程判定回退。
+
+真机验证（Arc 140T，OV 2025.0.0）：身份零漂移（bus=5/zidane=3，三轮 60s 定时窗）、remote 对 CPU 像素臂对拍（配对 IoU≥0.99、top conf Δ≤0.0015，门 5e-2）、D3 冻结参考对照（IoU=1.000/Δconf=0.0000 编码臂）、回退矩阵三档（无 GPU 插件运行库/厂商不一致纹理/CPU 会话）与性能三臂量化见[交付状态](../docs/RELEASE_STATUS.md)与 `.local/evidence/sdk-intel-direct-ic-20261119/`。
+
 原生硬件探测与直接解码自动策略见[硬件接入](../docs/design/native-hardware.md)。原Rust CPU构造和1.0 C ABI布局未改变；本地新构建的直接C解码器已执行既有PREFER_HW策略（0），SOFTWARE_ONLY为1，旧公开CPU制品不会自动升级。RTSP策略与源报告已接线，完整设备/耐压与验收仍在H2实施中。
 
 Rust `runtime::query` 不再隐式探测 CUDA；需判定设备时显式 `devices::probe`，再将 `CudaSnapshot::from_probe` 传入 `query_snapshot`。

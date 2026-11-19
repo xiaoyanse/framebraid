@@ -768,7 +768,10 @@ runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力�
   完成（与像素路径 BT.709 limited 存在已知色域差，CUDA 线既有现象，非本扩展引入）；
   OV remote 前处理在 OV preprocess 图内完成（NV12 双平面 remote 张量→resize→convert
   →pad→scale），实现注记：OV scale 为除法语义（归一化传 255.0），pad 值用归一化前
-  114.0（两处均系原型实证陷阱）
+  114.0（两处均系原型实证陷阱）；（ABI 1.8，实现注记）classify 档案的 center crop
+  前处理在 OV remote 路径不支持（OV preprocess C API 无裁剪算子）——OV 会话的
+  GPU 帧输入遇 classify 档案显式返回 `notSupported`（宿主回退像素路径或改用 CUDA
+  会话）；"与像素路径同式"的 center crop 语义在 CUDA 路径有效不变
 - 设备域（2026-11-16 F03 起）：GPU 直传管线（CUDA 上下文/纹理注册缓存/输入张量分配）按
   会话定向解析的 CUDA ordinal 建立，与 CUDA EP 会话同设备；多 GPU 并发（同进程多 ordinal
   管线并存）代码路径已接线但未经双卡实测（单卡 ordinal 0 全链验证）。级联 GPU 帧路径
@@ -776,6 +779,11 @@ runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力�
 - 设备域 OV 侧（ABI 1.8）：OV 会话定向的 GPU 直传按会话定向解析的 OV GPU 设备建立
   remote context；D3D11 纹理所属适配器与推理设备须厂商一致（复用 §3.5b 厂商核对词
   机制把关），不一致返回 `notSupported` 显式拒绝（错误详情含设备域快照），不静默换卡
+- OV remote 会话边界（ABI 1.8，实现注记）：①帧尺寸——同一 OV 会话首版限单帧尺寸流
+  （同一模型二次 preprocess 构建在 OV 2025.0.0 运行库实测失败；remote 会话按
+  设备×帧尺寸缓存），尺寸变化需求用多会话（与既有"每会话固定输入尺寸"指导一致）；
+  ②档案形态——双输入亲和（词汇类）档案在 OV remote 路径显式拒绝（单图像输入通道），
+  像素路径不受影响
 - **显式输入不静默降级**：kind=GPU_FRAME 而模型会话不支持（非 CUDA EP/互操作不可用/
   输入格式不支持）返回 `notSupported`；回退是宿主决策（能力查询后改用 PIXEL_VIEW——
   像素路径永远可用，构成自然回退），SDK 内部不做隐式转换（隐式转换需回读，正是本
