@@ -107,7 +107,7 @@ Call `amc_stream_get_status` as needed (init struct_size=sizeof); retry on `sdk.
 
 Exactly 1.6 behavior (zero impact without the new export).
 
-## ABI 1.7 → 1.8（sdk-intel-direct 批，未发布——`AM_ABI_VERSION` 65543→65544；合同 §3.3a）
+## ABI 1.7 → 1.8（随 v0.8.3 发布，`AM_ABI_VERSION` 65543→65544；合同 §3.3a）
 
 **变了什么 / What changed**：无新导出、无结构变化、无错误码变化的兼容新增——①GPU 帧输入能力位 `AMV_CAP_GPU_FRAME_INPUT`（bit10）置位条件从"当前运行库 CUDA 互操作入口可用"扩展为"任一互操作入口可用"（CUDA 运行库可载，或 OV remote 面：`openvino_c` 可载且设备枚举域含 GPU；查询不触发 CUDA 初始化与推理编译，OV core 枚举进程级缓存）；②GPU 帧输入在 OpenVINO 原生 GPU 会话上开放（remote context 直传链，接受段完成纹理快照+厂商核对+帧尺寸会话缓存）；③搬运审计 OV 条款（`gpu_inputs` 计数同式、remote 臂 `input_copies_per_frame=0`、`input_cpu_fallbacks` 不适用）；④三条路径限定入合同（classify 档案 center crop / 单帧尺寸流 / 双输入亲和档案，OV remote 路径显式 `notSupported`，标注（ABI 1.8，实现注记））。types 附录 feature_bits 注释同步；生成链四件（C 头/Rust/Python/C#）随次版本重生成。
 

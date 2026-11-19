@@ -20,7 +20,7 @@ v0.5.0 adds C ABI 1.2 compatible surface (FILE-source seek/duration/rate/loop; o
 
 Local C ABI 1.1 r10 exposes a Media worker budget per Context (default/ceiling 64, tightening only, zero disables new SDK workers). Counts cover the eight C ABI worker kinds, excluding caller threads and unmanaged driver threads. Direct Rust SessionPool configuration remains a separate audit path. Python/C# helpers and Windows x64 loopback checks are [recorded](verification/sdk-r3-media-workers-20261027.md); no published-platform or soak guarantee is added. / 历史峰值不随收紧清零，不能拿旧峰值与新上限误判超额。
 
-For the current Windows x64 release, see the [release validation record](RELEASE_STATUS.md#v080-验证状态快照). It covers CPU, D3D11VA hardware decoding and the GPU inference paths (CUDA/DirectML), including the device-targeting selector. / 当前 Windows x64 版本的 CPU、D3D11VA 硬解与 GPU 推理路径（CUDA/DirectML）及设备定向选择器验证范围见[交付状态](RELEASE_STATUS.md#v080-验证状态快照)。
+For the current Windows x64 release, see the [release validation record](RELEASE_STATUS.md#v083-验证状态快照). It covers CPU, D3D11VA hardware decoding and the GPU inference paths (CUDA/DirectML), including the device-targeting selector and the OpenVINO remote direct-input path. / 当前 Windows x64 版本的 CPU、D3D11VA 硬解与 GPU 推理路径（CUDA/DirectML）、设备定向选择器及 OpenVINO remote 直传路径验证范围见[交付状态](RELEASE_STATUS.md#v083-验证状态快照)。
 
 | Area / 方面 | Current scope / 当前范围 | Limits / 限制 |
 | --- | --- | --- |
@@ -42,7 +42,7 @@ For the current Windows x64 release, see the [release validation record](RELEASE
 
 The runtime compatibility matrix in this document is authoritative; code comments on version constants must point here, and `RELEASE_STATUS.md` records the runtime versions verified for each release.
 
-v0.8.0 uses C ABI 1.6. Match DLLs, headers and bindings to the release, then query runtime capabilities. Before SDK 1.0, Rust and language wrapper APIs may evolve. / v0.8.0 使用 C ABI 1.6。按发布版本匹配 DLL、头文件及绑定，再查询运行时能力。SDK 1.0 前 Rust 和语言封装接口可能演进。
+v0.8.3 uses C ABI 1.8. Match DLLs, headers and bindings to the release, then query runtime capabilities. Before SDK 1.0, Rust and language wrapper APIs may evolve. / v0.8.3 使用 C ABI 1.8。按发布版本匹配 DLL、头文件及绑定，再查询运行时能力。SDK 1.0 前 Rust 和语言封装接口可能演进。
 
 ## Resource and safety limits / 资源及安全边界
 
