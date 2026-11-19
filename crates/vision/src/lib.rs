@@ -95,12 +95,14 @@ fn is_cuda_dependency(file_name: &str) -> bool {
             .any(|prefix| stem.starts_with(prefix))
 }
 
-/// GPU 线会话创建前从 CUDA 运行库目录（AM_SDK_CUDA_DIR→AM_SDK_ORT_DIR，
+/// 会话创建前从 CUDA 运行库目录（AM_SDK_CUDA_DIR→AM_SDK_ORT_DIR，
 /// 同 CudaApi::load 解析链）预载依赖全家桶：把 ORT CUDA EP 的依赖装载
-/// 从搜索序细节收拢为显式全路径加载。幂等（同名模块已加载跳过）；
-/// 族缺席或加载失败静默——预载是防御不是依赖，ORT 报精确的注册错误。
+/// 从搜索序细节收拢为显式全路径加载。核心入口（runtime_for）与 SDK/FFI
+/// 装载路径（sdk::runtime::initialize）共用本预载。幂等（同名模块已加载
+/// 跳过）；族缺席或加载失败静默——预载是防御不是依赖，ORT 报精确的注册
+/// 错误。按族存在性自限：无 CUDA 族的目录（CPU/OpenVINO 形态）自然空转。
 #[cfg(windows)]
-fn preload_cuda_dependencies() {
+pub(crate) fn preload_cuda_dependencies() {
     let dirs: Vec<PathBuf> = ["AM_SDK_CUDA_DIR", "AM_SDK_ORT_DIR"]
         .iter()
         .filter_map(|key| std::env::var_os(key).map(PathBuf::from))
@@ -158,7 +160,7 @@ fn preload_module(path: &Path) {
 }
 
 #[cfg(not(windows))]
-fn preload_cuda_dependencies() {}
+pub(crate) fn preload_cuda_dependencies() {}
 
 #[cfg(windows)]
 #[link(name = "kernel32")]
