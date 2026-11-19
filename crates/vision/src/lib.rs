@@ -1,5 +1,7 @@
 //! 视觉推理与后处理核心；无设备、数据库、任务或报警副作用。
 mod backend;
+#[cfg(test)]
+mod cuda_preload_tests;
 mod decode;
 mod engine;
 pub mod gpu;
@@ -23,7 +25,11 @@ use ort::{
     session::Session,
     value::{Tensor, TensorElementType, ValueType},
 };
-use std::{path::Path, sync::OnceLock, time::Instant};
+use std::{
+    path::{Path, PathBuf},
+    sync::OnceLock,
+    time::Instant,
+};
 
 #[derive(Debug, thiserror::Error)]
 #[error("{0}")]
@@ -54,6 +60,9 @@ fn runtime_for(backend: InferenceBackend) -> Result<()> {
                 "vision.runtimeMissing".into()
             });
         };
+        if matches!(backend, InferenceBackend::Cuda) {
+            preload_cuda_dependencies();
+        }
         ort::init_from(path)
             .map_err(|_| "vision.runtimeLoadFailed".to_string())?
             .commit();
@@ -61,6 +70,107 @@ fn runtime_for(backend: InferenceBackend) -> Result<()> {
     })
     .clone()
     .map_err(Error)
+}
+
+/// CUDA 依赖预载前缀族：枚举匹配不硬编码文件名（版本号随件集变）。
+/// cudnn 用单前缀覆盖 9.x 模块化全家（cudnn64_9 及 ops/cnn/adv/graph/
+/// heuristic/engines_*/ext 各子库，子库实际命名随 cuDNN 发行逐版不同）。
+const CUDA_PRELOAD_PREFIXES: &[&str] = &[
+    "cudart64_",
+    "cublas64_",
+    "cublasLt64_",
+    "cufft64_",
+    "nvblas64_",
+    "nvrtc64_",
+    "cudnn",
+];
+
+fn is_cuda_dependency(file_name: &str) -> bool {
+    let Some((stem, ext)) = file_name.rsplit_once('.') else {
+        return false;
+    };
+    ext.eq_ignore_ascii_case("dll")
+        && CUDA_PRELOAD_PREFIXES
+            .iter()
+            .any(|prefix| stem.starts_with(prefix))
+}
+
+/// 会话创建前从 CUDA 运行库目录（AM_SDK_CUDA_DIR→AM_SDK_ORT_DIR，
+/// 同 CudaApi::load 解析链）预载依赖全家桶：把 ORT CUDA EP 的依赖装载
+/// 从搜索序细节收拢为显式全路径加载。核心入口（runtime_for）与 SDK/FFI
+/// 装载路径（sdk::runtime::initialize）共用本预载。幂等（同名模块已加载
+/// 跳过）；族缺席或加载失败静默——预载是防御不是依赖，ORT 报精确的注册
+/// 错误。按族存在性自限：无 CUDA 族的目录（CPU/OpenVINO 形态）自然空转。
+#[cfg(windows)]
+pub(crate) fn preload_cuda_dependencies() {
+    let dirs: Vec<PathBuf> = ["AM_SDK_CUDA_DIR", "AM_SDK_ORT_DIR"]
+        .iter()
+        .filter_map(|key| std::env::var_os(key).map(PathBuf::from))
+        .collect();
+    preload_from_dirs(&dirs);
+}
+
+#[cfg(windows)]
+fn preload_from_dirs(dirs: &[PathBuf]) {
+    for dir in dirs {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            continue;
+        };
+        let mut paths: Vec<PathBuf> = entries
+            .flatten()
+            .map(|entry| entry.path())
+            .filter(|path| {
+                path.is_file()
+                    && path
+                        .file_name()
+                        .and_then(|name| name.to_str())
+                        .is_some_and(is_cuda_dependency)
+            })
+            .collect();
+        paths.sort();
+        for path in paths {
+            preload_module(&path);
+        }
+    }
+}
+
+#[cfg(windows)]
+fn preload_module(path: &Path) {
+    const LOAD_WITH_ALTERED_SEARCH_PATH: u32 = 0x8;
+    let Some(name) = path.file_name().and_then(|name| name.to_str()) else {
+        return;
+    };
+    let module = name.encode_utf16().chain(Some(0)).collect::<Vec<_>>();
+    unsafe {
+        if !GetModuleHandleW(module.as_ptr()).is_null() {
+            return;
+        }
+        let full = path
+            .as_os_str()
+            .to_string_lossy()
+            .encode_utf16()
+            .chain(Some(0))
+            .collect::<Vec<_>>();
+        LoadLibraryExW(
+            full.as_ptr(),
+            std::ptr::null_mut(),
+            LOAD_WITH_ALTERED_SEARCH_PATH,
+        );
+    }
+}
+
+#[cfg(not(windows))]
+pub(crate) fn preload_cuda_dependencies() {}
+
+#[cfg(windows)]
+#[link(name = "kernel32")]
+unsafe extern "system" {
+    fn GetModuleHandleW(name: *const u16) -> *mut std::ffi::c_void;
+    fn LoadLibraryExW(
+        path: *const u16,
+        file: *mut std::ffi::c_void,
+        flags: u32,
+    ) -> *mut std::ffi::c_void;
 }
 
 pub struct PoseModel {

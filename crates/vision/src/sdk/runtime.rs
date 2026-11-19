@@ -63,6 +63,7 @@ pub fn initialize(path: &Path) -> Result<()> {
     }
     windows::check_loaded(&canonical)?;
     let _preflight = windows::preflight(&canonical)?;
+    crate::preload_cuda_dependencies();
     ort::init_from(&canonical)
         .map_err(|_| Error("vision.runtimeLoadFailed".into()))?
         .commit();
