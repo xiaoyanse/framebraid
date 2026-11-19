@@ -364,15 +364,30 @@ pub fn release_for_shutdown() {
 }
 
 /// 搬运审计计数（M2c 主指标；模型级细分随后续任务挂 ModelHandle）。
+/// ABI 1.8 OV 条款：OV remote 直传零 host 上传，input_copies_per_frame 按零计
+/// ——进程级单字段按实际流量构成取值：纯 OV remote 流量=0，含 CUDA 流量=2
+/// （CUDA 臂 Y+UV D2D 各一；两路并存时进程级字段无法分报，取 CUDA 口径，
+/// 如实登记于合同注记）。
 pub mod audit {
     use std::sync::atomic::{AtomicU64, Ordering};
     pub static GPU_INPUTS: AtomicU64 = AtomicU64::new(0);
     pub static GPU_COPIES_PER_FRAME: AtomicU64 = AtomicU64::new(2); // Y+UV D2D 各一
+    /// OV remote 直传帧子计数（copies 口径判定用；gpu_inputs 两侧共同累加）。
+    pub static GPU_INPUTS_OV_REMOTE: AtomicU64 = AtomicU64::new(0);
+    /// OV remote 接受段帧记账（ov_remote::capture 调用）。
+    pub fn note_remote_input() {
+        GPU_INPUTS.fetch_add(1, Ordering::Relaxed);
+        GPU_INPUTS_OV_REMOTE.fetch_add(1, Ordering::Relaxed);
+    }
     pub fn snapshot() -> (u64, u64) {
-        (
-            GPU_INPUTS.load(Ordering::Relaxed),
-            GPU_COPIES_PER_FRAME.load(Ordering::Relaxed),
-        )
+        let inputs = GPU_INPUTS.load(Ordering::Relaxed);
+        let remote = GPU_INPUTS_OV_REMOTE.load(Ordering::Relaxed);
+        let copies = if inputs > 0 && remote == inputs {
+            0 // 纯 OV remote 流量：零 host 上传（合同 ABI 1.8 条款）
+        } else {
+            GPU_COPIES_PER_FRAME.load(Ordering::Relaxed)
+        };
+        (inputs, copies)
     }
 }
 

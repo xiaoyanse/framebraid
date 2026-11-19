@@ -63,6 +63,12 @@ pub(crate) fn vendor_token(vendor: u32) -> Option<&'static str> {
     }
 }
 
+/// Option 形态的厂商核对词（remote 直传接受段消费：适配器枚举失败=None，
+/// 与 vendor_token 同表同语义）。
+pub(crate) fn vendor_token_of(vendor: Option<u32>) -> Option<&'static str> {
+    vendor.and_then(vendor_token)
+}
+
 /// selection 消费点的定向解析结果：targets 为重写后候选；ov_ep_gpu 标记 OV EP
 /// （backend=1）候选定向 GPU 设备串；ov_native_vendor 为 OV 原生（backend=4）候选
 /// 定向 GPU 时 DXGI 命中适配器的厂商核对词（无定向/未知厂商为 None）。

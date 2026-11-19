@@ -205,10 +205,19 @@ fn run_profile(
         }
     }
     if !gpu.is_empty() {
-        for (index, result) in run_profile_gpu(
-            model, session, inputs, ids, params, &gpu, &injected, available, segment, row_bytes,
-            overhead,
-        )? {
+        // GPU 帧物理批按会话引擎分派：CUDA=设备侧组装单次 run_gpu；OV GPU=
+        // remote 帧逐帧推理（preprocess 图融合在编译产物内，OV 侧无跨帧组装）。
+        let arm = if session.is_cuda() {
+            run_profile_gpu(
+                model, session, inputs, ids, params, &gpu, &injected, available, segment,
+                row_bytes, overhead,
+            )
+        } else {
+            run_profile_ov_remote(
+                model, session, inputs, ids, params, &gpu, available, segment, row_bytes, overhead,
+            )
+        };
+        for (index, result) in arm? {
             results[index] = Some(result);
         }
     }
@@ -375,7 +384,12 @@ fn run_profile_gpu(
     let frames: Vec<&am_vision_core::gpu::iobinding::InferenceInput> = indices
         .iter()
         .map(|i| match &inputs[*i] {
-            Input::Image(image) => image.gpu.as_ref().map(|g| &g.binding),
+            // OV remote 帧不进 CUDA 组装臂（run_profile 已按会话引擎分派；
+            // 混入即内部路由错误，显式报错不静默跳过）。
+            Input::Image(image) => match image.gpu.as_ref() {
+                Some(super::super::input::GpuFrame::Cuda { binding, .. }) => Some(binding),
+                _ => None,
+            },
             _ => None,
         })
         .collect::<Option<Vec<_>>>()
@@ -383,11 +397,10 @@ fn run_profile_gpu(
     let mappings: Vec<sdk::ImageTransform> = indices
         .iter()
         .map(|i| match &inputs[*i] {
-            Input::Image(image) => image
-                .gpu
-                .as_ref()
-                .map(|g| g.transform)
-                .ok_or(AM_ERR_SDK_INTERNAL_ERROR),
+            Input::Image(image) => match image.gpu.as_ref() {
+                Some(super::super::input::GpuFrame::Cuda { transform, .. }) => Ok(*transform),
+                _ => Err(AM_ERR_SDK_INTERNAL_ERROR),
+            },
             _ => Err(AM_ERR_SDK_INTERNAL_ERROR),
         })
         .collect::<Result<Vec<_>>>()?;
@@ -461,6 +474,84 @@ fn run_profile_gpu(
                 inputs[*index].assoc(),
                 Some(mapping),
                 row,
+                prediction,
+                None,
+                start,
+                end,
+                charge,
+            )?,
+        ));
+    }
+    Ok(results)
+}
+
+/// OV remote 帧物理批（ABI 1.8）：接受段产物（remote 双平面张量+自有纹理）
+/// 逐帧绑定推理——preprocess 图融合在 remote 编译产物内，OV 侧无跨帧设备
+/// 组装面；计费/解码与 CPU/CUDA 臂同式（逐项映射/params）。词汇注入在
+/// 接受段已对双输入档案显式拒绝（此臂无注入面）。
+#[allow(clippy::too_many_arguments)]
+fn run_profile_ov_remote(
+    model: &ModelHandle,
+    session: &mut sdk::Model,
+    inputs: &[Input],
+    ids: &[u64],
+    params: &[am_infer_params_t],
+    indices: &[usize],
+    available: usize,
+    segment: bool,
+    row_bytes: usize,
+    overhead: usize,
+) -> Result<Vec<(usize, Arc<ResultBuffer>)>> {
+    let frames: Vec<&am_vision_core::sdk::OvRemoteFrame> = indices
+        .iter()
+        .map(|i| match &inputs[*i] {
+            Input::Image(image) => match &image.gpu {
+                Some(super::super::input::GpuFrame::Ov { frame }) => Some(frame.as_ref()),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect::<Option<Vec<_>>>()
+        .ok_or(AM_ERR_SDK_INTERNAL_ERROR)?;
+    let mappings: Vec<sdk::ImageTransform> = frames.iter().map(|frame| frame.transform).collect();
+    let charges: Vec<_> = indices
+        .iter()
+        .zip(&mappings)
+        .map(|(index, mapping)| {
+            let p = item_params(params, *index);
+            model
+                .state
+                .charge(row_bytes + mask_of(segment, mapping, item_max_det(p)) + overhead)
+        })
+        .collect::<Result<Vec<_>>>()?;
+    let output_budget = row_bytes
+        .saturating_mul(indices.len())
+        .saturating_add(overhead)
+        .min(available);
+    let mut results = Vec::with_capacity(indices.len());
+    for ((slot, index), charge) in indices.iter().enumerate().zip(charges) {
+        let p = item_params(params, *index);
+        let max_det = item_max_det(p);
+        let mapping = mappings[slot];
+        let reserve = row_bytes + mask_of(segment, &mapping, max_det) + overhead;
+        let start = am_sdk_support::clock::monotonic_ms();
+        let raw = session
+            .run_ov_remote(frames[slot], output_budget)
+            .map_err(error)?;
+        model.refresh_selection(session);
+        let raw_bytes = tensors_bytes(&raw);
+        let prediction = execution::decode_profile(
+            session, &raw, &mapping, p, max_det, reserve, raw_bytes, None,
+        )?;
+        let end = am_sdk_support::clock::monotonic_ms();
+        results.push((
+            *index,
+            ResultBuffer::build(
+                model,
+                ids[*index],
+                inputs[*index].assoc(),
+                Some(mapping),
+                raw,
                 prediction,
                 None,
                 start,

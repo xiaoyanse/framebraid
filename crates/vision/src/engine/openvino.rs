@@ -53,12 +53,36 @@ pub(crate) struct OpenvinoEngine {
     pub(crate) outputs: Vec<TensorInfo>,
     /// 实际编译设备（OV 设备名："CPU" 或 GPU 域设备名）；定向核对与标签用。
     pub(crate) device: String,
+    /// 编译设备的 FULL_DEVICE_NAME（GPU 定向时回填；厂商核对词机制消费）。
+    device_full_name: String,
+    /// remote 直传会话缓存（ABI 1.8：按 D3D11 设备×帧尺寸键控；惰性建立）。
+    pub(crate) remote_sessions: super::ov_remote::RemoteSessions,
 }
 
 impl OpenvinoEngine {
     /// 是否编译在 GPU 设备域（am_backend_actual_t.device_utf8 "OpenVINO:GPU" 语义）。
     pub(crate) fn is_gpu(&self) -> bool {
         self.device == "GPU" || self.device.starts_with("GPU.")
+    }
+    /// remote 直传面访问器（ov_remote 模块消费；句柄借用期=引擎存活期）。
+    pub(crate) fn api(&self) -> &Arc<OvApi> {
+        &self.api
+    }
+    pub(crate) fn core(&self) -> *mut ov_core_t {
+        self.core
+    }
+    pub(crate) fn model(&self) -> *mut ov_model_t {
+        self.model
+    }
+    pub(crate) fn device_name(&self) -> &str {
+        &self.device
+    }
+    pub(crate) fn device_full_name(&self) -> &str {
+        &self.device_full_name
+    }
+    /// 最近一次 GPU 域枚举快照（诊断/拒绝详情用）。
+    pub(crate) fn gpu_domain_snapshot(&self) -> Option<String> {
+        gpu_domain_detail()
     }
 }
 
@@ -86,7 +110,10 @@ impl Drop for OpenvinoEngine {
 
 /// 句柄为独占所有（Box 语义），OpenVINO 运行时对象无线程亲和，跨线程移动与 Drop 安全；
 /// 并发使用仍由 ModelHandle 的 Mutex 串行化（同 ORT Session 的 Send 语义）。
+/// Sync：ModelEngine::Ov(Arc<…>) 经 Arc 进入 Model 的 Send 链需双标记
+/// （GpuPipeline 先例；访问始终由会话锁串行）。
 unsafe impl Send for OpenvinoEngine {}
+unsafe impl Sync for OpenvinoEngine {}
 
 /// ov 元素类型 → TensorData dtype 合同值（sdk/model.rs byte_count 同套编码）；
 /// 序数按运行库线选表（2025.0.x 旧序数经 ElementLine 适配）。
@@ -239,7 +266,7 @@ unsafe fn probe_remote_once() -> bool {
     let Ok(api) = OvApi::load() else {
         return false;
     };
-    api.remote_symbols_present() && unsafe { gpu_in_device_domain(&api) }
+    api.remote_surface_ready() && unsafe { gpu_in_device_domain(&api) }
 }
 
 /// 设备枚举域是否含 GPU 设备（"GPU"/"GPU.N"；resolve_gpu_device 同款过滤口径）。
@@ -285,15 +312,21 @@ unsafe fn build(
         inputs: Vec::new(),
         outputs: Vec::new(),
         device: String::new(),
+        device_full_name: String::new(),
+        remote_sessions: super::ov_remote::RemoteSessions::new(),
     };
     ov_try((api.core_create)(&mut engine.core), "core_create")?;
+    let mut device_full_name = String::new();
     let device = match target {
         CompileDevice::Cpu => c"CPU".to_owned(),
         CompileDevice::Gpu { selector, vendor } => {
-            resolve_gpu_device(&api, engine.core, selector, vendor)?
+            let (name, full) = resolve_gpu_device(&api, engine.core, selector, vendor)?;
+            device_full_name = full;
+            name
         }
     };
     engine.device = device.to_string_lossy().into_owned();
+    engine.device_full_name = device_full_name;
     // ONNX 内存加载不使用 weights（仅 IR 需要）；中途失败由 Drop 兜住已建句柄。
     ov_try(
         (api.read_model_from_memory_buffer)(
@@ -341,7 +374,7 @@ unsafe fn resolve_gpu_device(
     core: *mut ov_core_t,
     selector: &DeviceSelector,
     vendor: Option<&'static str>,
-) -> std::result::Result<CString, CreateFailure> {
+) -> std::result::Result<(CString, String), CreateFailure> {
     let mut devices = ov_sys::ov_available_devices_t {
         devices: null_mut(),
         size: 0,
@@ -374,7 +407,17 @@ unsafe fn resolve_gpu_device(
         *slot = Some(format!("ov gpu device domain [{listing}]"));
     }
     match pick_gpu_device(&gpu_devices, selector.needle(), selector.instance(), vendor) {
-        Some(name) => CString::new(name.as_str()).map_err(|_| fail("gpu_device")),
+        Some(name) => {
+            // 选定设备的全名随设备名一并返回（remote 直传厂商核对词机制消费）。
+            let full = gpu_devices
+                .iter()
+                .find(|(candidate, _)| *candidate == name)
+                .map(|(_, full)| full.clone())
+                .unwrap_or_default();
+            CString::new(name.as_str())
+                .map(|name| (name, full))
+                .map_err(|_| fail("gpu_device"))
+        }
         None => Err(fail("gpu_device")),
     }
 }
@@ -581,8 +624,14 @@ impl OpenvinoEngine {
             let mut outputs = Vec::with_capacity(self.outputs.len());
             for (index, spec) in self.outputs.iter().enumerate() {
                 // 剩余预算传入读取：复制前检查（F06，对齐 ORT 先扣后复制语义），
-                // 外层扣减维护多输出累加。
-                let built = self.read_output(index, spec, remaining)?;
+                // 外层扣减维护多输出累加；输出读取失败为交付类（native_ok=true）。
+                let built = read_output_tensor(api, self.request, index, spec, remaining).map_err(
+                    |error| OvInferError {
+                        native_ok: true,
+                        native_code: None,
+                        error,
+                    },
+                )?;
                 let allocated = built
                     .bytes()
                     .len()
@@ -594,48 +643,59 @@ impl OpenvinoEngine {
             Ok(outputs)
         }
     }
+}
 
-    /// 读单个输出张量并释放句柄；shape/类型/尺寸/数据在 free 前全部取值。
-    /// remaining：本输出复制前的剩余预算（F06：TensorData 分配前检查）。
-    unsafe fn read_output(
-        &self,
-        index: usize,
-        name_spec: &TensorInfo,
-        remaining: usize,
-    ) -> std::result::Result<TensorData, OvInferError> {
-        let api = &self.api;
+fn exhaustion() -> OvInferError {
+    OvInferError {
+        native_ok: true,
+        native_code: None,
+        error: Error("sdk.resourceExhausted".into()),
+    }
+}
+
+/// dtype→ov 元素序数的 crate 内便捷面（ov_remote preprocess 图构造消费）。
+pub(crate) fn element_of_dtype(
+    dtype: u32,
+    line: ElementLine,
+) -> std::result::Result<ov_element_type_e, Error> {
+    element_type_of(dtype, line)
+}
+
+/// 按索引读取推理请求输出为 TensorData（引擎与 remote 直传共用；shape/类型/
+/// 尺寸在 tensor_free 前全部取值，预算先扣后复制——F06 口径）。
+pub(crate) unsafe fn read_output_tensor(
+    api: &OvApi,
+    request: *mut ov_infer_request_t,
+    index: usize,
+    name_spec: &TensorInfo,
+    remaining: usize,
+) -> std::result::Result<TensorData, Error> {
+    unsafe {
         let mut tensor: *mut ov_tensor_t = null_mut();
-        if (api.infer_request_get_output_tensor_by_index)(self.request, index, &mut tensor) != OV_OK
+        if (api.infer_request_get_output_tensor_by_index)(request, index, &mut tensor) != OV_OK
             || tensor.is_null()
         {
-            return Err(OvInferError {
-                native_ok: true,
-                native_code: None,
-                error: Error("vision.inferenceFailed".into()),
-            });
+            return Err(Error("vision.inferenceFailed".into()));
         }
-        let built = self.read_output_data(tensor, name_spec, remaining);
+        let built = read_output_data(api, tensor, name_spec, remaining);
         (api.tensor_free)(tensor);
         built
     }
+}
 
-    unsafe fn read_output_data(
-        &self,
-        tensor: *mut ov_tensor_t,
-        name_spec: &TensorInfo,
-        remaining: usize,
-    ) -> std::result::Result<TensorData, OvInferError> {
-        let api = &self.api;
+unsafe fn read_output_data(
+    api: &OvApi,
+    tensor: *mut ov_tensor_t,
+    name_spec: &TensorInfo,
+    remaining: usize,
+) -> std::result::Result<TensorData, Error> {
+    unsafe {
         let mut shape = ov_sys::ov_shape_t {
             rank: 0,
             dims: null_mut(),
         };
         if (api.tensor_get_shape)(tensor, &mut shape) != OV_OK {
-            return Err(OvInferError {
-                native_ok: true,
-                native_code: None,
-                error: Error("vision.inferenceFailed".into()),
-            });
+            return Err(Error("vision.inferenceFailed".into()));
         }
         let dims: Vec<i64> = if shape.rank > 0 && !shape.dims.is_null() {
             std::slice::from_raw_parts(shape.dims, shape.rank as usize).to_vec()
@@ -644,26 +704,13 @@ impl OpenvinoEngine {
         };
         let _ = (api.shape_free)(&mut shape);
         if dims.is_empty() || dims.iter().any(|d| *d <= 0) {
-            return Err(OvInferError {
-                native_ok: true,
-                native_code: None,
-                error: Error("vision.inferenceFailed".into()),
-            });
+            return Err(Error("vision.inferenceFailed".into()));
         }
         let mut element: ov_element_type_e = 0;
         if (api.tensor_get_element_type)(tensor, &mut element) != OV_OK {
-            return Err(OvInferError {
-                native_ok: true,
-                native_code: None,
-                error: Error("vision.inferenceFailed".into()),
-            });
+            return Err(Error("vision.inferenceFailed".into()));
         }
-        let dtype =
-            map_element_type(element, self.api.element_line()).map_err(|error| OvInferError {
-                native_ok: true,
-                native_code: None,
-                error,
-            })?;
+        let dtype = map_element_type(element, api.element_line())?;
         let info = TensorInfo {
             name: name_spec.name.clone(),
             dtype,
@@ -671,38 +718,21 @@ impl OpenvinoEngine {
         };
         let mut size = 0usize;
         if (api.tensor_get_byte_size)(tensor, &mut size) != OV_OK {
-            return Err(OvInferError {
-                native_ok: true,
-                native_code: None,
-                error: Error("vision.inferenceFailed".into()),
-            });
+            return Err(Error("vision.inferenceFailed".into()));
         }
         let mut data: *mut c_void = null_mut();
-        // 预算检查在复制之前（F06）：按原生 byte size 对齐 8 扣减，不足即耗尽，
-        // 不再先 TensorData::new 分配复制后才报（零预算/差一字节均不得先复制）。
-        let allocated = size.checked_next_multiple_of(8).ok_or_else(exhaustion)?;
-        remaining.checked_sub(allocated).ok_or_else(exhaustion)?;
+        // 预算检查在复制之前（F06）：按原生 byte size 对齐 8 扣减。
+        let allocated = size
+            .checked_next_multiple_of(8)
+            .ok_or_else(|| Error("sdk.resourceExhausted".into()))?;
+        remaining
+            .checked_sub(allocated)
+            .ok_or_else(|| Error("sdk.resourceExhausted".into()))?;
         if (api.tensor_data)(tensor, &mut data) != OV_OK || data.is_null() {
-            return Err(OvInferError {
-                native_ok: true,
-                native_code: None,
-                error: Error("vision.inferenceFailed".into()),
-            });
+            return Err(Error("vision.inferenceFailed".into()));
         }
         let raw = std::slice::from_raw_parts(data.cast(), size);
-        TensorData::new(info, raw).map_err(|error| OvInferError {
-            native_ok: true,
-            native_code: None,
-            error,
-        })
-    }
-}
-
-fn exhaustion() -> OvInferError {
-    OvInferError {
-        native_ok: true,
-        native_code: None,
-        error: Error("sdk.resourceExhausted".into()),
+        TensorData::new(info, raw)
     }
 }
 
@@ -961,13 +991,16 @@ mod tests {
     }
 
     /// remote 六符号 Option 化：任一缺失即探测面不可用（旧运行库装载不受影响）；
-    /// 全在才判可用。variadic 桥接桩永不调用（被调即 panic）。
+    /// 全在才判可用。直传面就绪 = remote 六符号 + preprocess 族/按名绑定/模型
+    /// 端口全在（remote_surface_ready）。variadic 桥接桩永不调用（被调即 panic）。
     #[test]
     fn remote_symbol_presence_requires_all_six_symbols() {
         let bare = port_release_injection::stub_api(true, true, true);
         assert!(!bare.remote_symbols_present());
+        assert!(!bare.remote_surface_ready(), "缺族探测面必须判不可用");
         let full = port_release_injection::stub_api_remote_present();
         assert!(full.remote_symbols_present());
+        assert!(full.remote_surface_ready(), "全符号探测面应判可用");
     }
 
     #[test]
@@ -1573,6 +1606,105 @@ mod tests {
             _v: *mut *mut c_char,
         ) -> i32);
         panic_stub_r!(stub_get_last_err_msg() -> *const c_char);
+        panic_stub_r!(stub_set_tensor_by_name(
+            _r: *mut ov_infer_request_t,
+            _n: *const c_char,
+            _t: *const ov_tensor_t,
+        ) -> i32);
+        panic_stub_r!(stub_model_inputs_size(_m: *const ov_model_t, _n: *mut usize) -> i32);
+        panic_stub_r!(stub_model_input_by_index(
+            _m: *const ov_model_t,
+            _i: usize,
+            _p: *mut *mut ov_output_const_port_t,
+        ) -> i32);
+        panic_stub_r!(stub_layout_create(
+            _s: *const c_char,
+            _l: *mut *mut super::ov_sys::ov_layout_t,
+        ) -> i32);
+        panic_stub_v!(stub_layout_free(_l: *mut super::ov_sys::ov_layout_t));
+        panic_stub_r!(stub_pp_create(
+            _m: *const ov_model_t,
+            _p: *mut *mut super::ov_sys::ov_prepostprocessor_t,
+        ) -> i32);
+        panic_stub_v!(stub_pp_free(_p: *mut super::ov_sys::ov_prepostprocessor_t));
+        panic_stub_r!(stub_pp_build(
+            _p: *mut super::ov_sys::ov_prepostprocessor_t,
+            _m: *mut *mut ov_model_t,
+        ) -> i32);
+        panic_stub_r!(stub_pp_get_input_info(
+            _p: *mut super::ov_sys::ov_prepostprocessor_t,
+            _i: *mut *mut super::ov_sys::ov_preprocess_input_info_t,
+        ) -> i32);
+        panic_stub_v!(stub_input_info_free(
+            _i: *mut super::ov_sys::ov_preprocess_input_info_t
+        ));
+        panic_stub_r!(stub_input_info_get_tensor_info(
+            _i: *mut super::ov_sys::ov_preprocess_input_info_t,
+            _t: *mut *mut super::ov_sys::ov_preprocess_input_tensor_info_t,
+        ) -> i32);
+        panic_stub_v!(stub_tensor_info_free(
+            _t: *mut super::ov_sys::ov_preprocess_input_tensor_info_t
+        ));
+        panic_stub_r!(stub_tensor_info_set_element_type(
+            _t: *mut super::ov_sys::ov_preprocess_input_tensor_info_t,
+            _e: ov_element_type_e,
+        ) -> i32);
+        panic_stub_r!(stub_tensor_info_set_memory_type(
+            _t: *mut super::ov_sys::ov_preprocess_input_tensor_info_t,
+            _s: *const c_char,
+        ) -> i32);
+        panic_stub_r!(stub_tensor_info_set_spatial(
+            _t: *mut super::ov_sys::ov_preprocess_input_tensor_info_t,
+            _h: usize,
+            _w: usize,
+        ) -> i32);
+        panic_stub_r!(stub_tensor_info_set_layout(
+            _t: *mut super::ov_sys::ov_preprocess_input_tensor_info_t,
+            _l: *const super::ov_sys::ov_layout_t,
+        ) -> i32);
+        panic_stub_r!(stub_input_info_get_steps(
+            _i: *mut super::ov_sys::ov_preprocess_input_info_t,
+            _s: *mut *mut super::ov_sys::ov_preprocess_preprocess_steps_t,
+        ) -> i32);
+        panic_stub_v!(stub_steps_free(
+            _s: *mut super::ov_sys::ov_preprocess_preprocess_steps_t
+        ));
+        panic_stub_r!(stub_steps_convert_color(
+            _s: *mut super::ov_sys::ov_preprocess_preprocess_steps_t,
+            _c: u32,
+        ) -> i32);
+        panic_stub_r!(stub_steps_resize(
+            _s: *mut super::ov_sys::ov_preprocess_preprocess_steps_t,
+            _a: u32,
+        ) -> i32);
+        panic_stub_r!(stub_steps_convert_element_type(
+            _s: *mut super::ov_sys::ov_preprocess_preprocess_steps_t,
+            _e: ov_element_type_e,
+        ) -> i32);
+        panic_stub_r!(stub_steps_pad(
+            _s: *mut super::ov_sys::ov_preprocess_preprocess_steps_t,
+            _b: *const i32,
+            _bn: usize,
+            _e: *const i32,
+            _en: usize,
+            _v: f32,
+            _m: u32,
+        ) -> i32);
+        panic_stub_r!(stub_steps_scale(
+            _s: *mut super::ov_sys::ov_preprocess_preprocess_steps_t,
+            _v: f32,
+        ) -> i32);
+        panic_stub_r!(stub_input_info_get_model_info(
+            _i: *mut super::ov_sys::ov_preprocess_input_info_t,
+            _m: *mut *mut super::ov_sys::ov_preprocess_input_model_info_t,
+        ) -> i32);
+        panic_stub_v!(stub_model_info_free(
+            _m: *mut super::ov_sys::ov_preprocess_input_model_info_t
+        ));
+        panic_stub_r!(stub_model_info_set_layout(
+            _m: *mut super::ov_sys::ov_preprocess_input_model_info_t,
+            _l: *const super::ov_sys::ov_layout_t,
+        ) -> i32);
 
         pub(super) fn stub_api(
             shape_ok_path: bool,
@@ -1640,13 +1772,41 @@ mod tests {
                 remote_context_get_params: None,
                 remote_tensor_get_params: None,
                 remote_context_free: None,
+                infer_request_set_tensor: None,
+                model_inputs_size: None,
+                model_const_input_by_index: None,
+                layout_create: None,
+                layout_free: None,
+                prepostprocessor_create: None,
+                prepostprocessor_free: None,
+                prepostprocessor_build: None,
+                prepostprocessor_get_input_info: None,
+                input_info_free: None,
+                input_info_get_tensor_info: None,
+                tensor_info_free: None,
+                tensor_info_set_element_type: None,
+                tensor_info_set_color_format_with_subname: None,
+                tensor_info_set_memory_type: None,
+                tensor_info_set_spatial_static_shape: None,
+                tensor_info_set_layout: None,
+                input_info_get_preprocess_steps: None,
+                steps_free: None,
+                steps_convert_color: None,
+                steps_resize: None,
+                steps_convert_element_type: None,
+                steps_pad: None,
+                steps_scale: None,
+                input_info_get_model_info: None,
+                model_info_free: None,
+                model_info_set_layout: None,
                 version: String::new(),
                 element_line: ElementLine::Current,
             }
         }
 
-        /// remote 族全 Some 桩（variadic 签名 Rust 稳定版无法直接声明 stub：
-        /// 零参 panic stub 经 transmute 桥接；presence 检查只读 is_some 永不调用）。
+        /// remote 直传面全 Some 桩（variadic 签名 Rust 稳定版无法直接声明
+        /// stub：零参 panic stub 经 transmute 桥接；presence 检查只读 is_some
+        /// 永不调用）。remote 六符号 + preprocess 族/set_tensor/模型端口全置。
         pub(super) fn stub_api_remote_present() -> OvApi {
             macro_rules! variadic_panic_stub {
                 ($name:ident) => {{
@@ -1666,6 +1826,34 @@ mod tests {
             api.remote_context_get_params = Some(variadic_panic_stub!(stub_ov_ctx_params));
             api.remote_tensor_get_params = Some(variadic_panic_stub!(stub_ov_tensor_params));
             api.remote_context_free = Some(variadic_panic_stub!(stub_ov_ctx_free));
+            api.infer_request_set_tensor = Some(stub_set_tensor_by_name);
+            api.model_inputs_size = Some(stub_model_inputs_size);
+            api.model_const_input_by_index = Some(stub_model_input_by_index);
+            api.layout_create = Some(stub_layout_create);
+            api.layout_free = Some(stub_layout_free);
+            api.prepostprocessor_create = Some(stub_pp_create);
+            api.prepostprocessor_free = Some(stub_pp_free);
+            api.prepostprocessor_build = Some(stub_pp_build);
+            api.prepostprocessor_get_input_info = Some(stub_pp_get_input_info);
+            api.input_info_free = Some(stub_input_info_free);
+            api.input_info_get_tensor_info = Some(stub_input_info_get_tensor_info);
+            api.tensor_info_free = Some(stub_tensor_info_free);
+            api.tensor_info_set_element_type = Some(stub_tensor_info_set_element_type);
+            api.tensor_info_set_color_format_with_subname =
+                Some(variadic_panic_stub!(stub_tensor_info_set_color));
+            api.tensor_info_set_memory_type = Some(stub_tensor_info_set_memory_type);
+            api.tensor_info_set_spatial_static_shape = Some(stub_tensor_info_set_spatial);
+            api.tensor_info_set_layout = Some(stub_tensor_info_set_layout);
+            api.input_info_get_preprocess_steps = Some(stub_input_info_get_steps);
+            api.steps_free = Some(stub_steps_free);
+            api.steps_convert_color = Some(stub_steps_convert_color);
+            api.steps_resize = Some(stub_steps_resize);
+            api.steps_convert_element_type = Some(stub_steps_convert_element_type);
+            api.steps_pad = Some(stub_steps_pad);
+            api.steps_scale = Some(stub_steps_scale);
+            api.input_info_get_model_info = Some(stub_input_info_get_model_info);
+            api.model_info_free = Some(stub_model_info_free);
+            api.model_info_set_layout = Some(stub_model_info_set_layout);
             api
         }
 

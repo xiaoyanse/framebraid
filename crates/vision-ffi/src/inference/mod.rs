@@ -17,6 +17,8 @@ mod hardware;
 mod input;
 mod models;
 mod notify;
+#[cfg(test)]
+mod ov_remote_e2e_tests;
 mod pool;
 #[cfg(test)]
 mod pool_e2e_tests;
