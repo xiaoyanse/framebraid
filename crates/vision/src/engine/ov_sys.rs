@@ -56,6 +56,24 @@ pub enum ov_compiled_model_t {}
 pub enum ov_infer_request_t {}
 pub enum ov_tensor_t {}
 pub enum ov_output_const_port_t {}
+pub enum ov_remote_context_t {}
+
+/// GPU 插件 VA 互操作属性键（ov_core_create_context / ov_remote_context_create_tensor
+/// 的 C 变参对）：键串与值串经 2025.0.0/2025.1.0/2025.3.0/2026.1.0 四线
+/// intel_gpu/remote_properties.hpp 逐线核对一致；运行库级实证仅 2025.0.0 线（本机唯一
+/// 含 GPU 插件运行库）。VA_DEVICE/DEV_OBJECT_HANDLE 值为 void* 线（gpu_handle_param）；
+/// VA_PLANE 经 C 变参传字符串，插件侧按 uint32 解析。remote 张量元素类型序数沿用
+/// 既有 ElementLine 表（无新序数）。allow：键串先于调用链锚定（直传接线批次消费）。
+#[allow(dead_code)]
+pub mod va_keys {
+    pub const CONTEXT_TYPE: &str = "CONTEXT_TYPE";
+    pub const VA_SHARED: &str = "VA_SHARED";
+    pub const VA_DEVICE: &str = "VA_DEVICE";
+    pub const SHARED_MEM_TYPE: &str = "SHARED_MEM_TYPE";
+    pub const VA_SURFACE: &str = "VA_SURFACE";
+    pub const DEV_OBJECT_HANDLE: &str = "DEV_OBJECT_HANDLE";
+    pub const VA_PLANE: &str = "VA_PLANE";
+}
 
 /// ov_shape.h：按值传参；API 返回的 shape 须 ov_shape_free，自建 shape 由局部 Vec 撑住。
 #[derive(Clone, Copy)]
@@ -161,6 +179,47 @@ pub struct OvApi {
     /// 诊断用：错误消息只进冒烟/联调日志，不进 selection 报告（同 ORT 键纪律）。
     #[allow(dead_code)]
     pub get_last_err_msg: unsafe extern "C" fn() -> *const c_char,
+    /// remote 互操作族（ABI 1.8 直传面）：Option 解析——缺符号的旧运行库照常
+    /// CPU/GPU 推理，仅 remote 直传能力探测判不可用；签名四线核对一致。
+    pub core_create_context: Option<
+        unsafe extern "C" fn(
+            *const ov_core_t,
+            *const c_char,
+            usize,
+            *mut *mut ov_remote_context_t,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub compile_model_with_context: Option<
+        unsafe extern "C" fn(
+            *const ov_core_t,
+            *const ov_model_t,
+            *const ov_remote_context_t,
+            usize,
+            *mut *mut ov_compiled_model_t,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub remote_context_create_tensor: Option<
+        unsafe extern "C" fn(
+            *const ov_remote_context_t,
+            ov_element_type_e,
+            ov_shape_t,
+            usize,
+            *mut *mut ov_tensor_t,
+            ...
+        ) -> ov_status_e,
+    >,
+    pub remote_context_get_params: Option<
+        unsafe extern "C" fn(
+            *const ov_remote_context_t,
+            *mut usize,
+            *mut *mut c_char,
+        ) -> ov_status_e,
+    >,
+    pub remote_tensor_get_params:
+        Option<unsafe extern "C" fn(*mut ov_tensor_t, *mut usize, *mut *mut c_char) -> ov_status_e>,
+    pub remote_context_free: Option<unsafe extern "C" fn(*mut ov_remote_context_t)>,
     /// 装载即取的运行库版本（诊断用：失败详情/E1.6 对拍读，正常推理不读）。
     pub(crate) version: String,
     /// 元素类型序数线（按 version 判定）：map/逆映射按此选表。
@@ -176,6 +235,15 @@ impl OvApi {
     /// 元素类型序数线（2025.0.x 为 Legacy，其余含未知按 Current）。
     pub fn element_line(&self) -> ElementLine {
         self.element_line
+    }
+    /// remote 互操作族六符号是否齐备（直传能力探测的门一：缺任一即不可用）。
+    pub fn remote_symbols_present(&self) -> bool {
+        self.core_create_context.is_some()
+            && self.compile_model_with_context.is_some()
+            && self.remote_context_create_tensor.is_some()
+            && self.remote_context_get_params.is_some()
+            && self.remote_tensor_get_params.is_some()
+            && self.remote_context_free.is_some()
     }
 }
 
@@ -314,6 +382,14 @@ impl OvApi {
                 unsafe { std::mem::transmute::<*mut c_void, _>(sym($name)?) }
             };
         }
+        // remote 族缺符号不阻断装载：None 即该运行库无 remote 直传面。
+        macro_rules! cast_opt {
+            ($name:expr) => {
+                sym($name)
+                    .ok()
+                    .map(|ptr| unsafe { std::mem::transmute::<*mut c_void, _>(ptr) })
+            };
+        }
         let mut api = Self {
             get_openvino_version: cast!(b"ov_get_openvino_version"),
             version_free: cast!(b"ov_version_free"),
@@ -350,6 +426,12 @@ impl OvApi {
             available_devices_free: cast!(b"ov_available_devices_free"),
             core_get_property: cast!(b"ov_core_get_property"),
             get_last_err_msg: cast!(b"ov_get_last_err_msg"),
+            core_create_context: cast_opt!(b"ov_core_create_context"),
+            compile_model_with_context: cast_opt!(b"ov_core_compile_model_with_context"),
+            remote_context_create_tensor: cast_opt!(b"ov_remote_context_create_tensor"),
+            remote_context_get_params: cast_opt!(b"ov_remote_context_get_params"),
+            remote_tensor_get_params: cast_opt!(b"ov_remote_tensor_get_params"),
+            remote_context_free: cast_opt!(b"ov_remote_context_free"),
             version: String::new(),
             element_line: ElementLine::Current,
         };

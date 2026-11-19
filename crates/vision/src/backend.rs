@@ -161,6 +161,12 @@ pub fn cuda_available() -> bool {
     provider && cudnn
 }
 
+/// OpenVINO remote 直传可用（GPU 帧直传 ABI 1.8 能力位）：openvino_c 可载 + remote
+/// 符号齐 + 设备域含 GPU；进程级缓存，不建上下文不触发推理编译。
+pub fn openvino_remote_available() -> bool {
+    crate::engine::openvino::remote_available()
+}
+
 /// TensorRT 可选 EP 的文件级探测：GPU 目录旁需有 nvinfer 运行库（GPU 包不含，缺则显式禁用）。
 pub fn trt_available() -> bool {
     if !cfg!(windows) {

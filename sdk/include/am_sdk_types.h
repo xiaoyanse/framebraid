@@ -134,7 +134,7 @@ typedef enum am_lifecycle_state_e { AM_LIFECYCLE_RUNNING = 0, AM_LIFECYCLE_CANCE
   AM_LIFECYCLE_CLOSING, AM_LIFECYCLE_CLOSED } am_lifecycle_state_e;
 typedef enum am_request_state_e { AM_REQ_PENDING = 0, AM_REQ_RUNNING, AM_REQ_DONE, AM_REQ_FAILED,
   AM_REQ_CANCELED, AM_REQ_EXPIRED, AM_REQ_REPLACED, AM_REQ_UNKNOWN } am_request_state_e;
-#define AM_ABI_VERSION UINT32_C(65543)
+#define AM_ABI_VERSION UINT32_C(65544)
 #define AM_BACKEND_STRICT_CUDA_FP32 UINT32_C(2)
 #define AM_OK UINT32_C(0)
 #define AM_BSF_ANNEXB UINT32_C(0)
@@ -787,7 +787,8 @@ typedef struct amv_capability_s {
   uint32_t feature_bits;   /* AMV_CAP_IMAGE_INPUT|TENSOR_INPUT|RAW_MODEL|MEMORY_MODEL(P1)|
                               IMAGE_PREPROCESS_RAW|BATCH|RESULT_RAW_TENSOR|PUSH_NOTIFY|
                               SHARED_FRAME_POOL（SDK-DEC-07 消费侧）|
-                              GPU_FRAME_INPUT（M2b bit10）|
+                              GPU_FRAME_INPUT（M2b bit10；ABI 1.8 起任一互操作入口
+                              可用——CUDA 运行库或 OV remote context）|
                               DEVICE_SELECTOR（v0.8 bit12：适配器定向选择器，ABI 1.6） */
   uint32_t dtype_bits;     /* AM_DTYPE_* 位集（§6；首版 F32/F16/I64/I32/U8，§9-O5） */
   uint32_t max_batch_items, max_models, infer_parallelism;

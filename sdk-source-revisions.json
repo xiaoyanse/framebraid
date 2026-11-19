@@ -654,8 +654,8 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "a601fffa03a173df53226c794a723e91aa666ada72f8db7099a3ffe12491b380",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - AM_ABI_VERSION 65542->65543, amc_stream_get_status export, am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 7e0d4b77af32402a021fd897b58ad3be87440a488ab065fe108333afa781a288"
+      "sha256": "968ceef78ad18c5b8db91fcd8ab4dc7c9f11db17520cdba0e6795f246a8ecac8",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - AM_ABI_VERSION 65542->65543, amc_stream_get_status export, am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests); sdk-intel-direct batch I-A: AM_ABI_VERSION 65543->65544 via generator (abiMinor 1.7->1.8 compatible addition, capability lists unchanged). Prior approved SHA-256 (sdk-rtmp-wip): a601fffa03a173df53226c794a723e91aa666ada72f8db7099a3ffe12491b380"
     },
     {
       "path": "crates/sdk-abi/src/defaults.rs",
@@ -1110,8 +1110,8 @@
     {
       "path": "crates/vision-ffi/src/lib.rs",
       "previousSha256": "282a620e1475ff20c0ab416d17ffb518599469785e24e90bf1593ea574493847",
-      "sha256": "970a0ddc97676c0c947efca5f1c56d9146070a449f8f6b20be696b4769448927",
-      "reason": "sdk-v08 V8.3: AMV_CAP_DEVICE_SELECTOR capability bit (bit 12) advertised"
+      "sha256": "2b69c6c83fc9f6ba8747dd7326e43ae4a8d64eaed7b9b1facfdff02bef879b68",
+      "reason": "sdk-v08 V8.3: AMV_CAP_DEVICE_SELECTOR capability bit (bit 12) advertised；sdk-intel-direct batch I-A: bit10 (AMV_CAP_GPU_FRAME_INPUT) set-condition extended to GpuPipeline::available() || openvino_remote_available() (ABI 1.8 any-interop-entry semantics); bit11 (AMV_CAP_GPU_CASCADE) stays CUDA-only（prior 970a0ddc = sdk-v08 bit12 宣告）"
     },
     {
       "path": "crates/vision-types/src/lib.rs",
@@ -1134,8 +1134,8 @@
     {
       "path": "crates/vision/src/backend.rs",
       "previousSha256": "2a547cf15326cd01e70a96633cd80e0705070de034a58128c5380c571708d348",
-      "sha256": "21862eca35ad850cfc4302fb5840c5eab00e185e7e9147f9668020f3f9dce024",
-      "reason": "E2 DirectML后端枚举扩展（第四推理路径）"
+      "sha256": "743a5af765234add67d6c0f10c041a693d3beaa67faa8e10463f498fa34018e4",
+      "reason": "E2 DirectML后端枚举扩展（第四推理路径）；sdk-intel-direct batch I-A: openvino_remote_available() pub probe wrapper delegating to engine::openvino::remote_available (symmetric with the openvino_available/cuda_available probe family; process-cached, no context creation, no inference compile)（prior 21862eca = E2 DirectML 枚举）"
     },
     {
       "path": "crates/vision/src/engine/mod.rs",
@@ -1146,14 +1146,14 @@
     {
       "path": "crates/vision/src/engine/openvino.rs",
       "previousSha256": null,
-      "sha256": "fd74f0c73525a5f01a9a2f810e2b55b2fee47f7fcb2e35d987fac0b5b490fe07",
-      "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）；sdk-ovgpu GPU 定向贯通：compile_model 设备从硬编码 CPU 贯通 CompileDevice（Cpu 零变化/Gpu=枚举 ov_core_get_available_devices→FULL_DEVICE_NAME 身份核对+厂商把关+单设备回退，pick_gpu_device 纯函数可单测；无 GPU 域/定向不可达=候选失败 stage=gpu_device 不静默换设备）+元素类型序数按运行库线适配（2025.0.x 旧序数表）+真机门 2（GPU 编译推理+GPU/CPU 统计对拍；不可达定向回退+strict 拒绝）；sdk-fixd audit F06/F07: output budget checked before TensorData copy (remaining threaded into read_output/read_output_data, aligned-8 subtract precedes allocation — zero-budget / one-byte-short / accumulation boundaries gated on real runtime; multi-output accumulation form limited by single-output parity fixture, same code path per output), port queries RAII-guarded (PortGuard releases output_const_port on every early return — verified by stub-OvApi fault injection: shape/element/name failure each frees exactly once, success path exactly once); C ABI unchanged（prior 5304da2c = E1 对拍/回退矩阵 + GPU 定向贯通）"
+      "sha256": "db7c4cb432a8ac5f9c3b1058b4f53f9921e23b2c80dcfd556ae7c1360f644c39",
+      "reason": "E1 reviewed parity (order-insensitive: matched max_rel 3.15e-4, stats 1e-4; elementwise unreachable due to model top-300 tie ordering) + fallback matrix (3 scenarios measured); workspace 393 green；feedback P0-1 OV2026：引擎失败详情携带检测版本与期望线（期望 2025.x/2026.x 单一绑定）、发现/详情/接线三组测试（含 runtime_dirs 真机接线复现接入方场景）；sdk-ovgpu GPU 定向贯通：compile_model 设备从硬编码 CPU 贯通 CompileDevice（Cpu 零变化/Gpu=枚举 ov_core_get_available_devices→FULL_DEVICE_NAME 身份核对+厂商把关+单设备回退，pick_gpu_device 纯函数可单测；无 GPU 域/定向不可达=候选失败 stage=gpu_device 不静默换设备）+元素类型序数按运行库线适配（2025.0.x 旧序数表）+真机门 2（GPU 编译推理+GPU/CPU 统计对拍；不可达定向回退+strict 拒绝）；sdk-fixd audit F06/F07: output budget checked before TensorData copy (remaining threaded into read_output/read_output_data, aligned-8 subtract precedes allocation — zero-budget / one-byte-short / accumulation boundaries gated on real runtime; multi-output accumulation form limited by single-output parity fixture, same code path per output), port queries RAII-guarded (PortGuard releases output_const_port on every early return — verified by stub-OvApi fault injection: shape/element/name failure each frees exactly once, success path exactly once); C ABI unchanged；sdk-intel-direct batch I-A: remote_available() probe (OnceLock process cache; OvApi::load + remote six-symbol presence + GPU-in-domain enumeration via core_create/core_get_available_devices with the same GPU/GPU.N filter as resolve_gpu_device; no remote-context creation, no inference compile, no load-failure note — capability-query semantics) feeding the ABI 1.8 bit10 surface; remote presence unit tests via stub symbol table (all-None vs all-Some variadic bridging stubs)（prior fd74f0c7 = E1 对拍/回退矩阵 + sdk-ovgpu GPU 定向 + sdk-fixd F06/F07）"
     },
     {
       "path": "crates/vision/src/engine/ov_sys.rs",
       "previousSha256": null,
-      "sha256": "76d789b4c022feeb9cef685a47d1ec2fd3952bb2cda863446dd2f32ea5389155",
-      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）；sdk-ovgpu：+3 符号（ov_core_get_available_devices/ov_available_devices_free/ov_core_get_property，ov_available_devices_t 结构）+ElementLine 元素序数线（buildNumber 2025.0.x 前缀=旧序数 +1 表，2025.1.0 起并入当前布局——2025.0.0/2025.1.0/2025.3.0/2026.1.0 头文件逐项核对；ort-ov-124-final 运行库实测即 2025.0.0）；sdk-fixd audit F07: version/element_line fields pub(crate) so fault-injection tests can construct a stub symbol table (port release RAII guard gate); no symbol/signature/layout change; C ABI unchanged（prior debddd74 = E1 FFI 28 符号 + P0-1 OV2026 三改）"
+      "sha256": "6af11f064d4622500b2a3cf1acd747255c65bb19e8c34c10ce54fd7ae22cd7d1",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；feedback P0-1 OV2026：runtime_dirs 登记目录+AM_SDK_OPENVINO_DIR 显式覆盖（优先）、结构化装载失败（渠道/路径/缺失符号名）、版本访问器公开（原 dead_code 丢弃）；sdk-ovgpu：+3 符号（ov_core_get_available_devices/ov_available_devices_free/ov_core_get_property，ov_available_devices_t 结构）+ElementLine 元素序数线（buildNumber 2025.0.x 前缀=旧序数 +1 表，2025.1.0 起并入当前布局——2025.0.0/2025.1.0/2025.3.0/2026.1.0 头文件逐项核对；ort-ov-124-final 运行库实测即 2025.0.0）；sdk-fixd audit F07: version/element_line fields pub(crate) so fault-injection tests can construct a stub symbol table (port release RAII guard gate); no symbol/signature/layout change; C ABI unchanged；sdk-intel-direct batch I-A: +6 remote symbols (ov_core_create_context / ov_core_compile_model_with_context / ov_remote_context_create_tensor all C-variadic, ov_remote_context_get_params / ov_remote_tensor_get_params / ov_remote_context_free) resolved as Option — runtimes lacking the remote family keep loading normally (presence gates the probe only; call wiring ships with the implementation batch); va_keys property-key strings (CONTEXT_TYPE=VA_SHARED / VA_DEVICE / SHARED_MEM_TYPE=VA_SURFACE / DEV_OBJECT_HANDLE / VA_PLANE) verified identical across 2025.0.0/2025.1.0/2025.3.0/2026.1.0 headers and intel_gpu/remote_properties.hpp (runtime-level evidence 2025.0.0 line only); remote tensor element ordinals follow the existing ElementLine tables, no new ordinals（prior 76d789b4 = E1 FFI + P0-1 + sdk-ovgpu + sdk-fixd F07）"
     },
     {
       "path": "crates/vision/src/gpu/cuda_sys.rs",
@@ -1212,8 +1212,8 @@
     {
       "path": "crates/vision/src/lib.rs",
       "previousSha256": "c424b8856b6c0be6ea0e5d231b0286847576617e779de0660a14a41e8bc969d1",
-      "sha256": "d0268770b19f1716ef1268ac0b157bcacb0a2aab80e8ec74305cc940bc89bc11",
-      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；sdk-fixd audit legacy (handed over from fixa): legacy PoseModel directml_ep gains .error_on_failure() — fail_silently let a DML registration failure build a CPU session still labeled DirectML with fallback_reason=None, bypassing load_or_fallback's documented annotated-CPU-fallback promise; now isomorphic with openvino_ep/cuda_ep/trt_ep; verified: DML success path true-labeled (inspect e2e), EP-registration-failure annotated fallback witnessed via OpenVINO EP missing-provider injection (same load_or_fallback chain), DML-failure direct injection unreachable on this machine (DML always enumerable — limitation logged); C ABI unchanged（prior 25bbad0d = E1 引擎接入）"
+      "sha256": "3bce883218ae77ec07ddf5d746d2937afbe24adc85c6c9582fa3cd6381df3a9a",
+      "reason": "E1 reviewed OpenVINO native engine core (ov_sys C-API FFI 28 symbols vs vcpkg headers, ModelEngine enum with ORT branch untouched, selection fallback, 3 synthetic tests + real runtime smoke yolo26n-pose [1,300,57]); workspace 393 green; C ABI enum addition only；sdk-fixd audit legacy (handed over from fixa): legacy PoseModel directml_ep gains .error_on_failure() — fail_silently let a DML registration failure build a CPU session still labeled DirectML with fallback_reason=None, bypassing load_or_fallback's documented annotated-CPU-fallback promise; now isomorphic with openvino_ep/cuda_ep/trt_ep; verified: DML success path true-labeled (inspect e2e), EP-registration-failure annotated fallback witnessed via OpenVINO EP missing-provider injection (same load_or_fallback chain), DML-failure direct injection unreachable on this machine (DML always enumerable — limitation logged); C ABI unchanged；sdk-intel-direct batch I-A: backend re-export gains openvino_remote_available（prior d0268770 = E1 引擎接入 + sdk-fixd legacy）"
     },
     {
       "path": "crates/vision/src/profiles/mod.rs",

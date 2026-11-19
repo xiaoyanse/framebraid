@@ -1,5 +1,5 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
-pub const AM_ABI_VERSION: u32 = 65543;
+pub const AM_ABI_VERSION: u32 = 65544;
 pub const AM_BACKEND_STRICT_CUDA_FP32: u32 = 2;
 pub const AM_OK: u32 = 0;
 pub const AM_CODEC_H264: u32 = 1;

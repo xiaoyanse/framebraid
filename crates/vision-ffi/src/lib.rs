@@ -59,10 +59,13 @@ pub unsafe extern "C" fn amv_query_capability(
                 // 设备定向选择器（§3.5b，ABI 1.6）：参数解析能力恒在；
                 // 定向零命中按 sdk.invalidArgument 拒绝而非能力缺失。
                 | AMV_CAP_DEVICE_SELECTOR
-                // GPU 帧直传按实际可载置位（审计 A4）：无 CUDA 运行库的机器
-                // 不得宣称该能力，查询与实际支持保持一致。
+                // GPU 帧直传按实际可载置位（审计 A4；ABI 1.8 起 bit10 为任一互操作
+                // 入口可用——CUDA 运行库或 OV remote 探测，查询与实际支持一致）；
+                // 级联位仍仅绑 CUDA 互操作（级联合同 CUDA:0 约束不变）。
                 | if am_vision_core::gpu::pipeline::GpuPipeline::available() {
                     AMV_CAP_GPU_FRAME_INPUT | AMV_CAP_GPU_CASCADE
+                } else if am_vision_core::openvino_remote_available() {
+                    AMV_CAP_GPU_FRAME_INPUT
                 } else {
                     0
                 }) as u32,

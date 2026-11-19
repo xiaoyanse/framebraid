@@ -575,7 +575,8 @@ typedef struct amv_capability_s {
   uint32_t feature_bits;   /* AMV_CAP_IMAGE_INPUT|TENSOR_INPUT|RAW_MODEL|MEMORY_MODEL(P1)|
                               IMAGE_PREPROCESS_RAW|BATCH|RESULT_RAW_TENSOR|PUSH_NOTIFY|
                               SHARED_FRAME_POOL（SDK-DEC-07 消费侧）|
-                              GPU_FRAME_INPUT（M2b bit10）|
+                              GPU_FRAME_INPUT（M2b bit10；ABI 1.8 起任一互操作入口
+                              可用——CUDA 运行库或 OV remote context）|
                               DEVICE_SELECTOR（v0.8 bit12：适配器定向选择器，ABI 1.6） */
   uint32_t dtype_bits;     /* AM_DTYPE_* 位集（§6；首版 F32/F16/I64/I32/U8，§9-O5） */
   uint32_t max_batch_items, max_models, infer_parallelism;

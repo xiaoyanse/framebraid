@@ -13,7 +13,7 @@ use crate::sdk::{TensorData, TensorInfo};
 use crate::{Error, Result};
 use std::ffi::{c_char, c_void, CStr, CString};
 use std::ptr::null_mut;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
 /// 候选失败：错误键须精确 "vision.backendStrictUnavailable"（selection 回退按精确 key 匹配）。
 #[derive(Debug)]
@@ -225,6 +225,49 @@ fn gpu_domain_detail() -> Option<String> {
 
 /// GPU 定向解析的设备域快照（诊断用；resolve_gpu_device 写入，create 失败详情读）。
 static GPU_DOMAIN_SNAPSHOT: Mutex<Option<String>> = Mutex::new(None);
+
+/// OV remote 直传可用性探测（§3.3a ABI 1.8 能力位置位面）：openvino_c 可载 + remote
+/// 六符号齐备 + 设备枚举域含 GPU 设备；进程级 OnceLock 缓存（能力位查询语义）。
+/// 仅枚举设备域——不建 remote context、不触发推理编译；失败静默返回 false，
+/// 不写装载失败详情（探测属能力查询，非模型构造尝试）。
+pub(crate) fn remote_available() -> bool {
+    static AVAILABLE: OnceLock<bool> = OnceLock::new();
+    *AVAILABLE.get_or_init(|| unsafe { probe_remote_once() })
+}
+
+unsafe fn probe_remote_once() -> bool {
+    let Ok(api) = OvApi::load() else {
+        return false;
+    };
+    api.remote_symbols_present() && unsafe { gpu_in_device_domain(&api) }
+}
+
+/// 设备枚举域是否含 GPU 设备（"GPU"/"GPU.N"；resolve_gpu_device 同款过滤口径）。
+unsafe fn gpu_in_device_domain(api: &OvApi) -> bool {
+    let mut core: *mut ov_core_t = null_mut();
+    if (api.core_create)(&mut core) != OV_OK {
+        return false;
+    }
+    let mut devices = ov_sys::ov_available_devices_t {
+        devices: null_mut(),
+        size: 0,
+    };
+    let enumerated = (api.core_get_available_devices)(core, &mut devices) == OV_OK;
+    let gpu = enumerated
+        && !devices.devices.is_null()
+        && (0..devices.size).any(|index| {
+            let name = *devices.devices.add(index);
+            !name.is_null() && {
+                let name = CStr::from_ptr(name).to_string_lossy();
+                name == "GPU" || name.starts_with("GPU.")
+            }
+        });
+    if enumerated {
+        (api.available_devices_free)(&mut devices);
+    }
+    (api.core_free)(core);
+    gpu
+}
 
 unsafe fn build(
     api: Arc<OvApi>,
@@ -917,6 +960,16 @@ mod tests {
         );
     }
 
+    /// remote 六符号 Option 化：任一缺失即探测面不可用（旧运行库装载不受影响）；
+    /// 全在才判可用。variadic 桥接桩永不调用（被调即 panic）。
+    #[test]
+    fn remote_symbol_presence_requires_all_six_symbols() {
+        let bare = port_release_injection::stub_api(true, true, true);
+        assert!(!bare.remote_symbols_present());
+        let full = port_release_injection::stub_api_remote_present();
+        assert!(full.remote_symbols_present());
+    }
+
     #[test]
     fn profile_layout_boundary_is_nchw_byte_identity() {
         // E1.5 档案适配边界：NCHW f32 预处理张量按字节直传引擎，无布局变换。
@@ -1521,7 +1574,11 @@ mod tests {
         ) -> i32);
         panic_stub_r!(stub_get_last_err_msg() -> *const c_char);
 
-        fn stub_api(shape_ok_path: bool, element_ok_path: bool, name_ok_path: bool) -> OvApi {
+        pub(super) fn stub_api(
+            shape_ok_path: bool,
+            element_ok_path: bool,
+            name_ok_path: bool,
+        ) -> OvApi {
             OvApi {
                 get_openvino_version: stub_get_openvino_version,
                 version_free: stub_version_free,
@@ -1577,9 +1634,39 @@ mod tests {
                 available_devices_free: stub_available_devices_free,
                 core_get_property: stub_core_get_property,
                 get_last_err_msg: stub_get_last_err_msg,
+                core_create_context: None,
+                compile_model_with_context: None,
+                remote_context_create_tensor: None,
+                remote_context_get_params: None,
+                remote_tensor_get_params: None,
+                remote_context_free: None,
                 version: String::new(),
                 element_line: ElementLine::Current,
             }
+        }
+
+        /// remote 族全 Some 桩（variadic 签名 Rust 稳定版无法直接声明 stub：
+        /// 零参 panic stub 经 transmute 桥接；presence 检查只读 is_some 永不调用）。
+        pub(super) fn stub_api_remote_present() -> OvApi {
+            macro_rules! variadic_panic_stub {
+                ($name:ident) => {{
+                    unsafe extern "C" fn $name() {
+                        panic!("remote presence 桩不应被调用");
+                    }
+                    #[allow(clippy::missing_transmute_annotations)]
+                    let bridged =
+                        unsafe { std::mem::transmute::<unsafe extern "C" fn(), _>($name) };
+                    bridged
+                }};
+            }
+            let mut api = stub_api(true, true, true);
+            api.core_create_context = Some(variadic_panic_stub!(stub_ov_create_context));
+            api.compile_model_with_context = Some(variadic_panic_stub!(stub_ov_compile_ctx));
+            api.remote_context_create_tensor = Some(variadic_panic_stub!(stub_ov_remote_tensor));
+            api.remote_context_get_params = Some(variadic_panic_stub!(stub_ov_ctx_params));
+            api.remote_tensor_get_params = Some(variadic_panic_stub!(stub_ov_tensor_params));
+            api.remote_context_free = Some(variadic_panic_stub!(stub_ov_ctx_free));
+            api
         }
 
         fn sentinel_port() -> *mut ov_output_const_port_t {
