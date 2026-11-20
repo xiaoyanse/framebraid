@@ -1,10 +1,12 @@
 use super::*;
 
-/// A packed NV12 snapshot owned by the request. The original texture is no longer borrowed.
+/// 级联 ROI 快照（NV12 帧经 VP 平面转换后的 BGRA 打包设备缓冲，请求持有，
+/// 原纹理借用已闭合——P1 修复起快照内容为 BT.601 full RGB，色彩/几何语义
+/// 见 vp_transit.rs 与 bgra_letterbox.ptx 头注）。
 pub struct Nv12Snapshot {
-    ptr: *mut c_void,
-    width: u32,
-    height: u32,
+    pub(super) ptr: *mut c_void,
+    pub(super) width: u32,
+    pub(super) height: u32,
     pipeline: &'static GpuPipeline,
 }
 
@@ -22,7 +24,8 @@ impl Drop for Nv12Snapshot {
 }
 
 impl GpuPipeline {
-    /// Copy both planes under one resource mapping.
+    /// 帧快照：VP 转换（NV12 slice→BGRA）+ GPU 同步 + 单次 D2D 打包。
+    /// 源纹理借用在本函数返回时闭合（借用窗口内的全部设备操作）。
     ///
     /// # Safety
     /// The texture and its selected NV12 slice must remain valid and immutable until return.
@@ -46,10 +49,10 @@ impl GpuPipeline {
         )?;
         let width = frame.width as usize;
         let height = frame.height as usize;
-        let y_bytes = width * height;
+        let bgra_bytes = width * height * 4;
         let mut ptr = std::ptr::null_mut();
         self.runtime.check(
-            unsafe { (self.runtime.malloc)(&mut ptr, y_bytes * 3 / 2) },
+            unsafe { (self.runtime.malloc)(&mut ptr, bgra_bytes) },
             "ROI snapshot allocation",
         )?;
         let snapshot = Nv12Snapshot {
@@ -58,30 +61,25 @@ impl GpuPipeline {
             height: frame.height,
             pipeline: self,
         };
-        let cached = unsafe {
-            self.registry
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .acquire(&self.runtime, frame.texture)?
+        let (entry, mapped) = {
+            let mut pool = self.transit.lock().unwrap_or_else(|e| e.into_inner());
+            pool.acquire(&self.runtime, frame)?
         };
-        let _guard = cached.map_lock.lock().unwrap_or_else(|e| e.into_inner());
-        let y = cached.texture.map_subresource(frame.subresource)?;
-        let uv = cached.texture.map_subresource(frame.subresource + 1)?;
-        for (dst, plane, rows) in [
-            (ptr, y.array, height),
-            (
-                unsafe { ptr.cast::<u8>().add(y_bytes).cast() },
-                uv.array,
-                height / 2,
-            ),
-        ] {
-            self.runtime.check(
-                unsafe {
-                    (self.runtime.memcpy2d_from_array)(dst, width, plane, 0, 0, width, rows, 3)
-                },
-                "ROI snapshot plane copy",
-            )?;
-        }
+        let _keepalive = entry; // 映射存续期背书（Arc 保活到 D2D 完成后）
+        let code = unsafe {
+            (self.runtime.memcpy2d_from_array)(
+                ptr,
+                width * 4,
+                mapped.array,
+                0,
+                0,
+                width * 4,
+                height,
+                3, // DtoD（同步语义，完成即打包完成）
+            )
+        };
+        drop(mapped);
+        self.runtime.check(code, "ROI snapshot plane copy")?;
         Ok(snapshot)
     }
 }
@@ -89,6 +87,12 @@ impl GpuPipeline {
 impl Nv12Snapshot {
     pub fn dimensions(&self) -> (u32, u32) {
         (self.width, self.height)
+    }
+
+    /// 测试辅助：BGRA 打包缓冲的设备指针（kernel 同输入镜像回读用）。
+    #[cfg(test)]
+    pub(crate) fn bgra_ptr_for_test(&self) -> *const c_void {
+        self.ptr
     }
 
     /// Each region is [x, y, width, height] in source pixels.
@@ -134,7 +138,6 @@ impl Nv12Snapshot {
                 let rh = (h as f32 * scale).round().clamp(1.0, dst as f32) as u32;
                 gpu.kernel.launch_region(
                     self.ptr as u64,
-                    self.ptr as u64 + u64::from(self.width) * u64::from(self.height),
                     w,
                     h,
                     dst,

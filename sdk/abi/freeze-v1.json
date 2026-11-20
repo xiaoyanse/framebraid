@@ -1,6 +1,6 @@
 {
-  "id": "am-sdk-cabi-1.8-intel-direct-r15",
-  "previousFreezeSha256": "5dc615c9c2927a4b11d4c1ed3c6e0b7772cb2fc41dff4db5f0104b6bbd85c042",
+  "id": "am-sdk-cabi-1.8-uvfix-clarify-r16",
+  "previousFreezeSha256": "7671f225cd5028295cbc2589072109d250fee8d194e97c83bd2a0b6687ed759c",
   "abiVersion": 65544,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
@@ -17,8 +17,8 @@
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "eee5684abaaab3c7533d5e81949bb772bcc9927f7ccae73fd5cb5cda0a7cfd9d",
-      "bytes": 87657
+      "sha256": "2b0d76d0ff60e67c23b7607cba8eb024738a054a64842917104bc5f92d7936d7",
+      "bytes": 88113
     },
     {
       "path": "sdk/abi/constants.json",

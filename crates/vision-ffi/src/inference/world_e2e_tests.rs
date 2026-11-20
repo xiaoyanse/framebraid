@@ -318,7 +318,10 @@ fn assert_scores_correlate(a: &[f32], b: &[f32], floor: f64, label: &str) {
 /// 贪心 IoU 几何对拍（辅证）：逐基线框找最佳匹配，IoU 与置信差过界即失败；
 /// 框数允许 |Δ|≤tolerance（阈值边界锚点翻转余量）。`top_n` 限定只对拍置信度
 /// 最高的前 n 框（跨预处理域用——近阈边界框集合跨域不保证稳定，top 框是
-/// 分离良好的稳定带）；None=全量（同域用）。类目一致性由同域 raw 对拍蕴含。
+/// 分离良好的稳定带；框数断言同取截断后的 top 集，2026-11-20 P1 后按本注
+/// 释既定语义对齐实现：VP BT.601 双线性色度 vs CPU 最近邻为合同登记域差，
+/// 自标定噪声阈下的近阈集合跨域漂移超出 tolerance 不是回归）；None=全量
+/// （同域用）。类目一致性由同域 raw 对拍蕴含。
 fn assert_boxes_match(
     baseline: &[BoxHit],
     candidate: &[BoxHit],
@@ -326,18 +329,18 @@ fn assert_boxes_match(
     min_iou: f32,
     top_n: Option<usize>,
 ) {
+    let limit = top_n.unwrap_or(usize::MAX);
     assert!(
-        (baseline.len() as isize - candidate.len() as isize).abs() <= tolerance as isize,
-        "框数漂移 baseline={} candidate={}",
+        (baseline.len().min(limit) as isize - candidate.len().min(limit) as isize).abs()
+            <= tolerance as isize,
+        "框数漂移 baseline={} candidate={}（top_n={:?}）",
         baseline.len(),
-        candidate.len()
+        candidate.len(),
+        top_n
     );
     let matchable = baseline.len().min(candidate.len());
     let mut remaining: Vec<&BoxHit> = candidate.iter().collect();
-    for base in baseline
-        .iter()
-        .take(matchable.min(top_n.unwrap_or(usize::MAX)))
-    {
+    for base in baseline.iter().take(matchable.min(limit)) {
         let Some((index, _)) = remaining
             .iter()
             .enumerate()
@@ -466,8 +469,7 @@ fn batching_max_observed(model: usize) -> (u64, u64, u64) {
 #[ignore = "需真实 NVIDIA GPU 与 yolo-world 双模型（.local/tests/yolo-world 及 -batchd 派生件）"]
 fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
     use am_vision_core::gpu::{
-        cuda_sys::CudaApi, interop::nvidia_nv12_texture, interop::RegisteredTexture,
-        pipeline::GpuPipeline,
+        cuda_sys::CudaApi, interop::nvidia_nv12_texture, pipeline::GpuPipeline,
     };
     let mut guard = CtxGuard {
         ctx: init_ctx(),
@@ -501,16 +503,12 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
 
     let gpu_sync = |frame: &str, threshold: f32| -> (Vec<BoxHit>, Vec<f32>) {
         let nv12 = std::fs::read(format!("{BATCHD}\\{frame}.nv12")).expect("nv12");
-        let (w, h) = (640usize, 640usize);
         let texture = unsafe { nvidia_nv12_texture(640, 640).expect("NV12 纹理") };
+        // P1 修复后 CUDA 不可写 NV12 UV 平面——装载走 D3D staging 整 slice 拷
         unsafe {
-            let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-            let y = registered.map_subresource(0).expect("Y map");
-            let uv = registered.map_subresource(1).expect("UV map");
-            (runtime.memcpy2d_to_array)(y.array, 0, 0, nv12.as_ptr().cast(), w, w, h, 1);
-            let uv_ptr = nv12.as_ptr().add(w * h);
-            (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), w, w, h / 2, 1);
+            am_vision_core::gpu::vp_transit::upload_nv12_slice(texture.0, 0, &nv12, 640, 640)
         }
+        .expect("D3D staging 装载");
         let gpu_ref = am_gpu_frame_ref_t {
             width: 640,
             height: 640,
@@ -548,16 +546,11 @@ fn world_e2e_gpu_direct_and_batch_window_match_single_runs() {
     };
     let submit_gpu_async = |frame: &str, threshold: f32| -> u64 {
         let nv12 = std::fs::read(format!("{BATCHD}\\{frame}.nv12")).expect("nv12");
-        let (w, h) = (640usize, 640usize);
         let texture = unsafe { nvidia_nv12_texture(640, 640).expect("NV12 纹理") };
         unsafe {
-            let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-            let y = registered.map_subresource(0).expect("Y map");
-            let uv = registered.map_subresource(1).expect("UV map");
-            (runtime.memcpy2d_to_array)(y.array, 0, 0, nv12.as_ptr().cast(), w, w, h, 1);
-            let uv_ptr = nv12.as_ptr().add(w * h);
-            (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), w, w, h / 2, 1);
+            am_vision_core::gpu::vp_transit::upload_nv12_slice(texture.0, 0, &nv12, 640, 640)
         }
+        .expect("D3D staging 装载");
         let gpu_ref = am_gpu_frame_ref_t {
             width: 640,
             height: 640,

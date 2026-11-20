@@ -177,8 +177,8 @@ pub struct KernelModule {
 }
 
 impl KernelModule {
-    pub fn load_nv12_letterbox(api: Arc<DriverApi>) -> Result<Self, crate::Error> {
-        const PTX: &str = include_str!("nv12_letterbox.ptx");
+    pub fn load_bgra_letterbox(api: Arc<DriverApi>) -> Result<Self, crate::Error> {
+        const PTX: &str = include_str!("bgra_letterbox.ptx");
         let mut module: *mut c_void = std::ptr::null_mut();
         // PTX 文本需 NUL 结尾。
         let text = format!("{PTX}\0");
@@ -189,7 +189,7 @@ impl KernelModule {
             )?
         };
         let mut function: *mut c_void = std::ptr::null_mut();
-        let name = b"nv12_letterbox\0";
+        let name = b"bgra_letterbox\0";
         unsafe {
             api.check(
                 (api.module_get_function)(&mut function, module, name.as_ptr()),
@@ -203,13 +203,12 @@ impl KernelModule {
         })
     }
 
-    /// 启动 NV12 letterbox kernel；grid 覆盖 dst 全像素（block 16x16）。
+    /// 启动 BGRA letterbox kernel；grid 覆盖 dst 全像素（block 16x16）。
     /// 参数与 PTX 入口一一对应（内核入口签名决定，非 SDK 公开接口）。
     #[allow(clippy::too_many_arguments)]
     pub fn launch(
         &self,
-        y_ptr: u64,
-        uv_ptr: u64,
+        bgra_ptr: u64,
         src_w: u32,
         src_h: u32,
         dst_w: u32,
@@ -219,19 +218,19 @@ impl KernelModule {
         out_ptr: u64,
     ) -> Result<(), crate::Error> {
         self.launch_region(
-            y_ptr, uv_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, 0, 1.0, 0,
-            0.0, 0.0, 1.0,
+            bgra_ptr, src_w, src_h, dst_w, dst_h, rw, rh, out_ptr, src_w, 0, 0, 0, 1.0, 0, 0.0,
+            0.0, 1.0,
         )
     }
 
     /// 完整参数面（含 classify center-crop 四参数，F02）：crop 非 0 时 kernel
     /// 以 (d+0.5)/crop_scale - 0.5 + crop_{x,y} 重写采样映射（源域窗口偏移），
-    /// letterbox/ROI 调用方传 crop=0 保持原行为。
+    /// letterbox/ROI 调用方传 crop=0 保持原行为。P1 修复起采样源为 VP 转换的
+    /// BGRA 平面（pitch 单位=像素，字节距在 kernel 内 ×4）。
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn launch_region(
         &self,
-        y_ptr: u64,
-        uv_ptr: u64,
+        bgra_ptr: u64,
         src_w: u32,
         src_h: u32,
         dst_w: u32,
@@ -250,8 +249,7 @@ impl KernelModule {
         crop_scale: f32,
     ) -> Result<(), crate::Error> {
         let mut params = KernelParams::new();
-        params.push_u64(y_ptr);
-        params.push_u64(uv_ptr);
+        params.push_u64(bgra_ptr);
         params.push_u32(src_w);
         params.push_u32(src_h);
         params.push_u32(dst_w);

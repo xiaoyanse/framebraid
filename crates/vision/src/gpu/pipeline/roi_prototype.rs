@@ -12,37 +12,36 @@ struct RoiInputs {
     inputs: Vec<InferenceInput>,
     transforms: Vec<crate::sdk::ImageTransform>,
     source_bytes: usize,
-    map_count: usize,
+    blit_count: usize,
     plane_copies: usize,
 }
 
 impl GpuPipeline {
     // The prototype is exercised through the real CUDA and ORT path, independently of C ABI admission.
+    // P1 修复起源=快照 BGRA 设备缓冲（VP 转换一次），ROI kernel 自缓冲采样。
     fn roi_bindings(
         &self,
-        frame: &GpuFrameData,
+        snapshot: &Nv12Snapshot,
         session: &ort::session::Session,
         name: &str,
         dst: u32,
         rois: &[Roi],
         group: usize,
     ) -> Result<RoiInputs, Error> {
+        let (snap_w, snap_h) = snapshot.dimensions();
         if rois.is_empty()
             || rois.len() > 16
             || !(1..=16).contains(&group)
             || !(1..=1024).contains(&dst)
-            || frame.texture.is_null()
-            || frame.d3d_format != 103
-            || !(2..=8192).contains(&frame.width)
-            || !(2..=8192).contains(&frame.height)
-            || !frame.width.is_multiple_of(2)
-            || !frame.height.is_multiple_of(2)
-            || frame.subresource == u32::MAX
+            || snap_w < 2
+            || snap_h < 2
+            || !snap_w.is_multiple_of(2)
+            || !snap_h.is_multiple_of(2)
             || rois.iter().any(|r| {
                 r.w == 0
                     || r.h == 0
-                    || r.x.checked_add(r.w).is_none_or(|end| end > frame.width)
-                    || r.y.checked_add(r.h).is_none_or(|end| end > frame.height)
+                    || r.x.checked_add(r.w).is_none_or(|end| end > snap_w)
+                    || r.y.checked_add(r.h).is_none_or(|end| end > snap_h)
             })
         {
             return Err(Error("vision.gpuFrameInvalid|ROI prototype".into()));
@@ -51,12 +50,19 @@ impl GpuPipeline {
             unsafe { (self.driver.ctx_set_current)(self.context) },
             "ROI context",
         )?;
-        let pitch = frame.width as usize;
-        let height = frame.height as usize;
-        let y_bytes = pitch * height;
-        let uv_bytes = y_bytes / 2;
-        let y = PooledBuf::acquire(&self.bufs, &self.runtime, y_bytes, "ROI Y")?;
-        let uv = PooledBuf::acquire(&self.bufs, &self.runtime, uv_bytes, "ROI UV")?;
+        let pitch = snap_w as usize * 4;
+        let height = snap_h as usize;
+        let bgra_bytes = pitch * height;
+        let bgra = PooledBuf::acquire(&self.bufs, &self.runtime, bgra_bytes, "ROI BGRA")?;
+        let code = unsafe {
+            (self.runtime.memcpy_dtod)(
+                bgra.ptr(),
+                snapshot.ptr as *const c_void,
+                bgra_bytes,
+                3, // DtoD
+            )
+        };
+        self.runtime.check(code, "ROI source copy")?;
         let mut inputs = Vec::new();
         for chunk in rois.chunks(group) {
             inputs.push(InferenceInput::new_batch(
@@ -68,37 +74,14 @@ impl GpuPipeline {
                 self.ordinal,
             )?);
         }
-        let mut map_count = 0;
+        let mut blit_count = 0;
         let mut plane_copies = 0;
         let mut source_bytes = 0;
         {
-            let cached = unsafe {
-                self.registry
-                    .lock()
-                    .unwrap_or_else(|e| e.into_inner())
-                    .acquire(&self.runtime, frame.texture)?
-            };
-            let _guard = cached.map_lock.lock().unwrap_or_else(|e| e.into_inner());
-            // Both guards share one underlying resource mapping.
-            let y_plane = cached.texture.map_subresource(frame.subresource)?;
-            map_count += 1;
-            let uv_plane = cached.texture.map_subresource(frame.subresource + 1)?;
-            for (buffer, array, rows) in [
-                (y.ptr(), y_plane.array, height),
-                (uv.ptr(), uv_plane.array, height / 2),
-            ] {
-                self.runtime.check(
-                    unsafe {
-                        (self.runtime.memcpy2d_from_array)(
-                            buffer, pitch, array, 0, 0, pitch, rows, 3,
-                        )
-                    },
-                    "ROI source plane copy",
-                )?;
-                plane_copies += 1;
-                source_bytes += pitch * rows;
-            }
-            // Synchronous plane copies finish before the texture is unmapped.
+            // 快照缓冲只读（kernel 采样源）；本拷贝隔离池缓冲与快照生命周期。
+            blit_count += 1;
+            plane_copies += 1;
+            source_bytes += bgra_bytes;
         }
         let mut transforms = Vec::with_capacity(rois.len());
         let event = EventLease::acquire(&self.events, &self.driver)?;
@@ -110,8 +93,7 @@ impl GpuPipeline {
                     let rw = (roi.w as f32 * scale).round().clamp(1.0, dst as f32) as u32;
                     let rh = (roi.h as f32 * scale).round().clamp(1.0, dst as f32) as u32;
                     self.kernel.launch_region(
-                        y.ptr() as u64,
-                        uv.ptr() as u64,
+                        bgra.ptr() as u64,
                         roi.w,
                         roi.h,
                         dst,
@@ -119,7 +101,7 @@ impl GpuPipeline {
                         rw,
                         rh,
                         input.device_ptr() + (row * stride) as u64,
-                        frame.width,
+                        snapshot.width,
                         roi.x,
                         roi.y,
                         1,
@@ -155,7 +137,7 @@ impl GpuPipeline {
         if let Err(error) = launch {
             // Earlier launches can still be reading the source or writing ORT buffers.
             if unsafe { (self.driver.ctx_synchronize)() } != 0 {
-                std::mem::forget((y, uv, inputs, event));
+                std::mem::forget((bgra, inputs, event));
             }
             return Err(error);
         }
@@ -163,7 +145,7 @@ impl GpuPipeline {
             inputs,
             transforms,
             source_bytes,
-            map_count,
+            blit_count,
             plane_copies,
         })
     }
@@ -205,7 +187,9 @@ fn world_text() -> TensorData {
     .unwrap()
 }
 
-fn fill_texture(pipeline: &GpuPipeline, frame: &GpuFrameData) -> Vec<u8> {
+/// 构造条纹 NV12 并经 D3D staging 整 slice 写入纹理（P1 修复后 CUDA 不可写
+/// NV12 平面——装载走 CopySubresourceRegion 扁平 slice 口径，RELAY 先例）。
+fn fill_texture(frame: &GpuFrameData) -> Vec<u8> {
     let (w, h) = (frame.width as usize, frame.height as usize);
     let mut pixels = vec![0u8; w * h * 3 / 2];
     for row in 0..h {
@@ -221,45 +205,50 @@ fn fill_texture(pipeline: &GpuPipeline, frame: &GpuFrameData) -> Vec<u8> {
             pixels[offset + 1] = (96 + (row * 7 + col) % 64) as u8;
         }
     }
-    let texture = unsafe {
-        super::super::interop::RegisteredTexture::register(pipeline.runtime.clone(), frame.texture)
+    unsafe {
+        super::super::vp_transit::upload_nv12_slice(
+            frame.texture,
+            frame.subresource,
+            &pixels,
+            frame.width,
+            frame.height,
+        )
     }
-    .unwrap();
-    let y = texture.map_subresource(0).unwrap();
-    let uv = texture.map_subresource(1).unwrap();
-    for (array, offset, rows) in [(y.array, 0, h), (uv.array, w * h, h / 2)] {
-        pipeline
-            .runtime
-            .check(
-                unsafe {
-                    (pipeline.runtime.memcpy2d_to_array)(
-                        array,
-                        0,
-                        0,
-                        pixels.as_ptr().add(offset).cast(),
-                        w,
-                        w,
-                        rows,
-                        1,
-                    )
-                },
-                "fixture upload",
-            )
-            .unwrap();
-    }
+    .expect("D3D staging 装载");
     pixels
+}
+
+/// 快照 BGRA 读回（host 视图，用于 CPU 镜像参考输入）。
+fn readback_bgra(pipeline: &GpuPipeline, snapshot: &Nv12Snapshot) -> Vec<u8> {
+    let bytes = snapshot.width as usize * snapshot.height as usize * 4;
+    let mut out = vec![0u8; bytes];
+    pipeline
+        .runtime
+        .check(
+            unsafe {
+                (pipeline.runtime.memcpy_dtoh)(
+                    out.as_mut_ptr().cast(),
+                    snapshot.ptr as *const c_void,
+                    bytes,
+                    2, // DtoH
+                )
+            },
+            "snapshot readback",
+        )
+        .unwrap();
+    out
 }
 
 fn check_tensor(
     pipeline: &GpuPipeline,
     input: &InferenceInput,
     roi: Roi,
-    pixels: &[u8],
+    bgra: &[u8],
     width: usize,
-    height: usize,
 ) -> f32 {
-    // 640×640 identity-size crop at odd origins. Compare RGB at each pixel against full-frame
-    // NV12 addressing, including chroma phase and the first and last ROI rows and columns.
+    // 640×640 identity-size crop at odd origins. RGB-domain bilinear parity on the
+    // SAME BGRA bytes the kernel sampled (P1 修复后输入即 VP 转换结果，kernel 与
+    // 本镜像同域同数据，容差回到 f32 单操作量级）。
     let side = SIZE as usize;
     let n = side * side;
     let mut values = vec![0.0f32; 3 * n];
@@ -271,34 +260,47 @@ fn check_tensor(
                     values.as_mut_ptr().cast(),
                     input.device_ptr() as *const c_void,
                     n * 12,
-                    2,
+                    2, // DtoH
                 )
             },
             "ROI tensor test readback",
         )
         .unwrap();
+    let inv255 = f32::from_bits(0x3B808081);
+    let channel = |px: usize, py: usize, c: usize| -> f32 {
+        // BGR 内存序：B=+0 G=+1 R=+2；c: 0=R 1=G 2=B
+        let byte = [2usize, 1, 0][c];
+        bgra[(py * width + px) * 4 + byte] as f32 * inv255
+    };
     let mut error = 0.0f32;
     for y in 0..side {
         for x in 0..side {
-            let gx = x + roi.x as usize;
-            let gy = y + roi.y as usize;
-            let uv = width * height + gy / 2 * width + gx / 2 * 2;
-            let luma = 1.164375 * (pixels[gy * width + gx] as f32 / 255.0 - 0.0625);
-            let u = pixels[uv] as f32 / 255.0 - 0.5;
-            let v = pixels[uv + 1] as f32 / 255.0 - 0.5;
-            let rgb = [
-                luma + 1.5934375 * v,
-                luma - 0.39125 * u - 0.81264 * v,
-                luma + 2.0211 * u,
-            ];
-            for (c, reference) in rgb.into_iter().enumerate() {
-                let actual = values[c * n + y * side + x];
-                error = error.max((actual - reference.clamp(0.0, 1.0)).abs());
+            let sx = (x as f32 + 0.5) * roi.w as f32 / side as f32 - 0.5 + roi.x as f32;
+            let sy = (y as f32 + 0.5) * roi.h as f32 / side as f32 - 0.5 + roi.y as f32;
+            let raw_x = sx.floor() as i32;
+            let raw_y = sy.floor() as i32;
+            let fx = sx - raw_x as f32;
+            let fy = sy - raw_y as f32;
+            let x0 = raw_x.clamp(0, roi.x as i32 + roi.w as i32 - 1) as usize;
+            let y0 = raw_y.clamp(0, roi.y as i32 + roi.h as i32 - 1) as usize;
+            let x1 = (raw_x + 1).clamp(0, roi.x as i32 + roi.w as i32 - 1) as usize;
+            let y1 = (raw_y + 1).clamp(0, roi.y as i32 + roi.h as i32 - 1) as usize;
+            let index = y * side + x;
+            for c in 0..3 {
+                let v00 = channel(x0, y0, c);
+                let v01 = channel(x1, y0, c);
+                let v10 = channel(x0, y1, c);
+                let v11 = channel(x1, y1, c);
+                let top = v00 + (v01 - v00) * fx;
+                let bottom = v10 + (v11 - v10) * fx;
+                let expected = top + (bottom - top) * fy;
+                let actual = values[c * n + index];
+                error = error.max((actual - expected).abs());
                 assert!(actual.is_finite());
             }
         }
     }
-    assert!(error < 0.006, "RGB parity max error {error}");
+    assert!(error < 3e-4, "BGRA parity max error {error}");
     error
 }
 
@@ -355,7 +357,7 @@ struct Run {
     decode_ms: f64,
     used_delta: i64,
     live_bytes: usize,
-    map_count: usize,
+    blit_count: usize,
     plane_copies: usize,
     source_bytes: usize,
 }
@@ -376,7 +378,7 @@ fn free_bytes(pipeline: &GpuPipeline, mem_info: MemInfo) -> usize {
 fn measure(
     pipeline: &GpuPipeline,
     model: &mut Model,
-    frame: &GpuFrameData,
+    snapshot: &Nv12Snapshot,
     rois: &[Roi],
     group: usize,
     text: &TensorData,
@@ -390,13 +392,13 @@ fn measure(
             inputs: Vec::new(),
             transforms: Vec::new(),
             source_bytes: 0,
-            map_count: 0,
+            blit_count: 0,
             plane_copies: 0,
         };
         for roi in rois {
             let one = pipeline
                 .roi_bindings(
-                    frame,
+                    snapshot,
                     model.ort_session(),
                     &name,
                     SIZE,
@@ -407,22 +409,22 @@ fn measure(
             all.inputs.extend(one.inputs);
             all.transforms.extend(one.transforms);
             all.source_bytes += one.source_bytes;
-            all.map_count += one.map_count;
+            all.blit_count += one.blit_count;
             all.plane_copies += one.plane_copies;
         }
         all
     } else {
         pipeline
-            .roi_bindings(frame, model.ort_session(), &name, SIZE, rois, group)
+            .roi_bindings(snapshot, model.ort_session(), &name, SIZE, rois, group)
             .unwrap()
     };
     let prep_ms = begin.elapsed().as_secs_f64() * 1000.0;
-    let expected_maps = if group == 0 { rois.len() } else { 1 };
-    assert_eq!(prepared.map_count, expected_maps);
-    assert_eq!(prepared.plane_copies, 2 * expected_maps);
+    let expected_copies = if group == 0 { rois.len() } else { 1 };
+    assert_eq!(prepared.blit_count, expected_copies);
+    assert_eq!(prepared.plane_copies, expected_copies);
     assert_eq!(
         prepared.source_bytes,
-        expected_maps * frame.width as usize * frame.height as usize * 3 / 2
+        expected_copies * snapshot.width as usize * snapshot.height as usize * 4
     );
     let live_bytes = prepared
         .inputs
@@ -449,7 +451,7 @@ fn measure(
         for row in 0..count {
             let index = chunk * group.max(1) + row;
             let roi = rois[index];
-            let [w, h] = [frame.width as f32, frame.height as f32];
+            let [w, h] = [snapshot.width as f32, snapshot.height as f32];
             let normalized = [
                 roi.x as f32 / w,
                 roi.y as f32 / h,
@@ -484,7 +486,7 @@ fn measure(
         decode_ms,
         used_delta: baseline as i64 - least_free as i64,
         live_bytes,
-        map_count: prepared.map_count,
+        blit_count: prepared.blit_count,
         plane_copies: prepared.plane_copies,
         source_bytes: prepared.source_bytes,
     }
@@ -492,7 +494,7 @@ fn measure(
 
 fn row(run: &Run) -> Value {
     json!({"preprocessMs":run.prep_ms,"inferenceMs":run.run_ms,"decodeMs":run.decode_ms,
-           "sampledDeviceDeltaBytes":run.used_delta,"liveInputTensorBytes":run.live_bytes,"mapCount":run.map_count,
+           "sampledDeviceDeltaBytes":run.used_delta,"liveInputTensorBytes":run.live_bytes,"blitCount":run.blit_count,
            "planeCopies":run.plane_copies,"sourceBytes":run.source_bytes,"boxes":run.boxes})
 }
 
@@ -517,7 +519,9 @@ fn real_detector_roi_prototype() {
         texture: texture.0,
     };
     let baseline = free_bytes(pipeline, mem_info);
-    let pixels = fill_texture(pipeline, &frame);
+    let _pixels = fill_texture(&frame);
+    let snapshot = unsafe { pipeline.snapshot_nv12(&frame) }.unwrap();
+    let bgra = readback_bgra(pipeline, &snapshot);
     let probe = Roi {
         x: 313,
         y: 117,
@@ -526,9 +530,9 @@ fn real_detector_roi_prototype() {
     };
     let name = model.inputs[0].name.clone();
     let parity = pipeline
-        .roi_bindings(&frame, model.ort_session(), &name, SIZE, &[probe], 1)
+        .roi_bindings(&snapshot, model.ort_session(), &name, SIZE, &[probe], 1)
         .unwrap();
-    let pixel_error = check_tensor(pipeline, &parity.inputs[0], probe, &pixels, 1920, 1080);
+    let pixel_error = check_tensor(pipeline, &parity.inputs[0], probe, &bgra, 1920);
     drop(parity);
     let rois: Vec<_> = (0..16)
         .map(|i| Roi {
@@ -550,7 +554,7 @@ fn real_detector_roi_prototype() {
             measure(
                 pipeline,
                 &mut model,
-                &frame,
+                &snapshot,
                 &rois[..count],
                 group,
                 &text,
@@ -563,7 +567,7 @@ fn real_detector_roi_prototype() {
             samples.push(row(&measure(
                 pipeline,
                 &mut model,
-                &frame,
+                &snapshot,
                 &rois[..count],
                 group,
                 &text,

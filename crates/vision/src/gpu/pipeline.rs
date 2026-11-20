@@ -1,12 +1,15 @@
-//! GPU 帧直传管线编排（M2b 3.6）：GpuFrameData → 互操作映射 → D2D 搬运 →
-//! 预处理 kernel → IOBinding 输入。全程 device 内完成（M2c 搬运审计口径）。
-//! A 线三靶点优化：设备缓冲池化复用、纹理注册缓存（COM 保活）、kernel
-//! 完成事件同步替代全上下文同步——纯内部优化，无合同面变化。
+//! GPU 帧直传管线编排（M2b 3.6）：GpuFrameData → VP 平面转换中转 → D2D 搬运
+//! → 预处理 kernel → IOBinding 输入。全程 device 内完成（M2c 搬运审计口径）。
+//! 2026-11-20 P1 UV 修复：CUDA 对 NV12 数组纹理仅暴露 luma 平面（扁平 slice
+//! 口径），旧 k/k+1 双映射的 UV 实为下一 slice luma（伪色彩/尾 slice 越界）；
+//! 现行路径=VideoProcessor NV12→BGRA 中转（vp_transit.rs，探针定界唯一零
+//! host 路径）+ kernel BGRA 采样（RGB 域重采样，与 CPU 参考同域）。
+//! 保留优化：设备缓冲池化复用、kernel 完成事件同步替代全上下文同步。
 use super::bufpool::{DeviceBufPool, EventLease, EventPool, PooledBuf};
 use super::cuda_sys::CudaApi;
 use super::driver_sys::{DriverApi, KernelModule};
 use super::iobinding::InferenceInput;
-use super::registry::TextureRegistry;
+use super::vp_transit::TransitPool;
 use crate::Error;
 
 #[cfg(test)]
@@ -40,11 +43,11 @@ pub struct GpuPipeline {
     /// 建立时的上下文句柄：每次管线操作前显式设为当前（runtime/ORT 调用
     /// 可能扰动线程 current，不依赖隐式延续）。
     context: *mut std::ffi::c_void,
-    /// 管线绑定的 CUDA 设备 ordinal（F03）：输入张量分配与注册缓存同设备。
+    /// 管线绑定的 CUDA 设备 ordinal（F03）：输入张量分配与中转注册同设备。
     ordinal: u32,
-    /// 设备级纹理注册缓存（F03：注册资源绑定创建时上下文，多卡各持独立
-    /// LRU；单卡行为与原全局缓存一致）。
-    registry: Mutex<TextureRegistry>,
+    /// VP 平面转换中转池（P1 UV 修复：按 D3D 设备×帧尺寸键控，替代旧源纹理
+    /// CUDA 注册缓存——源纹理不再注册 CUDA）。
+    transit: Mutex<TransitPool>,
     /// 设备缓冲复用池（三靶点：消除每帧 cudaMalloc/cudaFree）。
     bufs: Mutex<DeviceBufPool>,
     /// kernel 完成事件池（三靶点：事件同步替代 cuCtxSynchronize）。
@@ -91,14 +94,14 @@ impl GpuPipeline {
         // 先建上下文再 JIT：cuModuleLoadData 依赖调用线程已有 current 上下文，
         // 业务线程冷启动首触时无上下文，JIT 前置必败（cuInit+primary 激活须先行）。
         let context = driver.establish_context(ordinal)?;
-        let kernel = KernelModule::load_nv12_letterbox(driver.clone())?;
+        let kernel = KernelModule::load_bgra_letterbox(driver.clone())?;
         Ok(Self {
             runtime,
             driver,
             kernel,
             context,
             ordinal,
-            registry: Mutex::new(TextureRegistry::new()),
+            transit: Mutex::new(TransitPool::new()),
             bufs: Mutex::new(DeviceBufPool::new()),
             events: Mutex::new(EventPool::default()),
         })
@@ -108,7 +111,8 @@ impl GpuPipeline {
     /// classify 档案语义（F02：max 比例+源域中心窗口，与 CPU prepare.rs
     /// resize==2 分支同规则；false 保持 detect letterbox）。返回 IOBinding
     /// 输入（device tensor 由 ORT allocator 持有）。纹理借用至本函数返回
-    /// （kernel 完成后归还语义：事件同步等 kernel 结束再归还缓冲/解除映射）。
+    /// （VP 转换+GPU 同步完成后即不再触碰源纹理；kernel 完成事件同步后
+    /// 归还缓冲/解除中转映射）。
     pub fn preprocess_to_binding(
         &self,
         frame: &GpuFrameData,
@@ -126,35 +130,45 @@ impl GpuPipeline {
             // DXGI_FORMAT_NV12=103；首版仅 NV12（解码默认输出），其余格式回退像素路径。
             return Err(crate::Error("vision.gpuFormatUnsupported".into()));
         }
-        if frame.texture.is_null() || frame.width == 0 || frame.height == 0 {
+        if frame.texture.is_null()
+            || frame.width == 0
+            || frame.height == 0
+            || !frame.width.is_multiple_of(2)
+            || !frame.height.is_multiple_of(2)
+        {
             return Err(crate::Error("vision.gpuFrameInvalid".into()));
         }
-        // 注册缓存命中即免 register/unregister；同纹理并发 map 串行化兜底。
-        // Safety：纹理指针经 GPU 帧租约借入（合同 §3.3a），缓存 AddRef 保活。
-        let cached = unsafe {
-            self.registry
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .acquire(&self.runtime, frame.texture)?
+        // VP 平面转换中转（P1 UV 修复）：源纹理不注册 CUDA——Blt 转换 slice
+        // 为 BGRA + GPU 同步 + CUDA 映射中转纹理。Safety：源纹理经 GPU 帧
+        // 租约借入（合同 §3.3a），转换+同步全程在借用窗口内完成。
+        let (entry, mapped) = {
+            let mut pool = self.transit.lock().unwrap_or_else(|e| e.into_inner());
+            pool.acquire(&self.runtime, frame)?
         };
-        let _map_guard = cached.map_lock.lock().unwrap_or_else(|e| e.into_inner());
+        drop(entry); // 映射存续期背书（Arc 由 acquire 语义保证池内常驻）
         {
-            let y = cached.texture.map_subresource(frame.subresource)?;
-            // NV12 每 slice 两个 subresource（M2b 实测）：UV 紧随 Y。
-            let uv = cached.texture.map_subresource(frame.subresource + 1)?;
-            let y_array = y.array;
-            let uv_array = uv.array;
-            // D2D 搬运：array → device buffer（GPU 内拷贝，计入搬运审计）；
+            // D2D 搬运：BGRA array → device buffer（同步 DtoD，完成即返回）；
             // 缓冲池复用，尺寸变化时按需新分配。
-            let y_bytes = frame.width as usize * frame.height as usize;
-            let uv_bytes = y_bytes / 2;
-            let y_buf = PooledBuf::acquire(&self.bufs, &self.runtime, y_bytes, "Y缓冲分配")?;
-            let uv_buf = PooledBuf::acquire(&self.bufs, &self.runtime, uv_bytes, "UV缓冲分配")?;
+            let bgra_bytes = frame.width as usize * frame.height as usize * 4;
+            let bgra_buf =
+                PooledBuf::acquire(&self.bufs, &self.runtime, bgra_bytes, "BGRA缓冲分配")?;
+            let pitch = frame.width as usize * 4;
+            let code = unsafe {
+                (self.runtime.memcpy2d_from_array)(
+                    bgra_buf.ptr(),
+                    pitch,
+                    mapped.array,
+                    0,
+                    0,
+                    pitch,
+                    frame.height as usize,
+                    3, // DtoD
+                )
+            };
+            self.runtime.check(code, "BGRA平面搬运")?;
+            drop(mapped); // DtoD 同步完成，中转纹理可复用/解映射
             self.copy_and_launch(
-                y_buf.ptr(),
-                uv_buf.ptr(),
-                y_array,
-                uv_array,
+                bgra_buf.ptr(),
                 frame,
                 dst_w,
                 dst_h,
@@ -163,8 +177,8 @@ impl GpuPipeline {
                 center_crop,
             )
         }
-        // 作用域出口顺序：copy_and_launch 内事件同步（kernel 完成）→
-        // 缓冲归还池 → unmap → 解除同纹理锁 → 注册缓存条目引用释放。
+        // 作用域出口顺序：事件同步（kernel 完成）→ 缓冲归还池 → 中转条目
+        // 引用释放（Arc 归零才真正 unmap——池内常驻，正常路径不触发）。
     }
 
     /// 批 C 图像攒批的设备侧组装：N 帧已预处理设备张量（各 [1,3,h,w]，来自
@@ -216,10 +230,7 @@ impl GpuPipeline {
     #[allow(clippy::too_many_arguments)]
     fn copy_and_launch(
         &self,
-        y_buf: *mut c_void,
-        uv_buf: *mut c_void,
-        y_array: super::cuda_sys::CudaArray,
-        uv_array: super::cuda_sys::CudaArray,
+        bgra_buf: *mut c_void,
         frame: &GpuFrameData,
         dst_w: u32,
         dst_h: u32,
@@ -227,19 +238,6 @@ impl GpuPipeline {
         input_name: &str,
         center_crop: bool,
     ) -> Result<(InferenceInput, crate::sdk::ImageTransform), Error> {
-        let width = frame.width as usize;
-        let height = frame.height as usize;
-        // Y 平面：行距=width（紧凑）；UV 平面：行距=width（每行 w/2 个双字节 texel）。
-        let code = unsafe {
-            (self.runtime.memcpy2d_from_array)(
-                y_buf, width, y_array, 0, 0, width, height, 3, // DtoD
-            )
-        };
-        self.runtime.check(code, "Y平面搬运")?;
-        let code = unsafe {
-            (self.runtime.memcpy2d_from_array)(uv_buf, width, uv_array, 0, 0, width, height / 2, 3)
-        };
-        self.runtime.check(code, "UV平面搬运")?;
         let input = InferenceInput::new(
             session,
             input_name,
@@ -276,8 +274,7 @@ impl GpuPipeline {
             top,
         };
         let launched = self.kernel.launch_region(
-            y_buf as u64,
-            uv_buf as u64,
+            bgra_buf as u64,
             frame.width,
             frame.height,
             dst_w,
@@ -342,7 +339,7 @@ pub(crate) fn crop_geometry(
     (scale, crop_x, crop_y)
 }
 
-/// 显式关闭路径的注册清理（sdk-p2 T1，F03 起逐设备管线各自清空）：最后一个
+/// 显式关闭路径的中转清理（sdk-p2 T1，F03 起逐设备管线各自清空）：最后一个
 /// 推理会话释放时由 FFI 层调用，unregister/COM Release 均发生在调用方线程
 /// （无 loader lock、驱动工作线程存活），D3D11 对象销毁可正常完成。
 ///
@@ -355,10 +352,10 @@ pub(crate) fn crop_geometry(
 pub fn release_for_shutdown() {
     if let Some(cache) = PIPELINES.get() {
         let guard = cache.lock().unwrap_or_else(|e| e.into_inner());
-        // Err 条目（构造失败未建成管线）无注册缓存，flatten 跳过。
+        // Err 条目（构造失败未建成管线）无中转池，flatten 跳过。
         for pipeline in guard.values().flatten() {
-            let mut registry = pipeline.registry.lock().unwrap_or_else(|e| e.into_inner());
-            registry.drain();
+            let mut transit = pipeline.transit.lock().unwrap_or_else(|e| e.into_inner());
+            transit.drain();
         }
     }
 }
@@ -366,12 +363,12 @@ pub fn release_for_shutdown() {
 /// 搬运审计计数（M2c 主指标；模型级细分随后续任务挂 ModelHandle）。
 /// ABI 1.8 OV 条款：OV remote 直传零 host 上传，input_copies_per_frame 按零计
 /// ——进程级单字段按实际流量构成取值：纯 OV remote 流量=0，含 CUDA 流量=2
-/// （CUDA 臂 Y+UV D2D 各一；两路并存时进程级字段无法分报，取 CUDA 口径，
-/// 如实登记于合同注记）。
+/// （P1 修复后 CUDA 臂=VP 平面转换+BGRA D2D 各一；两路并存时进程级字段无法
+/// 分报，取 CUDA 口径，如实登记于合同注记）。
 pub mod audit {
     use std::sync::atomic::{AtomicU64, Ordering};
     pub static GPU_INPUTS: AtomicU64 = AtomicU64::new(0);
-    pub static GPU_COPIES_PER_FRAME: AtomicU64 = AtomicU64::new(2); // Y+UV D2D 各一
+    pub static GPU_COPIES_PER_FRAME: AtomicU64 = AtomicU64::new(2); // VP 转换+BGRA D2D 各一
     /// OV remote 直传帧子计数（copies 口径判定用；gpu_inputs 两侧共同累加）。
     pub static GPU_INPUTS_OV_REMOTE: AtomicU64 = AtomicU64::new(0);
     /// OV remote 接受段帧记账（ov_remote::capture 调用）。
