@@ -1,39 +1,39 @@
 {
-  "id": "am-sdk-cabi-1.8-uvfix-clarify-r16",
-  "previousFreezeSha256": "7671f225cd5028295cbc2589072109d250fee8d194e97c83bd2a0b6687ed759c",
-  "abiVersion": 65544,
+  "id": "am-sdk-cabi-1.9-resident-r17",
+  "previousFreezeSha256": "47d08fb1e29382f5621e6c8747f3990d0630adb6886be7d03c9b836501b34860",
+  "abiVersion": 65545,
   "designFrozen": true,
   "runtimeAcceptance": "pending",
   "files": [
     {
       "path": "sdk/include/am_camera.h",
-      "sha256": "2a121fc02cba783aa9cbb7da6714827cdd22d79e7624bbb1b48c73eb2a87ab58",
-      "bytes": 10834
+      "sha256": "94d97290ba0b9ae2bddc349c08e918312372460a0deb0288d4f982ce77c2dcc7",
+      "bytes": 11019
     },
     {
       "path": "sdk/include/am_vision.h",
-      "sha256": "e3137ae1ba24889b06aa54d028d8b253191b91f3e180ad66c5ffb40fc46f78ea",
-      "bytes": 8440
+      "sha256": "cdfbc2c2c80c9620a58bcb6f3ec5d77630890d35d6317159a6146fc891e2d9bc",
+      "bytes": 8614
     },
     {
       "path": "sdk/include/am_sdk_types.h",
-      "sha256": "2b0d76d0ff60e67c23b7607cba8eb024738a054a64842917104bc5f92d7936d7",
-      "bytes": 88113
+      "sha256": "22af39dfb03e97792ca4522e5296ee7f338025c7c7c7d0dd58c547ff4faaca43",
+      "bytes": 91040
     },
     {
       "path": "sdk/abi/constants.json",
-      "sha256": "8ffb59d33fe4d458c7442ff6e8377bb91600d42b66b68495de40aee9aec6454e",
+      "sha256": "2a1c1fe38967bb8699ec1e617d1746501e1226bbc362a7019ce8a690bff5e285",
       "bytes": 2343
     },
     {
       "path": "sdk/abi/defaults.json",
-      "sha256": "16aeaa14ab23cf4dd5604afeec7c2aa5612475bbc9cb74f328f850f68e22a010",
-      "bytes": 1923
+      "sha256": "1124dcd735667bae15afc14479311278056db470fceb5d82870b266fa4b57314",
+      "bytes": 1969
     },
     {
       "path": "sdk/abi/layout-win-x64.json",
-      "sha256": "a2eda4c8d82ff17904909d2fd48131ec6bc828a4d41c48382563e77c0339a6be",
-      "bytes": 27055
+      "sha256": "a13546374727afbd12abaf170e241bba78423f916aa7b6de6b20c66dc7dfd94d",
+      "bytes": 27489
     },
     {
       "path": "sdk/abi/decode-hardware-report-v1.schema.json",

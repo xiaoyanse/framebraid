@@ -21,7 +21,8 @@
     "shared_pool_max_consumers": 8,
     "shared_pool_max_outstanding_borrows": 32,
     "shared_pool_max_pools": 4,
-    "shared_pool_metadata_bytes": 262144
+    "shared_pool_metadata_bytes": 262144,
+    "device_resident_budget_bytes": 67108864
   },
   "runtime": {
     "max_contexts": 8,

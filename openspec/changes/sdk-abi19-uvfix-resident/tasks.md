@@ -23,8 +23,8 @@
 
 ## 族 3：驻留形态（族 1 落地后）
 
-- [ ] 3.1 合同设计定稿：设备驻留 result（raw_outputs 设备侧+标志位）+amv_result_device_readout 导出+独立 device 显存账本+筛选描述结构——四裁决落合同（§3.3a 输出段+§5.1 所有权+新节）
-- [ ] 3.2 生成链：ABI 1.9+四生成物+freeze r16
+- [x] 3.1 合同设计定稿：设备驻留 result（raw_outputs 设备侧+标志位）+amv_result_device_readout 导出+独立 device 显存账本+筛选描述结构——四裁决落合同（§3.3a 输出段+§5.1 所有权+新节 §3.6a；双 §2.10/§2.11 编号错位随批修正为 §2.12）
+- [x] 3.2 生成链：ABI 1.9（65545）+四生成物+freeze r17（r16 归档 history；r16 已被族 1+2 冻结消费）
 - [ ] 3.3 实现输出侧：iobinding 设备输出绑定（CUDA MemoryInfo 先例 L67-73）+extract_outputs 驻留分支+readout API+device 账本
 - [ ] 3.4 GPU 筛选：描述结构+零目标帧只回读计数张量
 - [ ] 3.5 GPU 帧导出输入面：amc_frame_encode 纹理输入（四路径选项按侦察报告设计定稿实施）

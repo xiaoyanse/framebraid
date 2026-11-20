@@ -406,7 +406,7 @@ typedef struct am_frame_meta_s {   /* B12 独立帧身份：不假设一包一�
   uint32_t clock_quality;    /* am_clock_quality_e（P5）：设备时钟→本地单调钟的映射质量 */
   am_spatial_transform_t transform;
 } am_frame_meta_t;
-/* ---- 单帧图像导出（§2.11，与流编码器共享编码底座但无句柄生命周期）---- */
+/* ---- 单帧图像导出（§2.12，与流编码器共享编码底座但无句柄生命周期）---- */
 typedef struct am_frame_encode_opts_s {
   uint32_t struct_size;  /* explicit */
   uint32_t format;        /* AM_ENCODE_JPEG=1 / AM_ENCODE_PNG=2 */ /* zero=invalid */
@@ -539,7 +539,7 @@ typedef struct am_event_detail_s {
 } am_event_detail_t;
 ```
 
-### 2.9 推流状态（主文件 §2.10；ABI 1.7 兼容新增）
+### 2.9 推流状态（主文件 §2.12；ABI 1.7 兼容新增）
 
 ```c
 typedef enum am_stream_conn_state_e {
@@ -755,7 +755,9 @@ typedef struct am_gpu_frame_desc_s {
   uint32_t struct_size;
   uint32_t width, height;
   uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 103=NV12） */
-  uint32_t subresource;        /* 纹理子资源索引 */
+  uint32_t subresource;        /* 纹理数组扁平 slice 索引（0..ArraySize-1；NV12 平面
+                                  含于 slice 内由 SDK 处理，消费方无平面复合换算；
+                                  ffmpeg D3D11VA 形态 data[1] 原值即此口径） */
   uint64_t shared_nt_handle;   /* 跨 DLL 共享句柄（同进程，可选）；0=句柄不可得（纹理指针仍可用） */
   uint32_t flags;              /* 1=共享句柄不可得（信息性标注，非回读判定） */
   am_frame_assoc_t assoc;      /* 帧身份（与像素帧一致） */
@@ -771,7 +773,9 @@ typedef struct am_gpu_frame_ref_s {
   uint32_t struct_size;
   uint32_t width, height;
   uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 103=NV12） */
-  uint32_t subresource;        /* 纹理子资源索引 */
+  uint32_t subresource;        /* 纹理数组扁平 slice 索引（0..ArraySize-1；NV12 平面
+                                  含于 slice 内由 SDK 处理，消费方无平面复合换算；
+                                  ffmpeg D3D11VA 形态 data[1] 原值即此口径） */
   uint64_t shared_nt_handle;   /* 可选共享句柄；0=句柄不可得（纹理指针仍可用） */
   void* texture;               /* 同进程纹理指针（租约借用期内有效；M2b 主交付物） */
   uint32_t flags;              /* 保留=0 */
@@ -822,6 +826,12 @@ typedef struct am_cascade_result_s {
                                      命中 / skipped>0 有 ROI 未执行（可观测性，消费方
                                      确认轮 2026-11-05 备注 1） */ /* zero=default */
 } am_cascade_result_t;
+typedef struct am_device_filter_s {  /* GPU 侧声明式交付筛选（ABI 1.9 尾部嵌，主文件 §3.6a；
+                                        声明式无回调；只影响交付形态不影响推理本身） */
+  uint32_t enabled;        /* 1=启用设备侧筛选；0=禁用（本结构整体忽略） */ /* zero=default */
+  int32_t class_id;        /* >=0=仅交付该类别（0 即类别 0，为有效选择）；-1=全部类别 */ /* explicit */
+  float min_confidence;    /* 置信度下限；0=用档案/params 默认阈值（不另设） */
+} am_device_filter_t;
 typedef struct am_infer_params_s {
   uint32_t struct_size;
   float confidence_threshold;  /* 档案默认外的覆盖；越界 vision.confidenceRange */
@@ -833,6 +843,12 @@ typedef struct am_infer_params_s {
                                   批量全部入口（P6，无入口例外） */
   const am_raw_preprocess_t* raw_preprocess;  /* RAW 模型图像入口必填；PROFILE 模式忽略 */
   uint32_t reserved[2];
+  uint32_t device_resident_outputs;  /* ABI 1.9 尾部追加（主文件 §3.6a）：0=默认（输出全量回读，
+                                        现状语义）；1=请求 raw_outputs 设备驻留（结果
+                                        device_resident=1，readout 经 amv_result_device_readout）；
+                                        运行库不支持时显式 notSupported 不静默降级 */ /* zero=default */
+  am_device_filter_t device_filter;  /* ABI 1.9 尾部追加：设备侧交付筛选；enabled=0 整体忽略；
+                                        驻留/非驻留两形态同参数同语义（主文件 §3.6a） */
 } am_infer_params_t;
 typedef enum am_dtype_e { AM_DTYPE_F32 = 0, AM_DTYPE_F16, AM_DTYPE_I64, AM_DTYPE_I32, AM_DTYPE_U8 } am_dtype_e;
 typedef struct am_tensor_in_s {
@@ -1065,6 +1081,14 @@ typedef struct amv_result_s {   /* 结构化五类+原始张量双出口；JSON 
                                              按 struct_size 忽略 */
   const am_cascade_result_t* cascade;     /* ROI 级联二级结果（C1，P2 尾部追加）：仅级联入口非 NULL；
                                              一级结果仍在 detect；旧消费者按 struct_size 忽略 */
+  uint32_t device_resident;               /* 设备驻留标志（ABI 1.9 尾部追加，主文件 §3.6a）：
+                                             0=常规 CPU 结果（raw_outputs.data 有效，现状语义）；
+                                             1=raw_outputs 驻留设备侧——data 指针为 NULL，dtype/
+                                             shape/data_size 元数据仍有效（调用方可判形状决定
+                                             readout 时机） */ /* zero=default */
+  uint64_t device_outputs_token;          /* 驻留令牌（ABI 1.9 尾部追加）：amv_result_device_readout
+                                             消费的不透明句柄值；随 amv_result_release 失效；
+                                             非驻留结果恒 0 */ /* zero=invalid */
 } amv_result_t;
 ```
 
@@ -1107,6 +1131,10 @@ typedef struct am_limits_s {   /* 两库共用框架，非本库字段忽略（=
   uint32_t shared_pool_max_pools;          /* ctx内不同池身份上限=4；仍受共享像素总预算 */
   uint64_t shared_pool_metadata_bytes;     /* ctx控制元数据上限=256KiB，每池不超过64KiB */
   uint32_t reserved[8];
+  uint64_t device_resident_budget_bytes;   /* 推理：设备驻留输出账本上限（ABI 1.9 尾部追加，主文件
+                                              §3.6a）：独立于 result_budget_bytes 的 host 结果账，
+                                              默认 64MiB 同值独立计；0=未设置（保持当前值，同本
+                                              结构 =0 忽略惯例）；冻结包络内只可调低 */ /* zero=default */
 } am_limits_t;
 
 typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文件 §2.11/§3.8 */
@@ -1132,6 +1160,9 @@ typedef struct am_stats_s {    /* 输出经 DLL 脱敏；scope 语义见主文�
   uint64_t gpu_inputs, gpu_copies_per_frame; /* GPU 搬运审计（尾部追加，struct_size 判版）：
                                                进程级上下文计数（非 per-model）；
                                                inputs=GPU直传帧累计，copies=当前每帧GPU内拷贝次数 */
+  uint64_t device_resident_bytes, device_resident_peak_bytes; /* 设备驻留输出账本观测（ABI 1.9
+                                               尾部追加，主文件 §3.6a）：当前驻留字节与历史峰值；
+                                               独立于 host 结果账 */ /* zero=default */
 } am_stats_t;
 ```
 

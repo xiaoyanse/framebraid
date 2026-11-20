@@ -1,6 +1,56 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use crate::*;
 #[test]
+fn am_obb_instance_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_obb_instance_t>(), 64);
+    assert_eq!(core::mem::align_of::<am_obb_instance_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, vertices_xy),
+        0,
+        "am_obb_instance_t.vertices_xy"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, center_x),
+        32,
+        "am_obb_instance_t.center_x"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, center_y),
+        36,
+        "am_obb_instance_t.center_y"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, width),
+        40,
+        "am_obb_instance_t.width"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, height),
+        44,
+        "am_obb_instance_t.height"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, angle),
+        48,
+        "am_obb_instance_t.angle"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, confidence),
+        52,
+        "am_obb_instance_t.confidence"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, class_id),
+        56,
+        "am_obb_instance_t.class_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_obb_instance_t, angle_normalized),
+        60,
+        "am_obb_instance_t.angle_normalized"
+    );
+}
+#[test]
 fn am_obb_result_t_matches_c() {
     assert_eq!(core::mem::size_of::<am_obb_result_t>(), 16);
     assert_eq!(core::mem::align_of::<am_obb_result_t>(), 8);
@@ -17,7 +67,7 @@ fn am_obb_result_t_matches_c() {
 }
 #[test]
 fn amv_result_t_matches_c() {
-    assert_eq!(core::mem::size_of::<amv_result_t>(), 224);
+    assert_eq!(core::mem::size_of::<amv_result_t>(), 240);
     assert_eq!(core::mem::align_of::<amv_result_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(amv_result_t, struct_size),
@@ -109,6 +159,16 @@ fn amv_result_t_matches_c() {
         216,
         "amv_result_t.cascade"
     );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, device_resident),
+        224,
+        "amv_result_t.device_resident"
+    );
+    assert_eq!(
+        core::mem::offset_of!(amv_result_t, device_outputs_token),
+        232,
+        "amv_result_t.device_outputs_token"
+    );
 }
 #[test]
 fn am_realtime_policy_t_matches_c() {
@@ -142,7 +202,7 @@ fn am_realtime_policy_t_matches_c() {
 }
 #[test]
 fn am_limits_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_limits_t>(), 160);
+    assert_eq!(core::mem::size_of::<am_limits_t>(), 168);
     assert_eq!(core::mem::align_of::<am_limits_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_limits_t, struct_size),
@@ -259,10 +319,15 @@ fn am_limits_t_matches_c() {
         128,
         "am_limits_t.reserved"
     );
+    assert_eq!(
+        core::mem::offset_of!(am_limits_t, device_resident_budget_bytes),
+        160,
+        "am_limits_t.device_resident_budget_bytes"
+    );
 }
 #[test]
 fn am_stats_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_stats_t>(), 248);
+    assert_eq!(core::mem::size_of::<am_stats_t>(), 264);
     assert_eq!(core::mem::align_of::<am_stats_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_stats_t, struct_size),
@@ -418,6 +483,16 @@ fn am_stats_t_matches_c() {
         core::mem::offset_of!(am_stats_t, gpu_copies_per_frame),
         240,
         "am_stats_t.gpu_copies_per_frame"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stats_t, device_resident_bytes),
+        248,
+        "am_stats_t.device_resident_bytes"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_stats_t, device_resident_peak_bytes),
+        256,
+        "am_stats_t.device_resident_peak_bytes"
     );
 }
 #[test]

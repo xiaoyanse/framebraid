@@ -1,5 +1,45 @@
 // 由scripts/sdk/generate-rust-abi.mjs生成；与公开C头文件同源，勿手改。
 use super::*;
+impl AbiLayout for am_obb_instance_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_obb_instance_t, vertices_xy),
+            core::mem::size_of::<[f32; 8]>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, center_x),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, center_y),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, width),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, height),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, angle),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, confidence),
+            core::mem::size_of::<f32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, class_id),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_obb_instance_t, angle_normalized),
+            core::mem::size_of::<u32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_obb_result_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -143,6 +183,14 @@ impl AbiLayout for amv_result_t {
             core::mem::offset_of!(amv_result_t, cascade),
             core::mem::size_of::<*const am_cascade_result_t>(),
         ),
+        (
+            core::mem::offset_of!(amv_result_t, device_resident),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(amv_result_t, device_outputs_token),
+            core::mem::size_of::<u64>(),
+        ),
     ];
 }
 impl AbiLayout for am_realtime_policy_t {
@@ -262,6 +310,10 @@ impl AbiLayout for am_limits_t {
         (
             core::mem::offset_of!(am_limits_t, reserved),
             core::mem::size_of::<[u32; 8]>(),
+        ),
+        (
+            core::mem::offset_of!(am_limits_t, device_resident_budget_bytes),
+            core::mem::size_of::<u64>(),
         ),
     ];
 }
@@ -389,6 +441,14 @@ impl AbiLayout for am_stats_t {
         ),
         (
             core::mem::offset_of!(am_stats_t, gpu_copies_per_frame),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_stats_t, device_resident_bytes),
+            core::mem::size_of::<u64>(),
+        ),
+        (
+            core::mem::offset_of!(am_stats_t, device_resident_peak_bytes),
             core::mem::size_of::<u64>(),
         ),
     ];

@@ -2,6 +2,16 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_tracked_box_t {
+    pub bounds: [f32; 4],
+    pub confidence: f32,
+    pub class_id: u32,
+    pub track_id: u64,
+    pub age_frames: u32,
+    pub hits: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_detect_result_t {
     pub count: u32,
     pub boxes: *const am_detect_box_t,
@@ -89,17 +99,4 @@ pub struct am_segment_instance_t {
 pub struct am_segment_result_t {
     pub count: u32,
     pub instances: *const am_segment_instance_t,
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_obb_instance_t {
-    pub vertices_xy: [f32; 8],
-    pub center_x: f32,
-    pub center_y: f32,
-    pub width: f32,
-    pub height: f32,
-    pub angle: f32,
-    pub confidence: f32,
-    pub class_id: i32,
-    pub angle_normalized: u32,
 }

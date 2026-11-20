@@ -72,6 +72,8 @@ AM_API am_status_t amv_result_fetch(amv_context_t* ctx, uint64_t request_id, amv
 AM_API am_status_t amv_result_ack(amv_context_t* ctx, uint64_t request_id);
 AM_API am_status_t amv_result_retain(amv_result_t* result);
 AM_API am_status_t amv_result_release(amv_result_t* result);
+AM_API am_status_t amv_result_device_readout(amv_context_t* ctx, const amv_result_t* result,
+    uint32_t output_index, uint8_t* out, uint64_t capacity, uint64_t* out_size);
 AM_API am_status_t amv_request_query(amv_context_t* ctx, uint64_t request_id, am_request_snapshot_t** out_snapshot);
 AM_API am_status_t amv_request_snapshot_release(am_request_snapshot_t* snapshot);
 AM_API am_status_t amv_request_cancel(amv_context_t* ctx, uint64_t request_id);
