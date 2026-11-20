@@ -959,7 +959,9 @@ typedef struct am_gpu_frame_desc_s {
   uint32_t struct_size;
   uint32_t width, height;
   uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 103=NV12） */
-  uint32_t subresource;        /* 纹理子资源索引 */
+  uint32_t subresource;        /* 纹理数组扁平 slice 索引（0..ArraySize-1；NV12 平面
+                                  含于 slice 内由 SDK 处理，消费方无平面复合换算；
+                                  ffmpeg D3D11VA 形态 data[1] 原值即此口径） */
   uint64_t shared_nt_handle;   /* 跨 DLL 共享句柄（同进程，可选）；0=句柄不可得（纹理指针仍可用） */
   uint32_t flags;              /* 1=共享句柄不可得（信息性标注，非回读判定） */
   am_frame_assoc_t assoc;      /* 帧身份（与像素帧一致） */
@@ -975,7 +977,9 @@ typedef struct am_gpu_frame_ref_s {
   uint32_t struct_size;
   uint32_t width, height;
   uint32_t d3d_format;         /* DXGI_FORMAT 枚举值（如 103=NV12） */
-  uint32_t subresource;        /* 纹理子资源索引 */
+  uint32_t subresource;        /* 纹理数组扁平 slice 索引（0..ArraySize-1；NV12 平面
+                                  含于 slice 内由 SDK 处理，消费方无平面复合换算；
+                                  ffmpeg D3D11VA 形态 data[1] 原值即此口径） */
   uint64_t shared_nt_handle;   /* 可选共享句柄；0=句柄不可得（纹理指针仍可用） */
   void* texture;               /* 同进程纹理指针（租约借用期内有效；M2b 主交付物） */
   uint32_t flags;              /* 保留=0 */

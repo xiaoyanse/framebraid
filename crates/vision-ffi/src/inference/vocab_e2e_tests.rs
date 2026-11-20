@@ -198,8 +198,7 @@ fn vocab_e2e_bind_inject_decode_and_hits() {
 #[ignore = "需真实 NVIDIA GPU 与 vocab 合成双模型夹具（.local/tests/vocab-e2e）"]
 fn vocab_e2e_gpu_direct_injection_matches_cpu() {
     use am_vision_core::gpu::{
-        cuda_sys::CudaApi, interop::nvidia_nv12_texture, interop::RegisteredTexture,
-        pipeline::GpuPipeline,
+        cuda_sys::CudaApi, interop::nvidia_nv12_texture, pipeline::GpuPipeline,
     };
     let mut guard = CtxGuard {
         ctx: init_ctx(),
@@ -236,21 +235,14 @@ fn vocab_e2e_gpu_direct_injection_matches_cpu() {
         0
     );
     // GPU 帧：常色 NV12（合成模型分数与图像内容无关，常色即可）→ D3D 纹理
-    // → CUDA 装载（装载模式与 GPU e2e 相同：Y/UV 平面各一次 H2D）
-    let (w, h) = (640usize, 640usize);
-    let nv12 = vec![128u8; w * h * 3 / 2];
+    // → D3D staging 整 slice 装载（P1 修复后 CUDA 不可写 NV12 UV 平面）
+    let nv12 = vec![128u8; 640usize * 640 * 3 / 2];
     let runtime = CudaApi::load().expect("cudart");
     GpuPipeline::for_device(0).expect("GPU 管线");
     let texture = unsafe { nvidia_nv12_texture(640, 640).expect("NV12 纹理") };
-    unsafe {
-        (runtime.set_device)(0);
-        let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-        let y = registered.map_subresource(0).expect("Y map");
-        let uv = registered.map_subresource(1).expect("UV map");
-        (runtime.memcpy2d_to_array)(y.array, 0, 0, nv12.as_ptr().cast(), w, w, h, 1);
-        let uv_ptr = nv12.as_ptr().add(w * h);
-        (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), w, w, h / 2, 1);
-    }
+    unsafe { (runtime.set_device)(0) };
+    unsafe { am_vision_core::gpu::vp_transit::upload_nv12_slice(texture.0, 0, &nv12, 640, 640) }
+        .expect("D3D staging 装载");
     let gpu_ref = am_gpu_frame_ref_t {
         width: 640,
         height: 640,

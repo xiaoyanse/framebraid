@@ -412,6 +412,12 @@ AM_API am_status_t amc_gpu_frame_texture(const amc_gpu_frame_t* frame,
 `amc_gpu_frame_desc`/`amc_gpu_frame_texture`（M2b 补，跨 DLL 消费查询）：宿主经它们组装
 `am_gpu_frame_ref_t` 传给 Vision（§3.3a）；`texture` 借用期内有效，查询不转移所有权。
 
+**subresource 语义（2026-11-20 澄清，既有行为定界非变更）**：`am_gpu_frame_desc_t.subresource`
+与 `am_gpu_frame_ref_t.subresource` 为**扁平 slice 口径**——纹理数组的第 k 个数组元素
+（0..ArraySize-1），NV12 的 Y/UV 两平面含于该 slice 内由 SDK 内部处理，消费方**不做**
+平面复合索引换算。ffmpeg D3D11VA 形态下 `AVFrame.data[1]` 的原值即此口径（D3D11VA 的
+纹理数组索引），透传即正确；MipLevels 恒按 1 消费（解码输出形态），mip 索引不参与。
+
 **能力位**：`AMC_CAP_GPU_FRAMES`（编译编入+运行时可用的双条件）。
 
 **同进程约束**：纹理指针与 `shared_nt_handle` 均仅供同进程跨 DLL 消费（Vision 互操作）；句柄为可选增强（平台/runtime 支持时提供），纹理指针为始终可用的交付物；跨进程共享后续。
@@ -772,6 +778,21 @@ runtime 拒绝纹理 QI DXGI 接口，`shared_nt_handle` 平台支持时尽力�
   前处理在 OV remote 路径不支持（OV preprocess C API 无裁剪算子）——OV 会话的
   GPU 帧输入遇 classify 档案显式返回 `notSupported`（宿主回退像素路径或改用 CUDA
   会话）；"与像素路径同式"的 center crop 语义在 CUDA 路径有效不变
+- CUDA 线 NV12 消费路径修正（2026-11-20 P1，随修复版本生效；ABI 面零变化）：
+  v0.3.0 起 CUDA 直传线的 UV 采样存在正确性缺陷——CUDA 对 NV12 数组纹理的映射为
+  **扁平 slice 口径且仅暴露 luma 平面**（runtime+driver 双 API 实测定谳，uvfix 探针
+  在案），旧实现"Y=slice k、UV=slice k+1"双映射的 k+1 实际指向**下一 slice 的 luma**
+  ——三种失效：单 slice 形态越界拒绝、数组尾 slice 越界拒绝（ArraySize=20 现场尾帧
+  必炸）、其余 slice 伪 UV 采样（颜色语义错；检测类亮度主导影响低，既有门因此全绿
+  掩盖）。修复后实现：**D3D11 VideoProcessor 平面转换中转**——帧纹理（不注册 CUDA）
+  经 VP Blt 转为 B8G8R8A8 中转纹理（SDK 自有、按设备×尺寸池化、BT.601 full 转换、
+  流自动处理禁用），CUDA 仅注册/映射中转纹理；kernel 采样源改为 BGRA（RGB 域
+  双线性重采样——与像素路径 CPU 参考的 RGB 域重采样对齐，旧 YUV 域重采样偏差类
+  消除；色度上采样由 VP 完成，与旧 kernel 最近邻色度采样存在合成硬色度边处
+  ≤75/255 的口径差，实测登记）。探针同时定界：本机 NVIDIA 驱动（621.14/CUDA 13.5）
+  的 CopySubresourceRegion 平面拆拷（NV12→R8/R8G8）与 cast SRV 平面视图（R8G8/R8
+  view 恒指平面 0）均不可用，VP 中转为唯一零 host 路径；搬运审计
+  `input_copies_per_frame` 口径不变（GPU 内拷贝=2：VP 转换+D2D 搬运各一）
 - 设备域（2026-11-16 F03 起）：GPU 直传管线（CUDA 上下文/纹理注册缓存/输入张量分配）按
   会话定向解析的 CUDA ordinal 建立，与 CUDA EP 会话同设备；多 GPU 并发（同进程多 ordinal
   管线并存）代码路径已接线但未经双卡实测（单卡 ordinal 0 全链验证）。级联 GPU 帧路径

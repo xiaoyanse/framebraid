@@ -4,8 +4,7 @@ use super::models::ModelHandle;
 use super::state::State;
 use am_sdk_support::{abi::*, context};
 use am_vision_core::gpu::{
-    cuda_sys::CudaApi,
-    interop::{nvidia_nv12_texture, RegisteredTexture},
+    cuda_sys::CudaApi, interop::nvidia_nv12_texture, vp_transit::upload_nv12_slice,
 };
 use std::{
     ffi::CString,
@@ -311,30 +310,8 @@ fn gpu_cascade_public_entry_real_replay() {
         let bytes = std::fs::read(directory.join(format!("{sample}.nv12"))).unwrap();
         assert_eq!(bytes.len(), 614400);
         let texture = unsafe { nvidia_nv12_texture(640, 640) }.unwrap();
-        {
-            let reg = unsafe { RegisteredTexture::register(runtime.clone(), texture.0) }.unwrap();
-            let y = reg.map_subresource(0).unwrap();
-            let uv = reg.map_subresource(1).unwrap();
-            for (array, offset, rows) in [(y.array, 0, 640), (uv.array, 409600, 320)] {
-                runtime
-                    .check(
-                        unsafe {
-                            (runtime.memcpy2d_to_array)(
-                                array,
-                                0,
-                                0,
-                                bytes.as_ptr().add(offset).cast(),
-                                640,
-                                640,
-                                rows,
-                                1,
-                            )
-                        },
-                        "frame upload",
-                    )
-                    .unwrap();
-            }
-        }
+        // P1 修复后 CUDA 不可写 NV12 UV 平面——装载走 D3D staging 整 slice 拷
+        unsafe { upload_nv12_slice(texture.0, 0, &bytes, 640, 640) }.unwrap();
         let frame = am_frame_view_t {
             width: 640,
             height: 640,
@@ -408,13 +385,30 @@ fn gpu_cascade_public_entry_real_replay() {
         eprintln!("ROI_REPLAY {sample} cpu={} gpu={} batch={} cpu_gpu={cpu_cmp:?} gpu_batch={gpu_cmp:?} ms={cpu_ms:.2}/{single_ms:.2}/{batch_ms:.2}",cpu_hits.len(),single.len(),batch.len());
         assert_eq!(source_cmp.0, cuda_pixels.len());
         assert_eq!(cuda_pixels.len(), single.len());
-        assert!(
-            source_cmp.1 < 0.5,
-            "{sample}: same-CUDA pixel vs texture {source_cmp:?}"
-        );
+        // 跨预处理域的框级距离断言只在照片档（conf 0.25 真检出，分离良好带）
+        // 生效（2026-11-20 P1 后重定，依据登记）：VP BT.601 双线性色度上采样 vs
+        // CPU 最近邻为合同登记域差（docs §3.3a，探针实测硬色度边 ≤75/255），
+        // 合成噪声帧的 argmax 框在 ~0.003 置信噪声底上不可稳定；像素级颜色
+        // 正确性由 uv_truth 门逐 slice BT.601 真值覆盖，同域一致性由下方
+        // pixels_cmp/gpu_cmp 断言覆盖。真检出跨域实测（bus 8 框 min 0.92）：
+        // 匹配 8/8、score Δ0.0035、框漂 ≤1.71px——与 cpu_cmp（CPU vs 纹理源）
+        // 1.73px 同量级，即每跨一个预处理域 ≈2px@640；预算 3px（旧 0.5px 按
+        // 修复前像素同域路径标定，已失效）。
+        if photos.is_some() {
+            assert!(
+                source_cmp.1 < 3.0,
+                "{sample}: same-CUDA pixel vs texture {source_cmp:?}"
+            );
+        }
         assert_eq!(gpu_cmp.0, single.len());
+        // 同域（VP 纹理源 single vs batch）像素级框漂预算：照片档真检出
+        // （conf≥0.25）回归良好，1px；合成 seek 档在 conf~0.003 噪声底上
+        // 框回归病态，批 GEMM tiling 数值差即可漂 ~1.3px（2026-11-20 P1 后
+        // 实测 1.27px/score 8e-6——分数通道证明管线数值同一性，几何通道按
+        // 噪声回归病态性放宽到 2px，依据登记）。
+        let batch_px_budget = if photos.is_some() { 1.0 } else { 2.0 };
         assert!(
-            gpu_cmp.1 < 1.0,
+            gpu_cmp.1 < batch_px_budget,
             "{sample}: CUDA single vs batch {gpu_cmp:?}"
         );
         assert_eq!(single.len(), batch.len());
@@ -450,7 +444,11 @@ fn gpu_cascade_public_entry_real_replay() {
             let roi_px = delta(cpu_hit.roi, gpu_hit.roi);
             let box_px = delta(cpu_hit.bounds, gpu_hit.bounds);
             eprintln!("ROI_DYNAMIC {sample} roi_px={roi_px:.5} box_px={box_px:.5}");
-            assert!(roi_px < 0.5 && box_px < 3.0);
+            // 跨预处理域（CPU 像素 vs VP 纹理源）级联 ROI 坐标预算同
+            // source_cmp 重定依据：每跨一个预处理域 ≈2px@640（实测
+            // bus roi 1.59px/box 1.28px；旧 0.5px/3.0px 按修复前像素同域
+            // 路径标定）。
+            assert!(roi_px < 3.0 && box_px < 3.0);
         }
         let submit = |primary, secondary, input: &am_image_input_t| {
             let mut id = 0;

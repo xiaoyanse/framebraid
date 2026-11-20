@@ -1,0 +1,293 @@
+//
+// Handwritten PTX 2026-11-20 (P1 UV fix): BGRA plane (global buffer, VP-converted
+// BT.601 full-range RGB) -> RGB NCHW f32 letterbox preprocess. Replaces the NV12
+// dual-plane kernel: CUDA cannot address the NV12 chroma plane (flat-slice luma
+// only, runtime+driver established), so color conversion + chroma upsampling now
+// happen in the D3D11 VideoProcessor (vp_transit.rs) and this kernel resamples
+// RGB directly — same domain as the CPU pixel-path reference (the old YUV-domain
+// resampling deviation class is eliminated; VP bilinear chroma vs old nearest
+// chroma is the remaining registered difference, <=75/255 at synthetic hard
+// chroma edges, probe-measured).
+//
+// Geometry mirrors the previous kernel verbatim: letterbox scale=min(dst/src),
+// round+clamp, floor-div pad 114/255, /255 normalize; classify center-crop mode
+// ((d+0.5)/scale - 0.5 + crop_src); ROI modes clamp source coords to the ROI
+// window and translate by origin. The old CPU-parity quantize path is absorbed:
+// BGRA taps are already u8-domain RGB, so bilinear over them equals the CPU
+// mirror's resize without a separate quantize step.
+//
+// Layout: bgra_ptr holds width*height u32 texels (B,G,R,A byte order, pitch in
+// PIXELS given by the pitch param; byte offset = (y*pitch+x)*4, aligned u32
+// loads).
+//
+.version 8.7
+.target sm_120
+.address_size 64
+
+.visible .entry bgra_letterbox(
+	.param .u64 bgra_ptr,
+	.param .u32 src_w,
+	.param .u32 src_h,
+	.param .u32 dst_w,
+	.param .u32 dst_h,
+	.param .u32 rw,
+	.param .u32 rh,
+	.param .u64 out_ptr,
+    .param .u32 pitch,
+    .param .u32 origin_x,
+    .param .u32 origin_y,
+    .param .u32 sampling,
+    .param .f32 roi_scale,
+    .param .u32 crop,
+    .param .f32 crop_x,
+    .param .f32 crop_y,
+    .param .f32 crop_scale
+)
+{
+	.reg .pred p, q, parity;
+	// %r1=x %r2=y %r3=dst_w %r4=dst_h %r5=rw %r6=rh %r7=left %r8=top
+	// %r9=dx %r10=dy %r11=tmp %r12=hw %r13=sx0 %r14=sy0 %r15=sx1 %r16=sy1
+	// %r17=wgridx %r18=wgridy %r23=sampling %r24=origin_x %r25=origin_y
+	// %r26=crop flag
+	.reg .b32 %r<27>;
+	// %f1..=coords/weights, %f12..=channel accumulators
+	.reg .f32 %f<48>;
+	.reg .b64 %rd<12>;
+
+	ld.param.u64 %rd1, [bgra_ptr];
+	ld.param.u32 %r3, [dst_w];
+	ld.param.u32 %r4, [dst_h];
+	ld.param.u32 %r5, [rw];
+	ld.param.u32 %r6, [rh];
+	ld.param.u64 %rd3, [out_ptr];
+
+	// x/y = global thread coords
+	mov.u32 %r1, %ctaid.x;
+	mov.u32 %r11, %ntid.x;
+	mov.u32 %r12, %tid.x;
+	mad.lo.s32 %r1, %r1, %r11, %r12;
+	mov.u32 %r2, %ctaid.y;
+	mov.u32 %r11, %ntid.y;
+	mov.u32 %r12, %tid.y;
+	mad.lo.s32 %r2, %r2, %r11, %r12;
+
+	setp.ge.s32 p, %r1, %r3;
+	@p bra DONE;
+	setp.ge.s32 p, %r2, %r4;
+	@p bra DONE;
+
+	// left/top = (dst - r) >> 1
+	sub.s32 %r7, %r3, %r5;
+	shr.s32 %r7, %r7, 1;
+	sub.s32 %r8, %r4, %r6;
+	shr.s32 %r8, %r8, 1;
+
+	// channel addresses: R/G/B (NCHW)
+	mad.lo.s32 %r11, %r2, %r3, %r1;
+	mul.lo.s32 %r12, %r4, %r3;
+	cvta.to.global.u64 %rd3, %rd3;
+	mul.wide.s32 %rd4, %r11, 4;
+	add.s64 %rd4, %rd3, %rd4;
+	mul.wide.s32 %rd6, %r12, 4;
+	add.s64 %rd5, %rd4, %rd6;
+	add.s64 %rd6, %rd5, %rd6;
+
+	// dx/dy = x-left, y-top; pad check
+	sub.s32 %r9, %r1, %r7;
+	sub.s32 %r10, %r2, %r8;
+	setp.lt.s32 p, %r9, 0;
+	@p bra PAD;
+	setp.lt.s32 p, %r10, 0;
+	@p bra PAD;
+	setp.ge.s32 p, %r9, %r5;
+	@p bra PAD;
+	setp.ge.s32 p, %r10, %r6;
+	@p bra PAD;
+
+	// bilinear source coords: sx = (dx+0.5)*src/rw - 0.5
+	cvt.rn.f32.s32 %f1, %r9;
+	cvt.rn.f32.s32 %f2, %r10;
+	cvt.rn.f32.s32 %f3, %r5;
+	cvt.rn.f32.s32 %f4, %r6;
+	ld.param.u32 %r17, [src_w];
+	ld.param.u32 %r18, [src_h];
+	cvt.rn.f32.s32 %f5, %r17;
+	cvt.rn.f32.s32 %f6, %r18;
+	add.f32 %f1, %f1, 0f3F000000;
+	add.f32 %f2, %f2, 0f3F000000;
+	div.rn.f32 %f7, %f5, %f3;      // src_w/rw
+	div.rn.f32 %f8, %f6, %f4;      // src_h/rh
+	mul.f32 %f9, %f1, %f7;
+	sub.f32 %f9, %f9, 0f3F000000;  // sx
+	mul.f32 %f1, %f2, %f8;
+	sub.f32 %f1, %f1, 0f3F000000;  // sy
+
+	// Classify center-crop override (F02): same op order as CPU prepare.rs
+	ld.param.u32 %r26, [crop];
+	setp.ne.u32 p, %r26, 0;
+	@p ld.param.f32 %f44, [crop_scale];
+	@p cvt.rn.f32.s32 %f46, %r9;
+	@p add.f32 %f46, %f46, 0f3F000000;
+	@p div.rn.f32 %f9, %f46, %f44;
+	@p sub.f32 %f9, %f9, 0f3F000000;
+	@p ld.param.f32 %f45, [crop_x];
+	@p add.f32 %f9, %f9, %f45;
+	@p cvt.rn.f32.s32 %f46, %r10;
+	@p add.f32 %f46, %f46, 0f3F000000;
+	@p div.rn.f32 %f1, %f46, %f44;
+	@p sub.f32 %f1, %f1, 0f3F000000;
+	@p ld.param.f32 %f45, [crop_y];
+	@p add.f32 %f1, %f1, %f45;
+
+    // ROI mode clamps interpolation to the cropped image before translating
+    // to the full plane.
+    ld.param.u32 %r23, [sampling];
+    setp.ge.u32 parity, %r23, 2;
+    @parity ld.param.f32 %f5, [roi_scale];
+    @parity cvt.rn.f32.s32 %f1, %r9;
+    @parity add.f32 %f1, %f1, 0f3F000000;
+    @parity div.rn.f32 %f9, %f1, %f5;
+    @parity sub.f32 %f9, %f9, 0f3F000000;
+    @parity div.rn.f32 %f1, %f2, %f5;
+    @parity sub.f32 %f1, %f1, 0f3F000000;
+    setp.ne.u32 q, %r23, 0;
+    sub.s32 %r11, %r17, 1;
+    cvt.rn.f32.s32 %f2, %r11;
+    @q max.f32 %f9, %f9, 0f00000000;
+    @q min.f32 %f9, %f9, %f2;
+    sub.s32 %r11, %r18, 1;
+    cvt.rn.f32.s32 %f2, %r11;
+    @q max.f32 %f1, %f1, 0f00000000;
+    @q min.f32 %f1, %f1, %f2;
+
+    // Integer neighbors (clamped within the ROI), then ROI origin translate.
+	cvt.rzi.s32.f32 %r13, %f9;     // sx0 = floor(sx)
+	cvt.rzi.s32.f32 %r14, %f1;     // sy0
+	cvt.rn.f32.s32 %f2, %r13;
+	sub.f32 %f10, %f9, %f2;        // fx
+	cvt.rn.f32.s32 %f2, %r14;
+	sub.f32 %f11, %f1, %f2;        // fy
+	add.s32 %r15, %r13, 1;         // sx1
+	add.s32 %r16, %r14, 1;         // sy1
+	max.s32 %r13, %r13, 0;
+	max.s32 %r14, %r14, 0;
+	min.s32 %r13, %r13, %r17;
+	min.s32 %r14, %r14, %r18;
+	sub.s32 %r11, %r17, 1;
+	min.s32 %r15, %r15, %r11;
+	sub.s32 %r11, %r18, 1;
+	min.s32 %r16, %r16, %r11;
+
+    ld.param.u32 %r23, [origin_x];
+    ld.param.u32 %r24, [origin_y];
+    ld.param.u32 %r25, [pitch];
+    add.s32 %r13, %r13, %r23;
+    add.s32 %r15, %r15, %r23;
+    add.s32 %r14, %r14, %r24;
+    add.s32 %r16, %r16, %r24;
+    mov.u32 %r17, %r25;
+
+    // BGRA taps: byte offset = (y*pitch + x)*4 — aligned u32 loads, channels
+    // extracted by mask/shift (B=+0, G=+8, R=+16).
+	mad.lo.s32 %r19, %r14, %r17, %r13;  // y00
+	mad.lo.s32 %r20, %r14, %r17, %r15;  // y01 (x+1)
+	mad.lo.s32 %r21, %r16, %r17, %r13;  // y10
+	mad.lo.s32 %r22, %r16, %r17, %r15;  // y11
+	cvta.to.global.u64 %rd7, %rd1;
+	shl.b32 %r19, %r19, 2;
+	shl.b32 %r20, %r20, 2;
+	shl.b32 %r21, %r21, 2;
+	shl.b32 %r22, %r22, 2;
+	cvt.u64.u32 %rd8, %r19;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u32 %r11, [%rd8];
+	cvt.u64.u32 %rd8, %r20;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u32 %r12, [%rd8];
+	cvt.u64.u32 %rd8, %r21;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u32 %r19, [%rd8];
+	cvt.u64.u32 %rd8, %r22;
+	add.s64 %rd8, %rd7, %rd8;
+	ld.global.u32 %r20, [%rd8];
+
+	// R channel (texel >> 16)
+	and.b32 %r1, %r11, 0xFF0000;
+	shr.b32 %r1, %r1, 16;
+	and.b32 %r2, %r12, 0xFF0000;
+	shr.b32 %r2, %r2, 16;
+	and.b32 %r9, %r19, 0xFF0000;
+	shr.b32 %r9, %r9, 16;
+	and.b32 %r10, %r20, 0xFF0000;
+	shr.b32 %r10, %r10, 16;
+	cvt.rn.f32.u32 %f12, %r1;
+	cvt.rn.f32.u32 %f13, %r2;
+	cvt.rn.f32.u32 %f14, %r9;
+	cvt.rn.f32.u32 %f15, %r10;
+	sub.f32 %f13, %f13, %f12;
+	mad.rn.f32 %f16, %f13, %f10, %f12; // top interp
+	sub.f32 %f15, %f15, %f14;
+	mad.rn.f32 %f17, %f15, %f10, %f14; // bottom interp
+	sub.f32 %f17, %f17, %f16;
+	mad.rn.f32 %f40, %f17, %f11, %f16; // R final
+
+	// G channel (texel >> 8)
+	and.b32 %r1, %r11, 0xFF00;
+	shr.b32 %r1, %r1, 8;
+	and.b32 %r2, %r12, 0xFF00;
+	shr.b32 %r2, %r2, 8;
+	and.b32 %r9, %r19, 0xFF00;
+	shr.b32 %r9, %r9, 8;
+	and.b32 %r10, %r20, 0xFF00;
+	shr.b32 %r10, %r10, 8;
+	cvt.rn.f32.u32 %f12, %r1;
+	cvt.rn.f32.u32 %f13, %r2;
+	cvt.rn.f32.u32 %f14, %r9;
+	cvt.rn.f32.u32 %f15, %r10;
+	sub.f32 %f13, %f13, %f12;
+	mad.rn.f32 %f16, %f13, %f10, %f12;
+	sub.f32 %f15, %f15, %f14;
+	mad.rn.f32 %f17, %f15, %f10, %f14;
+	sub.f32 %f17, %f17, %f16;
+	mad.rn.f32 %f41, %f17, %f11, %f16; // G final
+
+	// B channel (texel & 0xFF)
+	and.b32 %r1, %r11, 0xFF;
+	and.b32 %r2, %r12, 0xFF;
+	and.b32 %r9, %r19, 0xFF;
+	and.b32 %r10, %r20, 0xFF;
+	cvt.rn.f32.u32 %f12, %r1;
+	cvt.rn.f32.u32 %f13, %r2;
+	cvt.rn.f32.u32 %f14, %r9;
+	cvt.rn.f32.u32 %f15, %r10;
+	sub.f32 %f13, %f13, %f12;
+	mad.rn.f32 %f16, %f13, %f10, %f12;
+	sub.f32 %f15, %f15, %f14;
+	mad.rn.f32 %f17, %f15, %f10, %f14;
+	sub.f32 %f17, %f17, %f16;
+	mad.rn.f32 %f42, %f17, %f11, %f16; // B final
+
+	// /255 normalize and clamp [0,1]
+	mul.f32 %f40, %f40, 0f3B808081;
+	mul.f32 %f41, %f41, 0f3B808081;
+	mul.f32 %f42, %f42, 0f3B808081;
+	max.f32 %f40, %f40, 0f00000000;
+	min.f32 %f40, %f40, 0f3F800000;
+	max.f32 %f41, %f41, 0f00000000;
+	min.f32 %f41, %f41, 0f3F800000;
+	max.f32 %f42, %f42, 0f00000000;
+	min.f32 %f42, %f42, 0f3F800000;
+	st.global.f32 [%rd4], %f40; // R
+	st.global.f32 [%rd5], %f41; // G
+	st.global.f32 [%rd6], %f42; // B
+	bra DONE;
+
+PAD:
+	mov.f32 %f17, 0f3EE4E4E5;      // 114/255
+	st.global.f32 [%rd4], %f17;
+	st.global.f32 [%rd5], %f17;
+	st.global.f32 [%rd6], %f17;
+
+DONE:
+	ret;
+}

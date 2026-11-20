@@ -136,6 +136,7 @@ int rc = amv_infer_image_sync(model, &input, &params, &result, &id);
 
 - **部署前置环境变量（宿主接入必读）**：CUDA 直传依赖 `AM_SDK_CUDA_DIR` 或 `AM_SDK_ORT_DIR` 显式指向 CUDA 线运行库目录（cudart/nvcuda 解析；v0.8.3 起 CUDA 依赖全家桶——cudnn/cublas/cufft 等——也从该目录预载）。**缺设时能力探测静默返回不可用且结果进程级缓存**（OnceLock，同进程后续补设不再生效）——宿主必须在**首次能力查询或会话创建之前**完成设置，否则易误判"GPU 不可用"且无错误提示（消费方接入实证反馈在档）。DML/CPU 分进程形态下的目录隔离要求见 §7A。
 - **色彩域固定 BT.601**：直传 CUDA kernel 固定 BT.601 limited 采样；像素路径可显式传 `color_matrix`（如 BT.709）。检测数稳定、top 置信度存在微漂移（实测在档）；绝对精度敏感场景（阈值边缘目标）应知悉此固定域差异。
+- **subresource 口径（2026-11-20 澄清）**：`am_gpu_frame_ref_t.subresource` 为纹理数组**扁平 slice 索引**（0..ArraySize-1），NV12 的 Y/UV 平面含于 slice 内由 SDK 内部处理——消费方不做任何平面复合索引换算。ffmpeg D3D11VA 形态下 `AVFrame.data[1]` 的原值即此口径，透传即正确。
 - **显存预算**：较像素路径约 +95MiB/路量级（纹理驻留 + 互操作管线 + 设备张量常驻），多路部署按此量级预留显存余量。
 - **动态批模型规划批形态前先跑符号维探针**：输出声明为全符号维（如 `[-1,-1,-1]`）的模型，在 FFI 面物理批形态（离线批/攒批窗口）恒 `resourceExhausted`——模型侧输出声明约束，非直传合同约束。探针用法（`--probe-offline` 三面探针）见 `.local/evidence/sdk-bench-gpu-20261116/gpu-direct-arm.md`。
 - 直传臂实测证据与诚实边界（单会话串行形态、纹理驻留形态、多路走多会话/池形态）见上报告；多路部署的攒批窗口批形状指导值（GPU 直传批 4/CPU 像素批 2）见下文自适应攒批与推理池段。

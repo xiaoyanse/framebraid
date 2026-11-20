@@ -358,9 +358,7 @@ fn pool_e2e_cpu_pixel_batch2_sharded_flow() {
 #[ignore = "需真实 NVIDIA GPU 与 yolo-world 双模型（.local/tests/yolo-world 及 -batchd 派生件）"]
 fn pool_e2e_sharded_batching_gpu_direct_full_flow() {
     use am_vision_core::gpu::{
-        cuda_sys::CudaApi,
-        interop::{nvidia_nv12_texture, RegisteredTexture},
-        pipeline::GpuPipeline,
+        cuda_sys::CudaApi, interop::nvidia_nv12_texture, pipeline::GpuPipeline,
     };
     let mut guard = CtxGuard {
         ctx: init_ctx(),
@@ -453,17 +451,12 @@ fn pool_e2e_sharded_batching_gpu_direct_full_flow() {
         .take(8)
         .map(|frame| {
             let nv12 = std::fs::read(format!("{BATCHD}\\{frame}.nv12")).expect("nv12");
-            let (w, h) = (640usize, 640usize);
             let texture = unsafe { nvidia_nv12_texture(640, 640).expect("NV12 纹理") };
+            // P1 修复后 CUDA 不可写 NV12 UV 平面——装载走 D3D staging 整 slice 拷
             unsafe {
-                let registered =
-                    RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-                let y = registered.map_subresource(0).expect("Y map");
-                let uv = registered.map_subresource(1).expect("UV map");
-                (runtime.memcpy2d_to_array)(y.array, 0, 0, nv12.as_ptr().cast(), w, w, h, 1);
-                let uv_ptr = nv12.as_ptr().add(w * h);
-                (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), w, w, h / 2, 1);
+                am_vision_core::gpu::vp_transit::upload_nv12_slice(texture.0, 0, &nv12, 640, 640)
             }
+            .expect("D3D staging 装载");
             texture
         })
         .collect();

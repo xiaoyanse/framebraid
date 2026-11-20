@@ -1,9 +1,11 @@
-//! GPU 帧推理端到端对拍（M2b 3.8）：合成 NV12 纹理 → CUDA 管线 → 推理，
-//! 与 CPU 预处理路径同数据对拍（模型输出一致性）+ 搬运审计数字。
-//! 需真实 NVIDIA GPU；AM_RT_ORT_GPU_LIBRARY / AM_SDK_ORT_DIR / AM_SDK_MODEL。
+//! GPU 帧推理端到端对拍（P1 修复后形态）：合成 NV12 纹理（D3D staging 装载）
+//! → CUDA 管线（VP 转换+BGRA kernel）→ 推理，与 CPU 预处理路径同数据对拍
+//! （模型输出一致性）+ 搬运审计数字。需真实 NVIDIA GPU；
+//! AM_RT_ORT_GPU_LIBRARY / AM_SDK_ORT_DIR / AM_SDK_MODEL。
 use super::cuda_sys::CudaApi;
-use super::interop::{nvidia_nv12_texture, RegisteredTexture};
+use super::interop::nvidia_nv12_texture;
 use super::pipeline::{GpuFrameData, GpuPipeline};
+use super::vp_transit::upload_nv12_slice;
 use crate::sdk::{Model, ModelSource, TensorData};
 use std::path::Path;
 
@@ -58,10 +60,24 @@ fn reference_nchw(nv12: &[u8], src_w: usize, src_h: usize, dst: usize) -> Vec<f3
     out
 }
 
-// 对拍口径（2026-10-29 收口）：检测级一致性（最高置信候选框）。kernel 为
-// YUV 域重采样、CPU 生产路径为 RGB 域 bilinear——域差异使 raw 张量级对拍
-// 不可行（RGB 域 kernel 为 M2c 优化项，登记 OpenSpec）。链路、审计计数、
-// 目标形态（同图同目标同数量级）均验证。
+/// NV12 字节装载进 D3D 纹理 slice（P1 修复后 CUDA 不可写 NV12 UV 平面，
+/// 装载走 D3D staging 整 slice 拷——扁平口径，vp_transit 辅助）。
+fn load_frame(
+    runtime: &std::sync::Arc<CudaApi>,
+    texture: *mut std::ffi::c_void,
+    slice: u32,
+    nv12: &[u8],
+    w: u32,
+    h: u32,
+) {
+    let _ = runtime;
+    unsafe { upload_nv12_slice(texture, slice, nv12, w, h) }.expect("D3D staging 装载");
+}
+
+// 对拍口径（2026-10-29 收口；2026-11-20 P1 修订）：检测级一致性（最高置信
+// 候选框）。CPU 路径为 BT.709 系可用域、GPU 线 VP 固定 BT.601——色彩域差
+// 使 raw 张量级对拍不可行；链路、审计计数、目标形态（同图同目标同数量级）
+// 均验证。
 #[test]
 #[ignore = "需要真实NVIDIA GPU（AM_RT_ORT_GPU_LIBRARY/AM_SDK_ORT_DIR/AM_SDK_MODEL/AM_SDK_NV12）"]
 fn gpu_frame_inference_matches_cpu() {
@@ -99,39 +115,11 @@ fn gpu_frame_inference_matches_cpu() {
         model.run(&[tensor], 16 * 1024 * 1024).expect("CPU 推理")
     };
 
-    // GPU 管线：纹理装载 → 帧直传 → run_gpu
+    // GPU 管线：D3D 装载 → 帧直传 → run_gpu
     let runtime = CudaApi::load().expect("cudart");
     let pipeline = GpuPipeline::for_device(0).expect("GPU 管线");
     let texture = unsafe { nvidia_nv12_texture(320, 240).expect("NV12 纹理") };
-    unsafe {
-        (runtime.set_device)(0);
-        let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-        let y = registered.map_subresource(0).expect("Y map");
-        let uv = registered.map_subresource(1).expect("UV map");
-        let code = (runtime.memcpy2d_to_array)(
-            y.array,
-            0,
-            0,
-            nv12.as_ptr().cast(),
-            src_w,
-            src_w,
-            src_h,
-            1, // HostToDevice
-        );
-        runtime.check(code, "Y 装载").unwrap();
-        let uv_ptr = nv12.as_ptr().add(src_w * src_h);
-        let code = (runtime.memcpy2d_to_array)(
-            uv.array,
-            0,
-            0,
-            uv_ptr.cast(),
-            src_w,
-            src_w,
-            src_h / 2,
-            1, // HostToDevice
-        );
-        runtime.check(code, "UV 装载").unwrap();
-    }
+    load_frame(&runtime, texture.0, 0, &nv12, 320, 240);
     let frame = GpuFrameData {
         width: 320,
         height: 240,
@@ -153,11 +141,9 @@ fn gpu_frame_inference_matches_cpu() {
     let gpu_out = model.run_gpu(&binding, 16 * 1024 * 1024).expect("GPU 推理");
 
     eprintln!("[e2e] dst={} inputs0shape={:?}", dst, model.inputs[0].shape);
-    // 对拍：主输出张量逐元素（kernel 预处理 2e-3 差 → 推理放大后按 2e-2 相对容差）
+    // 对拍：检测级（GPU 线 VP BT.601 与 CPU 参考张量（BT.601 直灌）域差
+    // 经网络放大——以最高置信候选的目标框一致性收口，与修复前同口径）
     assert_eq!(cpu_out.len(), gpu_out.len(), "输出张量数一致");
-    // 检测级对拍（下游验收口径）：kernel 为 YUV 域重采样、CPU 生产路径为
-    // RGB 域 bilinear，域差异经网络放大令 raw 张量级对拍不可行（RGB 域 kernel
-    // 为 M2c 优化项）；以最高置信候选的目标框一致性收口。
     let top = |out: &[crate::sdk::TensorData]| -> (f32, [f32; 4]) {
         let values = out[0].floats().unwrap();
         let stride = 57; // [300,57]: x y w h conf ...
@@ -195,15 +181,13 @@ fn gpu_frame_inference_matches_cpu() {
     }
     let (inputs, copies) = super::pipeline::audit::snapshot();
     assert!(inputs >= 1, "GPU 输入审计计数");
-    assert_eq!(copies, 2, "每帧 GPU 内拷贝次数（Y+UV D2D）");
+    assert_eq!(copies, 2, "每帧 GPU 内拷贝次数（VP 转换+BGRA D2D）");
 }
 
-/// F02 定向：classify 档案 center crop（非方形 640×480 → 224²，修复前 GPU 恒
-/// letterbox 与 CPU resize==2 语义分叉）。两层对拍：
+/// F02 定向：classify 档案 center crop（非方形 640×480 → 224²）。两层对拍：
 /// 1. 变换元数据与 CPU 生产路径 prepare.rs（真实 sdk::prepare 调用）逐字段一致；
-/// 2. kernel 输出张量与独立 CPU 镜像（kernel 同采样：Y 双线性+UV 单采样+
-///    BT.601 limited+(/255)、映射 (d+0.5)/scale-0.5+crop）逐元素对拍——映射错误
-///    （如修复前的 letterbox）表现为多像素级源偏移，远超容差。
+/// 2. kernel 输出张量与独立 CPU 镜像（同 BGRA 输入字节——经快照读回 VP 转换
+///    结果，色彩域完全一致，仅对拍几何映射）逐元素对拍。
 ///
 /// 模型会话仅提供 CUDA allocator（dst=224 显式传入，与模型 640 输入无关）。
 #[test]
@@ -262,31 +246,11 @@ fn gpu_classify_center_crop_matches_cpu_mapping() {
     .expect("CPU classify prepare");
     drop(tensor);
 
-    // GPU：纹理装载 → classify 直传（center_crop=true）→ 回读设备张量。
+    // GPU：D3D 装载 → 快照（VP BGRA 读回=镜像输入）→ classify 直传 → 回读。
     let runtime = CudaApi::load().expect("cudart");
     let pipeline = GpuPipeline::for_device(0).expect("GPU 管线");
     let texture = unsafe { nvidia_nv12_texture(640, 480).expect("NV12 纹理") };
-    unsafe {
-        (runtime.set_device)(0);
-        let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-        let y = registered.map_subresource(0).expect("Y map");
-        let uv = registered.map_subresource(1).expect("UV map");
-        let code = (runtime.memcpy2d_to_array)(
-            y.array,
-            0,
-            0,
-            nv12.as_ptr().cast(),
-            src_w,
-            src_w,
-            src_h,
-            1,
-        );
-        runtime.check(code, "Y 装载").unwrap();
-        let uv_ptr = nv12.as_ptr().add(src_w * src_h);
-        let code =
-            (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), src_w, src_w, src_h / 2, 1);
-        runtime.check(code, "UV 装载").unwrap();
-    }
+    load_frame(&runtime, texture.0, 0, &nv12, 640, 480);
     let frame = GpuFrameData {
         width: 640,
         height: 480,
@@ -294,6 +258,21 @@ fn gpu_classify_center_crop_matches_cpu_mapping() {
         subresource: 0,
         texture: texture.0,
     };
+    let snapshot = unsafe { pipeline.snapshot_nv12(&frame) }.expect("快照");
+    let mut bgra = vec![0u8; src_w * src_h * 4];
+    runtime
+        .check(
+            unsafe {
+                (runtime.memcpy_dtoh)(
+                    bgra.as_mut_ptr().cast(),
+                    snapshot_bgra_ptr(&snapshot),
+                    bgra.len(),
+                    2, // DtoH
+                )
+            },
+            "快照 BGRA 回读",
+        )
+        .unwrap();
     let (binding, gpu_transform) = pipeline
         .preprocess_to_binding(&frame, model.ort_session(), &name, 224, 224, true)
         .expect("GPU classify 预处理");
@@ -309,7 +288,8 @@ fn gpu_classify_center_crop_matches_cpu_mapping() {
         "crop 无填边"
     );
 
-    // 对拍二：kernel 输出 vs 独立镜像（kernel 语义手写复刻，常数取 PTX 位型）。
+    // 对拍二：kernel 输出 vs 同 BGRA 字节的 CPU 镜像（几何映射 kernel 同式：
+    // (d+0.5)/scale - 0.5 + crop_src，RGB 双线性，/255）。
     let mut values = vec![0f32; 3 * dst * dst];
     runtime
         .check(
@@ -325,17 +305,32 @@ fn gpu_classify_center_crop_matches_cpu_mapping() {
         )
         .unwrap();
     let scale = cpu_transform.scale_x;
-    let reference = kernel_mirror_classify(
-        &nv12,
-        src_w,
-        src_h,
-        dst,
-        scale,
-        cpu_transform.crop_x as f32,
-        cpu_transform.crop_y as f32,
-    );
+    let inv255 = f32::from_bits(0x3B808081);
     let mut max_error = 0f32;
-    for (index, (actual, expected)) in values.iter().zip(&reference).enumerate() {
+    for (index, actual) in values.iter().enumerate() {
+        let plane = dst * dst;
+        let ch = index / plane;
+        let rem = index % plane;
+        let y = rem / dst;
+        let x = rem % dst;
+        let sx = (x as f32 + 0.5) / scale - 0.5 + crop_f32(cpu_transform.crop_x);
+        let sy = (y as f32 + 0.5) / scale - 0.5 + crop_f32(cpu_transform.crop_y);
+        let raw_x = sx.floor() as i32;
+        let raw_y = sy.floor() as i32;
+        let fx = sx - raw_x as f32;
+        let fy = sy - raw_y as f32;
+        let x0 = raw_x.clamp(0, src_w as i32 - 1) as usize;
+        let y0 = raw_y.clamp(0, src_h as i32 - 1) as usize;
+        let x1 = (raw_x + 1).clamp(0, src_w as i32 - 1) as usize;
+        let y1 = (raw_y + 1).clamp(0, src_h as i32 - 1) as usize;
+        let byte = [2usize, 1, 0][ch];
+        let v00 = bgra[(y0 * src_w + x0) * 4 + byte] as f32;
+        let v01 = bgra[(y0 * src_w + x1) * 4 + byte] as f32;
+        let v10 = bgra[(y1 * src_w + x0) * 4 + byte] as f32;
+        let v11 = bgra[(y1 * src_w + x1) * 4 + byte] as f32;
+        let top = v00 + (v01 - v00) * fx;
+        let bottom = v10 + (v11 - v10) * fx;
+        let expected = (top + (bottom - top) * fy) * inv255;
         let error = (actual - expected).abs();
         assert!(actual.is_finite(), "非有限值 idx={index}");
         max_error = error.max(max_error);
@@ -345,63 +340,17 @@ fn gpu_classify_center_crop_matches_cpu_mapping() {
         cpu_transform.crop_x, cpu_transform.crop_y
     );
     assert!(
-        max_error < 1e-4,
+        max_error < 1e-5,
         "classify crop 映射与镜像差异过大: {max_error}"
     );
 }
 
-/// kernel 语义独立镜像（classify crop 映射）：常数取 PTX 位型（1/255、BT.601
-/// limited 系数），采样规则按 kernel 主色路——Y 平面双线性（邻居整数钳制）、
-/// UV 单采样（钳制后 luma 整数坐标>>1）、NCHW 输出。
-fn kernel_mirror_classify(
-    nv12: &[u8],
-    src_w: usize,
-    src_h: usize,
-    dst: usize,
-    scale: f32,
-    crop_x: f32,
-    crop_y: f32,
-) -> Vec<f32> {
-    let inv255 = f32::from_bits(0x3B808081);
-    let kr = f32::from_bits(0x3F950A3D);
-    let kg_u = f32::from_bits(0xBEC82F5B);
-    let kg_v = f32::from_bits(0xBF50095D);
-    let kb = f32::from_bits(0x4001699A);
-    let kv = f32::from_bits(0x3FCBF5BB);
-    let mut out = vec![0f32; 3 * dst * dst];
-    let plane = dst * dst;
-    for y in 0..dst {
-        for x in 0..dst {
-            let sx = (x as f32 + 0.5) / scale - 0.5 + crop_x;
-            let sy = (y as f32 + 0.5) / scale - 0.5 + crop_y;
-            // kernel 邻居钳制序：fx/fy 先按未钳制 floor 取小数，x1 由未钳制
-            // floor+1 再 min（负 floor 时 x1 可钳到 0——与 x0 同像素）。
-            let raw_x = sx.floor() as i32;
-            let raw_y = sy.floor() as i32;
-            let fx = sx - raw_x as f32;
-            let fy = sy - raw_y as f32;
-            let x0 = raw_x.clamp(0, src_w as i32 - 1) as usize;
-            let y0 = raw_y.clamp(0, src_h as i32 - 1) as usize;
-            let x1 = (raw_x + 1).clamp(0, src_w as i32 - 1) as usize;
-            let y1 = (raw_y + 1).clamp(0, src_h as i32 - 1) as usize;
-            let v00 = nv12[y0 * src_w + x0] as f32;
-            let v01 = nv12[y0 * src_w + x1] as f32;
-            let v10 = nv12[y1 * src_w + x0] as f32;
-            let v11 = nv12[y1 * src_w + x1] as f32;
-            let top = v00 + (v01 - v00) * fx;
-            let bottom = v10 + (v11 - v10) * fx;
-            let luma = (top + (bottom - top) * fy) * inv255;
-            let uv_x = (x0 >> 1).min(src_w / 2 - 1);
-            let uv_y = (y0 >> 1).min(src_h / 2 - 1);
-            let uv = src_w * src_h + uv_y * src_w + uv_x * 2;
-            let chroma_u = nv12[uv] as f32 * inv255 - 0.5;
-            let chroma_v = nv12[uv + 1] as f32 * inv255 - 0.5;
-            let c = (luma - 0.0625) * kr;
-            let index = y * dst + x;
-            out[index] = (c + chroma_v * kv).clamp(0.0, 1.0);
-            out[plane + index] = (c + chroma_u * kg_u + chroma_v * kg_v).clamp(0.0, 1.0);
-            out[2 * plane + index] = (c + chroma_u * kb).clamp(0.0, 1.0);
-        }
-    }
-    out
+/// 快照 BGRA 设备指针（同仓回读惯例：绕过 pub 边界仅测试内使用）。
+fn snapshot_bgra_ptr(snapshot: &super::pipeline::Nv12Snapshot) -> *const std::ffi::c_void {
+    snapshot.bgra_ptr_for_test()
+}
+
+/// crop 元数据以 f32 参与镜像（kernel 接 f32 参数）。
+fn crop_f32(value: i32) -> f32 {
+    value as f32
 }

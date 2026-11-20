@@ -14,4 +14,6 @@ pub mod iobinding;
 pub mod pipeline;
 #[cfg(test)]
 mod preprocess_tests;
-pub mod registry;
+#[cfg(test)]
+mod uv_truth_tests;
+pub mod vp_transit;

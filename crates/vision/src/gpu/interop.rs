@@ -165,17 +165,17 @@ pub struct Guid {
 #[repr(C)]
 #[allow(dead_code)]
 pub struct TexDesc {
-    width: u32,
-    height: u32,
-    mip_levels: u32,
-    array_size: u32,
-    format: u32,
-    sample_count: u32,
-    sample_quality: u32,
-    usage: u32,
-    bind_flags: u32,
-    cpu_access: u32,
-    misc_flags: u32,
+    pub width: u32,
+    pub height: u32,
+    pub mip_levels: u32,
+    pub array_size: u32,
+    pub format: u32,
+    pub sample_count: u32,
+    pub sample_quality: u32,
+    pub usage: u32,
+    pub bind_flags: u32,
+    pub cpu_access: u32,
+    pub misc_flags: u32,
 }
 
 pub struct Com(pub *mut c_void);
@@ -198,6 +198,21 @@ impl Drop for Com {
 /// # Safety
 /// 返回的 Com 指针在 Drop 前有效；内部按需保活 dxgi/d3d11 库。
 pub unsafe fn nvidia_nv12_texture(width: u32, height: u32) -> Option<Com> {
+    unsafe { nvidia_nv12_texture_ex(width, height, 4, 0x200 | 0x8, 0x2) }
+}
+
+/// 参数化形态（P1 三形态矩阵：ArraySize=1/4/20 与现场同款 desc 0x208/Misc=0
+/// 等）。默认形态=nvidia_nv12_texture（ArraySize=4/DECODER|SRV/MISC_SHARED）。
+///
+/// # Safety
+/// 同 `nvidia_nv12_texture`。
+pub unsafe fn nvidia_nv12_texture_ex(
+    width: u32,
+    height: u32,
+    array_size: u32,
+    bind_flags: u32,
+    misc_flags: u32,
+) -> Option<Com> {
     let dxgi = unsafe { libloading::Library::new("dxgi.dll").ok()? };
     let d3d11 = unsafe { libloading::Library::new("d3d11.dll").ok()? };
     // IID_IDXGIFactory {7B7166EC-21C7-44AE-B21A-C9AE321AE369}
@@ -278,14 +293,14 @@ pub unsafe fn nvidia_nv12_texture(width: u32, height: u32) -> Option<Com> {
             width,
             height,
             mip_levels: 1,
-            array_size: 4,
+            array_size,
             format: 103, // DXGI_FORMAT_NV12
             sample_count: 1,
             sample_quality: 0,
             usage: 0, // DEFAULT
-            bind_flags: 0x200 | 0x8,
+            bind_flags,
             cpu_access: 0,
-            misc_flags: 0x2,
+            misc_flags,
         };
         let mut texture: *mut c_void = std::ptr::null_mut();
         let rc = unsafe { create_tex2d(device.0, &desc, std::ptr::null(), &mut texture) };

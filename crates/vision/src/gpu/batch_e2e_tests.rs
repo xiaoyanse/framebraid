@@ -4,7 +4,7 @@
 //! assemble_frames D2D 拼接为 [4,3,640,640] 批绑定 + 词汇张量 batch 维复制
 //! → 单次 run_gpu；逐项输出与单帧 run_gpu 对拍 + 批内互异（帧内容可区分）。
 use super::cuda_sys::CudaApi;
-use super::interop::{nvidia_nv12_texture, RegisteredTexture};
+use super::interop::nvidia_nv12_texture;
 use super::pipeline::{GpuFrameData, GpuPipeline};
 use crate::gpu::iobinding::InferenceInput;
 use crate::sdk::{initialize, Model, ModelSource, TensorData, TensorInfo};
@@ -64,8 +64,9 @@ fn tile_batch(src: &TensorData, n: usize) -> TensorData {
 }
 
 /// 常量亮度 NV12（Y=level，UV 中性）装载进 D3D 纹理并经管线产设备输入。
+/// P1 修复后装载走 D3D staging 整 slice 拷（CUDA 不可写 NV12 UV 平面）。
 fn frame_binding(
-    runtime: &std::sync::Arc<CudaApi>,
+    _runtime: &std::sync::Arc<CudaApi>,
     pipeline: &GpuPipeline,
     session: &ort::session::Session,
     input_name: &str,
@@ -75,14 +76,8 @@ fn frame_binding(
     let mut nv12 = vec![level; w * h];
     nv12.extend(vec![128u8; w * h / 2]);
     let texture = unsafe { nvidia_nv12_texture(SIZE, SIZE).expect("NV12 纹理") };
-    unsafe {
-        let registered = RegisteredTexture::register(runtime.clone(), texture.0).expect("注册");
-        let y = registered.map_subresource(0).expect("Y map");
-        let uv = registered.map_subresource(1).expect("UV map");
-        (runtime.memcpy2d_to_array)(y.array, 0, 0, nv12.as_ptr().cast(), w, w, h, 1);
-        let uv_ptr = nv12.as_ptr().add(w * h);
-        (runtime.memcpy2d_to_array)(uv.array, 0, 0, uv_ptr.cast(), w, w, h / 2, 1);
-    }
+    unsafe { super::vp_transit::upload_nv12_slice(texture.0, 0, &nv12, SIZE, SIZE) }
+        .expect("D3D staging 装载");
     let frame = GpuFrameData {
         width: SIZE,
         height: SIZE,
