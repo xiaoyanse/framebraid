@@ -29,11 +29,11 @@ export async function freezeAbi({ check = false } = {}) {
   const content =
     JSON.stringify(
       {
-        id: 'am-sdk-cabi-1.8-uvfix-clarify-r16',
+        id: 'am-sdk-cabi-1.9-resident-r17',
         previousFreezeSha256: createHash('sha256')
-          .update(await fs.readFile(path.join(root, 'sdk/abi/history/freeze-v1.8-r15.json')))
+          .update(await fs.readFile(path.join(root, 'sdk/abi/history/freeze-v1.8-r16.json')))
           .digest('hex'),
-        abiVersion: 65544,
+        abiVersion: 65545,
         designFrozen: true,
         runtimeAcceptance: 'pending',
         files,

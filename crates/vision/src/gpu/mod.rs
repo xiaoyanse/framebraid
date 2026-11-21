@@ -7,6 +7,7 @@ pub mod cuda_sys;
 pub mod driver_sys;
 #[cfg(test)]
 mod e2e_tests;
+pub mod filter;
 pub mod interop;
 #[cfg(test)]
 mod interop_tests;

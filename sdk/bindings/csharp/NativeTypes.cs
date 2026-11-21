@@ -67,6 +67,15 @@ namespace AmrtSdk {
         public IntPtr @raw_preprocess;
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
         public uint[] @reserved;
+        public uint @device_resident_outputs;
+        public am_device_filter_t @device_filter;
+    }
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct am_device_filter_t {
+        public uint @enabled;
+        public int @class_id;
+        public float @min_confidence;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -116,6 +125,8 @@ namespace AmrtSdk {
         public long @infer_end_ms;
         public IntPtr @vocab_hits;
         public IntPtr @cascade;
+        public uint @device_resident;
+        public ulong @device_outputs_token;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -524,7 +535,7 @@ namespace AmrtSdk {
     }
 
     public static class AbiConstants {
-        public const uint AbiVersion = 65544U;
+        public const uint AbiVersion = 65545U;
         public const uint PixelViewMagic = 1095585880U;
         public const uint SubscriptionPull = 1U;
     }

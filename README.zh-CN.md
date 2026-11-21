@@ -105,6 +105,7 @@ FrameBraid 是 Rust 源码 SDK，通过 C ABI 供 C、C++、C#、Python 接入�
 - 跨语言安全像素输入：Python `owner.pixels().infer(...)` / C# `owner.Pixels().Submit(...)` 提交期间保持拥有者存活并加锁；异步输入默认复制，显式保留除外。
 - Python/C# 模型通知缓冲有界（256 条、满时丢最旧）；丢弃后凭请求 ID 仍可查询结果。
 - 可选共享帧，构建期编入并显式初始化启用。
+- **设备驻留输出**（ABI 1.9 预览候选；默认关闭）：`device_resident_outputs` 显式启用后输出驻留设备内存，经不透明 token 逐张量两段式读出（`amv_result_device_readout`）、声明式设备筛选与独立设备显存账本支撑；0 保持全量读回路径不变（合同 §3.6a）。
 
 本 SDK 不支持任意 YOLO 版本/导出。请对照[模型档案目录](crates/vision/resources/profiles.json)。模型权重及其许可另行获取。
 
@@ -157,6 +158,8 @@ v0.6.3 Windows x64 发布通过 **508 项 workspace Rust 测试**（代码与 v0
 源码检出不含运行库、权重、凭据、业务库与宿主 UI。Windows 包附带匹配的 CPU 运行库及其源码/许可材料。提取清单为历史来源记录，不是持续更新的发布清单；核心文件保持指纹核查。
 
 见[支持边界](docs/SUPPORT.md)、[当前验证状态](docs/RELEASE_STATUS.md)与[发布清单](docs/RELEASE_CHECKLIST.md)。历史计划不替代实际证据。
+
+v0.8.4 处于发版准备（ABI 1.9 预览候选，未发布）：设备驻留输出实现与 GPU 帧编码导出已过 G.2 双径向后兼容实证门（2026-11-21）与全量工作区门禁（fmt/clippy/workspace/boundary/freeze/doc-coverage/zero-semantics），三项非阻塞遗留已如实登记。当前验证状态见[交付状态](docs/RELEASE_STATUS.md)；ABI 1.8→1.9 迁移说明见[迁移指南](docs/MIGRATION.md)。
 
 ## 测试观察
 

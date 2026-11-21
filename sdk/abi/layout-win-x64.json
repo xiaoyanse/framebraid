@@ -834,8 +834,17 @@
         "skipped_count": 24
       }
     },
+    "am_device_filter_t": {
+      "size": 12,
+      "align": 4,
+      "offsets": {
+        "enabled": 0,
+        "class_id": 4,
+        "min_confidence": 8
+      }
+    },
     "am_infer_params_t": {
-      "size": 48,
+      "size": 64,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -845,7 +854,9 @@
         "sync_deadline_ms": 16,
         "slot_key": 24,
         "raw_preprocess": 32,
-        "reserved": 40
+        "reserved": 40,
+        "device_resident_outputs": 48,
+        "device_filter": 52
       }
     },
     "am_tensor_in_t": {
@@ -1132,7 +1143,7 @@
       }
     },
     "amv_result_t": {
-      "size": 224,
+      "size": 240,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -1152,7 +1163,9 @@
         "infer_start_ms": 192,
         "infer_end_ms": 200,
         "vocab_hits": 208,
-        "cascade": 216
+        "cascade": 216,
+        "device_resident": 224,
+        "device_outputs_token": 232
       }
     },
     "am_realtime_policy_t": {
@@ -1167,7 +1180,7 @@
       }
     },
     "am_limits_t": {
-      "size": 160,
+      "size": 168,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -1192,11 +1205,12 @@
         "shared_pool_max_outstanding_borrows": 108,
         "shared_pool_max_pools": 112,
         "shared_pool_metadata_bytes": 120,
-        "reserved": 128
+        "reserved": 128,
+        "device_resident_budget_bytes": 160
       }
     },
     "am_stats_t": {
-      "size": 248,
+      "size": 264,
       "align": 8,
       "offsets": {
         "struct_size": 0,
@@ -1229,7 +1243,9 @@
         "shared_outstanding_borrows": 204,
         "reserved": 208,
         "gpu_inputs": 232,
-        "gpu_copies_per_frame": 240
+        "gpu_copies_per_frame": 240,
+        "device_resident_bytes": 248,
+        "device_resident_peak_bytes": 256
       }
     },
     "am_pixel_view_t": {

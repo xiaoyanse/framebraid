@@ -134,13 +134,20 @@ pub unsafe fn limits(domain: &Domain, key: usize, out: *mut am_limits_t) -> Resu
     unsafe { args::write(out, value) }
 }
 /// # Safety
-/// pointer须指向完整limits结构。
+/// pointer须指向声明大小可读的 limits 结构，支持 ABI 1.8 完整前缀。
 pub unsafe fn set_limits(domain: &Domain, key: usize, pointer: *const am_limits_t) -> Result<()> {
     crate::callbacks::reject_reentry()?;
     let entry = domain.active(key)?;
     let ctx = entry.data::<Context>()?;
-    let candidate = unsafe { args::read(pointer, std::mem::size_of::<am_limits_t>()) }?;
+    let previous = std::mem::offset_of!(am_limits_t, device_resident_budget_bytes);
+    let mut candidate = unsafe { args::read_versioned(pointer, previous) }?;
     let mut limits = ctx.limits.lock().map_err(|_| AM_ERR_SDK_INTERNAL_ERROR)?;
+    // ABI 1.9：device_resident_budget_bytes=0 为未设置（保持当前值——=0 忽略
+    // 惯例，am_sdk_types.h 注释）。若照抄 0 入账，后续"冻结包络内只可调低"
+    // 会把任何合法预算误判为扩容而永久锁死。
+    if candidate.device_resident_budget_bytes == 0 {
+        candidate.device_resident_budget_bytes = limits.device_resident_budget_bytes;
+    }
     if !limits_within(&candidate, &limits) {
         return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
     }

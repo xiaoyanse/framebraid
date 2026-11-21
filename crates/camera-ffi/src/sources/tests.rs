@@ -37,7 +37,7 @@ fn file_seek_modes_rate_and_eof_revival() {
         runtime_dir_count: 1,
         ..Default::default()
     };
-    let ctx = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+    let ctx = crate::open_shared_camera_ctx(&params);
     let desc = am_source_desc_t {
         kind: AM_SRC_FILE as u32,
         url_utf8: sample.as_ptr(),
@@ -226,7 +226,7 @@ fn file_source_pull_drains_after_eof() {
         runtime_dir_count: 1,
         ..Default::default()
     };
-    let ctx = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+    let ctx = crate::open_shared_camera_ctx(&params);
     let desc = am_source_desc_t {
         kind: AM_SRC_FILE as u32,
         url_utf8: sample.as_ptr(),
@@ -386,7 +386,7 @@ impl Fixture {
             abi_version: AM_ABI_VERSION,
             ..Default::default()
         };
-        let ctx = unsafe { am_sdk_support::context::initialize_camera(domain(), &params) }.unwrap();
+        let ctx = crate::open_shared_camera_ctx(&params);
         Self {
             ctx,
             sources: Vec::new(),

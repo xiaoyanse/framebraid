@@ -140,6 +140,7 @@ int rc = amv_infer_image_sync(model, &input, &params, &result, &id);
 - **显存预算**：较像素路径约 +95MiB/路量级（纹理驻留 + 互操作管线 + 设备张量常驻），多路部署按此量级预留显存余量。
 - **动态批模型规划批形态前先跑符号维探针**：输出声明为全符号维（如 `[-1,-1,-1]`）的模型，在 FFI 面物理批形态（离线批/攒批窗口）恒 `resourceExhausted`——模型侧输出声明约束，非直传合同约束。探针用法（`--probe-offline` 三面探针）见 `.local/evidence/sdk-bench-gpu-20261116/gpu-direct-arm.md`。
 - 直传臂实测证据与诚实边界（单会话串行形态、纹理驻留形态、多路走多会话/池形态）见上报告；多路部署的攒批窗口批形状指导值（GPU 直传批 4/CPU 像素批 2）见下文自适应攒批与推理池段。
+- **pull 截止与重连重试语义**：`amc_frame_pull` 单次等待受队列 `wait_deadline_ms` 上限约束（默认 5000ms，`amc_set_queue_policy` 只可收紧）；流源断线重连按退避阶梯 1s/2s/4s…30s 封顶推进，重连累计超过等待上限（默认 5s）时该次 pull 以 `sdk.deadlineExceeded` 返回属合同设计（等待窗先到期，非源失败或链路终止），消费方应继续重试 pull 直至重连完成恢复出包。
 
 ## Intel GPU 帧直传部署侧启用（OpenVINO remote 输入路径，ABI 1.8）
 

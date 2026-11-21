@@ -59,6 +59,7 @@ pub fn default_limits(vision: bool) -> am_limits_t {
         shared_pool_max_outstanding_borrows: 32,
         shared_pool_max_pools: 4,
         shared_pool_metadata_bytes: 262144,
+        device_resident_budget_bytes: 67108864,
         ..Default::default()
     };
     if vision {
@@ -101,6 +102,7 @@ pub fn limits_within(candidate: &am_limits_t, ceiling: &am_limits_t) -> bool {
             <= ceiling.shared_pool_max_outstanding_borrows
         && candidate.shared_pool_max_pools <= ceiling.shared_pool_max_pools
         && candidate.shared_pool_metadata_bytes <= ceiling.shared_pool_metadata_bytes
+        && candidate.device_resident_budget_bytes <= ceiling.device_resident_budget_bytes
 }
 #[cfg(test)]
 mod tests {

@@ -28,6 +28,10 @@ mod receipt;
 #[cfg(test)]
 mod receipt_tests;
 mod records;
+#[cfg(test)]
+mod resident_e2e_tests;
+#[cfg(test)]
+mod resident_tests;
 mod results;
 mod scheduler;
 mod selected_exports;

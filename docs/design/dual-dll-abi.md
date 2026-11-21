@@ -289,7 +289,7 @@ AM_API am_status_t amc_probe_result_release(am_probe_result_t* result);
 
 **MJPEG 流源（R7，随 v0.3.0 发布）**：`AM_SRC_MJPEG_URL = 3`——HTTP `multipart/x-mixed-replace` MJPEG 流地址（不含内嵌凭据，凭据注入与 ISAPI 同套）。**流语义（boundary 分帧为唯一真相源）**：响应 `Content-Type` 的 `boundary` 参数（≤70B，支持引号包裹）决定分帧；`Content-Length` 不参与分帧，谎报仅计数。分帧仅在行首 `\r\n--boundary` 上下文（流首 boundary 允许无 CRLF 前缀），且 part 头 `Content-Type=image/jpeg` + JPEG SOI/EOI 魔数双校验；载荷内出现 boundary 字节序列不误切，无法区分的极端歧义降级为丢帧。**有界硬约束（防恶意流）**：boundary ≤70B / part 头 ≤64KB / 单帧 ≤8MB——超限丢帧+计数，连续 3 次超限断连进重连退避。**双超时**：无数据（对端黑洞）与无 boundary 进展（有数据但恶意无界流）分别判定，超时断连重连（复用既有指数退避）。JPEG 帧进入既有解码管线（含 EXIF 方向）与像素订阅/预算/统计语义，与 ISAPI 快照一致。
 
-**单帧图像导出（§2.11，第五批）**：`amc_frame_encode` 把宿主持有的一帧（`am_pixel_view_t`：订阅回调/共享帧池/解码输出任意来源）编码为 JPEG/PNG 字节返回——取证图/报警快照/调试确认用；与流编码器共享编码底座但**无句柄生命周期**（无状态单次调用，不占 `amc_encoder` 额度）。**输入面**：pixel view 全格式（RGBA8/RGB8/BGR8 直接组装、NV12 内部转 RGB8 再编码）；尺寸 1..8192。**opts**：`format`（`AM_ENCODE_JPEG=1`/`AM_ENCODE_PNG=2`，其余值 `sdk.invalidArgument`）+ `quality`（JPEG 1..100，0=85；PNG 忽略）+ `reserved` 必须清零。**输出缓冲**：调用方分配；容量不足时 `*out_size` 填所需大小并返回 `sdk.limitOutOfRange`（不返回半份图像，同报告类惯例）；成功 `*out_size` 为实写字节数。**输出上限**：32MiB（超限 `sdk.limitOutOfRange`，详情带实际所需）。**线程**：任意线程可调（纯函数式，无共享状态）；不触帧预算（输入帧由调用方持有，输出缓冲归调用方）。**与推理的关联**：vision 结果的帧关联元数据（assoc）由宿主用于"何时导出/关联哪帧"的决策，导出 API 本身不涉 vision（两库职责不混）。
+**单帧图像导出（§2.12，第五批）**：`amc_frame_encode` 把宿主持有的一帧（`am_pixel_view_t`：订阅回调/共享帧池/解码输出任意来源）编码为 JPEG/PNG 字节返回——取证图/报警快照/调试确认用；与流编码器共享编码底座但**无句柄生命周期**（无状态单次调用，不占 `amc_encoder` 额度）。**输入面**：pixel view 全格式（RGBA8/RGB8/BGR8 直接组装、NV12 内部转 RGB8 再编码）；尺寸 1..8192。**opts**：`format`（`AM_ENCODE_JPEG=1`/`AM_ENCODE_PNG=2`，其余值 `sdk.invalidArgument`）+ `quality`（JPEG 1..100，0=85；PNG 忽略）+ `reserved` 必须清零。**输出缓冲**：调用方分配；容量不足时 `*out_size` 填所需大小并返回 `sdk.limitOutOfRange`（不返回半份图像，同报告类惯例）；成功 `*out_size` 为实写字节数。**输出上限**：32MiB（超限 `sdk.limitOutOfRange`，详情带实际所需）。**线程**：任意线程可调（纯函数式，无共享状态）；不触帧预算（输入帧由调用方持有，输出缓冲归调用方）。**与推理的关联**：vision 结果的帧关联元数据（assoc）由宿主用于"何时导出/关联哪帧"的决策，导出 API 本身不涉 vision（两库职责不混）。
 
 **FILE 本地文件源（P1-8，录像 AI 复盘阶段 1）**：`AM_SRC_FILE = 4`——本地媒体文件（MP4/MKV/MOV 等按 FFmpeg 原生 demux 能力，首版验收口径为 MP4/H.264+H.265）。`url_utf8` 为 UTF-8 文件路径，可带 `file://` 前缀（剥前缀后按 FFmpeg 原生规则打开）；路径不存在或不可读返回 `camera.urlInvalid`（错误详情带路径与 OS 错误码，按 §7 编码约定）。**输入约束**：`stream_kind_utf8` 仅接受 NULL/""（文件无主子码流概念，传 "main"/"sub"/"isapi" 返回 `sdk.invalidArgument`）；`creds`/`provider` 必须为 NULL（非 NULL 返回 `sdk.invalidArgument`）；`reuse` 位接受但无连接复用语义（每次打开独立 demux 句柄，多消费者各自独立读）。**灌入语义**：as-fast-as-possible——按文件时间戳顺序尽快解码分发，不加节拍不做倍速（回放保真属宿主职责）；帧/包时间戳、代次、订阅队列、预算与统计语义与流源一致（generation 固定 1，无重连）。**背压（FILE 特有）**：订阅队列满时 demux 暂停等待消费者（流源的"丢至关键帧"语义不适用——录像复盘要求完整时间轴，不丢帧）；无订阅者时读取同样暂停（源为订阅驱动，open 不启动读线程）。**EOF 终态（FILE 特有）**：demux 读到文件尾，state 转 `AM_SRC_EOF`——不再产生新帧/包，对象仍存活，订阅队列按序排空；PULL 排空后返回 `camera.streamEnded`（复用既有"流结束"码；FILE 下为预期终态而非故障，调用方判终态以 `status.state == AM_SRC_EOF` 为准）；事件回调经既有事件通道上报流结束（fault_class=NONE）；不自动重放、不自动 close（显式关闭仍走 `amc_source_close` 三段式）；seek/变速/循环重放见下方阶段 2 段。打开失败（损坏文件/非媒体容器）按 §7 编码约定带检测详情。
 
@@ -565,11 +565,12 @@ R3独立解码提交计数修复：有效解码句柄的每次`amc_decoder_submi
 
 Media订阅的对象、队列引用槽和缩放预设容量属于控制元数据，构造前占用`AM_Q_CONTROL`字节/项额度，直到对象最后引用释放才归还；队列的图片/包载荷继续按原数据额度计费，不重复把引用槽当载荷。低控制预算下可明确ResourceExhausted，即使该订阅的载荷预算尚有余量；关闭不能提前释放仍被对象持有的元数据额度。
 
-### 2.10 帧编码输出与存档/推流会话（⑤，随 v0.3.0 发布）
+### 2.12 帧编码输出与存档/推流会话（⑤，随 v0.3.0 发布；编号修正 2026-11-20：原误标 2.10 与 §2.10 异步请求查询节重号，节内历史自引"§2.11"一并归位）
 
 **编码器**（FFmpeg avcodec；运行库重建为含 libx264——2026-10-29 用户裁决接受 GPL，
 分发随附 x264 GPL 许可文本）：像素帧（RGBA8，来自帧订阅或解码会话）→ H.264 编码。
-首版 `libx264` CPU 软编（NVENC 硬编为后续增强，GPU 帧直通同批）。
+首版 `libx264` CPU 软编（NVENC 硬编为后续增强；"GPU 帧直通同批"预告已由 ABI 1.9
+`amc_frame_encode_gpu` 兑现，见下）。
 
 **编码会话**（三段式生命周期，与解码器同族）：
 
@@ -590,9 +591,17 @@ AM_API am_status_t amc_encoder_receive(amc_encoder_t* enc, uint32_t timeout_ms,
 AM_API am_status_t amc_encoder_drain(amc_encoder_t* enc);       /* 冲刷尾包 */
 AM_API am_status_t amc_encoder_close(amc_encoder_t* enc, uint32_t timeout_ms,
     am_lifecycle_state_t* out_state);
-/* 单帧导出（§2.11）：宿主持有的 pixel view → JPEG/PNG 字节；无状态一次性，
+/* 单帧导出（§2.12）：宿主持有的 pixel view → JPEG/PNG 字节；无状态一次性，
    容量不足 *out_size 填所需并返回 sdk.limitOutOfRange（同报告类惯例） */
 AM_API am_status_t amc_frame_encode(amc_context_t* ctx, const am_pixel_view_t* frame,
+    const am_frame_encode_opts_t* opts, uint8_t* out, uint64_t capacity, uint64_t* out_size);
+/* GPU 帧编码导出（ABI 1.9 兼容新增，兑现本节"GPU 帧直通同批"预告）：GPU 帧引用 → JPEG/PNG
+   字节；与 amc_frame_encode 并列同款——opts/两段式容量/32MiB 输出上限/无状态单次/任意线程
+   全部同语义；输入为 GPU 帧引用，租约借用期内消费（同步借用至返回，与推理 GPU 帧输入同
+   借用语义 §3.3a——不跨租约持有、无异步入队形态）；纹理→编码器输入的域转换为 SDK 内部
+   决策（复用 VP 转换基建或 CPU 回读均为合法实现），合同只定行为不定路径；引用不合法
+   （texture 为空/租约已归还）返回 sdk.invalidArgument；NVENC 硬编维持"后续"定位不变 */
+AM_API am_status_t amc_frame_encode_gpu(amc_context_t* ctx, const am_gpu_frame_ref_t* gpu,
     const am_frame_encode_opts_t* opts, uint8_t* out, uint64_t capacity, uint64_t* out_size);
 ```
 
@@ -748,7 +757,7 @@ AM_API am_status_t amv_tracker_close(amv_tracker_t* tracker);
 ```
 
 - `am_image_input_t`（附录 §3.3）：kind（JPEG/PNG/PIXEL_VIEW）/encoded+size/view/flags，新增**可选关联元数据 `assoc`**（`am_frame_assoc_t*`，NULL=无；B12：外部图像可携带 source_id/frame_id/代次/PTS/时间基/采集时间，P5 补接收时间 received_at_ms 与 clock_quality；PIXEL_VIEW 模式下若未提供则取视图自带 frame_id/代次），结果原样回填（`amv_result_t.frame`，指针），供多模型/多源结果关联。
-- `am_infer_params_t`（附录 §3.3）：confidence_threshold（档案默认外覆盖）/sync_deadline_ms/slot_key（B11）/assoc 透传/raw_preprocess（RAW 模型）/flags。
+- `am_infer_params_t`（附录 §3.3）：confidence_threshold（档案默认外覆盖）/sync_deadline_ms/slot_key（B11）/assoc 透传/raw_preprocess（RAW 模型）/flags；ABI 1.9 尾部追加 device_resident_outputs/device_filter（设备驻留输出与交付筛选，§3.6a）。
 
 ### 3.3a GPU 帧输入（M2b，随 v0.3.0 发布）
 
@@ -1027,6 +1036,35 @@ typedef struct amv_result_s {
 - RAW 模型结果：task=AM_TASK_GENERIC，五类出口全空，仅 raw_outputs。
 - JSON 只用于低频配置与诊断，不承载逐帧大图或大张量。
 
+### 3.6a 设备驻留输出（ABI 1.9 兼容新增）
+
+推理输出默认全量回读（输出绑定 CPU，§3.6 现状语义）；多路直传热路径的每帧输出回读为下一档吞吐瓶颈。ABI 1.9 新增**设备驻留形态**：raw_outputs 张量留推理设备显存，调用方按需 readout——`am_infer_params_t` 尾部追加 `device_resident_outputs`（参数 opt-in；0=默认=全量回读现状，旧调用方零感知；1=请求驻留，运行库不支持时显式 `notSupported` 不静默降级），不新增推理导出，异步/攒批路径同参数语义。
+
+**驻留结果标志**：驻留提交产出的 result 携带尾部字段 `device_resident=1`——`raw_outputs` 各项 `data` 指针为 NULL，dtype/shape/data_size 元数据仍有效（调用方可判形状决定 readout 时机）；`device_outputs_token` 为 readout 消费的不透明令牌（非驻留结果恒 0）。五类结构化出口在驻留形态不执行实例级解码（实例解码需 host 浮点，执行即重引入整帧回读，与本形态目的相悖）：count 仅作**观测元数据**、不交付实例（实例数组指针为 NULL）——启用受支持的 detect 头筛选（下节）时 count 回填筛选谓词命中的**候选数**（argmax 类别+严格阈值命中，几何剔除与 NMS **前**的计数），正值不是最终检出/告警/跟踪/业务统计口径；未启用筛选时恒为 0（占位值，非空帧证据）；启用筛选时的 0 同样只是候选为零的观测——空帧门控前提见下节，未经该证明不得作跳帧或业务判据。RAW/Generic 档案唯一出口即 raw_outputs（§3.6），驻留收益最纯；PROFILE 消费方需要结构化实例结果时不置此参数（默认 0 路径行为完全不变，存量零迁移）。
+
+**readout 导出**：
+
+```c
+/* 设备驻留单输出张量读出（ABI 1.9）：仅对 device_resident=1 的结果有效——把第 output_index
+   个 raw_outputs 张量同步拷贝到调用方缓冲；容量不足 *out_size 填所需并返回 sdk.limitOutOfRange
+   （与 amc_frame_encode 两段式同款）；驻留 result 生命周期内可多次 readout（不同 index/重复
+   同 index 均可）；非驻留 result 或 output_index 越界返回 sdk.invalidArgument；out 缓冲调用方
+   所有（借用至返回，不入任何 SDK 账本）；readout 不改变驻留状态——释放设备侧唯一途径是
+   amv_result_release（token 随 release 失效） */
+AM_API am_status_t amv_result_device_readout(amv_context_t* ctx, const amv_result_t* result,
+    uint32_t output_index, uint8_t* out, uint64_t capacity, uint64_t* out_size);
+```
+
+**所有权与生命周期（B08 兼容论证）**：驻留不发明新句柄类型——retain 的仍是 result（无孤立 tensor retain，§3.6 B08 裁决词原样成立）；TTL/ack 只出缓存账（ack 不改变驻留），外部持有续计费至 release；`amv_result_release` 释放设备侧驻留缓冲并令 `device_outputs_token` 失效；缓存中未被 fetch 的驻留结果随 TTL 出账一并释放设备侧。驻留结果的预算归属为独立 device 账本（下），不再占 host 结果保留包络。
+
+**独立 device 显存账本（对齐相机 GPU 帧池独立显存账先例，§2.6a）**：驻留字节不进 §6 结果保留 64MiB host 账——显存与系统内存物理域不同源，混记要么过约束 GPU 驻留、要么让 device 占用挤占 host 结果预算；执行器在途包络（host/device 混记）是内部执行账，与已交付驻留结果的合同账本分列，互不替代。合同账面：`am_limits_t` 尾部追加 `device_resident_budget_bytes`（默认 64MiB 同值但独立账，保守起步；经 `amv_set_limits` 只可调低，=0 未设置语义同本结构惯例），超限的新驻留提交返回 `sdk.resourceExhausted`（与结果包络超限同式）；`am_stats_t` 尾部追加 `device_resident_bytes`/`device_resident_peak_bytes` 观测。预算算术注记：8 路 pose（单帧 68,400B）TTL 满载形态（8×2fps×60s）≈65.7MB 顶穿 64MiB 默认账——稳态占用取决于 fetch/ack 节奏而非 TTL 满载，满载形态需 ack 节奏配合（接入指导值随实现批进 sdk/INTEGRATION.md；现行 output_budget 利用率分母口径与消费方对齐亦随实现批落地）。
+
+**GPU 侧交付筛选（声明式，无回调）**：`am_infer_params_t` 尾部追加 `device_filter`（`am_device_filter_t` 值嵌：enabled/class_id/min_confidence，附录 §3.3）。筛选只影响交付物形态、不影响推理本身；两形态共用同一参数与同一谓词（argmax 类别+严格 `>`），但**计数语义结构性不同（2026-11-20 定稿）**：驻留形态不执行实例解码，SDK 内部只回读 4 字节计数张量，count=筛选命中的 **NMS 前候选数**（仅观测，如上节）；非驻留形态对回读后正常解码、去重（NMS 后）的最终实例应用同谓词过滤并交付过滤后实例列表，count=**过滤后实例数**。两形态计数不可互换比较。逐元素宿主回调形态被否决——逐元素跨 FFI 即失去免回读意义。**空帧门控前提**：仅当同一张量、受支持档案/布局、相同类别规则、有效阈值（含 argmax 平局与严格比较口径、有限合法输出）下证明最终实例集合包含于筛选候选集合、并经独立对拍验证零漏判后，筛选零值方可在该条件下作空帧判据；证据不足时一律仅观测，且非驻留路径可因无效分数/坐标报错——计数为零不能替代健康判断。
+
+**能力位：不设新位**。驻留是参数 opt-in 而非环境能力：调用方按 ABI 版本（≥1.9）+ 接受时显式拒绝（notSupported，运行库不支持如 CUDA 不可用）判可用；GPU_CASCADE"位=互操作入口可用"先例不适用（本形态无新互操作入口）。OV remote 臂无设备输出绑定路径（纯回读环），驻留请求在 OV 会话显式 notSupported 不静默降级——OV 驻留对等性登记为族 3 范围外后续批。
+
+**簿记登记（合同层）**：GPU 帧池 NV12 纹理按 rgba_bytes 计账的既有近似口径维持不变（校正改变既有计费行为，登记后续不随本批）；`device_resident_*` 限额/统计字段权威定义随附录 §4，预算行随 §6。
+
 ### 3.7 请求生命周期、实时槽与公平调度（B11）、模型换代
 
 ```c
@@ -1147,7 +1185,7 @@ AM_API const char* amv_status_name(am_status_t status);
 | am_encoded_packet_t | 相机 | amc_encoded_packet_release | pull/异步移交归调用方；回调内持有须 retain；引用计数 |
 | amc_frame_t 与 view.planes | 相机 | amc_frame_release | 同上；plane 指针只读，有效期至最后 release；跨 DLL 走 §5.6 |
 | am_captured_image_t / am_probe_result_t / am_stats_t | 相机 | amc_image_release / amc_probe_result_release / amc_stats_release | fetch/pull 移交；**回调/借用期内跨期持有必须当场 amc_image_retain（P3）**；ack 只释放 SDK 缓存引用（B08） |
-| amv_result_t（含内部数组/字符串/掩膜 bits/raw_outputs.data） | 推理 | amv_result_release | fetch 移交一个引用；跨异步任务持有须 amv_result_retain（B08：保留拥有者，无孤立 tensor retain）；TTL/ack 只出缓存账，外部持有继续计费至 release |
+| amv_result_t（含内部数组/字符串/掩膜 bits/raw_outputs.data；驻留结果含设备侧驻留缓冲） | 推理 | amv_result_release | fetch 移交一个引用；跨异步任务持有须 amv_result_retain（B08：保留拥有者，无孤立 tensor retain）；TTL/ack 只出缓存账，外部持有继续计费至 release；驻留结果（§3.6a）设备侧缓冲同随 result 生命周期——release 释放并令 device_outputs_token 失效，驻留字节计独立 device 账本（非 host 结果账） |
 | am_batch_receipt_t | 推理 | amv_receipt_release | 一次移交 |
 | am_request_snapshot_t（类型两库同构） | 分配方 DLL（相机经 amc_request_query / 推理经 amv_request_query 移交） | **分库入口（P3 四轮）**：amc_request_snapshot_release（相机）/ amv_request_snapshot_release（推理）——句柄必须回分配方库释放，跨库传入返回 sdk.handleInvalid | **快照句柄制（P3 三轮）**：query 每次移交一个句柄引用；终态内容不可变，已移交句柄至 release 前字符串保证可读（请求出账不影响已移交快照）；保留期内可重复 query |
 | 同步调用入参（张量/编码字节/视图/解码输入） | 调用方 | 调用方 | **借用至函数返回；超时返回后 SDK 不再引用（B06）**；若工作允许继续执行，SDK 已在返回前完成安全复制并可查询身份 |
@@ -1357,6 +1395,7 @@ Python `Frame/BorrowedFrame/RgbBuffer.pixels()` 和 C# `CameraFrame/SharedBorrow
 | 实时推理在途 | 请求/模型×槽 | 每槽 16 | 槽隔离与公平轮转（B11） |
 | 离线批量单次 | 项/提交 | 64 | 等待者另计 |
 | 结果保留（抓图+推理） | 项+字节+TTL | 256 项 + 64 MiB + 60s | **结果/掩膜字节入账**（B02/B10）：掩膜按 stride×height 计；ack 释放缓存引用，外部持有续计 |
+| 设备驻留输出账本（ABI 1.9） | 字节/推理域 | 64 MiB（独立账） | 驻留 raw_outputs 设备侧字节（device_resident_outputs=1，§3.6a）；独立于上一行 host 结果账（显存与系统内存物理域不同源，对齐相机 GPU 帧池独立显存账先例 §2.6a）；超限新驻留提交 sdk.resourceExhausted；release/缓存 TTL 出账；am_limits_t.device_resident_budget_bytes 冻结包络内只可调低 |
 | 控制/错误通道 | 项 | 32 | 独立于数据队列；满载时取消/关闭/读故障仍可用 |
 | 内存模型加载 | 字节 | 256 MiB | P1；超限 vision.modelTooLarge |
 | 共享帧池槽数/不同池身份 | 个/池与个/ctx | 4 / 4 | SDK-DEC-07；多池仍受同一ctx总字节预算，失联旧池继续入账 |

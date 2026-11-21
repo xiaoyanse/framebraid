@@ -193,6 +193,9 @@ class am_cascade_hit_t(Structure):
 class am_cascade_result_t(Structure):
     pass
 
+class am_device_filter_t(Structure):
+    pass
+
 class am_infer_params_t(Structure):
     pass
 
@@ -762,6 +765,12 @@ am_cascade_hit_t._fields_ = [
     ("roi", c_float * 4),
 ]
 
+am_device_filter_t._fields_ = [
+    ("enabled", c_uint32),
+    ("class_id", c_int32),
+    ("min_confidence", c_float),
+]
+
 am_tensor_in_t._fields_ = [
     ("name", c_char_p),
     ("dtype", c_uint32),
@@ -900,6 +909,8 @@ am_stats_t._fields_ = [
     ("reserved", c_uint32 * 6),
     ("gpu_inputs", c_uint64),
     ("gpu_copies_per_frame", c_uint64),
+    ("device_resident_bytes", c_uint64),
+    ("device_resident_peak_bytes", c_uint64),
 ]
 
 amc_init_params_t._fields_ = [
@@ -1066,6 +1077,8 @@ am_infer_params_t._fields_ = [
     ("slot_key", c_uint64),
     ("raw_preprocess", POINTER(am_raw_preprocess_t)),
     ("reserved", c_uint32 * 2),
+    ("device_resident_outputs", c_uint32),
+    ("device_filter", am_device_filter_t),
 ]
 
 am_batch_receipt_t._fields_ = [
@@ -1132,6 +1145,7 @@ am_limits_t._fields_ = [
     ("shared_pool_max_pools", c_uint32),
     ("shared_pool_metadata_bytes", c_uint64),
     ("reserved", c_uint32 * 8),
+    ("device_resident_budget_bytes", c_uint64),
 ]
 
 am_error_info_t._fields_ = [
@@ -1440,6 +1454,8 @@ amv_result_t._fields_ = [
     ("infer_end_ms", c_int64),
     ("vocab_hits", POINTER(am_vocab_hit_map_t)),
     ("cascade", POINTER(am_cascade_result_t)),
+    ("device_resident", c_uint32),
+    ("device_outputs_token", c_uint64),
 ]
 
 am_model_info_t._fields_ = [
@@ -1454,7 +1470,7 @@ am_model_info_t._fields_ = [
     ("execution", am_backend_actual_t),
 ]
 
-AM_ABI_VERSION = 65544
+AM_ABI_VERSION = 65545
 AM_BACKEND_STRICT_CUDA_FP32 = 2
 AM_OK = 0
 AM_CODEC_H264 = 1
@@ -1704,6 +1720,7 @@ FUNCTIONS = {
     "amc_encoder_drain": (am_status_t, [POINTER(amc_encoder_t)]),
     "amc_encoder_close": (am_status_t, [POINTER(amc_encoder_t), c_uint32, POINTER(am_lifecycle_state_t)]),
     "amc_frame_encode": (am_status_t, [POINTER(amc_context_t), POINTER(am_pixel_view_t), POINTER(am_frame_encode_opts_t), POINTER(c_uint8), c_uint64, POINTER(c_uint64)]),
+    "amc_frame_encode_gpu": (am_status_t, [POINTER(amc_context_t), POINTER(am_gpu_frame_ref_t), POINTER(am_frame_encode_opts_t), POINTER(c_uint8), c_uint64, POINTER(c_uint64)]),
     "amc_archive_open": (am_status_t, [POINTER(amc_context_t), c_char_p, POINTER(am_encoder_config_t), c_uint32, POINTER(POINTER(amc_archive_t))]),
     "amc_archive_write": (am_status_t, [POINTER(amc_archive_t), POINTER(am_pixel_view_t)]),
     "amc_archive_close": (am_status_t, [POINTER(amc_archive_t), c_uint32, POINTER(am_lifecycle_state_t)]),
@@ -1746,6 +1763,7 @@ FUNCTIONS = {
     "amv_result_ack": (am_status_t, [POINTER(amv_context_t), c_uint64]),
     "amv_result_retain": (am_status_t, [POINTER(amv_result_t)]),
     "amv_result_release": (am_status_t, [POINTER(amv_result_t)]),
+    "amv_result_device_readout": (am_status_t, [POINTER(amv_context_t), POINTER(amv_result_t), c_uint32, POINTER(c_uint8), c_uint64, POINTER(c_uint64)]),
     "amv_request_query": (am_status_t, [POINTER(amv_context_t), c_uint64, POINTER(POINTER(am_request_snapshot_t))]),
     "amv_request_snapshot_release": (am_status_t, [POINTER(am_request_snapshot_t)]),
     "amv_request_cancel": (am_status_t, [POINTER(amv_context_t), c_uint64]),

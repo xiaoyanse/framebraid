@@ -109,7 +109,9 @@ impl GpuPipeline {
 
     /// GPU 帧 → 模型输入（dst 尺寸按模型输入形状）。center_crop=true 为
     /// classify 档案语义（F02：max 比例+源域中心窗口，与 CPU prepare.rs
-    /// resize==2 分支同规则；false 保持 detect letterbox）。返回 IOBinding
+    /// resize==2 分支同规则；false 保持 detect letterbox）。resident=true 为
+    /// 驻留形态（ABI 1.9 §3.6a）：输出绑定构造为 CUDA 设备目标（绑定一次
+    /// 成型，执行段不重绑）。返回 IOBinding
     /// 输入（device tensor 由 ORT allocator 持有）。纹理借用至本函数返回
     /// （VP 转换+GPU 同步完成后即不再触碰源纹理；kernel 完成事件同步后
     /// 归还缓冲/解除中转映射）。
@@ -121,6 +123,7 @@ impl GpuPipeline {
         dst_w: u32,
         dst_h: u32,
         center_crop: bool,
+        resident: bool,
     ) -> Result<(InferenceInput, crate::sdk::ImageTransform), Error> {
         self.driver.check(
             unsafe { (self.driver.ctx_set_current)(self.context) },
@@ -175,6 +178,7 @@ impl GpuPipeline {
                 session,
                 input_name,
                 center_crop,
+                resident,
             )
         }
         // 作用域出口顺序：事件同步（kernel 完成）→ 缓冲归还池 → 中转条目
@@ -207,6 +211,7 @@ impl GpuPipeline {
             h as usize,
             w as usize,
             self.ordinal,
+            false,
         )?;
         let frame_bytes = batch.tensor_bytes() / frames.len();
         let base = batch.device_ptr();
@@ -237,14 +242,27 @@ impl GpuPipeline {
         session: &ort::session::Session,
         input_name: &str,
         center_crop: bool,
+        resident: bool,
     ) -> Result<(InferenceInput, crate::sdk::ImageTransform), Error> {
-        let input = InferenceInput::new(
-            session,
-            input_name,
-            dst_h as usize,
-            dst_w as usize,
-            self.ordinal,
-        )?;
+        let input = if resident {
+            InferenceInput::new_batch(
+                session,
+                input_name,
+                1,
+                dst_h as usize,
+                dst_w as usize,
+                self.ordinal,
+                true,
+            )?
+        } else {
+            InferenceInput::new(
+                session,
+                input_name,
+                dst_h as usize,
+                dst_w as usize,
+                self.ordinal,
+            )?
+        };
         // 目标几何（与 CPU 参考 prepare.rs 同规则）：detect=letterbox（min 比例+
         // round+clamp+填边）；classify=center crop（max 比例+源域中心窗口偏移，
         // F02：此前恒 letterbox 与 CPU 语义分叉）。crop 模式 rw/rh=dst（无填充带，

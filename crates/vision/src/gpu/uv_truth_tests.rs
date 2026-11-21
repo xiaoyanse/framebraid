@@ -153,6 +153,7 @@ fn uv_truth_three_form_matrix() {
                     DST as u32,
                     DST as u32,
                     false,
+                    false,
                 )
                 .unwrap_or_else(|e| panic!("{form} slice{slice} 预处理失败: {e}"));
             let mut values = vec![0f32; 3 * DST * DST];

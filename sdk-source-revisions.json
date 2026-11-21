@@ -768,14 +768,14 @@
     {
       "path": "crates/sdk-abi/src/constants.rs",
       "previousSha256": "167d12d1b72f202fe6f09a5bb41c23b3e150e70f8b70a57ffe4491e66a081103",
-      "sha256": "968ceef78ad18c5b8db91fcd8ab4dc7c9f11db17520cdba0e6795f246a8ecac8",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - AM_ABI_VERSION 65542->65543, amc_stream_get_status export, am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests); sdk-intel-direct batch I-A: AM_ABI_VERSION 65543->65544 via generator (abiMinor 1.7->1.8 compatible addition, capability lists unchanged). Prior approved SHA-256 (sdk-rtmp-wip): a601fffa03a173df53226c794a723e91aa666ada72f8db7099a3ffe12491b380"
+      "sha256": "6e2d506f0f42671a0dd1d8f7742027f0e67c126bd5517ee59375e664b1b1bafd",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - AM_ABI_VERSION 65542->65543, amc_stream_get_status export, am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests); sdk-intel-direct batch I-A: AM_ABI_VERSION 65543->65544 via generator (abiMinor 1.7->1.8 compatible addition, capability lists unchanged). Prior approved SHA-256 (sdk-rtmp-wip): a601fffa03a173df53226c794a723e91aa666ada72f8db7099a3ffe12491b380; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545, contract main 3.6a resident outputs): AM_ABI_VERSION 65544->65545. Prior approved SHA-256 (sdk-intel-direct I-A): 968ceef78ad18c5b8db91fcd8ab4dc7c9f11db17520cdba0e6795f246a8ecac8"
     },
     {
       "path": "crates/sdk-abi/src/defaults.rs",
       "previousSha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
-      "sha256": "dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3",
-      "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition"
+      "sha256": "753fa848ba199297717f2f11975fee7bea5d20754500de95609d8d9a9745d3af",
+      "reason": "R7 AM_SRC_MJPEG_URL enum constant / R1 budget default raise (committed in earlier batch); generator-synced; C ABI compatible addition; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): default_limits/limits_within + device_resident_budget_bytes (defaults.json limits + 64MiB independent device ledger default). Prior approved SHA-256 (R7/R1): dff046d096b7ffeefbf4666021252651f1b1608f48be76be2989b18ecfaff5b3"
     },
     {
       "path": "crates/sdk-abi/src/fields_0.rs",
@@ -816,26 +816,26 @@
     {
       "path": "crates/sdk-abi/src/fields_6.rs",
       "previousSha256": "ec4e29349bc247ac6c15d89b4c547e836d4814f2683a6b40c437a525bcd94b1c",
-      "sha256": "9ced52ab5ffcc3bb98320dbeabe4c1d412f7b709c9b25e1856c7055b9c86a7c9",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 25c84345a65942c40c5b06b336738c6030c2cfde0f3cddfc04f8a6fabc951cf8"
+      "sha256": "673d6853aa7764e9c1924372ce0039b42247a53dbd5686371804541704e3322e",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 25c84345a65942c40c5b06b336738c6030c2cfde0f3cddfc04f8a6fabc951cf8; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): AbiLayout FIELDS regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 9ced52ab5ffcc3bb98320dbeabe4c1d412f7b709c9b25e1856c7055b9c86a7c9"
     },
     {
       "path": "crates/sdk-abi/src/fields_7.rs",
       "previousSha256": "abbe61a1fd77d4650d4d0422149ca7e91296e25f9bc7f3bb7e460bcee04cf143",
-      "sha256": "d63959af04960a40981db2b921bac039903935a32e80c40f1e857aff3e82fdeb",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 4a04ffd2f0fdcb25dad3da5d40e36c34f9c21b6449f10e904038a583f81bcc67"
+      "sha256": "95d46712188b0b2c7eae32e2f537b7e3993fadbd048e5fc0d1fdea6e1c75dd57",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 4a04ffd2f0fdcb25dad3da5d40e36c34f9c21b6449f10e904038a583f81bcc67; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): AbiLayout FIELDS regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): d63959af04960a40981db2b921bac039903935a32e80c40f1e857aff3e82fdeb"
     },
     {
       "path": "crates/sdk-abi/src/fields_8.rs",
       "previousSha256": null,
-      "sha256": "7fdc2478908e104d387384e502d89eeee2529ab3f4107617887d996d50dd21e1",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 70abd44e730e202c4e08e0045826dc3da6ad213a148b83e7c8055396a12e7161"
+      "sha256": "59b71379f82a349107acf9298ed7bc7f0df67c6a532255c80f28785b647e0f8e",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 70abd44e730e202c4e08e0045826dc3da6ad213a148b83e7c8055396a12e7161; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): AbiLayout FIELDS regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 7fdc2478908e104d387384e502d89eeee2529ab3f4107617887d996d50dd21e1"
     },
     {
       "path": "crates/sdk-abi/src/fields_9.rs",
       "previousSha256": null,
-      "sha256": "0ccd20f7f5923f9bd37f1ab8fa0d96df5455a0ffad6bc3401bb4c260b9432e2d",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): acb59d93bf9d1ad559b2ee42276d05edc93c2521990c789324f1b5e0f9822dcd"
+      "sha256": "d34e3e242dbea9658550af25dde46eb4ca7bd15f42035f512374a58c401b42f0",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): acb59d93bf9d1ad559b2ee42276d05edc93c2521990c789324f1b5e0f9822dcd; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): AbiLayout FIELDS + amv_result_t.device_resident/device_outputs_token, am_limits_t.device_resident_budget_bytes, am_stats_t.device_resident_bytes/peak, group repartition. Prior approved SHA-256 (sdk-rtmp-wip): 0ccd20f7f5923f9bd37f1ab8fa0d96df5455a0ffad6bc3401bb4c260b9432e2d"
     },
     {
       "path": "crates/sdk-abi/src/layout_0.rs",
@@ -876,26 +876,26 @@
     {
       "path": "crates/sdk-abi/src/layout_6.rs",
       "previousSha256": "dde603164a8dfd9ce93f28fd2bc4bf747c3687877a667c14ef6898a2b2ded8d1",
-      "sha256": "5965bbf2c6077a92b3a73a4fbfa78539ad3fe7375eb07ff8e88f81114d5fd74e",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): e6e01d219ae5b0ad94386fe4544ad6d9f2fbd5d2fc4d45f26bf3b3a25cf2e996"
+      "sha256": "c2b6f0dbf6c413597cd7f219169842e7f5f207c9febc9391e95744700616d50e",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): e6e01d219ae5b0ad94386fe4544ad6d9f2fbd5d2fc4d45f26bf3b3a25cf2e996; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): layout assertions regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 5965bbf2c6077a92b3a73a4fbfa78539ad3fe7375eb07ff8e88f81114d5fd74e"
     },
     {
       "path": "crates/sdk-abi/src/layout_7.rs",
       "previousSha256": "11d3e5ff2835e68dbaa2a88ed870ee0f17005790c409b880efc94cde1d49dbe3",
-      "sha256": "737e4a459832d995f62b873dc7121bda885450710bb9470af38dfa2bb6b36811",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 4dfc3a099b0ff4f8d009aa777e625ca447e2c866d077e9f46cefe0366f7f2a78"
+      "sha256": "16eda838accf7121e21b54030aed6ec8fa838d4aba32e9aee96f61c2f61dae3c",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 4dfc3a099b0ff4f8d009aa777e625ca447e2c866d077e9f46cefe0366f7f2a78; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): layout assertions regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 737e4a459832d995f62b873dc7121bda885450710bb9470af38dfa2bb6b36811"
     },
     {
       "path": "crates/sdk-abi/src/layout_8.rs",
       "previousSha256": null,
-      "sha256": "53dc4c7b360a253157dd6c772f881285c4f660e96f0d2481672bcb3b868dfdbb",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): f0a1a6f86a88d3b3367cb98a19b6d604bdd58c028025f3a215a41723304dd594"
+      "sha256": "78cf7ad788368cb6b628588a21655b42a28d952a68dff8766295b83ea38b5cd2",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): f0a1a6f86a88d3b3367cb98a19b6d604bdd58c028025f3a215a41723304dd594; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): layout assertions regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 53dc4c7b360a253157dd6c772f881285c4f660e96f0d2481672bcb3b868dfdbb"
     },
     {
       "path": "crates/sdk-abi/src/layout_9.rs",
       "previousSha256": null,
-      "sha256": "15062bad9185e04448be7bc78e4f2ecc6655ade6a87fd9512e9f12c07c4daf06",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 7f647fc6ccd6655b965a09d2037e0734387dfd02d8e5c764f197f6255694b99d"
+      "sha256": "93bbef1b4d85fa21631f7e3b8a452a9dad8409821eadb4733459bb8415caf3c1",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 7f647fc6ccd6655b965a09d2037e0734387dfd02d8e5c764f197f6255694b99d; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): layout assertions + device offsets (amv_result_t 240/224/232, am_limits_t 168/160, am_stats_t 264/248/256, am_infer_params_t 64/48/52), group repartition. Prior approved SHA-256 (sdk-rtmp-wip): 15062bad9185e04448be7bc78e4f2ecc6655ade6a87fd9512e9f12c07c4daf06"
     },
     {
       "path": "crates/sdk-abi/src/layout_tests.rs",
@@ -954,26 +954,26 @@
     {
       "path": "crates/sdk-abi/src/types_6.rs",
       "previousSha256": "c09e17095c6ce377089be2abc9717bb7aab53554f7d0f97103937c5789906735",
-      "sha256": "5b27d3ef2695ed8e1a9b658e0e407e36866a3eb4f3ec0f975623235c96145352",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 7ecd9ecba141af04c24f3284347e4d498c31dbb2be6207cd61c0ed8040c15a62"
+      "sha256": "d911e987dbd17f9bf5a953c005def5f8bb32abf31e8cb554fce9bd8a6694cc15",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 7ecd9ecba141af04c24f3284347e4d498c31dbb2be6207cd61c0ed8040c15a62; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): value types regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 5b27d3ef2695ed8e1a9b658e0e407e36866a3eb4f3ec0f975623235c96145352"
     },
     {
       "path": "crates/sdk-abi/src/types_7.rs",
       "previousSha256": "e7bdc738bbdaf91cb3b7f61b1809525d621dd74101400b02ffcd700f9a189ea7",
-      "sha256": "dc4328e321ace727469428224384205d229aeff9fcb719549c5d1761354e7e32",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 9a86feafe3e49191cf22c49ee8a0aaf0a808959ebb10a8fc3ebb093e1c05a9e4"
+      "sha256": "41a6e92d13c62185fc25866580ba28aba1a2af3464df0e54f3333e3eab29a142",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 9a86feafe3e49191cf22c49ee8a0aaf0a808959ebb10a8fc3ebb093e1c05a9e4; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): value types regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): dc4328e321ace727469428224384205d229aeff9fcb719549c5d1761354e7e32"
     },
     {
       "path": "crates/sdk-abi/src/types_8.rs",
       "previousSha256": null,
-      "sha256": "9e8aa8085c1734e6eae10c0e93d16fdfbaba5b0759c37d589ac2c095ef5732c5",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 1c7d0fb7a7bc4a99089e2a3e5df6bb62334d73ac39a91f064203497c0e5d79f2"
+      "sha256": "8ce74040300673875d4e017b55249d089eb207872ae7f5df275ed233d3153833",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 1c7d0fb7a7bc4a99089e2a3e5df6bb62334d73ac39a91f064203497c0e5d79f2; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): value types regen, group repartition (am_device_filter_t insertion shifts groups). Prior approved SHA-256 (sdk-rtmp-wip): 9e8aa8085c1734e6eae10c0e93d16fdfbaba5b0759c37d589ac2c095ef5732c5"
     },
     {
       "path": "crates/sdk-abi/src/types_9.rs",
       "previousSha256": null,
-      "sha256": "59157f860d09211283a6c931429e14c7e8220bb05f80cffa493034b0ce9c0fd1",
-      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 8141fc6e9c6ab752ca4d8a59994bdd5e4d8df32c6d193c0cf783c1c2012eb2a3"
+      "sha256": "9aa8da0c136ba8fdace7c91684685e4cc64b989569402d02dc865fc09c4f91ab",
+      "reason": "sdk-rtmp-wip generator resync: stream status observability (contract main 2.10 + types 2.9, ABI 1.7 65543) - amc_stream_get_status export + am_stream_status_t/am_stream_conn_state_e; layout hand-registered via baseline-reuse path (host gcc toolchain unavailable, cross-checked by sdk-abi layout tests). Prior approved SHA-256 (sdk-v08 V8.3): 8141fc6e9c6ab752ca4d8a59994bdd5e4d8df32c6d193c0cf783c1c2012eb2a3; sdk-abi19 batch U3-A generator resync (ABI 1.9 65545): + am_device_filter_t struct, + amv_result_t.device_resident/device_outputs_token tail fields, group repartition. Prior approved SHA-256 (sdk-rtmp-wip): 59157f860d09211283a6c931429e14c7e8220bb05f80cffa493034b0ce9c0fd1"
     },
     {
       "path": "crates/sdk-support/Cargo.toml",

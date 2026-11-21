@@ -2,6 +2,26 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy)]
+pub struct am_batching_options_t {
+    pub struct_size: u32,
+    pub abi_minor: u32,
+    pub max_batch_items: u32,
+    pub max_wait_ms: u32,
+    pub flags: u32,
+}
+impl Default for am_batching_options_t {
+    fn default() -> Self {
+        Self {
+            struct_size: core::mem::size_of::<Self>() as u32,
+            abi_minor: Default::default(),
+            max_batch_items: Default::default(),
+            max_wait_ms: Default::default(),
+            flags: Default::default(),
+        }
+    }
+}
+#[repr(C)]
+#[derive(Clone, Copy)]
 pub struct am_batching_stats_t {
     pub struct_size: u32,
     pub abi_minor: u32,
@@ -139,14 +159,4 @@ impl Default for am_track_params_t {
             max_tracks: Default::default(),
         }
     }
-}
-#[repr(C)]
-#[derive(Clone, Copy, Default)]
-pub struct am_tracked_box_t {
-    pub bounds: [f32; 4],
-    pub confidence: f32,
-    pub class_id: u32,
-    pub track_id: u64,
-    pub age_frames: u32,
-    pub hits: u32,
 }

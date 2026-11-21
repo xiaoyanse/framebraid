@@ -2,6 +2,19 @@
 use super::*;
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
+pub struct am_obb_instance_t {
+    pub vertices_xy: [f32; 8],
+    pub center_x: f32,
+    pub center_y: f32,
+    pub width: f32,
+    pub height: f32,
+    pub angle: f32,
+    pub confidence: f32,
+    pub class_id: i32,
+    pub angle_normalized: u32,
+}
+#[repr(C)]
+#[derive(Clone, Copy, Default)]
 pub struct am_obb_result_t {
     pub count: u32,
     pub instances: *const am_obb_instance_t,
@@ -27,6 +40,8 @@ pub struct amv_result_t {
     pub infer_end_ms: i64,
     pub vocab_hits: *const am_vocab_hit_map_t,
     pub cascade: *const am_cascade_result_t,
+    pub device_resident: u32,
+    pub device_outputs_token: u64,
 }
 impl Default for amv_result_t {
     fn default() -> Self {
@@ -49,6 +64,8 @@ impl Default for amv_result_t {
             infer_end_ms: Default::default(),
             vocab_hits: Default::default(),
             cascade: Default::default(),
+            device_resident: Default::default(),
+            device_outputs_token: Default::default(),
         }
     }
 }
@@ -98,6 +115,7 @@ pub struct am_limits_t {
     pub shared_pool_max_pools: u32,
     pub shared_pool_metadata_bytes: u64,
     pub reserved: [u32; 8],
+    pub device_resident_budget_bytes: u64,
 }
 impl Default for am_limits_t {
     fn default() -> Self {
@@ -125,6 +143,7 @@ impl Default for am_limits_t {
             shared_pool_max_pools: Default::default(),
             shared_pool_metadata_bytes: Default::default(),
             reserved: [Default::default(); 8],
+            device_resident_budget_bytes: Default::default(),
         }
     }
 }
@@ -162,6 +181,8 @@ pub struct am_stats_t {
     pub reserved: [u32; 6],
     pub gpu_inputs: u64,
     pub gpu_copies_per_frame: u64,
+    pub device_resident_bytes: u64,
+    pub device_resident_peak_bytes: u64,
 }
 impl Default for am_stats_t {
     fn default() -> Self {
@@ -197,6 +218,8 @@ impl Default for am_stats_t {
             reserved: [Default::default(); 6],
             gpu_inputs: Default::default(),
             gpu_copies_per_frame: Default::default(),
+            device_resident_bytes: Default::default(),
+            device_resident_peak_bytes: Default::default(),
         }
     }
 }

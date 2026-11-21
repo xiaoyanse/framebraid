@@ -72,6 +72,7 @@ impl GpuPipeline {
                 dst as usize,
                 dst as usize,
                 self.ordinal,
+                false,
             )?);
         }
         let mut blit_count = 0;

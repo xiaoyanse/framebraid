@@ -84,6 +84,22 @@ impl AbiLayout for am_cascade_result_t {
         ),
     ];
 }
+impl AbiLayout for am_device_filter_t {
+    const FIELDS: &'static [(usize, usize)] = &[
+        (
+            core::mem::offset_of!(am_device_filter_t, enabled),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_device_filter_t, class_id),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_device_filter_t, min_confidence),
+            core::mem::size_of::<f32>(),
+        ),
+    ];
+}
 impl AbiLayout for am_infer_params_t {
     const FIELDS: &'static [(usize, usize)] = &[
         (
@@ -117,6 +133,25 @@ impl AbiLayout for am_infer_params_t {
         (
             core::mem::offset_of!(am_infer_params_t, reserved),
             core::mem::size_of::<[u32; 2]>(),
+        ),
+        (
+            core::mem::offset_of!(am_infer_params_t, device_resident_outputs),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_infer_params_t, device_filter)
+                + core::mem::offset_of!(am_device_filter_t, enabled),
+            core::mem::size_of::<u32>(),
+        ),
+        (
+            core::mem::offset_of!(am_infer_params_t, device_filter)
+                + core::mem::offset_of!(am_device_filter_t, class_id),
+            core::mem::size_of::<i32>(),
+        ),
+        (
+            core::mem::offset_of!(am_infer_params_t, device_filter)
+                + core::mem::offset_of!(am_device_filter_t, min_confidence),
+            core::mem::size_of::<f32>(),
         ),
     ];
 }
@@ -217,30 +252,6 @@ impl AbiLayout for am_batch_receipt_t {
         (
             core::mem::offset_of!(am_batch_receipt_t, rejects),
             core::mem::size_of::<*const am_status_t>(),
-        ),
-    ];
-}
-impl AbiLayout for am_batching_options_t {
-    const FIELDS: &'static [(usize, usize)] = &[
-        (
-            core::mem::offset_of!(am_batching_options_t, struct_size),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, abi_minor),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, max_batch_items),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, max_wait_ms),
-            core::mem::size_of::<u32>(),
-        ),
-        (
-            core::mem::offset_of!(am_batching_options_t, flags),
-            core::mem::size_of::<u32>(),
         ),
     ];
 }

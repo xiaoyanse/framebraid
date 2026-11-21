@@ -86,7 +86,7 @@ fn frame_binding(
         texture: texture.0,
     };
     pipeline
-        .preprocess_to_binding(&frame, session, input_name, SIZE, SIZE, false)
+        .preprocess_to_binding(&frame, session, input_name, SIZE, SIZE, false, false)
         .expect("GPU 预处理")
         .0
 }

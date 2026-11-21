@@ -106,8 +106,28 @@ fn am_cascade_result_t_matches_c() {
     );
 }
 #[test]
+fn am_device_filter_t_matches_c() {
+    assert_eq!(core::mem::size_of::<am_device_filter_t>(), 12);
+    assert_eq!(core::mem::align_of::<am_device_filter_t>(), 4);
+    assert_eq!(
+        core::mem::offset_of!(am_device_filter_t, enabled),
+        0,
+        "am_device_filter_t.enabled"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_device_filter_t, class_id),
+        4,
+        "am_device_filter_t.class_id"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_device_filter_t, min_confidence),
+        8,
+        "am_device_filter_t.min_confidence"
+    );
+}
+#[test]
 fn am_infer_params_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_infer_params_t>(), 48);
+    assert_eq!(core::mem::size_of::<am_infer_params_t>(), 64);
     assert_eq!(core::mem::align_of::<am_infer_params_t>(), 8);
     assert_eq!(
         core::mem::offset_of!(am_infer_params_t, struct_size),
@@ -148,6 +168,16 @@ fn am_infer_params_t_matches_c() {
         core::mem::offset_of!(am_infer_params_t, reserved),
         40,
         "am_infer_params_t.reserved"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_infer_params_t, device_resident_outputs),
+        48,
+        "am_infer_params_t.device_resident_outputs"
+    );
+    assert_eq!(
+        core::mem::offset_of!(am_infer_params_t, device_filter),
+        52,
+        "am_infer_params_t.device_filter"
     );
 }
 #[test]
@@ -273,35 +303,5 @@ fn am_batch_receipt_t_matches_c() {
         core::mem::offset_of!(am_batch_receipt_t, rejects),
         16,
         "am_batch_receipt_t.rejects"
-    );
-}
-#[test]
-fn am_batching_options_t_matches_c() {
-    assert_eq!(core::mem::size_of::<am_batching_options_t>(), 20);
-    assert_eq!(core::mem::align_of::<am_batching_options_t>(), 4);
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, struct_size),
-        0,
-        "am_batching_options_t.struct_size"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, abi_minor),
-        4,
-        "am_batching_options_t.abi_minor"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, max_batch_items),
-        8,
-        "am_batching_options_t.max_batch_items"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, max_wait_ms),
-        12,
-        "am_batching_options_t.max_wait_ms"
-    );
-    assert_eq!(
-        core::mem::offset_of!(am_batching_options_t, flags),
-        16,
-        "am_batching_options_t.flags"
     );
 }
