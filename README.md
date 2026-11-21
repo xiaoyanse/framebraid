@@ -105,6 +105,7 @@ Check runtime capabilities and contracts. H.265 decoding does not imply browser 
 - Owned pixel inputs across languages: Python `owner.pixels().infer(...)` / C# `owner.Pixels().Submit(...)` keep the owner alive and locked through submission; async inputs use the default copy policy unless retained explicitly.
 - Bounded model notification buffers (256 hints, drop-oldest) in Python/C# helpers; retain request IDs to query results after drops.
 - Optional shared frames, enabled at build time and explicitly at initialization.
+- **Device-resident outputs** (ABI 1.9 preview candidate; off by default): `device_resident_outputs` opts results into device memory behind an opaque token with per-tensor two-phase readout (`amv_result_device_readout`), declarative device filtering and an independent device-memory budget, while 0 keeps the full host-readback path unchanged (contract §3.6a).
 
 This is not every YOLO version/export. Match the [profile catalog](crates/vision/resources/profiles.json). Model weights and their licenses are separate.
 
@@ -157,6 +158,8 @@ The v0.6.3 Windows x64 release passes **508 workspace Rust tests** (code identic
 The source checkout excludes runtime binaries, weights, credentials, business database and host UI. The separate Windows package includes matching CPU runtimes and their source/license materials. The extraction manifest is historical provenance, not a continuously updated release manifest; core files remain fingerprint-checked.
 
 See [support boundaries](docs/SUPPORT.md), [current local validation](docs/RELEASE_STATUS.md) and [release checklist](docs/RELEASE_CHECKLIST.md). Historical plans do not supersede actual evidence.
+
+v0.8.4 is in release preparation (ABI 1.9 preview candidate, unpublished): the device-resident output implementation and GPU frame encode export passed the G.2 dual-path back-compat gate (2026-11-21) and the full workspace gate set (fmt/clippy/workspace/boundary/freeze/doc-coverage/zero-semantics), with three non-blocking leftovers registered. Current verification state is tracked in [RELEASE_STATUS](docs/RELEASE_STATUS.md); ABI 1.8→1.9 migration notes are in [MIGRATION](docs/MIGRATION.md).
 
 ## Test observations
 

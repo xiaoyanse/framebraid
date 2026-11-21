@@ -827,7 +827,9 @@ typedef struct am_cascade_result_s {
                                      确认轮 2026-11-05 备注 1） */ /* zero=default */
 } am_cascade_result_t;
 typedef struct am_device_filter_s {  /* GPU 侧声明式交付筛选（ABI 1.9 尾部嵌，主文件 §3.6a；
-                                        声明式无回调；只影响交付形态不影响推理本身） */
+                                        声明式无回调；只影响交付形态不影响推理本身。两形态计数
+                                        语义不同：驻留=NMS 前筛选候选数（仅观测），非驻留=对
+                                        解码去重后实例的过滤交付——见主文件 §3.6a 空帧门控前提） */
   uint32_t enabled;        /* 1=启用设备侧筛选；0=禁用（本结构整体忽略） */ /* zero=default */
   int32_t class_id;        /* >=0=仅交付该类别（0 即类别 0，为有效选择）；-1=全部类别 */ /* explicit */
   float min_confidence;    /* 置信度下限；0=用档案/params 默认阈值（不另设） */
@@ -848,7 +850,7 @@ typedef struct am_infer_params_s {
                                         device_resident=1，readout 经 amv_result_device_readout）；
                                         运行库不支持时显式 notSupported 不静默降级 */ /* zero=default */
   am_device_filter_t device_filter;  /* ABI 1.9 尾部追加：设备侧交付筛选；enabled=0 整体忽略；
-                                        驻留/非驻留两形态同参数同语义（主文件 §3.6a） */
+                                        两形态共用参数与谓词、计数语义结构性不同（主文件 §3.6a） */
 } am_infer_params_t;
 typedef enum am_dtype_e { AM_DTYPE_F32 = 0, AM_DTYPE_F16, AM_DTYPE_I64, AM_DTYPE_I32, AM_DTYPE_U8 } am_dtype_e;
 typedef struct am_tensor_in_s {

@@ -1,18 +1,31 @@
 use super::{
     lock,
     models::ModelHandle,
-    state::{ControlCharge, ResultCharge, State},
+    state::{ControlCharge, DeviceCharge, ResultCharge, State},
 };
 use am_sdk_support::{abi::*, buffers::Buffer, context::Context, Result};
 use am_vision_core::{
     profiles::{Output, Prediction},
-    sdk::{ImageTransform, TensorData},
+    sdk::{DeviceTensor, ImageTransform, TensorData},
 };
 use std::{
     any::Any,
     ffi::CString,
     sync::{atomic::Ordering, Arc},
 };
+
+/// 驻留形态交付载荷（§3.6a ABI 1.9）：设备张量句柄+筛选计数元数据+显存
+/// 账目（随 ResultBuffer 生命周期出账）。task 为档案任务（RAW=GENERIC）；
+/// 五类出口不解码（实例指针恒 NULL），count 仅作交付元数据。
+pub struct ResidentPayload {
+    pub tensors: Vec<DeviceTensor>,
+    pub detected_count: u32,
+    pub task: u32,
+    /// 显存账目（仅持有不读取：Drop 即出账——缓存 TTL、ack 出引用、外部
+    /// release 三条释放路径全部收敛到 ResultBuffer 析构）。
+    #[allow(dead_code)]
+    pub charge: DeviceCharge,
+}
 
 pub struct ResultBuffer {
     pub value: Box<amv_result_t>,
@@ -21,6 +34,7 @@ pub struct ResultBuffer {
     profile: CString,
     device: CString,
     fallback_reason: Option<CString>,
+    resident: Option<ResidentPayload>,
     raw: Vec<TensorData>,
     _names: Vec<CString>,
     views: Vec<am_tensor_out_t>,
@@ -73,11 +87,89 @@ impl ResultBuffer {
         end: i64,
         charge: ResultCharge,
     ) -> Result<Arc<Self>> {
+        Self::build_inner(
+            model, id, frame, mapping, raw, prediction, cascade, None, start, end, charge,
+        )
+    }
+
+    /// 驻留形态组装（§3.6a）：raw_outputs 元数据有效（name/dtype/shape/
+    /// data_size）但 data=NULL；device_outputs_token=request_id（会话内唯一
+    /// 非零）；五类出口不解码——启用 device_filter 时 detect.count 回填
+    /// 筛选候选数（NMS 前，仅观测），未启用恒 0（占位）；实例数组指针恒 NULL。
+    #[allow(clippy::too_many_arguments)]
+    pub fn build_resident(
+        model: &ModelHandle,
+        id: u64,
+        frame: Option<am_frame_assoc_t>,
+        mapping: Option<ImageTransform>,
+        resident: ResidentPayload,
+        start: i64,
+        end: i64,
+        charge: ResultCharge,
+    ) -> Result<Arc<Self>> {
+        Self::build_inner(
+            model,
+            id,
+            frame,
+            mapping,
+            Vec::new(),
+            None,
+            None,
+            Some(resident),
+            start,
+            end,
+            charge,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn build_inner(
+        model: &ModelHandle,
+        id: u64,
+        frame: Option<am_frame_assoc_t>,
+        mapping: Option<ImageTransform>,
+        raw: Vec<TensorData>,
+        prediction: Option<Prediction>,
+        cascade: Option<CascadeData>,
+        resident: Option<ResidentPayload>,
+        start: i64,
+        end: i64,
+        charge: ResultCharge,
+    ) -> Result<Arc<Self>> {
         let profile = model.info.profile.clone();
         let names = raw
             .iter()
-            .map(|r| CString::new(r.info.name.clone()).map_err(|_| AM_ERR_VISION_IO_UNSUPPORTED))
+            .map(|r| r.info.name.clone())
+            .chain(
+                resident
+                    .iter()
+                    .flat_map(|r| r.tensors.iter())
+                    .map(|t| t.info.name.clone()),
+            )
+            .map(|name| CString::new(name).map_err(|_| AM_ERR_VISION_IO_UNSUPPORTED))
             .collect::<Result<Vec<_>>>()?;
+        // 驻留张量视图（§3.6a）：元数据有效、data=NULL——形状可供调用方
+        // 决定 readout 时机，字节消费走 amv_result_device_readout。
+        let device_sizes = resident
+            .iter()
+            .flat_map(|r| r.tensors.iter())
+            .map(|t| t.byte_len().map_err(|_| AM_ERR_VISION_IO_UNSUPPORTED))
+            .collect::<Result<Vec<_>>>()?;
+        let device_views = resident
+            .iter()
+            .flat_map(|r| r.tensors.iter())
+            .zip(&names[raw.len()..])
+            .zip(&device_sizes)
+            .map(|((t, n), size)| am_tensor_out_t {
+                name: n.as_ptr(),
+                dtype: t.info.dtype,
+                shape: t.info.shape.as_ptr(),
+                shape_len: t.info.shape.len() as u32,
+                data: std::ptr::null(),
+                data_size: *size as u64,
+                is_contiguous: 1,
+            })
+            .collect::<Vec<_>>();
         let views = raw
             .iter()
             .zip(&names)
@@ -90,6 +182,7 @@ impl ResultBuffer {
                 data_size: r.bytes().len() as u64,
                 is_contiguous: 1,
             })
+            .chain(device_views)
             .collect::<Vec<_>>();
         let mut data = Self {
             value: Box::default(),
@@ -113,6 +206,7 @@ impl ResultBuffer {
             profile,
             device: model.info.device.clone(),
             fallback_reason: model.info.fallback_reason.clone(),
+            resident,
             raw,
             _names: names,
             views,
@@ -270,7 +364,10 @@ impl ResultBuffer {
                     .collect();
                 AM_TASK_OBB
             }
-            None => AM_TASK_GENERIC,
+            None => data
+                .resident
+                .as_ref()
+                .map_or(AM_TASK_GENERIC, |r| r.task as am_task_e),
         };
         data.value = Box::new(amv_result_t {
             request_id: id,
@@ -318,6 +415,16 @@ impl ResultBuffer {
             cascade: data.cascade.as_deref().map_or(std::ptr::null(), |v| v),
             ..Default::default()
         });
+        // 驻留标志与令牌（§3.6a）：token=request_id（会话内唯一非零，随
+        // release 失效）；筛选计数元数据回填 detect 出口（其余任务恒 0），
+        // 实例指针保持 NULL——驻留形态不执行实例级解码。
+        if let Some(resident) = data.resident.as_ref() {
+            data.value.device_resident = 1;
+            data.value.device_outputs_token = id;
+            if resident.task == AM_TASK_DETECT as u32 {
+                data.value.detect.count = resident.detected_count;
+            }
+        }
         let size = data
             .raw
             .iter()
@@ -327,6 +434,14 @@ impl ResultBuffer {
                     + t.info.shape.capacity() * 8
             })
             .sum::<usize>()
+            // 驻留元数据开销（name/shape 容量；设备字节走独立 device 账，
+            // 不落 host 结果账——§3.6a 独立账本口径）。
+            + data
+                .resident
+                .iter()
+                .flat_map(|r| r.tensors.iter())
+                .map(|t| t.info.name.capacity() + t.info.shape.capacity() * 8 + 8)
+                .sum::<usize>()
             + data
                 ._names
                 .iter()
@@ -393,6 +508,34 @@ impl ResultBuffer {
             }
         }
         Ok(Arc::new(data))
+    }
+    /// 驻留 readout 访问（§3.6a amv_result_device_readout 内核）：按
+    /// raw_outputs 下标取驻留张量同步 DtoH 拷贝；非驻留结果/下标越界为
+    /// 参数错误（合同口径），字节量返回供容量协议回填。多次调用幂等。
+    pub fn device_readout(&self, index: usize, out: &mut [u8]) -> Result<usize> {
+        let Some(resident) = self.resident.as_ref() else {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        };
+        let Some(tensor) = resident.tensors.get(index) else {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        };
+        tensor.readout(out).map_err(super::error)
+    }
+    /// 驻留张量元数据字节数（readout 容量协议的所需值；非驻留/越界拒绝）。
+    pub fn device_readout_len(&self, index: usize) -> Result<usize> {
+        let Some(resident) = self.resident.as_ref() else {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        };
+        let Some(tensor) = resident.tensors.get(index) else {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        };
+        tensor.byte_len().map_err(super::error)
+    }
+    /// 归属 ctx Entry（readout 会话校验：与传入 ctx 的 Entry 做 Arc 同一性
+    /// 比较——注册 key 是 token Box 指针而非 Entry 地址，不能按数值比对；
+    /// ctx 已销毁返回 None 拒绝同码）。
+    pub fn owner_entry(&self) -> Option<std::sync::Arc<am_sdk_support::handles::Entry>> {
+        self._charge.ctx.upgrade()
     }
     pub fn transfer(self: &Arc<Self>) -> Result<*mut amv_result_t> {
         let key = &*self.value as *const _ as usize;

@@ -33,25 +33,40 @@ pub unsafe fn validate_output<T>(pointer: *mut T, minimum: usize) -> Result<()> 
 /// # Safety
 /// 指针须指向调用方声明的可读结构；不能以此拦截任意野指针。
 pub unsafe fn read<T: Copy + Default>(pointer: *const T, minimum: usize) -> Result<T> {
-    if pointer.is_null() {
-        return Err(AM_ERR_SDK_NULL_ARGUMENT);
-    }
-    if !(pointer as usize).is_multiple_of(std::mem::align_of::<T>()) {
-        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
-    }
-    let size = unsafe { pointer.cast::<u32>().read() } as usize;
-    if size < minimum || size > 65536 {
+    let size = unsafe { read_size(pointer, minimum) }?;
+    Ok(unsafe { copy_prefix(pointer, size.min(size_of::<T>())) })
+}
+
+/// 在旧前缀与当前完整结构之间，只解释已发布的旧前缀；不读取部分尾字段。
+/// # Safety
+/// `T` 是首字段为 `u32 struct_size` 的 C 结构。`previous` 是与 `T` 布局兼容的
+/// 完整旧结构大小，调用方提供声明大小的可读内存。
+pub unsafe fn read_versioned<T: Copy + Default>(pointer: *const T, previous: usize) -> Result<T> {
+    let size = unsafe { read_size(pointer, previous) }?;
+    let current = size_of::<T>();
+    let readable = if size < current { previous } else { current };
+    Ok(unsafe { copy_prefix(pointer, readable) })
+}
+
+unsafe fn read_size<T>(input: *const T, minimum: usize) -> Result<usize> {
+    pointer(input)?;
+    let size = unsafe { input.cast::<u32>().read() } as usize;
+    if !(minimum..=65536).contains(&size) {
         return Err(AM_ERR_SDK_STRUCT_SIZE_INVALID);
     }
+    Ok(size)
+}
+
+unsafe fn copy_prefix<T: Copy + Default>(pointer: *const T, bytes: usize) -> T {
     let mut value = T::default();
     unsafe {
         std::ptr::copy_nonoverlapping(
             pointer.cast::<u8>(),
             (&mut value as *mut T).cast::<u8>(),
-            size.min(size_of::<T>()),
+            bytes,
         );
     }
-    Ok(value)
+    value
 }
 
 /// # Safety
@@ -178,6 +193,77 @@ pub unsafe fn runtime_dirs(pointer: *const *const c_char, count: u32) -> Result<
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn limits_legacy_buffers_work_in_both_domains() {
+        use crate::{common, context, handles::Domain};
+
+        const OLD: usize = 160;
+        const NEW: usize = 168;
+        const CANARY: u64 = 0xa5a5_a5a5_a5a5_a5a5;
+        assert_eq!(
+            std::mem::offset_of!(am_limits_t, device_resident_budget_bytes),
+            OLD
+        );
+        assert_eq!(size_of::<am_limits_t>(), NEW);
+        let camera = amc_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            ..Default::default()
+        };
+        let vision_params = amv_init_params_t {
+            abi_version: AM_ABI_VERSION,
+            ..Default::default()
+        };
+        for vision in [false, true] {
+            let domain = Domain::new(vision);
+            let ctx = unsafe {
+                if vision {
+                    context::initialize_vision(&domain, &vision_params)
+                } else {
+                    context::initialize_camera(&domain, &camera)
+                }
+            }
+            .unwrap();
+            let mut current = am_limits_t::default();
+            unsafe { common::limits(&domain, ctx, &mut current) }.unwrap();
+            current.device_resident_budget_bytes = 4096;
+            unsafe { common::set_limits(&domain, ctx, &current) }.unwrap();
+
+            let mut words = vec![CANARY; 8195];
+            let buffer = unsafe { words.as_mut_ptr().add(1) }.cast::<am_limits_t>();
+            unsafe { buffer.cast::<u32>().write(OLD as u32) };
+            unsafe { common::limits(&domain, ctx, buffer) }.unwrap();
+            assert_eq!(unsafe { buffer.cast::<u32>().read() }, OLD as u32);
+            assert_eq!(words[0], CANARY);
+            assert_eq!(words[1 + OLD / 8], CANARY);
+            unsafe { std::ptr::addr_of_mut!((*buffer).result_max_items).write(32) };
+            for size in OLD..NEW {
+                unsafe { buffer.cast::<u32>().write(size as u32) };
+                unsafe { common::set_limits(&domain, ctx, buffer) }.unwrap();
+                unsafe { common::limits(&domain, ctx, &mut current) }.unwrap();
+                assert_eq!(current.result_max_items, 32);
+                assert_eq!(current.device_resident_budget_bytes, 4096);
+            }
+            for size in [4, OLD - 1, 65537] {
+                unsafe { buffer.cast::<u32>().write(size as u32) };
+                assert_eq!(
+                    unsafe { common::set_limits(&domain, ctx, buffer) },
+                    Err(AM_ERR_SDK_STRUCT_SIZE_INVALID)
+                );
+            }
+            assert_eq!(
+                unsafe { common::set_limits(&domain, ctx, std::ptr::null()) },
+                Err(AM_ERR_SDK_NULL_ARGUMENT)
+            );
+            unsafe {
+                buffer.cast::<u32>().write((NEW + 1) as u32);
+                std::ptr::addr_of_mut!((*buffer).device_resident_budget_bytes).write(2048);
+                common::set_limits(&domain, ctx, buffer).unwrap();
+                common::limits(&domain, ctx, &mut current).unwrap();
+            }
+            assert_eq!(current.device_resident_budget_bytes, 2048);
+        }
+    }
+
     #[test]
     fn output_padding_is_zero_and_short_buffer_canary_is_untouched() {
         let value = am_version_info_t {

@@ -84,6 +84,61 @@ pub fn byte_count(dtype: u32, shape: &[i64]) -> Result<usize> {
         .try_fold(width, |n: usize, d| n.checked_mul(*d as usize))
         .ok_or_else(|| Error("vision.inputBytesMismatch".into()))
 }
+
+/// 设备驻留输出张量（ABI 1.9 §3.6a）：ORT OrtValue 引用计数句柄
+/// （Arc 共享——SessionOutputs 按值迭代移出，底层随句柄存活）+ 元数据
+/// （dtype/shape/字节长度在 result 上仍有效，data 由 readout 按需回读）。
+/// Send/Sync 由 ort `unsafe impl Value` 背书；release 前可多次 readout，
+/// readout 不改变驻留状态。
+pub struct DeviceTensor {
+    pub info: TensorInfo,
+    /// 张量所在 CUDA 设备 ordinal（readout 前置 set_device/同步用）。
+    pub ordinal: u32,
+    value: ort::value::DynValue,
+}
+
+impl DeviceTensor {
+    /// 元数据字节数（readout 容量协议所需值；dtype/shape 复核同口径）。
+    pub fn byte_len(&self) -> Result<usize> {
+        byte_count(self.info.dtype, &self.info.shape)
+    }
+
+    /// 设备地址（device_filter 计数 kernel 入参；张量生命周期内有效）。
+    pub fn device_ptr(&self) -> Result<u64> {
+        let tensor = self
+            .value
+            .downcast_ref::<ort::value::DynTensorValueType>()
+            .map_err(|_| Error("vision.ioUnsupported".into()))?;
+        Ok(tensor.data_ptr() as u64)
+    }
+
+    /// 同步整张量 DtoH readout（§3.6a：把驻留张量拷进调用方缓冲；容量
+    /// 不足的合同级拒绝（sdk.limitOutOfRange 两段式）在 FFI 出口按元数据
+    /// 判定，此处做同式防御复核）。前置设备级同步排干 ORT EP 内部 stream
+    /// （输出就绪仅在其 stream 上 ordered，跨流消费须先排干）。
+    pub fn readout(&self, out: &mut [u8]) -> Result<usize> {
+        let len = self.byte_len()?;
+        if out.len() < len {
+            return Err(Error("sdk.limitOutOfRange".into()));
+        }
+        let ptr = self.device_ptr()? as *const std::ffi::c_void;
+        let runtime = crate::gpu::cuda_sys::CudaApi::load()
+            .map_err(|e| Error(format!("cudart不可用|{e}")))?;
+        runtime.check(
+            unsafe { (runtime.set_device)(self.ordinal.min(i32::MAX as u32) as i32) },
+            "readout设备激活",
+        )?;
+        runtime.check(
+            unsafe { (runtime.device_synchronize)() },
+            "readout前置设备同步",
+        )?;
+        runtime.check(
+            unsafe { (runtime.memcpy_dtoh)(out.as_mut_ptr().cast(), ptr, len, 2) },
+            "驻留readout拷贝",
+        )?;
+        Ok(len)
+    }
+}
 /// 接受前只校验小型元数据，不等待正在运行的会话或读取张量内容。
 pub fn validate_input_infos(expected: &[TensorInfo], inputs: &[TensorInfo]) -> Result<()> {
     validate_infos(expected, inputs.iter())
@@ -723,6 +778,60 @@ impl Model {
             result,
             output_budget,
         )
+    }
+
+    /// GPU 驻留推理（ABI 1.9 §3.6a）：输入的输出绑定须已在 capture 段构造
+    /// 为 CUDA 设备目标（`InferenceInput::new_batch(resident=true)`——绑定
+    /// 一次成型，执行段不重绑）；run 后输出 OrtValue 留设备侧——按值迭代
+    /// 从 SessionOutputs 移出引用计数句柄（Arc 共享，host 侧零复制）；CPU
+    /// 可访问校验与 TensorData 复制在本形态不执行（驻留 result 的
+    /// raw_outputs.data 为 NULL，消费走 amv_result_device_readout）。五类
+    /// 结构化出口不解码（合同语义，由 FFI 层以交付元数据组装）。
+    pub fn run_gpu_resident(
+        &mut self,
+        input: &mut crate::gpu::iobinding::InferenceInput,
+    ) -> Result<Vec<DeviceTensor>> {
+        let ModelEngine::Ort(session) = &mut self.engine else {
+            return Err(Error("vision.ioUnsupported".into()));
+        };
+        if !input.outputs_resident() {
+            return Err(Error(
+                "vision.ioUnsupported|binding 非 CUDA 输出绑定".into(),
+            ));
+        }
+        let result = match session.run_binding(&input.binding) {
+            Ok(result) => {
+                Self::observe_ok(&mut self.selection);
+                result
+            }
+            Err(error) => {
+                Self::observe_err(&mut self.selection, &error);
+                return Err(Error(format!(
+                    "vision.inferenceFailed|gpu-resident|{error}"
+                )));
+            }
+        };
+        let mut output = Vec::new();
+        for (name, value) in result {
+            let spec = info(name, value.dtype())?;
+            output.push(DeviceTensor {
+                info: spec,
+                ordinal: self.cuda_ordinal,
+                value,
+            });
+        }
+        if self.batch != 0
+            && output.iter().any(|v| {
+                v.info
+                    .shape
+                    .first()
+                    .is_none_or(|b| *b != i64::from(self.batch))
+            })
+        {
+            return Err(Error("vision.batchUnsupported".into()));
+        }
+        self.selection.delivered_runs = self.selection.delivered_runs.saturating_add(1);
+        Ok(output)
     }
 
     fn observe_ok(selection: &mut super::selection::BackendSelectionReport) {

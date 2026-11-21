@@ -1,6 +1,5 @@
 use super::*;
 use crate::{domain, frames::Frame, sources::api::amc_source_open};
-use am_sdk_support::context::initialize_camera;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Barrier;
@@ -66,7 +65,7 @@ fn mjpeg_stream_source_subscribes_frames_and_closes_cleanly() {
         abi_version: AM_ABI_VERSION,
         ..Default::default()
     };
-    let ctx = unsafe { initialize_camera(domain(), &params) }.unwrap();
+    let ctx = crate::open_shared_camera_ctx(&params);
     let url = std::ffi::CString::new(format!("http://127.0.0.1:{port}/video")).unwrap();
     let desc = am_source_desc_t {
         kind: AM_SRC_MJPEG_URL as u32,
@@ -204,7 +203,7 @@ fn mjpeg_stream_reconnects_after_connection_drop() {
         abi_version: AM_ABI_VERSION,
         ..Default::default()
     };
-    let ctx = unsafe { initialize_camera(domain(), &params) }.unwrap();
+    let ctx = crate::open_shared_camera_ctx(&params);
     let url = std::ffi::CString::new(format!("http://127.0.0.1:{port}/video")).unwrap();
     let desc = am_source_desc_t {
         kind: AM_SRC_MJPEG_URL as u32,
@@ -237,10 +236,16 @@ fn mjpeg_stream_reconnects_after_connection_drop() {
     // 后两帧来自重连后的连接；generation 递增为重连实证。
     for _ in 0..3 {
         let mut frame = std::ptr::null_mut();
-        assert_eq!(
-            unsafe { crate::subscriptions::amc_frame_pull(sub, 5000, &mut frame) },
-            0
-        );
+        // 重连退避阶梯（1s/2s/4s…）累计可超单次 pull 截止；队列 wait_deadline_ms
+        // 默认 5000 且合同只可收紧，故按耐心消费者模型在截止超时上重试（3×5s 包络）
+        let mut rc = -1;
+        for _ in 0..3 {
+            rc = unsafe { crate::subscriptions::amc_frame_pull(sub, 5000, &mut frame) };
+            if rc != AM_ERR_SDK_DEADLINE_EXCEEDED as i32 {
+                break;
+            }
+        }
+        assert_eq!(rc, 0);
         let stored = domain().buffers.get(frame as usize).unwrap();
         let view = stored
             .as_any()

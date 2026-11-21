@@ -1,0 +1,92 @@
+//
+// Handwritten PTX 2026-11-20 (ABI 1.9 device_filter): detect-head threshold
+// count over a device-resident output tensor. One thread per anchor; scans the
+// class-score rows with the same predicate as the host decoder (results.rs
+// decode_head): strict-greater argmax (first max wins ties, best initialized
+// to 0.0f), then keep when best_score > min_confidence (strict, matching the
+// decoder's `<= skip`) and (class_sel == -1 or argmax class == class_sel).
+// Matches are atomically accumulated into a single u32 device counter, which
+// the host reads back via a 4-byte DtoH copy (the "count tensor" readout of
+// contract 3.6a). Layout mirrors the profile B1 declaration: transposed
+// [rows, anchors] (row*anchors+anchor) vs row-major [anchors, rows]
+// (anchor*rows+row). Counting happens pre-NMS by design: resident results do
+// not decode instances (contract 3.6a), so detected_count is the filtered
+// candidate count, identical in predicate to the host decode's first stage.
+//
+.version 8.7
+.target sm_120
+.address_size 64
+
+.visible .entry filter_count(
+	.param .u64 head_ptr,
+	.param .u64 counter_ptr,
+	.param .u32 anchors,
+	.param .u32 rows,
+	.param .u32 classes,
+	.param .u32 transposed,
+	.param .u32 class_sel,
+	.param .f32 min_conf
+)
+{
+	.reg .pred p, q;
+	// %r1=anchors %r2=rows %r3=classes %r4=transposed %r5=class_sel
+	// %r9=global thread id (=anchor) %r10=c loop %r11=row %r12/%r13/%r14=idx
+	// %r15=bestc %r16=atom discard
+	.reg .b32 %r<20>;
+	// %f1=min_conf %f2=best %f3=score
+	.reg .f32 %f<4>;
+	.reg .b64 %rd<4>;
+
+	ld.param.u64 %rd1, [head_ptr];
+	ld.param.u64 %rd2, [counter_ptr];
+	ld.param.u32 %r1, [anchors];
+	ld.param.u32 %r2, [rows];
+	ld.param.u32 %r3, [classes];
+	ld.param.u32 %r4, [transposed];
+	ld.param.u32 %r5, [class_sel];
+	ld.param.f32 %f1, [min_conf];
+
+	mov.u32 %r9, %ctaid.x;
+	mov.u32 %r6, %ntid.x;
+	mov.u32 %r7, %tid.x;
+	mad.lo.u32 %r9, %r9, %r6, %r7;
+
+	setp.ge.u32 p, %r9, %r1;
+	@p bra DONE;
+
+	// argmax over class rows; best starts at +0.0f and only strict-greater
+	// scores replace (tie keeps the lower class id, host decoder parity).
+	mov.f32 %f2, 0f00000000;
+	mov.b32 %r15, 0;
+	mov.b32 %r10, 0;
+
+LOOP:
+	setp.ge.u32 p, %r10, %r3;
+	@p bra CHECK;
+
+	add.u32 %r11, %r10, 4;
+	mad.lo.u32 %r12, %r11, %r1, %r9;
+	mad.lo.u32 %r13, %r9, %r2, %r11;
+	setp.eq.u32 p, %r4, 1;
+	selp.b32 %r14, %r12, %r13, p;
+	mad.wide.u32 %rd3, %r14, 4, %rd1;
+	ld.global.f32 %f3, [%rd3];
+	setp.gt.f32 p, %f3, %f2;
+	selp.f32 %f2, %f3, %f2, p;
+	selp.b32 %r15, %r10, %r15, p;
+	add.u32 %r10, %r10, 1;
+	bra LOOP;
+
+CHECK:
+	// strict greater-than keeps parity with the decoder's `best <= conf skip`.
+	setp.gt.f32 p, %f2, %f1;
+	@!p bra DONE;
+	setp.eq.u32 q, %r5, 0xffffffff;
+	@q bra INC;
+	setp.eq.u32 p, %r15, %r5;
+	@!p bra DONE;
+INC:
+	atom.global.add.u32 %r16, [%rd2], 1;
+DONE:
+	exit;
+}

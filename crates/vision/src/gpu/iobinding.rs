@@ -20,6 +20,9 @@ pub struct InferenceInput {
     /// 词汇注入张量（批 B）：CPU 内存 OrtValue，保活到 run_binding 完成
     ///（binding 的 held_inputs 亦 AddRef，双保险）。
     vocab: Option<DynTensor>,
+    /// 输出绑定形态（ABI 1.9 §3.6a，构造时定形）：true=输出绑 CUDA 设备
+    /// （驻留形态，执行段只读不重绑）。
+    resident_outputs: bool,
     _output_info: MemoryInfo<'static>,
     _allocator: Allocator,
 }
@@ -38,8 +41,9 @@ pub(super) fn vocab_copy_len(tensor: &crate::sdk::TensorData) -> Result<usize, E
 }
 
 impl InferenceInput {
-    /// 在 session 的 CUDA device 上分配 [1, 3, h, w] f32 输入张量并绑定。
-    /// device 为目标 CUDA 设备 ordinal（F03：随会话定向；此前恒 0）。
+    /// 在 session 的 CUDA device 上分配 [1, 3, h, w] f32 输入张量并绑定
+    /// （输出绑 CPU，全量回读现状）。device 为目标 CUDA 设备 ordinal
+    ///（F03：随会话定向；此前恒 0）。
     pub fn new(
         session: &Session,
         input_name: &str,
@@ -47,12 +51,16 @@ impl InferenceInput {
         w: usize,
         device: u32,
     ) -> Result<Self, Error> {
-        Self::new_batch(session, input_name, 1, h, w, device)
+        Self::new_batch(session, input_name, 1, h, w, device, false)
     }
 
     /// 批 C 图像攒批：分配 [batch, 3, h, w] f32 设备张量并绑定（batch=1 与
     /// `new` 等价；批量轴为首位，逐帧预处理输出按 batch 维组装进此张量）。
     /// device 为目标 CUDA 设备 ordinal（与管线/会话 EP 同设备，F03）。
+    /// `resident`（ABI 1.9 §3.6a）：输出绑定目标——false=CPU（全量回读现状，
+    /// 提取路径与 CPU 推理一致）；true=CUDA device（驻留形态：输出留设备侧
+    /// 由 run_gpu_resident 取引用计数句柄，执行段不重绑——绑定一次成型，
+    /// 避免 clear/重绑对 IoBinding 内部状态的扰动）。
     pub fn new_batch(
         session: &Session,
         input_name: &str,
@@ -60,6 +68,7 @@ impl InferenceInput {
         h: usize,
         w: usize,
         device: u32,
+        resident: bool,
     ) -> Result<Self, Error> {
         if batch == 0 || batch > 64 {
             return Err(Error("vision.dynamicRangeExceeded".into()));
@@ -71,7 +80,7 @@ impl InferenceInput {
             MemoryType::Default,
         )
         .map_err(|e| Error(format!("CUDA MemoryInfo 构造失败|{e}")))?;
-        let allocator = Allocator::new(session, memory)
+        let allocator = Allocator::new(session, memory.clone())
             .map_err(|e| Error(format!("CUDA allocator 获取失败|{e}")))?;
         let tensor = Tensor::<f32>::new(&allocator, [batch, 3, h, w])
             .map_err(|e| Error(format!("CUDA 输入张量分配失败|{e}")))?;
@@ -81,19 +90,25 @@ impl InferenceInput {
         binding
             .bind_input(input_name, &tensor)
             .map_err(|e| Error(format!("GPU 输入绑定失败|{e}")))?;
-        // run_binding 要求至少一个输出绑定（ORT："At least one output should be
-        // requested"）；输出绑定到 CPU（提取路径与 CPU 推理一致）。
-        let cpu = MemoryInfo::default();
+        // run_binding 要求至少一个输出绑定（ORT："At least one output should
+        // be requested"）。驻留形态绑同设备 CUDA（MemoryInfo 与输入同源构
+        // 造，保活纪律同下——字段保活至 binding 析构）。
+        let output_info = if resident {
+            memory
+        } else {
+            MemoryInfo::default()
+        };
         for output in session.outputs() {
             binding
-                .bind_output_to_device(output.name(), &cpu)
+                .bind_output_to_device(output.name(), &output_info)
                 .map_err(|e| Error(format!("GPU 输出绑定失败|{e}")))?;
         }
         Ok(Self {
             binding,
             tensor,
             vocab: None,
-            _output_info: cpu,
+            resident_outputs: resident,
+            _output_info: output_info,
             _allocator: allocator,
         })
     }
@@ -132,6 +147,11 @@ impl InferenceInput {
     /// device 数据指针（预处理 kernel 直接写入；借用期内不得释放）。
     pub fn device_ptr(&self) -> u64 {
         self.tensor.data_ptr() as u64
+    }
+
+    /// 输出绑定是否为设备驻留形态（capture 段构造定形；执行段只读）。
+    pub fn outputs_resident(&self) -> bool {
+        self.resident_outputs
     }
 
     /// 绑定输入张量的批量轴长度（批 C：输出首轴对照与逐帧组装偏移计算用）。

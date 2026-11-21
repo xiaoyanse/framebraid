@@ -81,7 +81,9 @@ pub unsafe fn params(p: *const am_infer_params_t) -> Result<am_infer_params_t> {
             ..Default::default()
         }
     } else {
-        unsafe { args::read(p, size_of::<am_infer_params_t>()) }?
+        // ABI 1.8 ended before the resident-output and filter fields.
+        let previous = std::mem::offset_of!(am_infer_params_t, device_resident_outputs);
+        unsafe { args::read_versioned(p, previous) }?
     };
     if !value.confidence_threshold.is_finite()
         || !(0.0..=1.0).contains(&value.confidence_threshold)
@@ -397,7 +399,12 @@ impl Plan {
                 // F02：classify 档案（profile 前处理 resize==2）走 center crop，
                 // 与 CPU prepare.rs 语义对齐；detect 档案保持 letterbox。
                 let center_crop = self.preprocess.resize == 2;
-                capture_gpu(model, reference, center_crop)?
+                capture_gpu(
+                    model,
+                    reference,
+                    center_crop,
+                    self.params.device_resident_outputs != 0,
+                )?
             }),
             _ => None,
         };
@@ -450,6 +457,7 @@ unsafe fn capture_gpu(
     model: &ModelHandle,
     gpu_ref: am_gpu_frame_ref_t,
     center_crop: bool,
+    resident: bool,
 ) -> Result<GpuFrame> {
     use am_vision_core::gpu::pipeline::{GpuFrameData, GpuPipeline};
     let guard = lock(&model.session)?;
@@ -479,11 +487,22 @@ unsafe fn capture_gpu(
                 input_w,
                 input_h,
                 center_crop,
+                resident,
             )
             .map_err(error)?;
         return Ok(GpuFrame::Cuda { binding, transform });
     }
     if session.is_openvino_gpu() {
+        // 设备驻留输出（§3.6a ABI 1.9）：OV remote 臂为纯回读环（无设备
+        // 输出绑定路径），驻留请求显式 notSupported 不静默降级——合同
+        // "OV 驻留对等性登记为族 3 范围外后续批"。
+        if resident {
+            return Err(not_supported_with_detail(
+                model,
+                session,
+                "设备驻留输出当前仅 CUDA 会话支持（OV remote 臂纯回读环，族 3 范围外后续批）",
+            ));
+        }
         if !session.ov_remote_available_static() {
             return Err(not_supported_with_detail(
                 model,

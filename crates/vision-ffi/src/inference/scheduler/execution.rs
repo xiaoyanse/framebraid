@@ -1,4 +1,4 @@
-use super::super::results::CascadeData;
+use super::super::results::{CascadeData, ResidentPayload};
 use super::*;
 use am_vision_core::profiles::{self, ImageMapping, Options, TensorView};
 use am_vision_core::sdk::{self, cascade, pixels::Pixels};
@@ -272,6 +272,12 @@ fn run_gpu(
         left: transform.left,
         top: transform.top,
     };
+    // 设备驻留形态分派（§3.6a ABI 1.9）：device_resident_outputs=1 时输出
+    // 重绑 CUDA 后免回读交付（OV 臂已在 capture 段显式拒绝；非 GPU 帧/张量/
+    // 级联入口在 submit 段拒绝）。
+    if params.device_resident_outputs != 0 {
+        return run_gpu_resident(model, session, frame, id, params, assoc, &limits, &mapping);
+    }
     let queue_bytes = lock(&context.queues)?[AM_Q_RESULTS as usize].max_bytes;
     let available = limits
         .result_budget_bytes
@@ -327,6 +333,12 @@ fn run_gpu(
         raw_bytes,
         vocab_layout,
     )?;
+    let mut prediction = prediction;
+    // device_filter 交付过滤（§3.6a 非驻留语义：对解码去重后的实例应用同谓词；
+    // 驻留形态的候选计数另见 device_filter_count——两形态计数不可互换比较）。
+    if params.device_filter.enabled != 0 {
+        apply_host_filter(&mut prediction, params.device_filter);
+    }
     let end = am_sdk_support::clock::monotonic_ms();
     ResultBuffer::build(
         model,
@@ -340,6 +352,163 @@ fn run_gpu(
         end,
         charge,
     )
+}
+
+/// 驻留形态执行（§3.6a ABI 1.9）：设备显存独立账本进账（预算按"=0 未
+/// 设置→默认 64MiB"归一，超限 sdk.resourceExhausted 与结果包络超限同式）
+/// → host 结构账小额预留（驻留数据字节不落 host 结果账）→ run_gpu_resident
+/// （输出重绑 CUDA+引用计数句柄移出，零回读）→ device_filter 启用时 GPU
+/// 侧阈值计数（内部只回读 4 字节计数张量）→ 驻留 ResultBuffer 组装（五类
+/// 不解码，count 仅交付元数据）。
+fn run_gpu_resident(
+    model: &ModelHandle,
+    session: &mut am_vision_core::sdk::Model,
+    frame: &mut super::super::input::GpuFrame,
+    id: u64,
+    params: am_infer_params_t,
+    assoc: Option<am_frame_assoc_t>,
+    limits: &am_limits_t,
+    mapping: &am_vision_core::sdk::ImageTransform,
+) -> Result<Arc<ResultBuffer>> {
+    let binding = match frame {
+        super::super::input::GpuFrame::Cuda { binding, .. } => binding,
+        // OV 臂已在 capture 段显式拒绝；此处防御性兜底同码（不静默降级）。
+        super::super::input::GpuFrame::Ov { .. } => return Err(AM_ERR_SDK_NOT_SUPPORTED),
+    };
+    let budget = match limits.device_resident_budget_bytes {
+        0 => 67_108_864, // =0 未设置→默认 64MiB（am_limits 默认同值，§3.6a）
+        value => value as usize,
+    };
+    let ctx_entry = model.state.context()?;
+    let context = ctx_entry.data::<Context>()?;
+    let queue_bytes = lock(&context.queues)?[AM_Q_RESULTS as usize].max_bytes;
+    let available = limits
+        .result_budget_bytes
+        .min(queue_bytes)
+        .saturating_sub(model.state.usage.bytes.load(Ordering::Acquire) as u64)
+        as usize;
+    if available < 4096 {
+        return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+    }
+    let charge = model.state.charge((512 * 1024).min(available))?;
+    let start = am_sdk_support::clock::monotonic_ms();
+    let tensors = session.run_gpu_resident(binding).map_err(error)?;
+    // 设备驻留字节按运行期实际张量进账（输出声明可含动态维，预估不可靠——
+    // 与 host 路径 extract_outputs"执行期逐张量扣费、超额拒绝"同式：进账
+    // 失败即整笔拒绝，产出的设备张量随 Drop 释放；CAS 保证账本不超限）。
+    let resident_bytes = tensors
+        .iter()
+        .map(|t| t.byte_len().map_err(error))
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        .fold(0usize, |n, b| n.saturating_add(b));
+    if resident_bytes == 0 {
+        return Err(AM_ERR_VISION_IO_UNSUPPORTED);
+    }
+    // 进账先行：失败路径 device_charge Drop 自动出账（早期 return 同理）。
+    let device_charge =
+        super::super::state::charge_device_resident(&model.state.usage, resident_bytes, budget)?;
+    // device_filter 计数（§3.6a：档案适用性已在 submit 段拒绝非 detect 头；
+    // 零目标帧只发生 4 字节计数张量回读，输出本体零回读）。
+    let detected_count = if params.device_filter.enabled != 0 {
+        let mut filter = params.device_filter;
+        if filter.min_confidence == 0.0 {
+            filter.min_confidence = params.confidence_threshold;
+        }
+        device_filter_count(session, &tensors, filter)?
+    } else {
+        0
+    };
+    let end = am_sdk_support::clock::monotonic_ms();
+    let task = resident_task_code(session);
+    ResultBuffer::build_resident(
+        model,
+        id,
+        assoc,
+        Some(*mapping),
+        ResidentPayload {
+            tensors,
+            detected_count,
+            task,
+            charge: device_charge,
+        },
+        start,
+        end,
+        charge,
+    )
+}
+
+/// 驻留结果的档案任务码（五类出口不解码，task 仍按档案任务回填供调用方
+/// 分型；RAW/无档案=GENERIC）。
+fn resident_task_code(session: &am_vision_core::sdk::Model) -> u32 {
+    session
+        .profile
+        .map_or(AM_TASK_GENERIC as u32, |p| match p.task {
+            profiles::Task::Pose => AM_TASK_POSE as u32,
+            profiles::Task::Detect => AM_TASK_DETECT as u32,
+            profiles::Task::Classify => AM_TASK_CLASSIFY as u32,
+            profiles::Task::Segment => AM_TASK_SEGMENT as u32,
+            profiles::Task::Obb => AM_TASK_OBB as u32,
+            _ => AM_TASK_GENERIC as u32,
+        })
+}
+
+/// GPU 侧筛选计数（§3.6a device_filter 驻留形态）：检测头张量按档案 B1
+/// 布局声明做阈值过滤计数——kernel 谓词与宿主解码器首段逐字对齐（严格
+/// 大于 argmax + `best <= conf 跳过`），计数为 NMS 前候选数（驻留不解码，
+/// 合同 §3.6a 筛选候选计数——仅观测，非最终检出，空帧门控另需合同前提）。
+fn device_filter_count(
+    session: &am_vision_core::sdk::Model,
+    tensors: &[am_vision_core::sdk::DeviceTensor],
+    filter: am_device_filter_t,
+) -> Result<u32> {
+    let profile = session.profile.ok_or(AM_ERR_SDK_INVALID_ARGUMENT)?;
+    let classes = profile.classes.ok_or(AM_ERR_SDK_INVALID_ARGUMENT)? as u32;
+    let head = tensors.first().ok_or(AM_ERR_VISION_IO_UNSUPPORTED)?;
+    if head.info.dtype != 0 {
+        return Err(AM_ERR_VISION_IO_UNSUPPORTED);
+    }
+    let shape = &head.info.shape;
+    let rows = 4 + classes;
+    let (anchors, transposed) = match profile.postprocess.layout {
+        profiles::Layout::Transposed => (shape.last().copied().unwrap_or(0) as u32, true),
+        profiles::Layout::RowMajor => (
+            shape.get(shape.len().wrapping_sub(2)).copied().unwrap_or(0) as u32,
+            false,
+        ),
+    };
+    let elements = (head.byte_len().map_err(error)? / 4) as u32;
+    if anchors == 0 || rows.checked_mul(anchors) != Some(elements) {
+        return Err(AM_ERR_VISION_OUTPUT_SHAPE_MISMATCH);
+    }
+    am_vision_core::gpu::filter::count_head(
+        head.device_ptr().map_err(error)?,
+        anchors,
+        rows,
+        classes,
+        transposed,
+        filter.class_id,
+        filter.min_confidence,
+        session.cuda_ordinal,
+    )
+    .map_err(error)
+}
+
+/// device_filter 非驻留交付过滤（§3.6a"回读交付时应用"）：对解码后 detect
+/// 实例做同式过滤（class 命中 + conf 严格大于，谓词与 GPU kernel 一致）。
+/// 计数口径注记：非驻留为 NMS 后实例数，驻留为 NMS 前候选数——驻留不执行
+/// 实例级解码（合同结构性差异，INTEGRATION 说明随 U3-C 文档批）。
+pub(super) fn apply_host_filter(
+    prediction: &mut Option<profiles::Prediction>,
+    filter: am_device_filter_t,
+) {
+    if let Some(p) = prediction.as_mut() {
+        if let profiles::Output::Detect(ref mut list) = p.output {
+            let class = filter.class_id;
+            let min = filter.min_confidence;
+            list.retain(|d| (class < 0 || d.class_id == class as u32) && d.confidence > min);
+        }
+    }
 }
 
 /// OV remote 执行段失败的诊断详情（绑定/推理/回读错误的 |detail 尾巴）。
@@ -585,7 +754,7 @@ fn run(
     let output = session.run_ref(&infer_inputs, reserve);
     model.refresh_selection(session);
     let raw = output.map_err(error)?;
-    let prediction = decode_profile(
+    let mut prediction = decode_profile(
         session,
         &raw,
         &m,
@@ -595,6 +764,10 @@ fn run(
         raw_bytes,
         vocab_layout,
     )?;
+    // device_filter 交付过滤（§3.6a 非驻留语义：对解码去重后的实例应用同谓词）。
+    if params.device_filter.enabled != 0 {
+        apply_host_filter(&mut prediction, params.device_filter);
+    }
     let end = am_sdk_support::clock::monotonic_ms();
     ResultBuffer::build(
         model,

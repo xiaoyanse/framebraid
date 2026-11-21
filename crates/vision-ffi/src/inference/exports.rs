@@ -12,6 +12,7 @@ use am_vision_core::sdk::ModelSource;
 use std::{
     mem::size_of,
     path::Path,
+    sync::Arc,
     time::{Duration, Instant},
 };
 
@@ -426,6 +427,58 @@ pub unsafe extern "C" fn amv_result_release(result: *mut amv_result_t) -> i32 {
             .downcast_ref::<ResultBuffer>()
             .ok_or(AM_ERR_SDK_HANDLE_INVALID)?
             .change_reference(false)
+    })
+}
+/// 设备驻留单输出张量读出（ABI 1.9 §3.6a）：把第 output_index 个驻留
+/// raw_outputs 张量同步拷贝到调用方缓冲。两段式容量（不足时 *out_size 填
+/// 所需并返回 sdk.limitOutOfRange，与 amc_frame_encode 同款）；非驻留
+/// result/下标越界=sdk.invalidArgument；已 release 的残留指针经 buffer
+/// registry 拒 sdk.handleInvalid（token 随 release 失效的机制载体）；跨 ctx
+/// 的 result 指针拒绝（会话校验同既有导出族）；驻留生命周期内可多次
+/// readout（不同/重复下标均可），readout 不改变驻留状态——释放设备侧
+/// 唯一途径是 amv_result_release。out 缓冲调用方所有（借用至返回，不入
+/// 任何 SDK 账本）。
+#[no_mangle]
+pub unsafe extern "C" fn amv_result_device_readout(
+    ctx: *mut amv_context_t,
+    result: *const amv_result_t,
+    output_index: u32,
+    out: *mut u8,
+    capacity: u64,
+    out_size: *mut u64,
+) -> i32 {
+    status(crate::domain(), ctx as usize, || unsafe {
+        args::pointer(out_size)?;
+        out_size.write(0);
+        args::pointer(result)?;
+        // ctx 存活校验（State::get 内含 readable 检查，同 result_fetch 族）。
+        let state = State::get(ctx as usize)?;
+        let body = crate::domain().buffers.get(result as usize)?;
+        let buffer = body
+            .as_any()
+            .downcast_ref::<ResultBuffer>()
+            .ok_or(AM_ERR_SDK_HANDLE_INVALID)?;
+        if !match (buffer.owner_entry(), state.ctx.upgrade()) {
+            (Some(owner), Some(current)) => Arc::ptr_eq(&owner, &current),
+            _ => false,
+        } {
+            return Err(AM_ERR_SDK_HANDLE_INVALID);
+        }
+        if buffer.value.device_resident == 0 || buffer.value.device_outputs_token == 0 {
+            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+        }
+        // 容量协议先行（元数据驱动，无设备访问）：所需值回填后再判定容量。
+        let needed = buffer.device_readout_len(output_index as usize)? as u64;
+        out_size.write(needed);
+        if capacity < needed {
+            return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+        }
+        if needed > 0 {
+            args::pointer(out)?;
+            let slice = std::slice::from_raw_parts_mut(out, needed as usize);
+            buffer.device_readout(output_index as usize, slice)?;
+        }
+        Ok(())
     })
 }
 #[no_mangle]

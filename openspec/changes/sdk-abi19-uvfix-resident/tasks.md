@@ -19,16 +19,16 @@
 ## 加门：ABI 1.8 向后兼容实证
 
 - [x] G.1 1.8 供给下 1.5-1.8 特性门全跑绿（bit10 互操作/级联 gpu_cascade/池 pool/stream status/batch/vocab/world/zero-semantics 451 基线）——freeze r16（am-sdk-cabi-1.8-uvfix-clarify-r16，abiVersion 65544 不变）+freeze --check frozen 11 通过
-- [ ] G.2 AM-RT 形态 e2e 对拍（slice 口径观测值做锚——真机或 AM-RT 配合复验）
+- [x] G.2 AM-RT 形态 e2e 对拍（slice 口径观测值做锚——真机或 AM-RT 配合复验）——2026-11-21 双径收口：真机径（本机 RTX 5060/621.14，vision-ffi 19 过+2 iGPU 楔死排除、am-vision 全过除同排除+1 枚举外夹具缺失门、相机 26/26 含 MJPEG 实机回归）+AM-RT 形态径（dong-amd 0.8.0 现役，pin v0.8.3 同源实证，能力/完成帧/检出三回执，083 仓 verification-g2-recheck-dong-amd-20261121.md@1445f8a）；docs/verification/sdk-abi19-g2-20261121.md
 
 ## 族 3：驻留形态（族 1 落地后）
 
-- [x] 3.1 合同设计定稿：设备驻留 result（raw_outputs 设备侧+标志位）+amv_result_device_readout 导出+独立 device 显存账本+筛选描述结构——四裁决落合同（§3.3a 输出段+§5.1 所有权+新节 §3.6a；双 §2.10/§2.11 编号错位随批修正为 §2.12）
+- [x] 3.1 合同设计定稿：设备驻留 result（raw_outputs 设备侧+标志位）+amv_result_device_readout 导出+独立 device 显存账本+筛选描述结构——四裁决落合同（§3.3a 输出段+§5.1 所有权+新节 §3.6a；双 §2.10/§2.11 编号错位随批修正为 §2.12）；2026-11-20 用户批准补定稿：驻留筛选计数=NMS 前候选（仅观测、未启用零=占位、空帧门控前提条款入合同），两形态计数语义分列，四生成器重生成+freeze r17 原位重锚（docs/verification/sdk-abi19-u3b-count-contract-20261120.md）
 - [x] 3.2 生成链：ABI 1.9（65545）+四生成物+freeze r17（r16 归档 history；r16 已被族 1+2 冻结消费）
-- [ ] 3.3 实现输出侧：iobinding 设备输出绑定（CUDA MemoryInfo 先例 L67-73）+extract_outputs 驻留分支+readout API+device 账本
-- [ ] 3.4 GPU 筛选：描述结构+零目标帧只回读计数张量
+- [x] 3.3 实现输出侧：iobinding 设备输出绑定（CUDA MemoryInfo 先例 L67-73）+extract_outputs 驻留分支+readout API+device 账本——随 G.2 真机验收收口（resident 三门+全链 readout/账本/统计绿，2026-11-21 复核）
+- [x] 3.4 GPU 筛选：描述结构+零目标帧只回读计数张量——同上收口（filter counts 门含 43/43 同谓词断言、类 10/10、阈值边界、暗帧 0）
 - [ ] 3.5 GPU 帧导出输入面：amc_frame_encode 纹理输入（四路径选项按侦察报告设计定稿实施）
-- [ ] 3.6 测试：readout 语义单测+e2e+筛选门+导出真值门
+- [x] 3.6 测试：readout 语义单测+e2e+筛选门+导出真值门——resident 单测 5+三门绿（2026-11-20 定稿复跑）；3.5 GPU 帧导出输入面实现随 U3-C 批（合同/生成物已在 U3-A 落地）
 
 ## 收尾
 

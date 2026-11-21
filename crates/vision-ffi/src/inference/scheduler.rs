@@ -267,9 +267,49 @@ enum Payload {
 }
 // params中raw_preprocess不跨线程使用，接受前已复制进Input；其余字段是纯值。
 unsafe impl Send for Job {}
+/// device_filter 参数与档案适用性校验（§3.6a）：值域（conf∈[0,1] 有限、
+/// class_id>=-1）+ 档案必须为 detect 检测头（有 classes 声明——亲和头
+/// vocab/e2e pose/classify/segment/obb/RAW 的筛选语义不适用，显式拒绝不
+/// 猜测）。级联入口的两阶段筛选语义未定义，同拒。
+fn validate_device_filter(entry: &Arc<Entry>, plan: &Plan) -> Result<()> {
+    let filter = plan.params().device_filter;
+    if !filter.min_confidence.is_finite()
+        || !(0.0..=1.0).contains(&filter.min_confidence)
+        || filter.class_id < -1
+    {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    if matches!(plan, Plan::Cascade(..)) {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    let model = entry.data::<ModelHandle>()?;
+    let guard = lock(&model.session)?;
+    let session = guard.as_ref().ok_or(AM_ERR_SDK_HANDLE_CLOSED)?;
+    match session.profile {
+        Some(profile)
+            if profile.task == am_vision_core::profiles::Task::Detect
+                && profile.classes.is_some() =>
+        {
+            Ok(())
+        }
+        _ => Err(AM_ERR_SDK_INVALID_ARGUMENT),
+    }
+}
+
 pub unsafe fn submit(entry: Arc<Entry>, plan: Plan) -> Result<u64> {
-    // 级联（C1）不进自适应攒批窗口：ROI 逐项执行与原生组批语义不兼容。
-    let auto = !matches!(plan, Plan::Cascade(..));
+    // ABI 1.9 驻留/筛选参数静态校验（§3.6a：不支持路径显式拒绝，不静默
+    // 降级——驻留仅 GPU 帧直传 CUDA 臂；筛选仅 detect 检测头档案）。
+    let resident = plan.params().device_resident_outputs != 0;
+    if resident && !matches!(&plan, Plan::Image(p) if p.gpu.is_some()) {
+        return Err(AM_ERR_SDK_NOT_SUPPORTED);
+    }
+    if plan.params().device_filter.enabled != 0 {
+        validate_device_filter(&entry, &plan)?;
+    }
+    // 级联（C1）不进自适应攒批窗口：ROI 逐项执行与原生组批语义不兼容；
+    // 驻留请求不进攒批（原生批输出拆分与逐帧驻留生命周期语义不同——
+    // 走单帧 GPU 直传路径，执行形态不变）。
+    let auto = !matches!(plan, Plan::Cascade(..)) && !resident;
     let result = unsafe { admission::submit(entry.clone(), &[&plan], false, false, auto, None) };
     if result
         .as_ref()
@@ -291,6 +331,16 @@ pub(super) unsafe fn submit_offline(
     auto: bool,
     deadline: Option<std::time::Instant>,
 ) -> Result<Vec<u64>> {
+    // ABI 1.9：驻留请求不进显式批路径（原生批输出拆分与逐帧驻留生命周期
+    // 语义不同，显式拒绝不降级）；device_filter 逐项校验同单帧入口。
+    for plan in plans {
+        if plan.params().device_resident_outputs != 0 {
+            return Err(AM_ERR_SDK_NOT_SUPPORTED);
+        }
+        if plan.params().device_filter.enabled != 0 {
+            validate_device_filter(&entry, plan)?;
+        }
+    }
     unsafe { admission::submit(entry, plans, native, true, native && auto, deadline) }
 }
 pub(super) fn reserve_metadata(state: &State, bytes: usize) -> Result<Admission> {

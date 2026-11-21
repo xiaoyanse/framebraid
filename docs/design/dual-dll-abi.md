@@ -1040,7 +1040,7 @@ typedef struct amv_result_s {
 
 推理输出默认全量回读（输出绑定 CPU，§3.6 现状语义）；多路直传热路径的每帧输出回读为下一档吞吐瓶颈。ABI 1.9 新增**设备驻留形态**：raw_outputs 张量留推理设备显存，调用方按需 readout——`am_infer_params_t` 尾部追加 `device_resident_outputs`（参数 opt-in；0=默认=全量回读现状，旧调用方零感知；1=请求驻留，运行库不支持时显式 `notSupported` 不静默降级），不新增推理导出，异步/攒批路径同参数语义。
 
-**驻留结果标志**：驻留提交产出的 result 携带尾部字段 `device_resident=1`——`raw_outputs` 各项 `data` 指针为 NULL，dtype/shape/data_size 元数据仍有效（调用方可判形状决定 readout 时机）；`device_outputs_token` 为 readout 消费的不透明令牌（非驻留结果恒 0）。五类结构化出口在驻留形态不执行实例级解码（实例解码需 host 浮点，执行即重引入整帧回读，与本形态目的相悖）：五类 count 仅作交付元数据——启用 device_filter 时对应出口 count 回填筛选后检出数（detected_count 语义，零目标帧无需任何 readout），未启用时为 0；实例数组指针为 NULL。RAW/Generic 档案唯一出口即 raw_outputs（§3.6），驻留收益最纯；PROFILE 消费方需要结构化实例结果时不置此参数（默认 0 路径行为完全不变，存量零迁移）。
+**驻留结果标志**：驻留提交产出的 result 携带尾部字段 `device_resident=1`——`raw_outputs` 各项 `data` 指针为 NULL，dtype/shape/data_size 元数据仍有效（调用方可判形状决定 readout 时机）；`device_outputs_token` 为 readout 消费的不透明令牌（非驻留结果恒 0）。五类结构化出口在驻留形态不执行实例级解码（实例解码需 host 浮点，执行即重引入整帧回读，与本形态目的相悖）：count 仅作**观测元数据**、不交付实例（实例数组指针为 NULL）——启用受支持的 detect 头筛选（下节）时 count 回填筛选谓词命中的**候选数**（argmax 类别+严格阈值命中，几何剔除与 NMS **前**的计数），正值不是最终检出/告警/跟踪/业务统计口径；未启用筛选时恒为 0（占位值，非空帧证据）；启用筛选时的 0 同样只是候选为零的观测——空帧门控前提见下节，未经该证明不得作跳帧或业务判据。RAW/Generic 档案唯一出口即 raw_outputs（§3.6），驻留收益最纯；PROFILE 消费方需要结构化实例结果时不置此参数（默认 0 路径行为完全不变，存量零迁移）。
 
 **readout 导出**：
 
@@ -1059,7 +1059,7 @@ AM_API am_status_t amv_result_device_readout(amv_context_t* ctx, const amv_resul
 
 **独立 device 显存账本（对齐相机 GPU 帧池独立显存账先例，§2.6a）**：驻留字节不进 §6 结果保留 64MiB host 账——显存与系统内存物理域不同源，混记要么过约束 GPU 驻留、要么让 device 占用挤占 host 结果预算；执行器在途包络（host/device 混记）是内部执行账，与已交付驻留结果的合同账本分列，互不替代。合同账面：`am_limits_t` 尾部追加 `device_resident_budget_bytes`（默认 64MiB 同值但独立账，保守起步；经 `amv_set_limits` 只可调低，=0 未设置语义同本结构惯例），超限的新驻留提交返回 `sdk.resourceExhausted`（与结果包络超限同式）；`am_stats_t` 尾部追加 `device_resident_bytes`/`device_resident_peak_bytes` 观测。预算算术注记：8 路 pose（单帧 68,400B）TTL 满载形态（8×2fps×60s）≈65.7MB 顶穿 64MiB 默认账——稳态占用取决于 fetch/ack 节奏而非 TTL 满载，满载形态需 ack 节奏配合（接入指导值随实现批进 sdk/INTEGRATION.md；现行 output_budget 利用率分母口径与消费方对齐亦随实现批落地）。
 
-**GPU 侧交付筛选（声明式，无回调）**：`am_infer_params_t` 尾部追加 `device_filter`（`am_device_filter_t` 值嵌：enabled/class_id/min_confidence，附录 §3.3）。语义两形态一致、筛选只影响交付物形态不影响推理本身：驻留形态下零目标帧 SDK 内部只回读计数张量（结果携带筛选后检出数元数据，零 readout 需求）；非驻留形态下同参数在回读交付时应用（宿主侧筛选同式复用，减少拷贝交付字节）。逐元素宿主回调形态被否决——逐元素跨 FFI 即失去免回读意义。
+**GPU 侧交付筛选（声明式，无回调）**：`am_infer_params_t` 尾部追加 `device_filter`（`am_device_filter_t` 值嵌：enabled/class_id/min_confidence，附录 §3.3）。筛选只影响交付物形态、不影响推理本身；两形态共用同一参数与同一谓词（argmax 类别+严格 `>`），但**计数语义结构性不同（2026-11-20 定稿）**：驻留形态不执行实例解码，SDK 内部只回读 4 字节计数张量，count=筛选命中的 **NMS 前候选数**（仅观测，如上节）；非驻留形态对回读后正常解码、去重（NMS 后）的最终实例应用同谓词过滤并交付过滤后实例列表，count=**过滤后实例数**。两形态计数不可互换比较。逐元素宿主回调形态被否决——逐元素跨 FFI 即失去免回读意义。**空帧门控前提**：仅当同一张量、受支持档案/布局、相同类别规则、有效阈值（含 argmax 平局与严格比较口径、有限合法输出）下证明最终实例集合包含于筛选候选集合、并经独立对拍验证零漏判后，筛选零值方可在该条件下作空帧判据；证据不足时一律仅观测，且非驻留路径可因无效分数/坐标报错——计数为零不能替代健康判断。
 
 **能力位：不设新位**。驻留是参数 opt-in 而非环境能力：调用方按 ABI 版本（≥1.9）+ 接受时显式拒绝（notSupported，运行库不支持如 CUDA 不可用）判可用；GPU_CASCADE"位=互操作入口可用"先例不适用（本形态无新互操作入口）。OV remote 臂无设备输出绑定路径（纯回读环），驻留请求在 OV 会话显式 notSupported 不静默降级——OV 驻留对等性登记为族 3 范围外后续批。
 

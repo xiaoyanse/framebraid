@@ -330,7 +330,7 @@ fn run_profile_cpu(
         let mapping = mappings[slot];
         let reserve = row_bytes + mask_of(segment, &mapping, max_det) + overhead;
         let raw_bytes = tensors_bytes(&raw);
-        let prediction = execution::decode_profile(
+        let mut prediction = execution::decode_profile(
             session,
             &raw,
             &mapping,
@@ -340,6 +340,10 @@ fn run_profile_cpu(
             raw_bytes,
             vocab_layout,
         )?;
+        // device_filter 交付过滤（§3.6a 逐项 params 生效，与单帧路径同谓词）。
+        if p.device_filter.enabled != 0 {
+            execution::apply_host_filter(&mut prediction, p.device_filter);
+        }
         let end = am_sdk_support::clock::monotonic_ms();
         results.push((
             *index,
@@ -455,7 +459,7 @@ fn run_profile_gpu(
         let mapping = mappings[slot];
         let reserve = row_bytes + mask_of(segment, &mapping, max_det) + overhead;
         let raw_bytes = tensors_bytes(&row);
-        let prediction = execution::decode_profile(
+        let mut prediction = execution::decode_profile(
             session,
             &row,
             &mapping,
@@ -465,6 +469,10 @@ fn run_profile_gpu(
             raw_bytes,
             vocab_layout,
         )?;
+        // device_filter 交付过滤（§3.6a 逐项 params 生效，与单帧路径同谓词）。
+        if p.device_filter.enabled != 0 {
+            execution::apply_host_filter(&mut prediction, p.device_filter);
+        }
         let end = am_sdk_support::clock::monotonic_ms();
         results.push((
             *index,
@@ -540,9 +548,13 @@ fn run_profile_ov_remote(
             .map_err(error)?;
         model.refresh_selection(session);
         let raw_bytes = tensors_bytes(&raw);
-        let prediction = execution::decode_profile(
+        let mut prediction = execution::decode_profile(
             session, &raw, &mapping, p, max_det, reserve, raw_bytes, None,
         )?;
+        // device_filter 交付过滤（§3.6a 逐项 params 生效，与单帧路径同谓词）。
+        if p.device_filter.enabled != 0 {
+            execution::apply_host_filter(&mut prediction, p.device_filter);
+        }
         let end = am_sdk_support::clock::monotonic_ms();
         results.push((
             *index,

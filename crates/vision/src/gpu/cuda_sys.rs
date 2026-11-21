@@ -20,6 +20,10 @@ pub struct CudaApi {
     pub get_device_count: unsafe extern "C" fn(*mut i32) -> CudaResult,
     pub mem_get_info: unsafe extern "C" fn(*mut usize, *mut usize) -> CudaResult,
     pub set_device: unsafe extern "C" fn(i32) -> CudaResult,
+    /// cudaDeviceSynchronize（ABI 1.9 驻留形态）：readout 前置同步——ORT CUDA EP
+    /// 的输出就绪只在其内部 stream 上 ordered，跨 stream 消费（本库 null-stream
+    /// kernel 与 DtoH 拷贝）须先排干该设备全部工作。
+    pub device_synchronize: unsafe extern "C" fn() -> CudaResult,
     pub get_error_string: unsafe extern "C" fn(CudaResult) -> *const u8,
     pub register_d3d11: unsafe extern "C" fn(*mut GraphicsResource, *mut c_void, u32) -> CudaResult,
     pub unregister: unsafe extern "C" fn(GraphicsResource) -> CudaResult,
@@ -104,6 +108,7 @@ impl CudaApi {
             get_device_count: cast!(b"cudaGetDeviceCount"),
             mem_get_info: cast!(b"cudaMemGetInfo\0"),
             set_device: cast!(b"cudaSetDevice"),
+            device_synchronize: cast!(b"cudaDeviceSynchronize\0"),
             get_error_string: cast!(b"cudaGetErrorString"),
             register_d3d11: cast!(b"cudaGraphicsD3D11RegisterResource"),
             unregister: cast!(b"cudaGraphicsUnregisterResource"),

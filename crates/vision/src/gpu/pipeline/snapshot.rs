@@ -127,6 +127,7 @@ impl Nv12Snapshot {
             dst as usize,
             dst as usize,
             gpu.ordinal,
+            false,
         )?;
         let stride = input.tensor_bytes() / regions.len();
         let event = EventLease::acquire(&gpu.events, &gpu.driver)?;

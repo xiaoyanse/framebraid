@@ -109,6 +109,10 @@ pub unsafe extern "C" fn amv_get_stats(
             shared_outstanding_borrows: shared.3,
             gpu_inputs,
             gpu_copies_per_frame,
+            // 设备驻留显存账（§3.6a ABI 1.9 独立 device 账本观测）。
+            device_resident_bytes: state.usage.device_resident_bytes.load(Ordering::Acquire) as u64,
+            device_resident_peak_bytes: state.usage.device_resident_peak.load(Ordering::Acquire)
+                as u64,
             ..Default::default()
         };
         let mut value = Box::new(am_stats_t::default());

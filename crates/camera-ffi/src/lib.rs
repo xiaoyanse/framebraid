@@ -35,6 +35,22 @@ am_sdk_support::common_exports!(
     amc_object_request_close,
     amc_object_destroy
 );
+
+#[cfg(test)]
+pub(crate) fn open_shared_camera_ctx(params: &amc_init_params_t) -> usize {
+    // 并行测试共享进程域的上下文准入上限；名额被占满时等待其它测试释放
+    for _ in 0..600 {
+        match unsafe { context::initialize_camera(domain(), params) } {
+            Ok(key) => return key,
+            Err(AM_ERR_SDK_RESOURCE_EXHAUSTED) => {
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            Err(other) => panic!("camera ctx init: {other}"),
+        }
+    }
+    panic!("camera ctx admission never freed")
+}
+
 #[cfg(all(windows, not(test)))]
 unsafe extern "C" fn release_sdk_statics() {
     // 这里只回收空域的Rust静态堆，绝不在loader锁中补关线程、库或用户回调。

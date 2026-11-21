@@ -136,6 +136,7 @@ fn gpu_frame_inference_matches_cpu() {
             dst as u32,
             dst as u32,
             false,
+            false,
         )
         .expect("GPU 预处理");
     let gpu_out = model.run_gpu(&binding, 16 * 1024 * 1024).expect("GPU 推理");
@@ -274,7 +275,7 @@ fn gpu_classify_center_crop_matches_cpu_mapping() {
         )
         .unwrap();
     let (binding, gpu_transform) = pipeline
-        .preprocess_to_binding(&frame, model.ort_session(), &name, 224, 224, true)
+        .preprocess_to_binding(&frame, model.ort_session(), &name, 224, 224, true, false)
         .expect("GPU classify 预处理");
 
     // 对拍一：变换元数据（CPU 生产路径 vs GPU classify 分支）。

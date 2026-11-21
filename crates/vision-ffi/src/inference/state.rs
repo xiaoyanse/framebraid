@@ -46,6 +46,11 @@ pub struct Usage {
     pub external_bytes: AtomicUsize,
     pub control_bytes: AtomicUsize,
     pub waiters: AtomicUsize,
+    /// 设备驻留显存账（§3.6a ABI 1.9 独立 device 账本）：已交付驻留结果
+    /// 的设备侧字节（TTL/ack 只出缓存引用——Arc 归零即出账，外部持有续
+    /// 计费至 release，与 host 结果账同生命周期骨架）。
+    pub device_resident_bytes: AtomicUsize,
+    pub device_resident_peak: AtomicUsize,
 }
 pub struct ResultCharge {
     pub ctx: Weak<Entry>,
@@ -85,6 +90,60 @@ impl Drop for ResultCharge {
             if let Ok(c) = ctx.data::<Context>() {
                 c.buffers.fetch_sub(1, Ordering::AcqRel);
             }
+        }
+    }
+}
+/// 设备驻留显存账目（§3.6a）：随 ResultBuffer 生命周期出账（Drop 即减——
+/// 缓存 TTL 出账/ack 出缓存引用/外部 release 归零，三条路径全部收敛到
+/// ResultBuffer 析构，无需逐点手工记账）。
+pub struct DeviceCharge {
+    pub usage: Arc<Usage>,
+    pub bytes: usize,
+}
+impl Drop for DeviceCharge {
+    fn drop(&mut self) {
+        self.usage
+            .device_resident_bytes
+            .fetch_sub(self.bytes, Ordering::AcqRel);
+    }
+}
+/// 驻留预算进账（CAS 保证"检查+入账"原子；超限拒绝 sdk.resourceExhausted
+/// 与结果包络超限同式）。budget 已由调用方按"=0 未设置→默认 64MiB"归一。
+pub fn charge_device_resident(
+    usage: &Arc<Usage>,
+    bytes: usize,
+    budget: usize,
+) -> Result<DeviceCharge> {
+    let mut current = usage.device_resident_bytes.load(Ordering::Acquire);
+    loop {
+        let Some(next) = current.checked_add(bytes).filter(|v| *v <= budget) else {
+            return Err(AM_ERR_SDK_RESOURCE_EXHAUSTED);
+        };
+        match usage.device_resident_bytes.compare_exchange_weak(
+            current,
+            next,
+            Ordering::AcqRel,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => {
+                let mut peak = usage.device_resident_peak.load(Ordering::Acquire);
+                while peak < next {
+                    match usage.device_resident_peak.compare_exchange_weak(
+                        peak,
+                        next,
+                        Ordering::AcqRel,
+                        Ordering::Acquire,
+                    ) {
+                        Ok(_) => break,
+                        Err(n) => peak = n,
+                    }
+                }
+                return Ok(DeviceCharge {
+                    usage: usage.clone(),
+                    bytes,
+                });
+            }
+            Err(n) => current = n,
         }
     }
 }
