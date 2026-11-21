@@ -1,3 +1,5 @@
+#[cfg(test)]
+mod ai_photos_tests;
 pub(crate) mod backends;
 #[cfg(test)]
 mod batch_e2e_tests;
