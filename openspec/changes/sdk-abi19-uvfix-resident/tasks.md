@@ -33,6 +33,6 @@
 ## 收尾
 
 - [x] 4.1 workspace 全测（560 通过=562 基线−registry 2 单测随模块退役；86 ignored=+uv_truth 门）+fmt+clippy+boundary（306/13，+vp_transit/uv_truth/bgra_letterbox −registry/nv12_letterbox）+doc-coverage（199 符号 0 未提）+freeze --check 全绿
-- [ ] 4.2 文档六件套+MIGRATION ABI 1.8→1.9 段（含缺陷披露引用）
-- [ ] 4.3 CHANGELOG：Unreleased 记录（P1 修复+澄清+驻留）→v0.8.4 定版含诚实缺陷披露
-- [ ] 4.4 v0.8.4 发版（全速不跳门：全门禁+兼容实证+披露说明）
+- [x] 4.2 文档六件套+MIGRATION ABI 1.8→1.9 段（含缺陷披露引用）——随 v0.8.4 文档批落地（2fd836e：INTEGRATION/RELEASE_STATUS/ROADMAP/MIGRATION 1.8→1.9/CHANGELOG/双语 README 七文件；缺陷披露链接两个 verification 记录在段内）
+- [x] 4.3 CHANGELOG：Unreleased 记录（P1 修复+澄清+驻留）→v0.8.4 定版含诚实缺陷披露——定版尾笔 56cba10（实现提交链绑定+定版注记：ABI 65544→65545/计数两形态/UV 行为变化/未验项如实四条）
+- [x] 4.4 v0.8.4 发版（全速不跳门：全门禁+兼容实证+披露说明）——2026-11-21 发布闭环：tag v0.8.4（注解 e31640fd）+Release published（诚实边界四项披露）+协调线远端独立核验通过；G.2 兼容实证双径在档（勘误：门禁 clippy 腿当时假绿，风格级零行为影响，RELEASE_STATUS 段④勘误+U3-C 批清偿，真实退出码口径复跑全绿）
