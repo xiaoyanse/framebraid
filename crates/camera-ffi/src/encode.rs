@@ -455,7 +455,7 @@ unsafe fn read_pixel_view_any(frame: *const am_pixel_view_t) -> Result<AnyView<'
         )],
         AM_PF_NV12 if w.is_multiple_of(2) && h.is_multiple_of(2) => vec![
             (view.planes[0], view.strides[0] as usize, h as usize, 1),
-            (view.planes[1], view.strides[1] as usize, h as usize / 2, 2),
+            (view.planes[1], view.strides[1] as usize, h as usize / 2, 1),
         ],
         _ => return Err(AM_ERR_CAMERA_PIXEL_FORMAT_UNSUPPORTED),
     };
