@@ -639,3 +639,86 @@ fn frame_encode_roundtrip_capacity_and_rejections() {
     );
     drop((frame, gray_frame, nv12_frame));
 }
+
+/// NV12 UV 交织单平面每行=宽字节（bpp=1 口径）：紧密 pitch（UV stride=宽）
+/// 是合法布局须被接受，且与同内容 padded stride 视图的 JPEG 输出逐字节一致。
+#[test]
+fn nv12_tight_uv_stride_accepted_and_matches_padded_output() {
+    let guard = export_ctx();
+    let ctx: usize = guard.0;
+    let (w, h) = (16u32, 8u32);
+    let mut y = vec![0u8; (w * h) as usize];
+    for (i, b) in y.iter_mut().enumerate() {
+        *b = (i * 7 % 251) as u8;
+    }
+    let mut uv = vec![0u8; (w * h / 2) as usize];
+    for (i, b) in uv.iter_mut().enumerate() {
+        *b = (i * 13 % 249) as u8;
+    }
+    let tight_planes: [(&[u8], usize); 2] = [(&y, w as usize), (&uv, w as usize)];
+    let (tight_frame, tight_view) =
+        unsafe { export_frame_view(&tight_planes, w, h, AM_PF_NV12 as u32) };
+    let padded_stride = w as usize + 32;
+    let mut y_padded = vec![0xA5u8; padded_stride * h as usize];
+    let mut uv_padded = vec![0x5Au8; padded_stride * (h as usize / 2)];
+    for row in 0..h as usize {
+        y_padded[row * padded_stride..row * padded_stride + w as usize]
+            .copy_from_slice(&y[row * w as usize..(row + 1) * w as usize]);
+    }
+    for row in 0..h as usize / 2 {
+        uv_padded[row * padded_stride..row * padded_stride + w as usize]
+            .copy_from_slice(&uv[row * w as usize..(row + 1) * w as usize]);
+    }
+    let padded_planes: [(&[u8], usize); 2] =
+        [(&y_padded, padded_stride), (&uv_padded, padded_stride)];
+    let (padded_frame, padded_view) =
+        unsafe { export_frame_view(&padded_planes, w, h, AM_PF_NV12 as u32) };
+    let opts = am_frame_encode_opts_t {
+        struct_size: std::mem::size_of::<am_frame_encode_opts_t>() as u32,
+        format: 1,
+        quality: 80,
+        reserved: [0; 5],
+    };
+    let mut tight_out = vec![0u8; 64 * 1024];
+    let mut padded_out = vec![0u8; 64 * 1024];
+    let mut tight_len = 0u64;
+    let mut padded_len = 0u64;
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &tight_view,
+                &opts,
+                tight_out.as_mut_ptr(),
+                tight_out.len() as u64,
+                &mut tight_len,
+            )
+        },
+        0,
+        "紧密 UV stride（=宽字节）应接受"
+    );
+    assert_eq!(
+        unsafe {
+            amc_frame_encode(
+                ctx as _,
+                &padded_view,
+                &opts,
+                padded_out.as_mut_ptr(),
+                padded_out.len() as u64,
+                &mut padded_len,
+            )
+        },
+        0
+    );
+    assert!(
+        tight_len > 0 && tight_out[0] == 0xFF && tight_out[1] == 0xD8,
+        "JPEG SOI"
+    );
+    assert_eq!(tight_len, padded_len);
+    assert_eq!(
+        tight_out[..tight_len as usize],
+        padded_out[..padded_len as usize],
+        "同内容不同 stride 的 JPEG 输出应逐字节一致"
+    );
+    drop((tight_frame, padded_frame));
+}
