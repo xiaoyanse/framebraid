@@ -65,6 +65,7 @@ fn filter_module() -> Result<&'static FilterModule, crate::Error> {
 /// 全类（-1 语义同档案惯例），否则要求 argmax 类命中；`min_confidence`
 /// 严格小于才计数（与宿主解码同式）。计数张量在本函数内分配/清零/回读/
 /// 释放，调用方只拿到结果标量。
+#[allow(clippy::too_many_arguments)]
 pub fn count_head(
     head: u64,
     anchors: u32,

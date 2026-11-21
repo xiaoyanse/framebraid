@@ -241,7 +241,7 @@ fn mjpeg_stream_reconnects_after_connection_drop() {
         let mut rc = -1;
         for _ in 0..3 {
             rc = unsafe { crate::subscriptions::amc_frame_pull(sub, 5000, &mut frame) };
-            if rc != AM_ERR_SDK_DEADLINE_EXCEEDED as i32 {
+            if rc != AM_ERR_SDK_DEADLINE_EXCEEDED {
                 break;
             }
         }

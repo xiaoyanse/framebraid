@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- **`amc_frame_encode_gpu` implementation (sdk-abi19 U3-C, tasks 3.5/3.6)**: GPU frame reference → JPEG/PNG per contract §2.12 — D3D11 staging NV12 readback (the contract's explicitly legal path) feeding the existing `frame_export` chain via a shared encode path extracted from `amc_frame_encode` (pure move, byte-identical parity asserted); invalid-reference three-state and opts/capacity semantics shared with the CPU entry. Real-machine gate: GPU-path output byte-identical to the shared body on the same NV12 bytes, and FFmpeg RGBA baseline decode comparison mean=0 max=2 (quantization noise level). Test-domain fixture: the `native_run_failure` selection gate's out-of-range-Gather synthetic model rebuilt under `.local/tests/badrun-gather/` (local-only test data), gate now green.
+- **Clippy debt cleared (three pre-existing `-D warnings` errors surfaced by a gate-measurement fix)**: the v0.8.4 gate log's clippy leg recorded a pipe-exit code, not clippy's own — real exit was failing on two `too_many_arguments` (resident `preprocess_to_binding`/`count_head`/`run_gpu_resident`, now `#[allow]` per in-repo precedent) and one same-type cast (MJPEG reconnect test). Style-level only, no behavior change; workspace clippy now genuinely green with correctly captured exit codes.
+
 ## [0.8.4] - 2026-11-21
 
 实现提交 / Implementation: UV 修复族 1+2 `c75e92b`/合并 `88ddf40` · 驻留合同+生成链 U3-A `b160f11` · U3-B 实现+计数合同定稿+G.2+MJPEG 测试域修复+文档批 `2fd836e` · 合并 `3d9a014`。
