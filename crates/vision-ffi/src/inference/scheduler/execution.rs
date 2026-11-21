@@ -360,6 +360,7 @@ fn run_gpu(
 /// （输出重绑 CUDA+引用计数句柄移出，零回读）→ device_filter 启用时 GPU
 /// 侧阈值计数（内部只回读 4 字节计数张量）→ 驻留 ResultBuffer 组装（五类
 /// 不解码，count 仅交付元数据）。
+#[allow(clippy::too_many_arguments)]
 fn run_gpu_resident(
     model: &ModelHandle,
     session: &mut am_vision_core::sdk::Model,

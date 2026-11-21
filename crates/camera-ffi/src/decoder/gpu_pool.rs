@@ -13,7 +13,7 @@ use std::{
 
 /// GPU 帧池内部计数（M2b 随 Vision 接线消费；首版由 pipeline 内部持有）。
 #[allow(dead_code)]
-pub(super) struct GpuFramePoolInner {
+pub(crate) struct GpuFramePoolInner {
     pub frames_in_use: AtomicU64,
     pub bytes_in_use: AtomicU64,
     pub max_frames: usize,
@@ -97,6 +97,201 @@ impl Drop for GpuFrame {
             pool.bytes_in_use.fetch_sub(self.bytes, Ordering::AcqRel);
         }
     }
+}
+
+// ============ NV12 纹理回读（§2.12 GPU 帧编码消费；upload_nv12_slice 反向） ============
+
+/// 回读产物：完整映射内容（Y 平面后跟 UV 平面）与行距。
+/// D3D11 规范 NV12 的 UV 平面行距等于 Y 行距。
+pub(crate) struct Nv12Host {
+    pub data: Vec<u8>,
+    pub row_pitch: usize,
+}
+
+struct ComRelease(*mut c_void);
+impl Drop for ComRelease {
+    fn drop(&mut self) {
+        if !self.0.is_null() {
+            unsafe { com_release(self.0) };
+        }
+    }
+}
+
+unsafe fn vtable(object: *mut c_void) -> *const *const c_void {
+    unsafe { *object.cast::<*const *const c_void>() }
+}
+
+unsafe fn com_release(ptr: *mut c_void) {
+    let release: unsafe extern "system" fn(*mut c_void) -> u32 =
+        unsafe { std::mem::transmute(*vtable(ptr).add(2)) };
+    unsafe { release(ptr) };
+}
+
+/// 纹理→所属设备（ID3D11DeviceChild::GetDevice 槽 3；借用指针，guard 保活）。
+unsafe fn device_of_texture(texture: *mut c_void) -> Result<(ComRelease, *mut c_void)> {
+    let get_device: unsafe extern "system" fn(*mut c_void, *mut *mut c_void) =
+        unsafe { std::mem::transmute(*vtable(texture).add(3)) };
+    let mut device: *mut c_void = std::ptr::null_mut();
+    unsafe { get_device(texture, &mut device) };
+    if device.is_null() {
+        return Err(AM_ERR_SDK_INTERNAL_ERROR);
+    }
+    Ok((ComRelease(device), device))
+}
+
+/// 立即上下文（借用指针归设备所有，不 AddRef；设备 guard 保活期间有效）。
+unsafe fn immediate_context(device: *mut c_void) -> Result<*mut c_void> {
+    let get_ctx: unsafe extern "system" fn(*mut c_void, *mut *mut c_void) =
+        unsafe { std::mem::transmute(*vtable(device).add(40)) };
+    let mut context: *mut c_void = std::ptr::null_mut();
+    unsafe { get_ctx(device, &mut context) };
+    if context.is_null() {
+        return Err(AM_ERR_SDK_INTERNAL_ERROR);
+    }
+    Ok(context)
+}
+
+#[repr(C)]
+struct TexDesc {
+    width: u32,
+    height: u32,
+    mip_levels: u32,
+    array_size: u32,
+    format: u32,
+    sample_desc: (u32, u32),
+    usage: u32,
+    bind_flags: u32,
+    cpu_access_flags: u32,
+    misc_flags: u32,
+}
+
+#[repr(C)]
+struct MappedSubresource {
+    data: *mut c_void,
+    row_pitch: u32,
+    depth_pitch: u32,
+}
+
+/// NV12 纹理整 slice 回读到 host（staging 拷贝+CPU map，§2.12 CPU 回读合法
+/// 实现路径）。槽位核对链同 vp_transit.rs（Windows SDK 10.0.26100 d3d11.h；
+/// Map=14/Unmap=15 由已实证 End=28/GetData=29 按声明序偏移核对）。
+///
+/// # Safety
+/// `texture` 须为租约借用期内的有效 D3D11 NV12 纹理指针。
+pub(crate) unsafe fn readback_nv12(
+    texture: *mut c_void,
+    subresource: u32,
+    width: u32,
+    height: u32,
+) -> Result<Nv12Host> {
+    let (_device_guard, device) = unsafe { device_of_texture(texture)? };
+    let context = unsafe { immediate_context(device)? };
+    // GetDesc（Texture2D 槽 10）：尺寸/格式与引用声明不符即拒绝——宿主谎报
+    // 尺寸会按错值切平面越界；subresource 越界同拒。
+    let get_desc: unsafe extern "system" fn(*mut c_void, *mut TexDesc) =
+        unsafe { std::mem::transmute(*vtable(texture).add(10)) };
+    let mut desc = TexDesc {
+        width: 0,
+        height: 0,
+        mip_levels: 0,
+        array_size: 0,
+        format: 0,
+        sample_desc: (0, 0),
+        usage: 0,
+        bind_flags: 0,
+        cpu_access_flags: 0,
+        misc_flags: 0,
+    };
+    unsafe { get_desc(texture, &mut desc) };
+    if desc.format != 103
+        || desc.width != width
+        || desc.height != height
+        || subresource >= desc.mip_levels.saturating_mul(desc.array_size)
+    {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    let staging_desc = TexDesc {
+        width,
+        height,
+        mip_levels: 1,
+        array_size: 1,
+        format: 103,
+        sample_desc: (1, 0),
+        usage: 3, // D3D11_USAGE_STAGING
+        bind_flags: 0,
+        cpu_access_flags: 0x2_0000, // D3D11_CPU_ACCESS_READ
+        misc_flags: 0,
+    };
+    let create_tex2d: unsafe extern "system" fn(
+        *mut c_void,
+        *const TexDesc,
+        *const c_void,
+        *mut *mut c_void,
+    ) -> i32 = unsafe { std::mem::transmute(*vtable(device).add(5)) };
+    let mut staging: *mut c_void = std::ptr::null_mut();
+    let rc = unsafe { create_tex2d(device, &staging_desc, std::ptr::null(), &mut staging) };
+    if rc < 0 || staging.is_null() {
+        return Err(AM_ERR_SDK_INTERNAL_ERROR);
+    }
+    let _staging = ComRelease(staging);
+    let copy: unsafe extern "system" fn(
+        *mut c_void,
+        *mut c_void,
+        u32,
+        u32,
+        u32,
+        u32,
+        *mut c_void,
+        u32,
+        *const c_void,
+    ) = unsafe { std::mem::transmute(*vtable(context).add(46)) };
+    unsafe {
+        copy(
+            context,
+            staging,
+            0,
+            0,
+            0,
+            0,
+            texture,
+            subresource,
+            std::ptr::null(),
+        )
+    };
+    let map: unsafe extern "system" fn(
+        *mut c_void,
+        *mut c_void,
+        u32,
+        u32,
+        u32,
+        *mut MappedSubresource,
+    ) -> i32 = unsafe { std::mem::transmute(*vtable(context).add(14)) };
+    let mut mapped = MappedSubresource {
+        data: std::ptr::null_mut(),
+        row_pitch: 0,
+        depth_pitch: 0,
+    };
+    let rc = unsafe { map(context, staging, 0, 1, 0, &mut mapped) }; // D3D11_MAP_READ
+    if rc < 0 || mapped.data.is_null() {
+        return Err(AM_ERR_SDK_INTERNAL_ERROR);
+    }
+    let row_pitch = mapped.row_pitch as usize;
+    // Y 平面行距不足以容纳整行即布局不符（UV 行距按规范等于 Y 行距）。
+    if row_pitch < width as usize {
+        unsafe { unmap_staging(context, staging) };
+        return Err(AM_ERR_SDK_INTERNAL_ERROR);
+    }
+    let total = row_pitch * (height as usize + height as usize / 2);
+    let mut data = vec![0u8; total];
+    unsafe { std::ptr::copy_nonoverlapping(mapped.data.cast::<u8>(), data.as_mut_ptr(), total) };
+    unsafe { unmap_staging(context, staging) };
+    Ok(Nv12Host { data, row_pitch })
+}
+
+unsafe fn unmap_staging(context: *mut c_void, staging: *mut c_void) {
+    let unmap: unsafe extern "system" fn(*mut c_void, *mut c_void, u32) =
+        unsafe { std::mem::transmute(*vtable(context).add(15)) };
+    unsafe { unmap(context, staging, 0) };
 }
 
 // ============ C 导出 ============

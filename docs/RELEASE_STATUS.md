@@ -11,7 +11,7 @@
 
 **全量门禁七门绿（2026-11-21）**：fmt/clippy/workspace/boundary/freeze --check/doc-coverage/zero-semantics。**文档批完成**：INTEGRATION 消费方语义条目+MIGRATION ABI 1.8→1.9 迁移段+CHANGELOG 定版段+双语 README+ROADMAP+本节。**已定版**：CHANGELOG Unreleased→0.8.4（绑验证记录链接+提交链）、包版本 0.8.4、发布链（合并 main→push→tag v0.8.4→Release）随本尾笔执行。
 
-**遗留登记（不阻塞，如实列出）**：①native_run_failure 门需"越界 Gather 合成模型"夹具（盘上缺失，枚举外门，处置随文档批登记）；②rtmp_loopback 首轮 flake（复跑 26/26 过，观察项）；③AM-RT reviewStats 帧口径差（输入 24 帧 vs 复核账本 20 帧——其业务口径只计进入复核的帧，SDK 帧对账由真机径帧一致性门承担，经协调线同步）。
+**遗留登记（不阻塞，如实列出）**：①~~native_run_failure 门需"越界 Gather 合成模型"夹具~~——**2026-11-22 销账**：夹具已建（.local/tests/badrun-gather/，仅本地测试数据），门 PASS；②rtmp_loopback 首轮 flake（复跑 26/26 过，观察项）；③AM-RT reviewStats 帧口径差（输入 24 帧 vs 复核账本 20 帧——其业务口径只计进入复核的帧，SDK 帧对账由真机径帧一致性门承担，经协调线同步）；④**勘误（2026-11-22）**：本节"全量门禁七门绿"中 clippy 一项为**假绿**——门禁脚本经管道取退出码取到的是 tail 的而非 clippy 的，真实 clippy `-D warnings` 当时有 3 处风格级错误（驻留批 too_many_arguments×3 与 MJPEG 测试同型 cast，零行为影响）；已于 U3-C 批修复并改用真实退出码口径复跑全绿。
 
 ## v0.8.3 验证状态快照（sdk-intel-direct——Intel 侧 GPU 帧直传 ABI 1.8 OV remote 链，2026-11-19 定版）
 

@@ -115,6 +115,7 @@ impl GpuPipeline {
     /// 输入（device tensor 由 ORT allocator 持有）。纹理借用至本函数返回
     /// （VP 转换+GPU 同步完成后即不再触碰源纹理；kernel 完成事件同步后
     /// 归还缓冲/解除中转映射）。
+    #[allow(clippy::too_many_arguments)]
     pub fn preprocess_to_binding(
         &self,
         frame: &GpuFrameData,

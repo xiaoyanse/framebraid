@@ -490,6 +490,63 @@ fn planes_index(slices: &[&[u8]]) -> usize {
     slices.len()
 }
 
+/// opts 读取与校验（§2.12）：返回 (format, quality)；quality 零值在此不解默认
+/// （编码段统一处理），仅做界检查。
+pub(crate) unsafe fn validate_encode_opts(
+    opts: *const am_frame_encode_opts_t,
+) -> Result<(u32, u32), i32> {
+    am_sdk_support::args::pointer(opts)?;
+    let opts = unsafe { am_sdk_support::args::read(opts, size_of::<am_frame_encode_opts_t>()) }?;
+    if opts.format != am_camera_core::frame_export::FORMAT_JPEG
+        && opts.format != am_camera_core::frame_export::FORMAT_PNG
+    {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    if opts.quality > 100 || opts.reserved != [0; 5] {
+        return Err(AM_ERR_SDK_INVALID_ARGUMENT);
+    }
+    Ok((opts.format, opts.quality))
+}
+
+/// 编码+两段式容量协议（§2.11/§2.12 共享）：编码后即写 *out_size 所需值，
+/// 容量不足返 limitOutOfRange（同报告类惯例）；足量时拷贝输出。
+pub(crate) fn encode_frame_to_sink(
+    input: &am_camera_core::frame_export::FrameInput<'_>,
+    format: u32,
+    quality: u32,
+    out: *mut u8,
+    capacity: u64,
+    out_size: *mut u64,
+) -> Result<(), i32> {
+    let quality = if quality == 0 {
+        am_camera_core::frame_export::QUALITY_JPEG_DEFAULT
+    } else {
+        quality
+    };
+    let bytes =
+        am_camera_core::frame_export::encode(input, format, quality).map_err(|e| match e {
+            am_camera_core::frame_export::ExportError::FormatInvalid
+            | am_camera_core::frame_export::ExportError::PixelInvalid => {
+                AM_ERR_SDK_INVALID_ARGUMENT
+            }
+            am_camera_core::frame_export::ExportError::OutputTooLarge => {
+                AM_ERR_SDK_LIMIT_OUT_OF_RANGE
+            }
+            am_camera_core::frame_export::ExportError::EncodeFailed => AM_ERR_SDK_INTERNAL_ERROR,
+        })?;
+    unsafe {
+        out_size.write(bytes.len() as u64);
+    }
+    if (capacity as usize) < bytes.len() {
+        return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
+    }
+    am_sdk_support::args::pointer(out)?;
+    unsafe {
+        std::ptr::copy_nonoverlapping(bytes.as_ptr(), out, bytes.len());
+    }
+    Ok(())
+}
+
 #[no_mangle]
 pub unsafe extern "C" fn amc_frame_encode(
     ctx: *mut amc_context_t,
@@ -506,59 +563,23 @@ pub unsafe extern "C" fn amc_frame_encode(
             out_size.write(0);
         }
         let _ = domain().active(ctx as usize)?;
-        am_sdk_support::args::pointer(opts)?;
-        let opts =
-            unsafe { am_sdk_support::args::read(opts, size_of::<am_frame_encode_opts_t>()) }?;
-        if opts.format != am_camera_core::frame_export::FORMAT_JPEG
-            && opts.format != am_camera_core::frame_export::FORMAT_PNG
-        {
-            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
-        }
-        if opts.quality > 100 || opts.reserved != [0; 5] {
-            return Err(AM_ERR_SDK_INVALID_ARGUMENT);
-        }
-        let (planes, strides, w, h, format, matrix, range) = unsafe { read_pixel_view_any(frame)? };
+        let (format, quality) = unsafe { validate_encode_opts(opts)? };
+        let (planes, strides, w, h, view_format, matrix, range) =
+            unsafe { read_pixel_view_any(frame)? };
         let input = am_camera_core::frame_export::FrameInput {
             planes: &planes,
             strides: &strides,
             width: w,
             height: h,
-            format,
+            format: view_format,
             color_matrix: matrix,
             color_range: range,
         };
-        let quality = if opts.quality == 0 {
-            am_camera_core::frame_export::QUALITY_JPEG_DEFAULT
-        } else {
-            opts.quality
-        };
-        let bytes = am_camera_core::frame_export::encode(&input, opts.format, quality).map_err(
-            |e| match e {
-                am_camera_core::frame_export::ExportError::FormatInvalid
-                | am_camera_core::frame_export::ExportError::PixelInvalid => {
-                    AM_ERR_SDK_INVALID_ARGUMENT
-                }
-                am_camera_core::frame_export::ExportError::OutputTooLarge => {
-                    AM_ERR_SDK_LIMIT_OUT_OF_RANGE
-                }
-                am_camera_core::frame_export::ExportError::EncodeFailed => {
-                    AM_ERR_SDK_INTERNAL_ERROR
-                }
-            },
-        )?;
-        unsafe {
-            out_size.write(bytes.len() as u64);
-        }
-        if (capacity as usize) < bytes.len() {
-            return Err(AM_ERR_SDK_LIMIT_OUT_OF_RANGE);
-        }
-        am_sdk_support::args::pointer(out)?;
-        unsafe {
-            std::ptr::copy_nonoverlapping(bytes.as_ptr(), out, bytes.len());
-        }
-        Ok(())
+        encode_frame_to_sink(&input, format, quality, out, capacity, out_size)
     })
 }
+
+mod frame_gpu;
 
 #[cfg(test)]
 mod tests;

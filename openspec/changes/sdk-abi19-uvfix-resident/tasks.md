@@ -27,8 +27,8 @@
 - [x] 3.2 生成链：ABI 1.9（65545）+四生成物+freeze r17（r16 归档 history；r16 已被族 1+2 冻结消费）
 - [x] 3.3 实现输出侧：iobinding 设备输出绑定（CUDA MemoryInfo 先例 L67-73）+extract_outputs 驻留分支+readout API+device 账本——随 G.2 真机验收收口（resident 三门+全链 readout/账本/统计绿，2026-11-21 复核）
 - [x] 3.4 GPU 筛选：描述结构+零目标帧只回读计数张量——同上收口（filter counts 门含 43/43 同谓词断言、类 10/10、阈值边界、暗帧 0）
-- [ ] 3.5 GPU 帧导出输入面：amc_frame_encode 纹理输入（四路径选项按侦察报告设计定稿实施）
-- [x] 3.6 测试：readout 语义单测+e2e+筛选门+导出真值门——resident 单测 5+三门绿（2026-11-20 定稿复跑）；3.5 GPU 帧导出输入面实现随 U3-C 批（合同/生成物已在 U3-A 落地）
+- [x] 3.5 GPU 帧导出输入面：amc_frame_encode 纹理输入——U3-C 批实现（encode/frame_gpu.rs：合同 CPU 回读合法路径+复用 frame_export 全链；gpu_pool readback_nv12 staging 回读基建；encode.rs opts/编码段抽共享函数纯移动）；单测 4+真机对拍门（GPU 路 FFI 输出与同 NV12 host 字节共享主体逐字节一致+FFmpeg RGBA 基准解码对拍 mean=0 max=2）
+- [x] 3.6 测试：readout 语义单测+e2e+筛选门+导出真值门——resident 单测 5+三门绿（2026-11-20 定稿复跑）；导出真值门随 U3-C 批落（真机对拍门 2026-11-22 过，见 3.5）
 
 ## 收尾
 
