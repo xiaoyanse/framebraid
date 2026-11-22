@@ -7,6 +7,8 @@
 - [x] T2 严格对拍失败模式 0xc0000409（2026-11-15，随 T1 同根源收口）：归因=T1 诊断的崩溃变体（std::process::exit 跳 onexit+am_vision detach 序晚于 cudart，残留注册被 cudart 的 primary 上下文拆除回调访问已释放地址→0xC0000005/__fastfail 0xc409）——T1 删 atexit 登记后该触发面消除。PM 复验：强制失败模式（TF32 默认+FB_ROI_REQUIRE_CPU_PARITY=1，166px 分歧 panic 如预期=失败注入成立）**cargo 退出码 101 标准、"didn't exit successfully"/0xc0000409/STACK_BUFFER_OVERRUN 输出零命中**（对照 v0.7.1 roi-production/replay-strict.log:42 有 c409 行）——失败模式析构干净，独立修复批不再需要。原计划"panic unwind 析构链独立归因"被 T1 根因+本复验覆盖，如实合并收口
 - [x] T3 GPU 级联多会话冷启动补验（2026-11-15 02:44，协调线推送窗口+PM 执行）：容量上限实测（ctx max_models=8 槽位——8 分片+塔=9 槽被预检拒，7 独立会话+塔=8 槽满载可用）+满槽 7 会话 120s：**rejected=0 零拒绝、GPU 峰值 5378MiB/8151MiB（66%）=稳态值无冷启动尖峰、host priv 6.72GB 150s 零爬升、7 会话冷启动 <30s（含预热）**；吞吐 94.4fps 形态注记（单 lane/会话 formed=0 纯逐项执行，非攒批口径）。组合覆盖=7 独立检测会话+池双分片（v0.7.0）+级联单对（v0.7.1 门）。诚实边界更新："多独立会话冷启动未测"→已测范围如上；级联对多对并发/长时/现场负载仍如实未测。报告 .local/evidence/sdk-p2-20261115/t3-multi-session-coldstart.md
 - [x] T4 am-camera-ffi 门 harness 债（2026-11-15，代理交付+PM 静态验收）：**20/20 门全绿**（任务书按 19 门下达，实际清点 20 个 #[ignore] 门；--test-threads=1 串行，一键脚本实跑两轮 exit 0）。根因发现=**同变量不同门要求不同样本，必须分批设 env**（AM_SDK_H264_SAMPLE 被 5 门共用但诉求冲突：量化门要 1080p/预算门要同尺寸异画面/live 门要小分辨率——旧全局单值映射对预算门是错的，此即配置散佚根因）；回环 RTSP=仓内 MediaMTX v1.21.3（127.0.0.1:18554 TCP-only+合成凭据，ffmpeg listen 只能当 ANNOUNCE 端不可用）；散佚夹具全找回（Rext=r1-baseline-inputs/frame.h265、seek=seek/seek-test.mp4，零新生成）。交付：run-camera-gates.ps1 一键脚本（env 分批+RTSP 自起停+finally 清理+结果落档）+camera-gates-README.md（映射表附源码断言依据）+mediamtx-h2 配置+camera-gates-last-run.txt 证据。纪律核：零 crates/sdk 改动、RTSP 进程零残留。PM 复跑验证待 T1 完成后错峰补做（当前机器 T1 在跑 GPU 门）
-- [ ] T5 发版收口：CHANGELOG Unreleased 定版条目+四检/freeze/boundary/workspace/
+- [x] T5 发版收口：CHANGELOG Unreleased 定版条目+四检/freeze/boundary/workspace/
   16 门+19 门全绿+制品构建（单作业）+版本 0.7.1→0.7.2+tag+推送+回执（Release 页
-  等令，授权颗粒度纪律）
+  等令，授权颗粒度纪律）——2026-11-22 补证据勾选：v0.7.2 定版提交 04f0d66（2026-11-15，
+  提交信息含四检/freeze/boundary/workspace/16+19 门全绿清单）+CHANGELOG [0.7.2] 定版段
+  +tag v0.7.2+Release 页 published 2026-11-15T20:15:41Z——发版动作全实现在案，当时漏勾

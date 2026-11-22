@@ -1,0 +1,262 @@
+# bounded-pipeline-recovery Specification
+
+## Purpose
+为 FrameBraid 的全链路有界压力和故障恢复提供可重复、可观测且受资源与兼容边界约束的验收依据，区分已有实现、改造效果与未验证范围。
+
+## Requirements
+
+### Requirement: Auxiliary Rust source workers remain bounded through restart
+公开Rust H264Hub SHALL 每实例最多保留16个源登记，包含启动、运行、停止中的核心；超过上限返回TooManySources。启动占位 SHALL 在释放会话锁前发布，stop不能替代真实退出；线程失败或异常展开须关闭队列、清理就绪并归还工作登记。该上限不是C ABI或整个进程的额度。
+
+#### Scenario: Concurrent first subscription or blocked stopping source
+- **WHEN** 多个调用并发首订同一源，或原resolver/原生调用尚未结束但已请求stop
+- **THEN** 同源只启动一次，停止中的原工作占位继续保留，新订阅返回NotReady而不创建替代线程
+
+#### Scenario: Old subscription released after same URL restarts
+- **WHEN** 同URL新会话已建立且客户端ID与旧会话重复，旧订阅被释放
+- **THEN** 只退订旧Core，不移除或停止新会话及其客户端
+
+#### Scenario: Worker unwinds or waits in resource backoff
+- **WHEN** 辅助线程异常展开或在资源退避期间收到stop
+- **THEN** 退出守卫清理就绪/缓存并关闭现有队列，退避分段检查停止；不强杀阻塞的resolver或原生调用
+
+### Requirement: Domain registry storage has a fixed upper bound
+SDK SHALL 在冻结的每库4096项句柄与Buffer登记上限内固定基础索引容量，首次分配失败返回资源不足且不发布句柄或引用。销毁隔离区 SHALL 保持原4096项地址隔离语义，边界淘汰不得临时扩容。级联关闭 SHALL 使用有界强引用快照，调用关闭逻辑时不持注册锁；基础存储与Context载荷额度及原生内存分列。
+
+#### Scenario: Initial index allocation fails
+- **WHEN** 句柄或Buffer索引的首次固定存储分配失败
+- **THEN** 返回资源不足、不登记该对象，既有状态不损坏，后续重试可成功
+
+#### Scenario: Handle quarantine reaches its limit
+- **WHEN** 销毁隔离区已有4096项并销毁下一对象
+- **THEN** 先淘汰最老地址再入队，不创建第4097个引用槽，仍不允许destroy后使用
+
+#### Scenario: Destroy races with a child close snapshot
+- **WHEN** 父对象关闭快照仍持有子对象的Entry且另一调用尝试销毁该子对象
+- **THEN** 返回tryAgain并保留登记，快照退出后可正常销毁，不提前释放仍在访问的Entry
+
+### Requirement: Context service bookkeeping has fixed storage
+SDK SHALL 为内部服务索引及关闭钩子提供固定容量，登记已满时在构造或发布新服务之前拒绝；服务构造失败不得缓存不可用对象。SDK SHALL 在关闭时使用有界快照且不持登记锁调用服务钩子。固定基础开销与通道载荷预算分列，受Context总数约束，不将元数据存储说成RSS硬限。
+
+#### Scenario: Full registry or failed setup
+- **WHEN** 内部登记槽已满或新服务关闭钩子登记失败
+- **THEN** 返回资源不足或具体构造错误，不发布该服务，既有服务可读且失败允许重试
+
+#### Scenario: Reentrant close hook
+- **WHEN** 关闭钩子在关闭通知期间再次查询或登记
+- **THEN** 通知不持登记锁，快照固定容量，不临时构造堆列表，旧弱引用失效后槽可回收
+
+### Requirement: Context-wide Media worker admission
+
+Media C ABI SDK MUST 在每个由该Context创建的SDK线程前取得同一Context的worker槽，默认及硬上限64，只允许收紧；0禁止新建工作线程。SDK MUST 兼容新增配置/查询和能力位，stats显示活槽与历史峰值，不将宿主同步线程或未知驱动线程计为SDK worker。直接Rust会话没有该Context时按其自身配置另核，不能冒充本Context预算覆盖。
+
+#### Scenario: Busy worker cannot be revoked by a lower limit
+
+- **WHEN** 新上限低于仍在执行或启动中的SDK工作槽数
+- **THEN** SDK返回resourceExhausted并保持原上限，取消/关闭等待真实归还，不能杀线程或另建替代线程
+
+#### Scenario: Two contexts have independent worker limits
+
+- **WHEN** 一个Context耗尽worker槽，另一Context仍有空闲额度
+- **THEN** 前者新建SDK线程被拒，后者可继续；活槽统计在实际退出归零且历史峰值保留
+
+### Requirement: Capture metadata backing and flight completion
+
+Media SDK MUST 在抓图请求/合并采集/频率缓存/消费者/订阅索引分配前计控制字节，包含增长重叠及空闲保留容量；Flight本体独立计费，不将内部存储当外持缓冲或新增控制项目。
+
+#### Scenario: Cache admission fails after a coalesced capture
+
+- **WHEN** 共享采集已返回而最近图缓存登记因控制字节不足失败
+- **THEN** SDK向本次合并请求发布一致失败、唤醒等待者并移除在途索引，后续采集不能永久复用未完成Flight
+
+#### Scenario: Capture metadata allocation is refused
+
+- **WHEN** 受理前请求表或连续订阅登记需要的底层容量超额
+- **THEN** SDK保留旧容量/记录，返回明确拒绝且无对外新ID/订阅，消费者/worker许可不能泄漏，停止不提前收回外持图片
+
+#### Scenario: Accepted asynchronous capture cannot allocate a Flight
+
+- **WHEN** 请求表已受理但工作线程无法预留Flight索引或本体
+- **THEN** 原ID进入可查询/ack的失败终态，不能伪称受理成功等于图片成功，且不发起未准入的HTTP或遗留在途登记
+
+### Requirement: Inference record backing storage
+
+SDK MUST 在推理请求表分配前核Context控制字节，包含增长时新旧重叠及清空后保留容量；元数据不能计为外持结果或快照项目。拒绝 MUST 不发布请求ID、不替换既有请求；原记录数、TTL和关闭合同保持。
+
+#### Scenario: Record capacity exceeds control bytes
+
+- **WHEN** 新提交需要增长请求表且旧容量与新容量合计超出控制额度
+- **THEN** SDK返回resourceExhausted，保留旧记录/容量/计费且没有新请求ID，不能通过提前出账或未计费HashMap扩容接受请求
+
+### Requirement: End-to-end bounded pressure
+
+SDK MUST 约束所有内部队列和中转暂存的数量、字节及线程，外部持有独立统计，不用无限重试消化过载。
+
+#### Scenario: Slow consumer under overload
+
+- **WHEN** 消费速度低于输入且通知接收停滞
+- **THEN** 预算内拒绝/丢弃有明确原因，健康消费者持续服务并满足测前目标卡预算，压力解除后恢复
+
+#### Scenario: Native pixel work blocks
+
+- **WHEN** 一源的像素初始化、解码或回读原生调用暂时阻塞
+- **THEN** 压缩分发不在同一执行线程等待该调用；像素worker先取得现有decoder额度且不创建替代线程，队列数量/字节有界，溢出后旧在途结果不发布并等待真实关键帧恢复，关闭在原生调用返回前保持Closing
+
+#### Scenario: Inference classes share an executor
+
+- **WHEN** 一个 Context 的实时输入尚未归还，另一类或另一 Context 在自身字节预算内提交
+- **THEN** 分别核分类暂存、本 Context 合计及执行器总额，不将其他分类或 Context 用量套入当前类较小上限；超额拒绝不留账、不产生请求 ID，归还屏障完成后才释放原占用
+
+#### Scenario: ISAPI sampling subscriptions change repeatedly
+
+- **WHEN** 一个慢频率消费者持续运行，其他频率订阅反复开始、取图并排空，或停止与HTTP结果提交重叠
+- **THEN** 最近图片缓存只保留活跃源×频率，最后同频订阅排空即释放其缓存；晚提交不能复活退役键、旧帧不能覆盖新帧，健康抓图不因历史频率缓存耗尽预算，实际读取中的外部引用仍保持到release
+
+#### Scenario: Standalone decoder rejects new input under pressure
+
+- **WHEN** 有效独立解码器因队列数量/字节或Context字节预算而拒绝新提交
+- **THEN** 队列占用不变、拒绝累计增加一次；成功入队增加一次接受累计，参数错误和reset不伪造拒绝或清除历史计数，其他Context不受影响
+
+#### Scenario: Media subscription metadata reaches the control limit
+
+- **WHEN** 订阅对象、最大引用队列或缩放预设容量超出Context控制预算
+- **THEN** 构造明确拒绝且不留下占用；被接受的对象持有控制额度至最后引用释放，载荷额度独立，不因关闭或清队列提前归还仍常驻的元数据
+
+#### Scenario: RTSP framing requires new SDK buffers
+
+- **WHEN** RTSP配置或包转换需要新的参数集、临时缓冲和输出载荷，或探测打开同类流
+- **THEN** 在分配这些SDK缓冲前先申请可核对的工作区额度，成功后保留实际配置/载荷额度并归还余量；错误关闭Reader后才释放仍覆盖其缓冲的额度，不扩大原生库内存承诺
+
+#### Scenario: Inference notification has less than one entry of control bytes
+
+- **WHEN** 尚无预付存储且控制剩余额度不足一个包含其拥有权许可的完整通知条目
+- **THEN** 明确拒绝注册或新通知，丢弃计数明确；已接受通知持有预付条目存储及活项额度直到消费/注销/停止释放，不将通知丢弃改成推理失败
+
+#### Scenario: Inference notification queue retains spare storage
+
+- **WHEN** 通知队列留有空闲槽、反复注册或在忙回调期间停止
+- **THEN** 队列分配前预留控制存储额度、固定容量且空闲槽不提前退账；活通知项数和关闭屏障独立保留而不重复计存储字节，排空后存储和许可一并归还；预算不足的首次注册不残留工作线程
+
+#### Scenario: Decoder configuration and parameter caches consume domain bytes
+
+- **WHEN** 创建/重置独立解码器、更新参数集或生成原生重配置的extra副本
+- **THEN** 在相关SDK复制前预留域字节、缓存和临时副本持有到真正释放；空配置重置共享不可变配置，构造或准入失败不改变旧配置/代次及外持帧，NAL检查不靠额外列表暂存且保留既有接受/拒绝范围
+
+#### Scenario: Source event storage remains allocated between callbacks
+
+- **WHEN** 源事件回调停滞、队列有空闲槽，或注册失败/注销/停止
+- **THEN** 事件存储分配前预留且运行期不扩容，空闲槽持续计费；排队及忙项受固定槽数和64项硬限，满时仅丢待处理旧提示并明确计数，不能覆盖忙项；排空后归还存储，注册失败无新工作线程，视频消费者不依赖提示交付
+
+#### Scenario: Rust H264Hub subscriber stalls or closes
+
+- **WHEN** Rust辅助分发的客户端停滞、视频和叠层共同占用队列，或关闭与等待/投递重叠
+- **THEN** 单订阅36项及8 MiB载荷有界，GOP最多35包并受字节限制；叠层先让位视频，受损参考链等待新关键帧，关闭只交付一次终态且不可复活，健康订阅不被慢订阅的清队列或关闭影响
+
+### Requirement: Generation-safe recovery and draining
+
+恢复和关闭 SHALL 保留正确源代次与请求终态，重建参考链后才交付，关闭排空后不再回调。
+
+#### Scenario: Disconnect during outstanding work
+
+- **WHEN** 断流重连与在途请求或关闭重叠
+- **THEN** 旧代次结果不冒充新结果，租约读取结束后释放，不出现迟到回调
+
+### Requirement: Recovery and stability have scenario budgets
+
+故障验收 SHALL 按目标卡分别记录恢复首个正确新鲜输出、恢复持续达标窗口、健康消费者服务和稳定段资源趋势；不得用故障期间低吞吐或首尾RSS差替代恢复/稳定性结论。
+
+#### Scenario: A slow decoder shares a process with compressed consumers
+
+- **WHEN** 原生解码/回读变慢且健康压缩消费者仍在读取
+- **THEN** 按测前响应/交付预算验证隔离效果与队列/线程上限，不以“不重连”或“延迟绝对零影响”替代实测要求
+
+#### Scenario: Standalone decoder metadata reaches the control budget
+
+- **WHEN** 独立解码器输入槽/时间关联表创建或重置的新旧存储重叠超过控制字节
+- **THEN** 分配前明确拒绝且失败不改变旧代次；已接受固定容量和空闲槽持续计费，销毁缓冲后才退账，载荷帧字节独立核算
+
+#### Scenario: RTSP metadata reaches a non-power-of-two queue boundary
+
+- **WHEN** 像素队列填至36项或时间表反复滚过128项窗口
+- **THEN** 实际VecDeque容量不超过已预留槽数，时间表不因临时第129项扩成256，保留相同最终关联顺序及释放计费
+
+#### Scenario: Continuous capture retains history between deliveries
+
+- **WHEN** 连续抓图反复滚动120项FPS时间窗口或持有空的图片引用队列
+- **THEN** 两块实际容量在分配前占控制预算，停止清空不提前退账，订阅销毁后归还；构造/登记失败不留下消费者名额或无句柄活对象
+
+#### Scenario: Executor containers retain capacity across Contexts
+
+- **WHEN** 非二次幂Job槽达到上限、Context索引增长或变为空闲
+- **THEN** Job/线程句柄实际容量预先固定，常驻索引及新旧重叠与输入暂存共同受原执行器总字节限制，拒绝不改旧请求或发布ID；清理和统计不创建无预算Vec快照，繁忙记录锁不阻塞其他Context清理
+
+### Requirement: Probe storage remains admitted before copying
+
+探测 SHALL 在有效Context内先以有界借用规划结果和临时复制成本，完整拥有对象/Box/数组/字符串在分配前准入。缓存引用槽与URL分账；空闲容量持续计费，可选缓存失败不得抹去探测结果。模型IO数量SHALL在SDK元信息复制前检查。
+
+#### Scenario: Cached entries expire while capacity stays allocated
+
+- **WHEN** 缓存过期或清条目但底层槽仍分配
+- **THEN** 槽字节额度保持到真实销毁，结果准入不足时可真正丢缓存后重试，最终结果release归还完整拥有额度
+
+#### Scenario: Model exceeds the named IO contract
+
+- **WHEN** 原生会话输入或输出超过32项
+- **THEN** SDK在复制各项name/shape前以ioUnsupported拒绝，合法边界不受影响，原生会话内存仍另列
+
+### Requirement: Shared-source alias backing remains admitted
+
+Media SDK SHALL 在共享源别名表增长前预留实际引用槽及新旧重叠控制字节；空闲保留容量不提前退账。登记失败 SHALL 不发布源句柄，不泄漏已领取的共享所有权，不清除仍活的Closed外持对象。
+
+#### Scenario: Alias growth exceeds the control budget
+
+- **WHEN** 已有共享源可复用，但新增别名所需新旧容量超过控制字节
+- **THEN** 返回resourceExhausted且输出NULL，旧源/别名/所有权保持，后续可在足够预算的Context内正常登记和关闭
+
+### Requirement: Initialization and fixed foundation registries remain bounded
+
+SDK SHALL 在复制运行库目录前预留域绑定Context初始化槽，在册与pending合计不超过8，失败释放、成功同锁移交；pending期间不得视作可卸载。Media SHALL 在句柄发布前准备全域源表的4096槽精确存储，保留可观测资源拒绝。CameraState和Hub SHALL 固定8/64槽并在锁外消费有界强引用快照。共享基础索引 SHALL 沿用4映射/32初始借用/8进程验证边界，不以无法打开进程证明退出。
+
+#### Scenario: Pending initialization fails before registration
+
+- **WHEN** 目录分配、配置校验或最终登记失败
+- **THEN** SDK归还pending且不污染后续初始化；目录副本不超过已准入槽包络，不占控制消息64KiB
+
+#### Scenario: Shared process identities rotate at the boundary
+
+- **WHEN** 8个旧消费者token已离开共享记录并被8个新token替换
+- **THEN** 先清失效本地验证缓存，再登记新身份，不临时超8或丢失未知进程的责任；初始borrow的buffer登记失败不留lease
+
+### Requirement: Scenario-scoped acceptance without exhaustive duration gates
+
+当前优化验收 SHALL 按实际声明范围验证功能、失败诊断/回退、资源边界、所有权与关闭安全；SHALL NOT 把完整硬件矩阵或固定4h/24h长跑作为强制完成条件。移除门槛不等于相应未运行测试通过，不扩大支持范围。
+
+#### Scenario: Required targeted checks pass without an exhaustive hardware run
+
+- **WHEN** 本包相关功能/故障/资源/接口定向验证已按范围完成，但没有全硬件组合或固定时长长跑结果
+- **THEN** 不得仅因缺这两项阻塞本包收口；仍如实列实际设备/模型和测试范围，其他未完成实现或必验项照常保持开放
+
+### Requirement: Model metadata and temporary source snapshots stay bounded
+
+SDK SHALL 在模型IO副本分配前核每向32项/name4096字节/rank8，Ffi实际容量和分配失败可核对；失败不得保留部分副本或在原生会话退出前释放线程额度。输入校验 SHALL 借用现有元数据，不先克隆任意长度输入列表。来源状态/统计 SHALL 使用已登记4096项上界的完整强引用快照，锁外按源身份去重，不按URL合并独立源。
+
+#### Scenario: IO metadata allocation fails or input count is invalid
+
+- **WHEN** Ffi元数据任一受控分配失败，或输入数与模型不匹配
+- **THEN** 返回明确错误且不发布半构造模型/悬空视图；有效输入不发生校验用元数据克隆，既有名字/类型/shape/实际字节检查保持
+
+#### Scenario: A source closes during event or statistics consumption
+
+- **WHEN** 完整来源快照已捕获后发生新增/关闭
+- **THEN** 保留当次成员的强引用、锁外消费和关闭过滤，不重复计算共享源或遗漏快照成员；明确固定栈成本，不宣称所有规模更快
+
+#### Scenario: Hardware reports reach their temporary storage boundary
+
+- **WHEN** Media源、decoder或硬件probe报告序列化或缓存
+- **THEN** 借用已拥有报告、分配前准入固定输出，越界明确拒绝且不扩容/发布截断JSON；缓存保留到最后引用释放，原生设备与宿主线程/栈成本单独列账
+
+#### Scenario: A model file grows during SDK preflight
+
+- **WHEN** 模型文件读取期间发生增长/缩短或超过原有256 MiB限制
+- **THEN** SDK自有预检查缓冲不随增长扩容，返回明确失败且不发布模型；内存输入只借用到同步加载返回
+- **AND** 原生ORT后续按路径重新打开及外部权重的身份/资源不冒充已由本检查保证，调用方维持文件稳定可信
