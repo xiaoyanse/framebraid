@@ -4,8 +4,19 @@ use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::Barrier;
 
+/// 不设 FB_AI_PHOTOS 时纯色合成（无夹具环境可跑）；设置后读 AI 夹具
+/// raw/face2-1.png 经 image crate 缩放至请求尺寸内存转 JPEG——解码帧尺寸
+/// 语义不变（断言不动），仅像素内容由纯色换为真实照片纹理。
 fn sample_jpeg(width: u32, height: u32) -> Vec<u8> {
-    let image = image::DynamicImage::new_rgb8(width, height);
+    let image = match std::env::var("FB_AI_PHOTOS").ok() {
+        Some(dir) => {
+            let photo = image::open(format!("{dir}\\raw\\face2-1.png"))
+                .expect("FB_AI_PHOTOS 夹具 raw/face2-1.png 应可读")
+                .resize_exact(width, height, image::imageops::FilterType::Triangle);
+            image::DynamicImage::from(photo.to_rgb8())
+        }
+        None => image::DynamicImage::new_rgb8(width, height),
+    };
     let mut cursor = std::io::Cursor::new(Vec::new());
     image
         .write_to(&mut cursor, image::ImageFormat::Jpeg)

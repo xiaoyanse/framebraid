@@ -18,5 +18,5 @@ am-sdk-support = { path = "../sdk-support" }
 am-camera-core = { package = "am-camera", path = "../am-camera", default-features = false }
 
 [dev-dependencies]
-image = { version = "0.25", default-features = false, features = ["jpeg"] }
+image = { version = "0.25", default-features = false, features = ["jpeg", "png"] }
 tempfile = "3"
